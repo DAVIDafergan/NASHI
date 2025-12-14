@@ -1,0 +1,7 @@
+{
+  "name": "Nashi - Women's Culture City App",
+  "description": "A smart urban platform for promoting women's culture, community engagement, and volunteering.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
