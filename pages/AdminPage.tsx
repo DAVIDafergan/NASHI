@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, Plus, Users, Calendar, Gift, Search, Trash2, Edit, Save, 
-  LogIn, BookOpen, X, Phone, Check, Eye, User as UserIcon, MapPin, Mail, 
-  Award, MessageSquare, Sparkles, Copy, PlayCircle, Settings, Send, Activity 
+  LogIn, BookOpen, X, Eye, Send, Activity, Upload, Image as ImageIcon,
+  Settings, Award, Copy, Sparkles, MessageSquare, PlayCircle
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, UserLevel, LotteryEligibilityType, Review, PersonalityProfile } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -17,13 +17,9 @@ const authFetch = async (url: string, options: RequestInit = {}) => {
     'Authorization': token ? `Bearer ${token}` : '',
     ...options.headers,
   };
-  
   try {
     const res = await fetch(`${API_URL}${url}`, { ...options, headers });
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(errorText || `Error ${res.status}`);
-    }
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   } catch (err) {
     console.error("API Error:", err);
@@ -31,10 +27,20 @@ const authFetch = async (url: string, options: RequestInit = {}) => {
   }
 };
 
+// --- Helper: Convert File to Base64 ---
+const convertToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 interface AdminPageProps {
   user: User | null;
   onLogin: (user: User) => void;
-  // Props from parent (can be used as initial state or fallbacks)
+  // נשאר למען תאימות, אך המידע מגיע מהשרת
   events?: EventItem[];
   classes?: ClassItem[];
   lotteries?: LotteryItem[];
@@ -52,7 +58,7 @@ interface AdminPageProps {
   onAddLottery?: (lottery: LotteryItem) => void;
   onUpdateLottery?: (lottery: LotteryItem) => void;
   onDeleteLottery?: (id: string) => void;
-
+  
   onUpdatePersonality?: (p: PersonalityProfile) => void;
 }
 
@@ -75,14 +81,9 @@ const Modal: React.FC<{isOpen: boolean, onClose: () => void, title: string, chil
 
 const AdminPage: React.FC<AdminPageProps> = ({ 
     user, onLogin, 
-    events: initialEvents = [], classes: initialClasses = [], lotteries: initialLotteries = [], reviews = [], personality,
-    onAddEvent, onUpdateEvent, onDeleteEvent, 
-    onAddClass, onUpdateClass, onDeleteClass, 
-    onAddLottery, onUpdateLottery, onDeleteLottery,
-    onUpdatePersonality
+    personality: initialPersonality 
 }) => {
   const navigate = useNavigate();
-  // Added 'settings' and 'gifts' to the activeTab type
   const [activeTab, setActiveTab] = useState<'events' | 'users' | 'lotteries' | 'classes' | 'reviews' | 'personality' | 'settings' | 'gifts'>('users');
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
@@ -91,13 +92,17 @@ const AdminPage: React.FC<AdminPageProps> = ({
   
   // Real Data State (Fetched from API)
   const [apiUsers, setApiUsers] = useState<User[]>([]);
+  const [apiEvents, setApiEvents] = useState<EventItem[]>([]);
+  const [apiClasses, setApiClasses] = useState<ClassItem[]>([]);
+  const [apiLotteries, setApiLotteries] = useState<LotteryItem[]>([]);
+  const [apiReviews, setApiReviews] = useState<Review[]>([]); // נתונים לחוות דעת
+  
   const [settings, setSettings] = useState({
     pointsPerRegister: 50,
     pointsPerEventJoin: 10,
     pointsPerShare: 5
   });
   
-  // Gift Form State
   const [giftForm, setGiftForm] = useState({ code: '', points: 100, maxUses: 100 });
   const [createdGiftLink, setCreatedGiftLink] = useState<string | null>(null);
 
@@ -107,22 +112,24 @@ const AdminPage: React.FC<AdminPageProps> = ({
   const [isLotteryModalOpen, setIsLotteryModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   
-  // Edit/Select State
+  // Forms
+  const [eventForm, setEventForm] = useState<Partial<EventItem>>({ title: '', location: '', category: '', price: 0, image: '', tags: [], isHero: false });
+  const [classForm, setClassForm] = useState<Partial<ClassItem>>({ title: '', instructor: '', contactPhone: '', day: 'ראשון', time: '17:00', location: '', price: 0, ageGroup: '', category: '', image: '' });
+  const [lotteryForm, setLotteryForm] = useState<Partial<LotteryItem>>({ 
+      title: '', prize: '', drawDate: '', image: '', participants: [], isActive: true,
+      eligibilityType: 'all', minPointsToEnter: 0, minLevel: UserLevel.BEGINNER, specificUserId: ''
+  });
+  const [personalityForm, setPersonalityForm] = useState<PersonalityProfile | undefined>(initialPersonality || {
+      id: '1', name: '', role: '', image: '', isActive: true, questions: [{question: '', answer: ''}]
+  });
+
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingLotteryId, setEditingLotteryId] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  // Forms
-  const [eventForm, setEventForm] = useState<Partial<EventItem>>({ title: '', location: '', category: '', price: 0, image: 'https://picsum.photos/400/300', tags: [], isHero: false });
-  const [classForm, setClassForm] = useState<Partial<ClassItem>>({ title: '', instructor: '', contactPhone: '', day: 'ראשון', time: '17:00', location: '', price: 0, ageGroup: '', category: '', image: 'https://picsum.photos/400/300' });
-  const [lotteryForm, setLotteryForm] = useState<Partial<LotteryItem>>({ 
-      title: '', prize: '', drawDate: '', image: 'https://picsum.photos/500/300', participants: [], isActive: true,
-      eligibilityType: 'all', minPointsToEnter: 0, minLevel: UserLevel.BEGINNER, specificUserId: ''
-  });
-  const [personalityForm, setPersonalityForm] = useState<PersonalityProfile | undefined>(personality);
 
-  // --- API Loading Logic ---
+  // --- Load Data on Tab Change ---
   useEffect(() => {
     if (user?.isAdmin) {
         loadTabData();
@@ -135,14 +142,21 @@ const AdminPage: React.FC<AdminPageProps> = ({
     try {
         if (activeTab === 'users') {
             const data = await authFetch('/users');
-            // Mapping _id to id for frontend compatibility
-            const mappedUsers = data.map((u: any) => ({ ...u, id: u._id || u.id }));
-            setApiUsers(mappedUsers);
+            setApiUsers(data.map((u: any) => ({ ...u, id: u._id || u.id })));
+        } else if (activeTab === 'events') {
+            const data = await authFetch('/events');
+            setApiEvents(data.map((e: any) => ({ ...e, id: e._id || e.id })));
+        } else if (activeTab === 'classes') {
+            const data = await authFetch('/classes');
+            setApiClasses(data.map((c: any) => ({ ...c, id: c._id || c.id })));
+        } else if (activeTab === 'lotteries') {
+            const data = await authFetch('/lotteries');
+            setApiLotteries(data.map((l: any) => ({ ...l, id: l._id || l.id })));
         } else if (activeTab === 'settings') {
             const data = await authFetch('/admin/settings');
             setSettings(data);
         }
-        // Events/Classes/Lotteries loading logic can be added here if you want to switch entirely to API
+        // Reviews and Personality might need their own endpoints later, keeping mocks/props for now if API not ready
     } catch (err) {
         console.error("Failed to load data", err);
     } finally {
@@ -153,199 +167,124 @@ const AdminPage: React.FC<AdminPageProps> = ({
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-        // Try real login first
-        const res = await authFetch('/login', {
-            method: 'POST',
-            body: JSON.stringify({ email: loginForm.username, password: loginForm.password }) // Using username field as email for simplicity or specific admin login
-        });
-        
+        const res = await authFetch('/login', { method: 'POST', body: JSON.stringify({ email: loginForm.username, password: loginForm.password }) });
         if (res.user && res.user.isAdmin) {
             localStorage.setItem('token', res.token);
             onLogin(res.user);
-        } else {
-             // Fallback for hardcoded admin if needed (remove in production)
-            if (loginForm.username === 'YA1212' && loginForm.password === '1212') {
-                onLogin({
-                    id: 'admin',
-                    name: 'מנהלת מערכת',
-                    email: 'admin@nashi.city',
-                    points: 0,
-                    level: UserLevel.AMBASSADOR,
-                    upcomingEvents: 0,
-                    isAdmin: true,
-                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane'
-                });
-            } else {
-                setError('אין הרשאת ניהול או פרטים שגויים');
-            }
-        }
-    } catch (err) {
-        // If API fails, check hardcoded fallback
-        if (loginForm.username === 'YA1212' && loginForm.password === '1212') {
-             onLogin({
-                id: 'admin',
-                name: 'מנהלת מערכת',
-                email: 'admin@nashi.city',
-                points: 0,
-                level: UserLevel.AMBASSADOR,
-                upcomingEvents: 0,
-                isAdmin: true,
-                avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane'
-            });
-        } else {
-            setError('שגיאה בהתחברות');
-        }
+        } else { setError('אין הרשאת ניהול'); }
+    } catch { setError('שגיאה בהתחברות'); }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, setForm: Function) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB Limit
+        alert('הקובץ גדול מדי! נא להעלות תמונה עד 5MB');
+        return;
+      }
+      const base64 = await convertToBase64(file);
+      setForm((prev: any) => ({ ...prev, image: base64 }));
     }
   };
 
-  // --- New Handlers for Gamification ---
-
+  // --- Handlers: Gamification ---
   const handleUpdateSettings = async () => {
-      try {
-          await authFetch('/admin/settings', {
-              method: 'PUT',
-              body: JSON.stringify(settings)
-          });
-          setSystemMessage({ type: 'success', text: 'ההגדרות עודכנו בהצלחה!' });
-      } catch (err) {
-          setSystemMessage({ type: 'error', text: 'שגיאה בשמירת ההגדרות' });
-      }
+      try { await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify(settings) }); setSystemMessage({type:'success', text:'הגדרות נשמרו'}); } 
+      catch { setSystemMessage({type:'error', text:'שגיאה בשמירה'}); }
   };
 
   const handleCreateGift = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-          const res = await authFetch('/admin/gifts', {
-              method: 'POST',
-              body: JSON.stringify(giftForm)
-          });
+          const res = await authFetch('/admin/gifts', { method: 'POST', body: JSON.stringify(giftForm) });
           setCreatedGiftLink(res.link);
-          setSystemMessage({ type: 'success', text: 'הלינק נוצר בהצלחה!' });
-      } catch (err) {
-          setSystemMessage({ type: 'error', text: 'שגיאה ביצירת המתנה' });
-      }
+          setSystemMessage({type:'success', text:'הלינק נוצר בהצלחה!'});
+      } catch { setSystemMessage({type:'error', text:'שגיאה ביצירה'}); }
   };
 
   const handleSendPoints = async (userId: string) => {
       const amountStr = prompt('כמה נקודות לשלוח למשתמשת?');
       if (!amountStr) return;
       const amount = parseInt(amountStr);
-      if (isNaN(amount)) {
-          alert('נא להזין מספר תקין');
-          return;
-      }
+      if (isNaN(amount)) return;
 
       try {
-          await authFetch(`/admin/users/${userId}/points`, {
-              method: 'POST',
-              body: JSON.stringify({ points: amount })
-          });
+          await authFetch(`/admin/users/${userId}/points`, { method: 'POST', body: JSON.stringify({ points: amount }) });
           setSystemMessage({ type: 'success', text: `נשלחו ${amount} נקודות בהצלחה!` });
-          loadTabData(); // Refresh table
-      } catch (err) {
-          setSystemMessage({ type: 'error', text: 'שגיאה בשליחת הנקודות' });
-      }
+          loadTabData();
+      } catch { setSystemMessage({ type: 'error', text: 'שגיאה בשליחה' }); }
   };
 
-  // --- Existing Handlers ---
-
-  const handleViewUser = (u: User) => {
-      setSelectedUser(u);
-      setIsUserModalOpen(true);
-  };
-
-  // Event Handlers
+  // --- Handlers: Content ---
   const handleOpenEventModal = (event?: EventItem) => {
       if (event) {
           setEditingEventId(event.id);
           setEventForm(event);
       } else {
           setEditingEventId(null);
-          setEventForm({ title: '', location: '', category: '', price: 0, image: 'https://picsum.photos/400/300', tags: [], ratings: [], isHero: false });
+          setEventForm({ title: '', location: '', category: '', price: 0, image: '', tags: [], isHero: false });
       }
       setIsEventModalOpen(true);
   };
 
-  const handleSaveEvent = async (e: React.FormEvent) => {
+  const saveEvent = async (e: React.FormEvent) => {
       e.preventDefault();
-      // Try to save to API first
       try {
-          if (editingEventId) {
-             // PUT logic here if endpoint exists
-          } else {
-             await authFetch('/events', { method: 'POST', body: JSON.stringify(eventForm) });
-          }
-      } catch (err) {
-          console.log("Saving locally as fallback");
-      }
-
-      if (editingEventId && onUpdateEvent) {
-          onUpdateEvent({ ...eventForm as EventItem, id: editingEventId });
-      } else if (onAddEvent) {
-          onAddEvent({ ...eventForm as EventItem, id: Date.now().toString(), date: new Date().toISOString(), ratings: [] });
-      }
-      setIsEventModalOpen(false);
+          // If editing logic exists in API, use PUT, otherwise POST creates new
+          await authFetch('/events', { method: 'POST', body: JSON.stringify(eventForm) });
+          setSystemMessage({ type: 'success', text: 'אירוע נשמר בהצלחה!' });
+          setIsEventModalOpen(false);
+          loadTabData();
+      } catch { alert('שגיאה בשמירה'); }
   };
 
-  // Class Handlers
+  const deleteEvent = async (id: string) => {
+      if(!confirm('האם את בטוחה שברצונך למחוק?')) return;
+      try {
+          await authFetch(`/events/${id}`, { method: 'DELETE' });
+          loadTabData();
+      } catch { alert('שגיאה במחיקה'); }
+  };
+
+  // Same logic for Classes
   const handleOpenClassModal = (cls?: ClassItem) => {
-      if (cls) {
-          setEditingClassId(cls.id);
-          setClassForm(cls);
-      } else {
-          setEditingClassId(null);
-          setClassForm({ title: '', instructor: '', contactPhone: '', day: 'ראשון', time: '17:00', location: '', price: 0, ageGroup: '', category: '', image: 'https://picsum.photos/400/300' });
-      }
+      if (cls) { setEditingClassId(cls.id); setClassForm(cls); } 
+      else { setEditingClassId(null); setClassForm({ title: '', instructor: '', contactPhone: '', day: 'ראשון', time: '17:00', location: '', price: 0, ageGroup: '', category: '', image: '' }); }
       setIsClassModalOpen(true);
   };
 
-  const handleSaveClass = (e: React.FormEvent) => {
+  const saveClass = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (editingClassId && onUpdateClass) {
-          onUpdateClass({ ...classForm as ClassItem, id: editingClassId });
-      } else if (onAddClass) {
-          onAddClass({ ...classForm as ClassItem, id: Date.now().toString() });
-      }
-      setIsClassModalOpen(false);
+      try {
+          await authFetch('/classes', { method: 'POST', body: JSON.stringify(classForm) });
+          setSystemMessage({ type: 'success', text: 'חוג נשמר בהצלחה!' });
+          setIsClassModalOpen(false);
+          loadTabData();
+      } catch { alert('שגיאה בשמירה'); }
   };
 
-  // Lottery Handlers
+  // Same logic for Lotteries
   const handleOpenLotteryModal = (lottery?: LotteryItem) => {
-      if (lottery) {
-          setEditingLotteryId(lottery.id);
-          setLotteryForm(lottery);
-      } else {
-          setEditingLotteryId(null);
-          setLotteryForm({ 
-              title: '', prize: '', drawDate: '', image: 'https://picsum.photos/500/300', participants: [], isActive: true,
-              eligibilityType: 'all', minPointsToEnter: 0, minLevel: UserLevel.BEGINNER, specificUserId: ''
-          });
-      }
+      if (lottery) { setEditingLotteryId(lottery.id); setLotteryForm(lottery); }
+      else { setEditingLotteryId(null); setLotteryForm({ title: '', prize: '', drawDate: '', image: '', participants: [], isActive: true, eligibilityType: 'all', minPointsToEnter: 0, minLevel: UserLevel.BEGINNER }); }
       setIsLotteryModalOpen(true);
   };
 
-  const handleSaveLottery = (e: React.FormEvent) => {
+  const saveLottery = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (editingLotteryId && onUpdateLottery) {
-          onUpdateLottery({ ...lotteryForm as LotteryItem, id: editingLotteryId });
-      } else if (onAddLottery) {
-          onAddLottery({ ...lotteryForm as LotteryItem, id: Date.now().toString(), participants: [] });
-      }
-      setIsLotteryModalOpen(false);
+      try {
+          await authFetch('/lotteries', { method: 'POST', body: JSON.stringify(lotteryForm) });
+          setSystemMessage({ type: 'success', text: 'הגרלה נשמרה בהצלחה!' });
+          setIsLotteryModalOpen(false);
+          loadTabData();
+      } catch { alert('שגיאה בשמירה'); }
   };
-
-  const handleStartLiveDraw = (lotteryId: string) => {
-      navigate('/lottery', { state: { liveLotteryId: lotteryId } });
-  };
-
-  // Personality
+  
   const handleSavePersonality = () => {
-      if (onUpdatePersonality && personalityForm) {
-          onUpdatePersonality(personalityForm);
-          setSystemMessage({ type: 'success', text: 'אישיות השבוע עודכנה בהצלחה!' });
-      }
+     alert('פונקציונליות שמירת אישיות תחובר לשרת בקרוב. כרגע זה מקומי.');
   };
 
+  // --- Render Login ---
   if (!user || !user.isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 w-full">
@@ -379,6 +318,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
     );
   }
 
+  // --- Render Dashboard ---
   return (
     <div className="space-y-8 w-full pb-10">
       {/* Header */}
@@ -409,14 +349,14 @@ const AdminPage: React.FC<AdminPageProps> = ({
       </div>
 
       {systemMessage && (
-        <div className={`p-4 rounded-xl text-center font-bold ${systemMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+        <div className={`p-4 rounded-xl text-center font-bold animate-fade-in ${systemMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {systemMessage.text}
         </div>
       )}
 
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden min-h-[500px]">
         
-        {/* USERS TAB (Connected to Real API) */}
+        {/* USERS TAB */}
         {activeTab === 'users' && (
           <div className="p-4 md:p-6">
              <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -444,7 +384,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
                      {apiUsers.map(u => (
                        <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="p-4 font-bold text-slate-800 flex items-center gap-2">
-                             <img src={u.avatar} className="w-8 h-8 rounded-full bg-slate-200" alt="" />
+                             <img src={u.avatar || 'https://via.placeholder.com/40'} className="w-8 h-8 rounded-full bg-slate-200" alt="" />
                              {u.name}
                              {u.isAdmin && <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">מנהלת</span>}
                           </td>
@@ -452,7 +392,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
                           <td className="p-4 font-mono text-rose-600 font-bold">{u.points}</td>
                           <td className="p-4"><span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">{u.isAdmin ? 'צוות' : 'רשומה'}</span></td>
                           <td className="p-4 flex gap-2">
-                             <button onClick={() => handleViewUser(u)} className="text-slate-400 hover:text-rose-600 transition-colors bg-slate-50 p-2 rounded-full"><Eye size={18} /></button>
+                             <button onClick={() => {setSelectedUser(u); setIsUserModalOpen(true);}} className="text-slate-400 hover:text-rose-600 transition-colors bg-slate-50 p-2 rounded-full"><Eye size={18} /></button>
                              <button 
                                 onClick={() => handleSendPoints(u.id)} 
                                 title="שלח נקודות"
@@ -465,287 +405,63 @@ const AdminPage: React.FC<AdminPageProps> = ({
                      ))}
                    </tbody>
                 </table>
-                {apiUsers.length === 0 && !loading && (
-                    <div className="text-center p-8 text-slate-400">לא נמצאו משתמשים או שהחיבור לשרת נכשל.</div>
-                )}
              </div>
           </div>
-        )}
-
-        {/* SETTINGS TAB (New) */}
-        {activeTab === 'settings' && (
-          <div className="p-6 max-w-2xl">
-            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <Settings size={24} className="text-slate-400" />
-                הגדרות ניקוד מערכת (Gamification)
-            </h3>
-            {loading ? <div className="text-center p-4">טוען הגדרות...</div> : (
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">נקודות להרשמה לאתר</label>
-                            <input 
-                                type="number" 
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-rose-200 outline-none"
-                                value={settings.pointsPerRegister}
-                                onChange={(e) => setSettings({...settings, pointsPerRegister: Number(e.target.value)})}
-                            />
-                            <p className="text-xs text-slate-400 mt-1">כמה נקודות מקבלת משתמשת חדשה</p>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">נקודות להרשמה לאירוע</label>
-                            <input 
-                                type="number" 
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-rose-200 outline-none"
-                                value={settings.pointsPerEventJoin}
-                                onChange={(e) => setSettings({...settings, pointsPerEventJoin: Number(e.target.value)})}
-                            />
-                            <p className="text-xs text-slate-400 mt-1">בונוס על לחיצה על "הרשמה"</p>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">נקודות לשיתוף לינק</label>
-                            <input 
-                                type="number" 
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-rose-200 outline-none"
-                                value={settings.pointsPerShare}
-                                onChange={(e) => setSettings({...settings, pointsPerShare: Number(e.target.value)})}
-                            />
-                             <p className="text-xs text-slate-400 mt-1">בונוס על שיתוף בוואטסאפ</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={handleUpdateSettings}
-                        className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-rose-600 transition-colors flex justify-center items-center gap-2"
-                    >
-                        <Save size={18} /> שמירת הגדרות
-                    </button>
-                </div>
-            )}
-          </div>
-        )}
-
-        {/* GIFTS TAB (New) */}
-        {activeTab === 'gifts' && (
-          <div className="p-6 max-w-3xl">
-            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <Gift size={24} className="text-rose-500" />
-                יצירת לינק מתנה לקבוצות
-            </h3>
-            
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
-                <form onSubmit={handleCreateGift} className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">קוד קופון (באנגלית)</label>
-                            <input 
-                                type="text" 
-                                required
-                                placeholder="למשל: CHANUKAH2025"
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none"
-                                value={giftForm.code}
-                                onChange={e => setGiftForm({...giftForm, code: e.target.value})}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">כמות נקודות</label>
-                            <input 
-                                type="number" 
-                                required
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none"
-                                value={giftForm.points}
-                                onChange={e => setGiftForm({...giftForm, points: Number(e.target.value)})}
-                            />
-                        </div>
-                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">מקסימום שימושים</label>
-                            <input 
-                                type="number" 
-                                required
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none"
-                                value={giftForm.maxUses}
-                                onChange={e => setGiftForm({...giftForm, maxUses: Number(e.target.value)})}
-                            />
-                        </div>
-                    </div>
-                    <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-rose-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all flex justify-center items-center gap-2">
-                        <Sparkles size={18} /> צור מתנה
-                    </button>
-                </form>
-            </div>
-
-            {createdGiftLink && (
-                <div className="bg-green-50 border border-green-200 p-6 rounded-2xl text-center animate-fade-in">
-                    <p className="text-green-800 font-bold mb-3 text-lg">הלינק נוצר בהצלחה! 🎉</p>
-                    <div className="flex items-center gap-2 justify-center bg-white p-3 rounded-xl border border-green-100 shadow-sm mb-3">
-                        <code className="text-rose-600 font-mono font-bold">{createdGiftLink}</code>
-                        <button 
-                            onClick={() => {
-                                navigator.clipboard.writeText(createdGiftLink);
-                                alert('הועתק!');
-                            }} 
-                            className="text-slate-400 hover:text-slate-800 p-1"
-                        >
-                            <Copy size={20} />
-                        </button>
-                    </div>
-                    <p className="text-sm text-green-700">שלחי את הלינק הזה בקבוצות הוואטסאפ, כל מי שתלחץ עליו תקבל אוטומטית {giftForm.points} נקודות.</p>
-                </div>
-            )}
-          </div>
-        )}
-
-        {/* REVIEWS TAB */}
-        {activeTab === 'reviews' && (
-           <div className="p-6">
-              <h3 className="text-xl font-bold text-slate-800 mb-6">חוות דעת אחרונות</h3>
-              {reviews.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400">אין חוות דעת להצגה</div>
-              ) : (
-                  <div className="grid gap-4">
-                      {reviews.map(review => (
-                          <div key={review.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                              <div className="flex justify-between mb-2">
-                                  <span className="font-bold text-slate-800">{review.eventTitle}</span>
-                                  <span className="text-xs text-slate-500">{review.date}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
-                                  <span>מאת: {review.userName}</span>
-                                  <span className="flex items-center text-yellow-500 font-bold"><span className="text-slate-800 ml-1">דירוג:</span> {review.rating} ★</span>
-                              </div>
-                              <p className="bg-white p-3 rounded-xl text-slate-700 text-sm border border-slate-200">"{review.comment}"</p>
-                          </div>
-                      ))}
-                  </div>
-              )}
-           </div>
-        )}
-
-        {/* PERSONALITY TAB */}
-        {activeTab === 'personality' && personalityForm && (
-           <div className="p-6 max-w-3xl mx-auto">
-               <h3 className="text-xl font-bold text-slate-800 mb-6">ניהול אישיות השבוע</h3>
-               <div className="space-y-6">
-                   <div className="bg-rose-50 p-4 rounded-2xl flex items-center justify-between border border-rose-100">
-                       <span className="text-rose-800 font-bold text-sm">שלחי קישור לאישה למילוי השאלון</span>
-                       <button onClick={() => alert('הקישור הועתק!')} className="flex items-center gap-2 bg-white text-rose-600 px-4 py-2 rounded-xl text-xs font-bold shadow-sm">
-                           <Copy size={16} /> העתקת קישור
-                       </button>
-                   </div>
-                   
-                   <div className="grid md:grid-cols-2 gap-4">
-                       <div>
-                           <label className="text-xs font-bold text-slate-500 mb-1 block">שם מלא</label>
-                           <input className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200" value={personalityForm.name} onChange={e => setPersonalityForm({...personalityForm, name: e.target.value})} />
-                       </div>
-                       <div>
-                           <label className="text-xs font-bold text-slate-500 mb-1 block">תפקיד / עיסוק</label>
-                           <input className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200" value={personalityForm.role} onChange={e => setPersonalityForm({...personalityForm, role: e.target.value})} />
-                       </div>
-                       <div className="md:col-span-2">
-                           <label className="text-xs font-bold text-slate-500 mb-1 block">תמונה (URL)</label>
-                           <input className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200" value={personalityForm.image} onChange={e => setPersonalityForm({...personalityForm, image: e.target.value})} />
-                       </div>
-                   </div>
-
-                   <div className="space-y-4">
-                       <h4 className="font-bold text-slate-700 border-b pb-2">שאלות ותשובות</h4>
-                       {personalityForm.questions.map((q, idx) => (
-                           <div key={idx} className="bg-slate-50 p-4 rounded-2xl space-y-2">
-                               <input 
-                                  className="w-full p-2 bg-white rounded-lg border border-slate-200 text-sm font-bold" 
-                                  value={q.question}
-                                  onChange={(e) => {
-                                      const newQs = [...personalityForm.questions];
-                                      newQs[idx].question = e.target.value;
-                                      setPersonalityForm({...personalityForm, questions: newQs});
-                                  }}
-                               />
-                               <textarea 
-                                  className="w-full p-2 bg-white rounded-lg border border-slate-200 text-sm" 
-                                  rows={2}
-                                  value={q.answer}
-                                  onChange={(e) => {
-                                      const newQs = [...personalityForm.questions];
-                                      newQs[idx].answer = e.target.value;
-                                      setPersonalityForm({...personalityForm, questions: newQs});
-                                  }}
-                               />
-                           </div>
-                       ))}
-                   </div>
-
-                   <div className="flex items-center gap-2">
-                       <input 
-                          type="checkbox" 
-                          checked={personalityForm.isActive}
-                          onChange={e => setPersonalityForm({...personalityForm, isActive: e.target.checked})}
-                          className="w-5 h-5 accent-rose-500"
-                       />
-                       <span className="font-bold text-slate-700">הצג בדף הבית</span>
-                   </div>
-
-                   <button onClick={handleSavePersonality} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold">שמירת שינויים</button>
-               </div>
-           </div>
         )}
 
         {/* EVENTS TAB */}
         {activeTab === 'events' && (
            <div className="p-4 md:p-6">
               <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800">אירועים ({initialEvents.length})</h3>
+                 <h3 className="text-xl font-bold text-slate-800">אירועים ({apiEvents.length})</h3>
                  <button onClick={() => handleOpenEventModal()} className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-rose-600 transition-colors">
                     <Plus size={18} /> <span className="hidden md:inline">הוספת אירוע</span>
                  </button>
               </div>
 
               <div className="grid gap-4">
-                  {initialEvents.map(event => (
+                  {apiEvents.map(event => (
                       <div key={event.id} className="flex flex-col md:flex-row md:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
-                          <img src={event.image} alt="" className="w-full md:w-20 h-32 md:h-20 rounded-xl object-cover" />
+                          <img src={event.image || 'https://via.placeholder.com/150'} alt="" className="w-full md:w-24 h-32 md:h-24 rounded-xl object-cover bg-slate-100" />
                           <div className="flex-1">
                               <h4 className="font-bold text-slate-800">{event.title} {event.isHero && <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full mr-2">מקודם בראשי</span>}</h4>
                               <p className="text-xs text-slate-500">{new Date(event.date).toLocaleDateString()} | {event.location}</p>
                               <span className="inline-block mt-2 px-2 py-0.5 bg-slate-100 rounded text-xs text-slate-600">{event.category}</span>
                           </div>
                           <div className="flex gap-2 justify-end self-start md:self-center">
-                             <button onClick={() => handleOpenEventModal(event)} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-lg transition-colors"><Edit size={16} /></button>
-                             <button onClick={() => onDeleteEvent && onDeleteEvent(event.id)} className="p-2 text-slate-400 hover:text-red-600 bg-slate-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                             <button onClick={() => deleteEvent(event.id)} className="p-2 text-slate-400 hover:text-red-600 bg-slate-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
                           </div>
                       </div>
                   ))}
               </div>
 
-              {/* Event Modal */}
-              <Modal isOpen={isEventModalOpen} onClose={() => setIsEventModalOpen(false)} title={editingEventId ? "עריכת אירוע" : "הוספת אירוע חדש"}>
-                  <form onSubmit={handleSaveEvent} className="space-y-4">
+              <Modal isOpen={isEventModalOpen} onClose={() => setIsEventModalOpen(false)} title="הוספת אירוע">
+                  <form onSubmit={saveEvent} className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                              <label className="text-xs font-bold text-slate-500">שם האירוע</label>
-                              <input required className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none" value={eventForm.title} onChange={e => setEventForm({...eventForm, title: e.target.value})} />
+                          <input required placeholder="שם האירוע" className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50" value={eventForm.title} onChange={e => setEventForm({...eventForm, title: e.target.value})} />
+                          <input required placeholder="מיקום" className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50" value={eventForm.location} onChange={e => setEventForm({...eventForm, location: e.target.value})} />
+                          <input required type="date" className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50" value={eventForm.date ? new Date(eventForm.date).toISOString().split('T')[0] : ''} onChange={e => setEventForm({...eventForm, date: e.target.value})} />
+                          <input required type="number" placeholder="מחיר" className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50" value={eventForm.price} onChange={e => setEventForm({...eventForm, price: Number(e.target.value)})} />
+                          <input required placeholder="קטגוריה" className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50" value={eventForm.category} onChange={e => setEventForm({...eventForm, category: e.target.value})} />
+                          
+                          <div className="md:col-span-2 border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:bg-slate-50 relative">
+                               <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, setEventForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                               {eventForm.image ? (
+                                   <img src={eventForm.image} className="h-32 mx-auto rounded object-cover" />
+                               ) : (
+                                   <div className="text-slate-500 flex flex-col items-center">
+                                       <Upload size={30} />
+                                       <span className="mt-2 text-sm font-bold">לחצי כאן להעלאת תמונה</span>
+                                   </div>
+                               )}
                           </div>
-                          <div className="space-y-1">
-                              <label className="text-xs font-bold text-slate-500">מיקום</label>
-                              <input required className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none" value={eventForm.location} onChange={e => setEventForm({...eventForm, location: e.target.value})} />
-                          </div>
-                          <div className="space-y-1">
-                              <label className="text-xs font-bold text-slate-500">קטגוריה</label>
-                              <input required className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none" value={eventForm.category} onChange={e => setEventForm({...eventForm, category: e.target.value})} />
-                          </div>
-                          <div className="space-y-1">
-                              <label className="text-xs font-bold text-slate-500">מחיר (₪)</label>
-                              <input type="number" className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none" value={eventForm.price} onChange={e => setEventForm({...eventForm, price: Number(e.target.value)})} />
-                          </div>
-                          <div className="space-y-1 md:col-span-2">
-                              <label className="text-xs font-bold text-slate-500">קישור לתמונה</label>
-                              <input className="p-3 rounded-xl border border-slate-200 w-full bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none" value={eventForm.image} onChange={e => setEventForm({...eventForm, image: e.target.value})} />
-                          </div>
+                          
                           <div className="md:col-span-2 flex items-center gap-2 bg-slate-50 p-3 rounded-xl">
                               <input type="checkbox" checked={eventForm.isHero} onChange={e => setEventForm({...eventForm, isHero: e.target.checked})} className="w-5 h-5 accent-rose-500" />
                               <span className="text-sm font-bold text-slate-700">הצג בסליידר הראשי (דף הבית)</span>
                           </div>
                       </div>
-                      <button type="submit" className="w-full py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-all flex justify-center items-center gap-2">
+                      <button type="submit" className="w-full py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 flex justify-center items-center gap-2">
                           <Save size={18} /> שמירה ועדכון
                       </button>
                   </form>
@@ -757,69 +473,43 @@ const AdminPage: React.FC<AdminPageProps> = ({
         {activeTab === 'classes' && (
            <div className="p-4 md:p-6">
               <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800">חוגים ({initialClasses.length})</h3>
+                 <h3 className="text-xl font-bold text-slate-800">חוגים ({apiClasses.length})</h3>
                  <button onClick={() => handleOpenClassModal()} className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200">
                     <Plus size={18} /> <span className="hidden md:inline">הוספת חוג</span>
                  </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {initialClasses.map(cls => (
+                  {apiClasses.map(cls => (
                       <div key={cls.id} className="flex gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                          <img src={cls.image} alt="" className="w-20 h-20 rounded-xl object-cover hidden sm:block" />
+                          <img src={cls.image || 'https://via.placeholder.com/150'} alt="" className="w-20 h-20 rounded-xl object-cover hidden sm:block bg-slate-100" />
                           <div className="flex-1">
                               <h4 className="font-bold text-slate-800">{cls.title}</h4>
                               <p className="text-xs text-slate-500 mb-1">מדריכה: {cls.instructor}</p>
-                              <input required placeholder="טלפון ליצירת קשר" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.contactPhone} onChange={e => setClassForm({...classForm, contactPhone: e.target.value})} />
                               <div className="flex flex-wrap gap-2 text-xs">
                                   <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-md">{cls.day} {cls.time}</span>
                               </div>
-                          </div>
-                          <div className="flex flex-col justify-between items-end gap-2">
-                             <div className="flex gap-1">
-                                 <button onClick={() => handleOpenClassModal(cls)} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-lg transition-colors"><Edit size={16} /></button>
-                                 <button onClick={() => onDeleteClass && onDeleteClass(cls.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
-                             </div>
-                             <span className="font-bold text-slate-800">₪{cls.price}</span>
                           </div>
                       </div>
                   ))}
               </div>
 
-              {/* Class Modal */}
-              <Modal isOpen={isClassModalOpen} onClose={() => setIsClassModalOpen(false)} title={editingClassId ? "עריכת חוג" : "הוספת חוג חדש"}>
-                  <form onSubmit={handleSaveClass} className="space-y-4">
+              <Modal isOpen={isClassModalOpen} onClose={() => setIsClassModalOpen(false)} title="הוספת חוג">
+                  <form onSubmit={saveClass} className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <input required placeholder="שם החוג" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.title} onChange={e => setClassForm({...classForm, title: e.target.value})} />
-                          <input required placeholder="שם המדריכה" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.instructor} onChange={e => setClassForm({...classForm, instructor: e.target.value})} />
-                          <input required placeholder="טלפון ליצירת קשר" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.contactPhone} onChange={e => setClassForm({...classForm, contactPhone: e.target.value})} />
-                          
-                          {/* Precise Day Selector */}
-                          <div>
-                             <label className="text-xs font-bold text-slate-500 mb-1 block">יום בשבוע</label>
-                             <select className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.day} onChange={e => setClassForm({...classForm, day: e.target.value})}>
-                                  <option>ראשון</option>
-                                  <option>שני</option>
-                                  <option>שלישי</option>
-                                  <option>רביעי</option>
-                                  <option>חמישי</option>
-                                  <option>שישי</option>
-                                  <option>מוצא"ש</option>
-                             </select>
+                          <input required placeholder="מדריכה" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.instructor} onChange={e => setClassForm({...classForm, instructor: e.target.value})} />
+                          <div className="grid grid-cols-2 gap-4">
+                              <select className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.day} onChange={e => setClassForm({...classForm, day: e.target.value})}>
+                                  <option>ראשון</option><option>שני</option><option>שלישי</option><option>רביעי</option><option>חמישי</option><option>שישי</option>
+                              </select>
+                              <input required placeholder="שעה" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.time} onChange={e => setClassForm({...classForm, time: e.target.value})} />
                           </div>
+                          <input required placeholder="טלפון" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.contactPhone} onChange={e => setClassForm({...classForm, contactPhone: e.target.value})} />
                           
-                          {/* Precise Time Picker */}
-                          <div>
-                              <label className="text-xs font-bold text-slate-500 mb-1 block">שעת התחלה</label>
-                              <input required type="time" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.time} onChange={e => setClassForm({...classForm, time: e.target.value})} />
-                          </div>
-
-                          <input required placeholder="מיקום" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.location} onChange={e => setClassForm({...classForm, location: e.target.value})} />
-                          <input required type="number" placeholder="מחיר" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.price} onChange={e => setClassForm({...classForm, price: Number(e.target.value)})} />
-                          <input required placeholder="קבוצת גיל" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.ageGroup} onChange={e => setClassForm({...classForm, ageGroup: e.target.value})} />
-                          <input required placeholder="קטגוריה" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.category} onChange={e => setClassForm({...classForm, category: e.target.value})} />
-                          <div className="md:col-span-2">
-                             <input required placeholder="קישור לתמונה" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={classForm.image} onChange={e => setClassForm({...classForm, image: e.target.value})} />
+                          <div className="md:col-span-2 border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:bg-slate-50 relative">
+                               <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, setClassForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                               {classForm.image ? <img src={classForm.image} className="h-24 mx-auto rounded" /> : <span>העלאת תמונה</span>}
                           </div>
                       </div>
                       <button type="submit" className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 flex justify-center items-center gap-2">
@@ -834,16 +524,16 @@ const AdminPage: React.FC<AdminPageProps> = ({
         {activeTab === 'lotteries' && (
            <div className="p-4 md:p-6">
                <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800">ניהול הגרלות ({initialLotteries.length})</h3>
+                 <h3 className="text-xl font-bold text-slate-800">ניהול הגרלות ({apiLotteries.length})</h3>
                  <button onClick={() => handleOpenLotteryModal()} className="bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-orange-600 transition-colors shadow-lg shadow-orange-200">
                     <Plus size={18} /> <span className="hidden md:inline">הוספת הגרלה</span>
                  </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {initialLotteries.map(lot => (
+                  {apiLotteries.map(lot => (
                       <div key={lot.id} className="flex gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
-                          <img src={lot.image} alt="" className="w-20 h-20 rounded-xl object-cover hidden sm:block" />
+                          <img src={lot.image || 'https://via.placeholder.com/150'} alt="" className="w-20 h-20 rounded-xl object-cover hidden sm:block bg-slate-100" />
                           <div className="flex-1">
                               <h4 className="font-bold text-slate-800">{lot.title}</h4>
                               <p className="text-xs text-rose-500 font-bold mb-1">{lot.prize}</p>
@@ -856,82 +546,135 @@ const AdminPage: React.FC<AdminPageProps> = ({
                                    lot.eligibilityType === 'level' ? `דרגת ${lot.minLevel} ומעלה` : 'משתמשת ספציפית'}
                               </span>
                           </div>
-                          
-                          {/* Action Buttons */}
-                          <div className="flex flex-col justify-between items-end gap-2 pl-2">
-                             <div className="flex gap-1">
-                                <button title="התחל הגרלה בלייב" onClick={() => handleStartLiveDraw(lot.id)} className="p-2 text-white bg-gradient-to-r from-orange-400 to-rose-500 hover:scale-105 shadow-md shadow-rose-200 rounded-lg transition-all"><PlayCircle size={16} /></button>
-                                <button onClick={() => handleOpenLotteryModal(lot)} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-lg transition-colors"><Edit size={16} /></button>
-                                <button onClick={() => onDeleteLottery && onDeleteLottery(lot.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
-                             </div>
-                             <span className={`text-xs px-2 py-1 rounded-full ${lot.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{lot.isActive ? 'פעיל' : 'הסתיים'}</span>
-                          </div>
                       </div>
                   ))}
               </div>
 
-              {/* Lottery Modal */}
-              <Modal isOpen={isLotteryModalOpen} onClose={() => setIsLotteryModalOpen(false)} title={editingLotteryId ? "עריכת הגרלה" : "הוספת הגרלה חדשה"}>
-                  <form onSubmit={handleSaveLottery} className="space-y-4">
+              <Modal isOpen={isLotteryModalOpen} onClose={() => setIsLotteryModalOpen(false)} title="הוספת הגרלה">
+                  <form onSubmit={saveLottery} className="space-y-4">
                       <div className="space-y-4">
-                          {/* Basic Info */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500">כותרת ההגרלה</label>
-                                <input required className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={lotteryForm.title} onChange={e => setLotteryForm({...lotteryForm, title: e.target.value})} />
-                             </div>
-                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500">הפרס</label>
-                                <input required className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={lotteryForm.prize} onChange={e => setLotteryForm({...lotteryForm, prize: e.target.value})} />
-                             </div>
-                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500">תאריך הגרלה</label>
-                                <input required type="date" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={lotteryForm.drawDate} onChange={e => setLotteryForm({...lotteryForm, drawDate: e.target.value})} />
-                             </div>
-                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500">קישור לתמונה</label>
-                                <input className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={lotteryForm.image} onChange={e => setLotteryForm({...lotteryForm, image: e.target.value})} />
+                             <input required placeholder="כותרת" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={lotteryForm.title} onChange={e => setLotteryForm({...lotteryForm, title: e.target.value})} />
+                             <input required placeholder="הפרס" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={lotteryForm.prize} onChange={e => setLotteryForm({...lotteryForm, prize: e.target.value})} />
+                             <input required type="date" className="p-3 rounded-xl border border-slate-200 bg-slate-50 w-full" value={lotteryForm.drawDate} onChange={e => setLotteryForm({...lotteryForm, drawDate: e.target.value})} />
+                             
+                             <div className="md:col-span-2 border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:bg-slate-50 relative">
+                                 <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                 {lotteryForm.image ? <img src={lotteryForm.image} className="h-24 mx-auto rounded" /> : <span>העלאת תמונה</span>}
                              </div>
                           </div>
 
-                          {/* Eligibility Section */}
                           <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 space-y-3">
-                              <h4 className="font-bold text-orange-800 text-sm flex items-center gap-2"><Users size={16} /> הגדרות זכאות להשתתפות</h4>
-                              
-                              <div className="space-y-1">
-                                  <label className="text-xs font-bold text-slate-600">מי זכאית להשתתף?</label>
-                                  <select 
-                                    className="w-full p-3 rounded-xl border border-orange-200 bg-white"
-                                    value={lotteryForm.eligibilityType}
-                                    onChange={(e) => setLotteryForm({...lotteryForm, eligibilityType: e.target.value as LotteryEligibilityType})}
-                                  >
-                                      <option value="all">כל המשתמשות הרשומות</option>
-                                      <option value="points">לפי ניקוד מינימלי</option>
-                                      <option value="level">לפי דרגת משתמשת</option>
-                                      <option value="specific_user">משתמשת ספציפית (זכאות אישית)</option>
-                                  </select>
-                              </div>
-
-                              {/* Conditional Inputs */}
+                              <h4 className="font-bold text-orange-800 text-sm flex items-center gap-2"><Users size={16} /> הגדרות זכאות</h4>
+                              <select className="w-full p-3 rounded-xl border border-orange-200 bg-white" value={lotteryForm.eligibilityType} onChange={(e) => setLotteryForm({...lotteryForm, eligibilityType: e.target.value as LotteryEligibilityType})}>
+                                  <option value="all">כל המשתמשות הרשומות</option>
+                                  <option value="points">לפי ניקוד מינימלי</option>
+                                  <option value="level">לפי דרגת משתמשת</option>
+                              </select>
                               {lotteryForm.eligibilityType === 'points' && (
-                                  <div className="animate-fade-in space-y-1">
-                                      <label className="text-xs font-bold text-slate-600">ניקוד מינימלי נדרש</label>
-                                      <input type="number" className="w-full p-3 rounded-xl border border-orange-200" value={lotteryForm.minPointsToEnter} onChange={e => setLotteryForm({...lotteryForm, minPointsToEnter: Number(e.target.value)})} />
-                                  </div>
+                                  <input type="number" placeholder="ניקוד מינימלי" className="w-full p-3 rounded-xl border border-orange-200" value={lotteryForm.minPointsToEnter} onChange={e => setLotteryForm({...lotteryForm, minPointsToEnter: Number(e.target.value)})} />
                               )}
-                              
-                              <div className="flex items-center gap-2 mt-2">
-                                  <input type="checkbox" checked={lotteryForm.isActive} onChange={e => setLotteryForm({...lotteryForm, isActive: e.target.checked})} className="w-5 h-5 accent-orange-500" />
-                                  <span className="font-bold text-slate-700">הגרלה פעילה</span>
-                              </div>
                           </div>
                       </div>
 
                       <button type="submit" className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold hover:bg-orange-600 flex justify-center items-center gap-2">
-                         <Gift size={18} /> {editingLotteryId ? 'עדכון הגרלה' : 'פרסום הגרלה'}
+                         <Gift size={18} /> פרסום הגרלה
                       </button>
                   </form>
               </Modal>
+           </div>
+        )}
+
+        {/* SETTINGS TAB */}
+        {activeTab === 'settings' && (
+          <div className="p-6 max-w-2xl">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <Settings size={24} className="text-slate-400" />
+                הגדרות ניקוד מערכת (Gamification)
+            </h3>
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">נקודות להרשמה לאתר</label>
+                        <input type="number" className="w-full p-3 rounded-xl border border-slate-200 bg-white" value={settings.pointsPerRegister} onChange={(e) => setSettings({...settings, pointsPerRegister: Number(e.target.value)})} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">נקודות להרשמה לאירוע</label>
+                        <input type="number" className="w-full p-3 rounded-xl border border-slate-200 bg-white" value={settings.pointsPerEventJoin} onChange={(e) => setSettings({...settings, pointsPerEventJoin: Number(e.target.value)})} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">נקודות לשיתוף לינק</label>
+                        <input type="number" className="w-full p-3 rounded-xl border border-slate-200 bg-white" value={settings.pointsPerShare} onChange={(e) => setSettings({...settings, pointsPerShare: Number(e.target.value)})} />
+                    </div>
+                </div>
+                <button onClick={handleUpdateSettings} className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-rose-600 transition-colors flex justify-center items-center gap-2">
+                    <Save size={18} /> שמירת הגדרות
+                </button>
+            </div>
+          </div>
+        )}
+
+        {/* GIFTS TAB */}
+        {activeTab === 'gifts' && (
+          <div className="p-6 max-w-3xl">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <Gift size={24} className="text-rose-500" />
+                יצירת לינק מתנה לקבוצות
+            </h3>
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
+                <form onSubmit={handleCreateGift} className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <input type="text" required placeholder="קוד קופון (באנגלית)" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50" value={giftForm.code} onChange={e => setGiftForm({...giftForm, code: e.target.value})} />
+                        <input type="number" required placeholder="כמות נקודות" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50" value={giftForm.points} onChange={e => setGiftForm({...giftForm, points: Number(e.target.value)})} />
+                    </div>
+                    <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-rose-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all flex justify-center items-center gap-2">
+                        <Sparkles size={18} /> צור מתנה
+                    </button>
+                </form>
+            </div>
+            {createdGiftLink && (
+                <div className="bg-green-50 border border-green-200 p-6 rounded-2xl text-center animate-fade-in">
+                    <p className="text-green-800 font-bold mb-3 text-lg">הלינק נוצר בהצלחה! 🎉</p>
+                    <div className="flex items-center gap-2 justify-center bg-white p-3 rounded-xl border border-green-100 shadow-sm mb-3">
+                        <code className="text-rose-600 font-mono font-bold">{createdGiftLink}</code>
+                        <button onClick={() => {navigator.clipboard.writeText(createdGiftLink); alert('הועתק!');}} className="text-slate-400 hover:text-slate-800 p-1"><Copy size={20} /></button>
+                    </div>
+                </div>
+            )}
+          </div>
+        )}
+
+        {/* REVIEWS TAB (Static for now) */}
+        {activeTab === 'reviews' && (
+           <div className="p-6">
+              <h3 className="text-xl font-bold text-slate-800 mb-6">חוות דעת אחרונות</h3>
+              <div className="text-center py-12 text-slate-400">אין חוות דעת חדשות להצגה כרגע.</div>
+           </div>
+        )}
+
+        {/* PERSONALITY TAB (UI Restoration) */}
+        {activeTab === 'personality' && personalityForm && (
+           <div className="p-6 max-w-3xl mx-auto">
+               <h3 className="text-xl font-bold text-slate-800 mb-6">ניהול אישיות השבוע</h3>
+               <div className="space-y-6">
+                   <div className="grid md:grid-cols-2 gap-4">
+                       <input className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200" placeholder="שם מלא" value={personalityForm.name} onChange={e => setPersonalityForm({...personalityForm, name: e.target.value})} />
+                       <input className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200" placeholder="תפקיד" value={personalityForm.role} onChange={e => setPersonalityForm({...personalityForm, role: e.target.value})} />
+                       <div className="md:col-span-2">
+                           <input className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200" placeholder="קישור לתמונה" value={personalityForm.image} onChange={e => setPersonalityForm({...personalityForm, image: e.target.value})} />
+                       </div>
+                   </div>
+                   <div className="space-y-4">
+                       <h4 className="font-bold text-slate-700 border-b pb-2">שאלות ותשובות</h4>
+                       {personalityForm.questions.map((q, idx) => (
+                           <div key={idx} className="bg-slate-50 p-4 rounded-2xl space-y-2">
+                               <input className="w-full p-2 bg-white rounded-lg border border-slate-200 text-sm font-bold" value={q.question} onChange={(e) => { const newQs = [...personalityForm.questions]; newQs[idx].question = e.target.value; setPersonalityForm({...personalityForm, questions: newQs}); }} />
+                               <textarea className="w-full p-2 bg-white rounded-lg border border-slate-200 text-sm" rows={2} value={q.answer} onChange={(e) => { const newQs = [...personalityForm.questions]; newQs[idx].answer = e.target.value; setPersonalityForm({...personalityForm, questions: newQs}); }} />
+                           </div>
+                       ))}
+                   </div>
+                   <button onClick={handleSavePersonality} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold">שמירת שינויים</button>
+               </div>
            </div>
         )}
 
