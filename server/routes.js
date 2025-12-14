@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken')const { User, Event, Class, Lottery, Review, Personality } = require('./models');
+const jwt = require('jsonwebtoken');
+const { User, Event, Class, Lottery, Review, Personality } = require('./models');
 
-// ודא שמשתנה הסביבה מוגדר ב-Railway
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_123'; 
 
 // --- Middleware: Verify Token ---
@@ -18,7 +18,8 @@ const authenticate = (req, res, next) => {
     res.status(400).json({ error: 'Invalid Token' });
   }
 };
-'
+
+// --- AUTH ---
 router.post('/register', async (req, res) => { 
   try {
     const { name, email, password, phone, address, communicationPref } = req.body;
@@ -35,7 +36,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// שינוי: הוסר הקידומת '/auth'
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// --- EVENTS ---
+// --- EVENTS --- (שאר הראוטרים נשארו כפי שהיו)
 router.get('/events', async (req, res) => {
   const events = await Event.find();
   res.json(events.map(e => ({ ...e.toObject(), id: e._id })));
