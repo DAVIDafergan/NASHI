@@ -1,6 +1,5 @@
 import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile } from '../types';
-
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const getHeaders = () => {
     const token = localStorage.getItem('token');
