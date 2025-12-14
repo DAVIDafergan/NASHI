@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { User, Event, Class, Lottery, Review, Personality } = require('./models');
+const jwt = require('jsonwebtoken')const { User, Event, Class, Lottery, Review, Personality } = require('./models');
 
 // ודא שמשתנה הסביבה מוגדר ב-Railway
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_123'; 
@@ -19,9 +18,7 @@ const authenticate = (req, res, next) => {
     res.status(400).json({ error: 'Invalid Token' });
   }
 };
-
-// --- AUTH ---
-// שינוי: הוסר הקידומת '/auth'
+'
 router.post('/register', async (req, res) => { 
   try {
     const { name, email, password, phone, address, communicationPref } = req.body;
