@@ -1,89 +1,69 @@
 const mongoose = require('mongoose');
 
-// --- User Model ---
+// --- סכמת משתמש ---
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  phone: String,
-  address: String,
-  communicationPref: { type: String, default: 'whatsapp' },
-  points: { type: Number, default: 50 },
-  level: { type: String, default: 'מתחילה' },
-  upcomingEvents: { type: Number, default: 0 },
+  phone: { type: String },
+  address: { type: String },
+  communicationPref: { type: String, enum: ['email', 'sms', 'whatsapp'], default: 'email' },
+  avatar: { type: String },
   isAdmin: { type: Boolean, default: false },
-  likedEventIds: [String],
-  avatar: String,
+  points: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
+const User = mongoose.model('User', UserSchema);
 
-// --- Event Model ---
+// --- סכמת אירוע ---
 const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   date: { type: Date, required: true },
-  location: String,
-  category: String,
-  price: Number,
-  image: String,
-  tags: [String],
-  ratings: [Number],
-  isHero: { type: Boolean, default: false }
+  location: { type: String, required: true },
+  description: { type: String },
+  image: { type: String },
+  category: { type: String },
+  attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  createdAt: { type: Date, default: Date.now }
 });
+const Event = mongoose.model('Event', EventSchema);
 
-// --- Class Model ---
+// --- סכמות נוספות ---
 const ClassSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  instructor: String,
-  contactPhone: String,
-  day: String,
-  time: String,
-  location: String,
-  price: Number,
-  ageGroup: String,
-  image: String,
-  category: String
+  instructor: { type: String },
+  schedule: { type: String },
+  description: { type: String },
+  price: { type: Number }
 });
+const Class = mongoose.model('Class', ClassSchema);
 
-// --- Lottery Model ---
 const LotterySchema = new mongoose.Schema({
   title: { type: String, required: true },
-  prize: String,
-  drawDate: Date,
-  image: String,
-  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  isActive: { type: Boolean, default: true },
-  winnerId: String,
-  eligibilityType: { type: String, default: 'all' },
-  minPointsToEnter: { type: Number, default: 0 },
-  minLevel: String,
-  specificUserId: String
+  prize: { type: String, required: true },
+  drawDate: { type: Date, required: true },
+  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
+const Lottery = mongoose.model('Lottery', LotterySchema);
 
-// --- Review Model ---
-const ReviewSchema = new mongoose.Schema({
-  eventId: String,
-  eventTitle: String,
-  userId: String,
-  userName: String,
-  rating: Number,
-  comment: String,
-  date: { type: Date, default: Date.now }
+// ================== חדש: הגדרות ניהול ומתנות ==================
+
+// שמירת הגדרות הניקוד (כדי שהמנהל יוכל לשנות)
+const SettingsSchema = new mongoose.Schema({
+  pointsPerRegister: { type: Number, default: 50 }, // הרשמה לאתר
+  pointsPerEventJoin: { type: Number, default: 10 }, // הרשמה לאירוע
+  pointsPerShare: { type: Number, default: 5 }      // שיתוף אירוע
 });
+const Settings = mongoose.model('Settings', SettingsSchema);
 
-// --- Personality Profile Model ---
-const PersonalitySchema = new mongoose.Schema({
-  name: String,
-  role: String,
-  image: String,
-  questions: [{ question: String, answer: String }],
-  isActive: { type: Boolean, default: true }
+// קודי מתנה (לינקים לנקודות)
+const GiftCodeSchema = new mongoose.Schema({
+  code: { type: String, required: true, unique: true }, // הקוד בלינק (למשל: CHANUKAH2025)
+  points: { type: Number, required: true }, // כמה נקודות זה נותן
+  maxUses: { type: Number, default: 1000 }, // מקסימום משתמשים שיכולים לממש
+  usedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // מי כבר ניצל את הקוד
+  expiresAt: { type: Date } // תוקף (אופציונלי)
 });
+const GiftCode = mongoose.model('GiftCode', GiftCodeSchema);
 
-module.exports = {
-  User: mongoose.model('User', UserSchema),
-  Event: mongoose.model('Event', EventSchema),
-  Class: mongoose.model('Class', ClassSchema),
-  Lottery: mongoose.model('Lottery', LotterySchema),
-  Review: mongoose.model('Review', ReviewSchema),
-  Personality: mongoose.model('Personality', PersonalitySchema)
-};
+module.exports = { User, Event, Class, Lottery, Settings, GiftCode };
