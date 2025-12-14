@@ -1,4 +1,6 @@
 import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile } from '../types';
+
+// התיקון הקודם (שימוש במשתנה סביבה) וגם התיקון הנוכחי!
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const getHeaders = () => {
@@ -11,8 +13,9 @@ const getHeaders = () => {
 
 export const api = {
     // --- Auth ---
+    // שינוי: הוסר הקידומת '/auth'
     async register(userData: any): Promise<{user: User, token: string}> {
-        const res = await fetch(`${API_URL}/auth/register`, {
+        const res = await fetch(`${API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData)
@@ -21,8 +24,9 @@ export const api = {
         return res.json();
     },
 
+    // שינוי: הוסר הקידומת '/auth'
     async login(credentials: any): Promise<{user: User, token: string}> {
-        const res = await fetch(`${API_URL}/auth/login`, {
+        const res = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credentials)
@@ -31,6 +35,8 @@ export const api = {
         return res.json();
     },
 
+    // ... שאר הפונקציות נשארות כפי שהיו ...
+    
     // --- Events ---
     async getEvents(): Promise<EventItem[]> {
         const res = await fetch(`${API_URL}/events`);
@@ -75,7 +81,7 @@ export const api = {
     },
     
     async updateClass(cls: ClassItem): Promise<ClassItem> {
-        const res = await fetch(`${API_URL}/classes/${cls.id}`, { // Assuming backend endpoint exists
+        const res = await fetch(`${API_URL}/classes/${cls.id}`, { 
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(cls)
@@ -84,7 +90,7 @@ export const api = {
     },
 
     async deleteClass(id: string): Promise<void> {
-        await fetch(`${API_URL}/classes/${id}`, { // Assuming backend endpoint exists
+        await fetch(`${API_URL}/classes/${id}`, { 
             method: 'DELETE', 
             headers: getHeaders() 
         });
