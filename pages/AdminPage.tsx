@@ -1,11 +1,40 @@
-import React, { useState } from 'react';
-import { ShieldCheck, Plus, Users, Calendar, Gift, Search, Trash2, Edit, Save, LogIn, BookOpen, X, Phone, Check, Eye, User as UserIcon, MapPin, Mail, Award, MessageSquare, Sparkles, Copy, PlayCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  ShieldCheck, Plus, Users, Calendar, Gift, Search, Trash2, Edit, Save, 
+  LogIn, BookOpen, X, Phone, Check, Eye, User as UserIcon, MapPin, Mail, 
+  Award, MessageSquare, Sparkles, Copy, PlayCircle, Settings, Send, Activity 
+} from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, UserLevel, LotteryEligibilityType, Review, PersonalityProfile } from '../types';
 import { useNavigate } from 'react-router-dom';
+
+// --- API Helper ---
+const API_URL = 'https://nashi-production.up.railway.app/api';
+
+const authFetch = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : '',
+    ...options.headers,
+  };
+  
+  try {
+    const res = await fetch(`${API_URL}${url}`, { ...options, headers });
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(errorText || `Error ${res.status}`);
+    }
+    return res.json();
+  } catch (err) {
+    console.error("API Error:", err);
+    throw err;
+  }
+};
 
 interface AdminPageProps {
   user: User | null;
   onLogin: (user: User) => void;
+  // Props from parent (can be used as initial state or fallbacks)
   events?: EventItem[];
   classes?: ClassItem[];
   lotteries?: LotteryItem[];
@@ -27,11 +56,6 @@ interface AdminPageProps {
   onUpdatePersonality?: (p: PersonalityProfile) => void;
 }
 
-const mockUsers: User[] = [
-  { id: '1', name: 'דנה כהן', email: 'dana@email.com', phone: '050-1234567', address: 'הפרחים 12, עיר', points: 230, level: UserLevel.ACTIVE, upcomingEvents: 2, communicationPref: 'whatsapp', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie' },
-  { id: '2', name: 'מיכל לוי', email: 'michal@email.com', phone: '052-7654321', address: 'הרקפת 4, עיר', points: 500, level: UserLevel.LEADER, upcomingEvents: 5, communicationPref: 'email', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Zoey' },
-];
-
 const Modal: React.FC<{isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode}> = ({isOpen, onClose, title, children}) => {
     if (!isOpen) return null;
     return (
@@ -51,17 +75,32 @@ const Modal: React.FC<{isOpen: boolean, onClose: () => void, title: string, chil
 
 const AdminPage: React.FC<AdminPageProps> = ({ 
     user, onLogin, 
-    events = [], classes = [], lotteries = [], reviews = [], personality,
+    events: initialEvents = [], classes: initialClasses = [], lotteries: initialLotteries = [], reviews = [], personality,
     onAddEvent, onUpdateEvent, onDeleteEvent, 
     onAddClass, onUpdateClass, onDeleteClass, 
     onAddLottery, onUpdateLottery, onDeleteLottery,
     onUpdatePersonality
 }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'events' | 'users' | 'lotteries' | 'classes' | 'reviews' | 'personality'>('users');
+  // Added 'settings' and 'gifts' to the activeTab type
+  const [activeTab, setActiveTab] = useState<'events' | 'users' | 'lotteries' | 'classes' | 'reviews' | 'personality' | 'settings' | 'gifts'>('users');
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [systemMessage, setSystemMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   
+  // Real Data State (Fetched from API)
+  const [apiUsers, setApiUsers] = useState<User[]>([]);
+  const [settings, setSettings] = useState({
+    pointsPerRegister: 50,
+    pointsPerEventJoin: 10,
+    pointsPerShare: 5
+  });
+  
+  // Gift Form State
+  const [giftForm, setGiftForm] = useState({ code: '', points: 100, maxUses: 100 });
+  const [createdGiftLink, setCreatedGiftLink] = useState<string | null>(null);
+
   // Modals State
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
@@ -83,25 +122,132 @@ const AdminPage: React.FC<AdminPageProps> = ({
   });
   const [personalityForm, setPersonalityForm] = useState<PersonalityProfile | undefined>(personality);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loginForm.username === 'YA1212' && loginForm.password === '1212') {
-      onLogin({
-        id: 'admin',
-        name: 'מנהלת מערכת',
-        email: 'admin@nashi.city',
-        points: 0,
-        level: UserLevel.AMBASSADOR,
-        upcomingEvents: 0,
-        isAdmin: true,
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane'
-      });
-    } else {
-      setError('שם משתמש או סיסמה שגויים');
+  // --- API Loading Logic ---
+  useEffect(() => {
+    if (user?.isAdmin) {
+        loadTabData();
+    }
+  }, [activeTab, user]);
+
+  const loadTabData = async () => {
+    setLoading(true);
+    setSystemMessage(null);
+    try {
+        if (activeTab === 'users') {
+            const data = await authFetch('/users');
+            // Mapping _id to id for frontend compatibility
+            const mappedUsers = data.map((u: any) => ({ ...u, id: u._id || u.id }));
+            setApiUsers(mappedUsers);
+        } else if (activeTab === 'settings') {
+            const data = await authFetch('/admin/settings');
+            setSettings(data);
+        }
+        // Events/Classes/Lotteries loading logic can be added here if you want to switch entirely to API
+    } catch (err) {
+        console.error("Failed to load data", err);
+    } finally {
+        setLoading(false);
     }
   };
 
-  // --- Handlers ---
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+        // Try real login first
+        const res = await authFetch('/login', {
+            method: 'POST',
+            body: JSON.stringify({ email: loginForm.username, password: loginForm.password }) // Using username field as email for simplicity or specific admin login
+        });
+        
+        if (res.user && res.user.isAdmin) {
+            localStorage.setItem('token', res.token);
+            onLogin(res.user);
+        } else {
+             // Fallback for hardcoded admin if needed (remove in production)
+            if (loginForm.username === 'YA1212' && loginForm.password === '1212') {
+                onLogin({
+                    id: 'admin',
+                    name: 'מנהלת מערכת',
+                    email: 'admin@nashi.city',
+                    points: 0,
+                    level: UserLevel.AMBASSADOR,
+                    upcomingEvents: 0,
+                    isAdmin: true,
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane'
+                });
+            } else {
+                setError('אין הרשאת ניהול או פרטים שגויים');
+            }
+        }
+    } catch (err) {
+        // If API fails, check hardcoded fallback
+        if (loginForm.username === 'YA1212' && loginForm.password === '1212') {
+             onLogin({
+                id: 'admin',
+                name: 'מנהלת מערכת',
+                email: 'admin@nashi.city',
+                points: 0,
+                level: UserLevel.AMBASSADOR,
+                upcomingEvents: 0,
+                isAdmin: true,
+                avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane'
+            });
+        } else {
+            setError('שגיאה בהתחברות');
+        }
+    }
+  };
+
+  // --- New Handlers for Gamification ---
+
+  const handleUpdateSettings = async () => {
+      try {
+          await authFetch('/admin/settings', {
+              method: 'PUT',
+              body: JSON.stringify(settings)
+          });
+          setSystemMessage({ type: 'success', text: 'ההגדרות עודכנו בהצלחה!' });
+      } catch (err) {
+          setSystemMessage({ type: 'error', text: 'שגיאה בשמירת ההגדרות' });
+      }
+  };
+
+  const handleCreateGift = async (e: React.FormEvent) => {
+      e.preventDefault();
+      try {
+          const res = await authFetch('/admin/gifts', {
+              method: 'POST',
+              body: JSON.stringify(giftForm)
+          });
+          setCreatedGiftLink(res.link);
+          setSystemMessage({ type: 'success', text: 'הלינק נוצר בהצלחה!' });
+      } catch (err) {
+          setSystemMessage({ type: 'error', text: 'שגיאה ביצירת המתנה' });
+      }
+  };
+
+  const handleSendPoints = async (userId: string) => {
+      const amountStr = prompt('כמה נקודות לשלוח למשתמשת?');
+      if (!amountStr) return;
+      const amount = parseInt(amountStr);
+      if (isNaN(amount)) {
+          alert('נא להזין מספר תקין');
+          return;
+      }
+
+      try {
+          await authFetch(`/admin/users/${userId}/points`, {
+              method: 'POST',
+              body: JSON.stringify({ points: amount })
+          });
+          setSystemMessage({ type: 'success', text: `נשלחו ${amount} נקודות בהצלחה!` });
+          loadTabData(); // Refresh table
+      } catch (err) {
+          setSystemMessage({ type: 'error', text: 'שגיאה בשליחת הנקודות' });
+      }
+  };
+
+  // --- Existing Handlers ---
 
   const handleViewUser = (u: User) => {
       setSelectedUser(u);
@@ -120,8 +266,19 @@ const AdminPage: React.FC<AdminPageProps> = ({
       setIsEventModalOpen(true);
   };
 
-  const handleSaveEvent = (e: React.FormEvent) => {
+  const handleSaveEvent = async (e: React.FormEvent) => {
       e.preventDefault();
+      // Try to save to API first
+      try {
+          if (editingEventId) {
+             // PUT logic here if endpoint exists
+          } else {
+             await authFetch('/events', { method: 'POST', body: JSON.stringify(eventForm) });
+          }
+      } catch (err) {
+          console.log("Saving locally as fallback");
+      }
+
       if (editingEventId && onUpdateEvent) {
           onUpdateEvent({ ...eventForm as EventItem, id: editingEventId });
       } else if (onAddEvent) {
@@ -178,7 +335,6 @@ const AdminPage: React.FC<AdminPageProps> = ({
   };
 
   const handleStartLiveDraw = (lotteryId: string) => {
-      // Navigate to Lottery Page with specific state to open the modal
       navigate('/lottery', { state: { liveLotteryId: lotteryId } });
   };
 
@@ -186,7 +342,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
   const handleSavePersonality = () => {
       if (onUpdatePersonality && personalityForm) {
           onUpdatePersonality(personalityForm);
-          alert('אישיות השבוע עודכנה בהצלחה!');
+          setSystemMessage({ type: 'success', text: 'אישיות השבוע עודכנה בהצלחה!' });
       }
   };
 
@@ -203,7 +359,7 @@ const AdminPage: React.FC<AdminPageProps> = ({
           </div>
           <form onSubmit={handleAdminLogin} className="space-y-5">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2 mr-1">שם משתמש</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2 mr-1">אימייל / שם משתמש</label>
               <input type="text" className="w-full px-5 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-slate-900 outline-none transition-all"
                 value={loginForm.username} onChange={(e) => setLoginForm({...loginForm, username: e.target.value})} />
             </div>
@@ -238,7 +394,9 @@ const AdminPage: React.FC<AdminPageProps> = ({
              { id: 'classes', label: 'חוגים', icon: <BookOpen size={18} /> },
              { id: 'lotteries', label: 'הגרלות', icon: <Gift size={18} /> },
              { id: 'reviews', label: 'חוות דעת', icon: <MessageSquare size={18} /> },
-             { id: 'personality', label: 'אישיות השבוע', icon: <Sparkles size={18} /> }
+             { id: 'personality', label: 'אישיות השבוע', icon: <Sparkles size={18} /> },
+             { id: 'gifts', label: 'מתנות וקופונים', icon: <Award size={18} /> },
+             { id: 'settings', label: 'הגדרות', icon: <Settings size={18} /> },
            ].map(tab => (
              <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
                className={`flex items-center gap-2 px-4 md:px-5 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all flex-1 md:flex-none justify-center ${activeTab === tab.id ? 'bg-white text-rose-600 shadow-md' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
@@ -250,13 +408,22 @@ const AdminPage: React.FC<AdminPageProps> = ({
          </div>
       </div>
 
+      {systemMessage && (
+        <div className={`p-4 rounded-xl text-center font-bold ${systemMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+            {systemMessage.text}
+        </div>
+      )}
+
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden min-h-[500px]">
         
-        {/* USERS TAB */}
+        {/* USERS TAB (Connected to Real API) */}
         {activeTab === 'users' && (
           <div className="p-4 md:p-6">
              <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <h3 className="text-xl font-bold text-slate-800">רשימת משתמשים</h3>
+                <div className="flex items-center gap-4">
+                    <h3 className="text-xl font-bold text-slate-800">רשימת משתמשים ({apiUsers.length})</h3>
+                    {loading && <Activity className="animate-spin text-rose-500" size={20} />}
+                </div>
                 <div className="relative w-full md:w-auto">
                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                    <input type="text" placeholder="חיפוש משתמשת..." className="w-full md:w-64 pr-10 pl-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-200" />
@@ -265,29 +432,165 @@ const AdminPage: React.FC<AdminPageProps> = ({
              <div className="overflow-x-auto">
                 <table className="w-full text-sm text-right min-w-[600px]">
                    <thead className="bg-slate-50 text-slate-600 font-bold">
-                      <tr>
-                        <th className="p-4 rounded-r-xl">שם מלא</th>
-                        <th className="p-4">פרטי קשר</th>
-                        <th className="p-4">נקודות</th>
-                        <th className="p-4">דרגה</th>
-                        <th className="p-4 rounded-l-xl">פעולות</th>
-                      </tr>
+                     <tr>
+                       <th className="p-4 rounded-r-xl">שם מלא</th>
+                       <th className="p-4">פרטי קשר</th>
+                       <th className="p-4">נקודות</th>
+                       <th className="p-4">סטטוס</th>
+                       <th className="p-4 rounded-l-xl">פעולות</th>
+                     </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-100">
-                      {mockUsers.map(u => (
-                        <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                           <td className="p-4 font-bold text-slate-800">{u.name}</td>
-                           <td className="p-4">{u.email}</td>
-                           <td className="p-4 font-mono text-rose-600 font-bold">{u.points}</td>
-                           <td className="p-4"><span className="px-3 py-1 bg-rose-50 text-rose-700 rounded-full text-xs font-bold">{u.level}</span></td>
-                           <td className="p-4">
-                              <button onClick={() => handleViewUser(u)} className="text-slate-400 hover:text-rose-600 transition-colors bg-slate-50 p-2 rounded-full"><Eye size={18} /></button>
-                           </td>
-                        </tr>
-                      ))}
+                     {apiUsers.map(u => (
+                       <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4 font-bold text-slate-800 flex items-center gap-2">
+                             <img src={u.avatar} className="w-8 h-8 rounded-full bg-slate-200" alt="" />
+                             {u.name}
+                             {u.isAdmin && <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">מנהלת</span>}
+                          </td>
+                          <td className="p-4">{u.email}<br/><span className="text-slate-400 text-xs">{u.phone}</span></td>
+                          <td className="p-4 font-mono text-rose-600 font-bold">{u.points}</td>
+                          <td className="p-4"><span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">{u.isAdmin ? 'צוות' : 'רשומה'}</span></td>
+                          <td className="p-4 flex gap-2">
+                             <button onClick={() => handleViewUser(u)} className="text-slate-400 hover:text-rose-600 transition-colors bg-slate-50 p-2 rounded-full"><Eye size={18} /></button>
+                             <button 
+                                onClick={() => handleSendPoints(u.id)} 
+                                title="שלח נקודות"
+                                className="text-blue-400 hover:text-blue-600 transition-colors bg-blue-50 p-2 rounded-full"
+                             >
+                                <Send size={18} />
+                             </button>
+                          </td>
+                       </tr>
+                     ))}
                    </tbody>
                 </table>
+                {apiUsers.length === 0 && !loading && (
+                    <div className="text-center p-8 text-slate-400">לא נמצאו משתמשים או שהחיבור לשרת נכשל.</div>
+                )}
              </div>
+          </div>
+        )}
+
+        {/* SETTINGS TAB (New) */}
+        {activeTab === 'settings' && (
+          <div className="p-6 max-w-2xl">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <Settings size={24} className="text-slate-400" />
+                הגדרות ניקוד מערכת (Gamification)
+            </h3>
+            {loading ? <div className="text-center p-4">טוען הגדרות...</div> : (
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">נקודות להרשמה לאתר</label>
+                            <input 
+                                type="number" 
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-rose-200 outline-none"
+                                value={settings.pointsPerRegister}
+                                onChange={(e) => setSettings({...settings, pointsPerRegister: Number(e.target.value)})}
+                            />
+                            <p className="text-xs text-slate-400 mt-1">כמה נקודות מקבלת משתמשת חדשה</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">נקודות להרשמה לאירוע</label>
+                            <input 
+                                type="number" 
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-rose-200 outline-none"
+                                value={settings.pointsPerEventJoin}
+                                onChange={(e) => setSettings({...settings, pointsPerEventJoin: Number(e.target.value)})}
+                            />
+                            <p className="text-xs text-slate-400 mt-1">בונוס על לחיצה על "הרשמה"</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">נקודות לשיתוף לינק</label>
+                            <input 
+                                type="number" 
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-rose-200 outline-none"
+                                value={settings.pointsPerShare}
+                                onChange={(e) => setSettings({...settings, pointsPerShare: Number(e.target.value)})}
+                            />
+                             <p className="text-xs text-slate-400 mt-1">בונוס על שיתוף בוואטסאפ</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={handleUpdateSettings}
+                        className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-rose-600 transition-colors flex justify-center items-center gap-2"
+                    >
+                        <Save size={18} /> שמירת הגדרות
+                    </button>
+                </div>
+            )}
+          </div>
+        )}
+
+        {/* GIFTS TAB (New) */}
+        {activeTab === 'gifts' && (
+          <div className="p-6 max-w-3xl">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <Gift size={24} className="text-rose-500" />
+                יצירת לינק מתנה לקבוצות
+            </h3>
+            
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
+                <form onSubmit={handleCreateGift} className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">קוד קופון (באנגלית)</label>
+                            <input 
+                                type="text" 
+                                required
+                                placeholder="למשל: CHANUKAH2025"
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none"
+                                value={giftForm.code}
+                                onChange={e => setGiftForm({...giftForm, code: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">כמות נקודות</label>
+                            <input 
+                                type="number" 
+                                required
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none"
+                                value={giftForm.points}
+                                onChange={e => setGiftForm({...giftForm, points: Number(e.target.value)})}
+                            />
+                        </div>
+                         <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">מקסימום שימושים</label>
+                            <input 
+                                type="number" 
+                                required
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-rose-200 outline-none"
+                                value={giftForm.maxUses}
+                                onChange={e => setGiftForm({...giftForm, maxUses: Number(e.target.value)})}
+                            />
+                        </div>
+                    </div>
+                    <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-rose-500 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all flex justify-center items-center gap-2">
+                        <Sparkles size={18} /> צור מתנה
+                    </button>
+                </form>
+            </div>
+
+            {createdGiftLink && (
+                <div className="bg-green-50 border border-green-200 p-6 rounded-2xl text-center animate-fade-in">
+                    <p className="text-green-800 font-bold mb-3 text-lg">הלינק נוצר בהצלחה! 🎉</p>
+                    <div className="flex items-center gap-2 justify-center bg-white p-3 rounded-xl border border-green-100 shadow-sm mb-3">
+                        <code className="text-rose-600 font-mono font-bold">{createdGiftLink}</code>
+                        <button 
+                            onClick={() => {
+                                navigator.clipboard.writeText(createdGiftLink);
+                                alert('הועתק!');
+                            }} 
+                            className="text-slate-400 hover:text-slate-800 p-1"
+                        >
+                            <Copy size={20} />
+                        </button>
+                    </div>
+                    <p className="text-sm text-green-700">שלחי את הלינק הזה בקבוצות הוואטסאפ, כל מי שתלחץ עליו תקבל אוטומטית {giftForm.points} נקודות.</p>
+                </div>
+            )}
           </div>
         )}
 
@@ -390,14 +693,14 @@ const AdminPage: React.FC<AdminPageProps> = ({
         {activeTab === 'events' && (
            <div className="p-4 md:p-6">
               <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800">אירועים ({events.length})</h3>
+                 <h3 className="text-xl font-bold text-slate-800">אירועים ({initialEvents.length})</h3>
                  <button onClick={() => handleOpenEventModal()} className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-rose-600 transition-colors">
                     <Plus size={18} /> <span className="hidden md:inline">הוספת אירוע</span>
                  </button>
               </div>
 
               <div className="grid gap-4">
-                  {events.map(event => (
+                  {initialEvents.map(event => (
                       <div key={event.id} className="flex flex-col md:flex-row md:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
                           <img src={event.image} alt="" className="w-full md:w-20 h-32 md:h-20 rounded-xl object-cover" />
                           <div className="flex-1">
@@ -454,14 +757,14 @@ const AdminPage: React.FC<AdminPageProps> = ({
         {activeTab === 'classes' && (
            <div className="p-4 md:p-6">
               <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800">חוגים ({classes.length})</h3>
+                 <h3 className="text-xl font-bold text-slate-800">חוגים ({initialClasses.length})</h3>
                  <button onClick={() => handleOpenClassModal()} className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200">
                     <Plus size={18} /> <span className="hidden md:inline">הוספת חוג</span>
                  </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {classes.map(cls => (
+                  {initialClasses.map(cls => (
                       <div key={cls.id} className="flex gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
                           <img src={cls.image} alt="" className="w-20 h-20 rounded-xl object-cover hidden sm:block" />
                           <div className="flex-1">
@@ -531,14 +834,14 @@ const AdminPage: React.FC<AdminPageProps> = ({
         {activeTab === 'lotteries' && (
            <div className="p-4 md:p-6">
                <div className="flex justify-between items-center mb-6">
-                 <h3 className="text-xl font-bold text-slate-800">ניהול הגרלות ({lotteries.length})</h3>
+                 <h3 className="text-xl font-bold text-slate-800">ניהול הגרלות ({initialLotteries.length})</h3>
                  <button onClick={() => handleOpenLotteryModal()} className="bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-orange-600 transition-colors shadow-lg shadow-orange-200">
                     <Plus size={18} /> <span className="hidden md:inline">הוספת הגרלה</span>
                  </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {lotteries.map(lot => (
+                  {initialLotteries.map(lot => (
                       <div key={lot.id} className="flex gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
                           <img src={lot.image} alt="" className="w-20 h-20 rounded-xl object-cover hidden sm:block" />
                           <div className="flex-1">
