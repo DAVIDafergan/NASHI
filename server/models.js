@@ -11,6 +11,7 @@ const UserSchema = new mongoose.Schema({
   avatar: { type: String },
   isAdmin: { type: Boolean, default: false },
   points: { type: Number, default: 0 },
+  likedEventIds: [{ type: String }],
   createdAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', UserSchema);
@@ -23,47 +24,75 @@ const EventSchema = new mongoose.Schema({
   description: { type: String },
   image: { type: String },
   category: { type: String },
+  price: { type: Number, default: 0 },
+  isHero: { type: Boolean, default: false },
+  registrationLink: { type: String },
   attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   createdAt: { type: Date, default: Date.now }
 });
 const Event = mongoose.model('Event', EventSchema);
 
-// --- סכמות נוספות ---
+// --- סכמת חוג ---
 const ClassSchema = new mongoose.Schema({
   title: { type: String, required: true },
   instructor: { type: String },
-  schedule: { type: String },
-  description: { type: String },
-  price: { type: Number }
+  contactPhone: { type: String },
+  day: { type: String },
+  time: { type: String },
+  location: { type: String },
+  price: { type: Number },
+  ageGroup: { type: String },
+  exceptions: { type: String },
+  category: { type: String },
+  image: { type: String },
+  createdAt: { type: Date, default: Date.now }
 });
 const Class = mongoose.model('Class', ClassSchema);
 
+// --- סכמת הגרלה ---
 const LotterySchema = new mongoose.Schema({
   title: { type: String, required: true },
   prize: { type: String, required: true },
   drawDate: { type: Date, required: true },
-  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+  image: { type: String },
+  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  isActive: { type: Boolean, default: true },
+  eligibilityType: { type: String, default: 'all' },
+  minPointsToEnter: { type: Number, default: 0 },
+  minLevel: { type: String, default: 'BEGINNER' }
 });
 const Lottery = mongoose.model('Lottery', LotterySchema);
 
-// ================== חדש: הגדרות ניהול ומתנות ==================
-
-// שמירת הגדרות הניקוד (כדי שהמנהל יוכל לשנות)
+// --- הגדרות מערכת ---
 const SettingsSchema = new mongoose.Schema({
-  pointsPerRegister: { type: Number, default: 50 }, // הרשמה לאתר
-  pointsPerEventJoin: { type: Number, default: 10 }, // הרשמה לאירוע
-  pointsPerShare: { type: Number, default: 5 }      // שיתוף אירוע
+  pointsPerRegister: { type: Number, default: 50 },
+  pointsPerEventJoin: { type: Number, default: 10 },
+  pointsPerShare: { type: Number, default: 5 }
 });
 const Settings = mongoose.model('Settings', SettingsSchema);
 
-// קודי מתנה (לינקים לנקודות)
+// --- קודי מתנה ---
 const GiftCodeSchema = new mongoose.Schema({
-  code: { type: String, required: true, unique: true }, // הקוד בלינק (למשל: CHANUKAH2025)
-  points: { type: Number, required: true }, // כמה נקודות זה נותן
-  maxUses: { type: Number, default: 1000 }, // מקסימום משתמשים שיכולים לממש
-  usedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // מי כבר ניצל את הקוד
-  expiresAt: { type: Date } // תוקף (אופציונלי)
+  code: { type: String, required: true, unique: true },
+  points: { type: Number, required: true },
+  maxUses: { type: Number, default: 1000 },
+  usedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  expiresAt: { type: Date }
 });
 const GiftCode = mongoose.model('GiftCode', GiftCodeSchema);
 
-module.exports = { User, Event, Class, Lottery, Settings, GiftCode };
+// --- סכמת אישיות השבוע (חדש!) ---
+const PersonalitySchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  role: { type: String },
+  image: { type: String },
+  questions: [{ 
+    question: { type: String }, 
+    answer: { type: String } 
+  }],
+  isActive: { type: Boolean, default: true },
+  updatedAt: { type: Date, default: Date.now }
+});
+const Personality = mongoose.model('Personality', PersonalitySchema);
+
+module.exports = { User, Event, Class, Lottery, Settings, GiftCode, Personality };

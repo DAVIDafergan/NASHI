@@ -1,20 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Bell, Star, ArrowLeft, Heart, 
-  Music, Palette, Activity, Briefcase, Mic, ChevronLeft, ChevronRight, Sparkles, Gift, Clock
+  Bell, Star, Heart, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles
 } from 'lucide-react';
-import { NewsItem, User, EventItem, PersonalityProfile, LotteryItem } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
+import WomanOfTheWeek from '../components/WomanOfTheWeek'; // ודא שהנתיב נכון
 
-interface HomePageProps {
-  user: User | null;
-  onOpenLogin: () => void;
-  events?: EventItem[];
-  personality?: PersonalityProfile;
-  lotteries?: LotteryItem[];
+// טיפוסים פנימיים למניעת תלות ב-types.ts אם יש שינויים
+interface EventItem {
+  id: string;
+  _id?: string;
+  title: string;
+  date: string;
+  location: string;
+  category: string;
+  image: string;
+  isHero?: boolean;
 }
 
-const mockNews: NewsItem[] = [
+interface LotteryItem {
+  id: string;
+  _id?: string;
+  title: string;
+  prize: string;
+  drawDate: string;
+  isActive: boolean;
+}
+
+interface User {
+  name: string;
+}
+
+const API_URL = 'https://nashi-production.up.railway.app/api';
+
+const mockNews = [
   { id: '1', title: 'פתיחת עונת התרבות', description: 'אירוע פתיחה חגיגי בהיכל התרבות.', date: '10/05', important: true },
   { id: '2', title: 'סדנת מנהיגות', description: 'הרשמה לקורס מנהיגות קהילתית.', date: '12/05', important: false },
 ];
@@ -28,26 +46,51 @@ const categories = [
   { name: 'קהילה', icon: <Heart size={14} /> },
 ];
 
-const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], personality, lotteries = [] }) => {
+const HomePage = ({ user, onOpenLogin }: { user: User | null, onOpenLogin: () => void }) => {
+  const navigate = useNavigate();
+  
+  // Data State
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [lotteries, setLotteries] = useState<LotteryItem[]>([]);
+  
+  // UI State
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [upcomingLottery, setUpcomingLottery] = useState<LotteryItem | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
-  const navigate = useNavigate();
+
+  // 1. Fetch Data from Server
+  useEffect(() => {
+    // Events
+    fetch(`${API_URL}/events`)
+      .then(res => res.json())
+      .then(data => {
+         const formatted = data.map((e: any) => ({...e, id: e._id || e.id}));
+         setEvents(formatted);
+      })
+      .catch(console.error);
+
+    // Lotteries
+    fetch(`${API_URL}/lotteries`)
+      .then(res => res.json())
+      .then(data => {
+         const formatted = data.map((l: any) => ({...l, id: l._id || l.id}));
+         setLotteries(formatted);
+      })
+      .catch(console.error);
+  }, []);
 
   const heroEvents = events.filter(e => e.isHero);
   const displayEvents = heroEvents.length > 0 ? heroEvents : events.slice(0, 3);
 
-  // Check for upcoming lotteries (within 3 hours)
+  // 2. Lottery Timer Logic
   useEffect(() => {
     const checkLottery = () => {
         const now = new Date().getTime();
-        // Find lottery happening within 3 hours
+        // מחפש הגרלה שמתרחשת ב-24 שעות הקרובות
         const active = lotteries.find(l => {
             const drawTime = new Date(l.drawDate).getTime();
             const diff = drawTime - now;
-            // Diff between 0 and 3 hours (3 * 60 * 60 * 1000 = 10800000)
-            return l.isActive && diff > 0 && diff <= 10800000;
+            return l.isActive && diff > 0 && diff <= (24 * 60 * 60 * 1000); 
         });
 
         if (active) {
@@ -63,10 +106,11 @@ const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], per
     };
 
     const interval = setInterval(checkLottery, 1000);
-    checkLottery(); // Run immediately
+    checkLottery();
     return () => clearInterval(interval);
   }, [lotteries]);
 
+  // 3. Slider Auto-Play
   useEffect(() => {
     if (displayEvents.length > 0) {
         const interval = setInterval(() => {
@@ -81,7 +125,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], per
   };
 
   return (
-    <div className="min-h-screen pb-10">
+    <div className="min-h-screen pb-20 p-4 md:p-8 space-y-8">
       
       {/* --- Upcoming Lottery Banner --- */}
       {upcomingLottery && (
@@ -116,7 +160,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], per
 
       {/* --- Welcome Banner (LoggedIn) --- */}
       {user && (
-         <div className="mb-6 bg-white/60 backdrop-blur-md p-4 rounded-3xl border border-white flex items-center justify-between animate-fade-in-up shadow-sm shadow-rose-100/20">
+         <div className="bg-white/60 backdrop-blur-md p-4 rounded-3xl border border-white flex items-center justify-between animate-fade-in-up shadow-sm shadow-rose-100/20">
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-rose-400 shadow-sm border border-rose-50">
                     <Star size={18} className="fill-current" />
@@ -129,7 +173,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], per
          </div>
       )}
 
-      {/* --- Hero Slider (Advanced & Delicate) --- */}
+      {/* --- Hero Slider --- */}
       {displayEvents.length > 0 && (
         <section className="relative h-[280px] md:h-[380px] w-full overflow-hidden group rounded-[2rem] md:rounded-[2.5rem] shadow-xl shadow-rose-200/40 mb-8 border border-white">
             {displayEvents.map((event, index) => (
@@ -137,11 +181,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], per
                 key={event.id}
                 className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
             >
-                <div 
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${event.image})` }}
-                ></div>
-                {/* Soft Gradient Overlay */}
+                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-slate-900/10 to-transparent"></div>
                 
                 <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 flex flex-col items-start justify-end">
@@ -154,17 +194,13 @@ const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], per
                     <p className="text-xs md:text-sm text-white/95 font-medium max-w-md mb-4 flex items-center gap-2 drop-shadow-sm">
                          {new Date(event.date).toLocaleDateString('he-IL')} • {event.location}
                     </p>
-                    <Link 
-                        to="/events" 
-                        className="bg-white/90 backdrop-blur text-rose-600 px-6 py-2.5 rounded-full font-bold text-xs hover:bg-white transition-colors shadow-lg shadow-black/10 active:scale-95"
-                    >
+                    <Link to="/events" className="bg-white/90 backdrop-blur text-rose-600 px-6 py-2.5 rounded-full font-bold text-xs hover:bg-white transition-colors shadow-lg shadow-black/10 active:scale-95">
                         לפרטים והרשמה
                     </Link>
                 </div>
             </div>
             ))}
             
-            {/* Minimal Dots */}
             <div className="absolute bottom-6 left-6 flex gap-1.5 z-10">
                 {displayEvents.map((_, idx) => (
                 <button 
@@ -177,8 +213,8 @@ const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], per
         </section>
       )}
 
-      {/* --- Categories (Clean Pills) --- */}
-      <div className="mb-8">
+      {/* --- Categories --- */}
+      <div>
           <h3 className="font-bold text-sm text-slate-700 mb-3 px-1">קטגוריות מובילות</h3>
           <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
             {categories.map((cat, idx) => (
@@ -195,46 +231,13 @@ const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], per
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
-         
-         <div className="lg:col-span-2 space-y-6">
+          
+          <div className="lg:col-span-2 space-y-6">
             
-            {/* --- Personality of the Week (Magazine Style) --- */}
-            {personality && personality.isActive && (
-                <div className="bg-white rounded-[2rem] p-1 shadow-sm border border-white/60 relative overflow-hidden group hover:shadow-xl hover:shadow-rose-100/50 transition-all">
-                    <div className="p-5 md:p-6 relative z-10">
-                         <div className="flex items-center justify-between mb-4">
-                             <div className="flex items-center gap-1.5 text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
-                                 <Sparkles size={12} />
-                                 <span className="text-[10px] font-bold uppercase tracking-widest">השראה שבועית</span>
-                             </div>
-                         </div>
+            {/* --- אשת השבוע (החדש!) --- */}
+            <WomanOfTheWeek />
 
-                         <div className="flex gap-4 items-start">
-                             <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-rose-50 overflow-hidden shrink-0 shadow-inner border-2 border-white">
-                                 <img src={personality.image} alt={personality.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
-                             </div>
-
-                             <div className="flex-1 min-w-0">
-                                 <h3 className="text-lg font-black text-slate-800 leading-tight">{personality.name}</h3>
-                                 <p className="text-xs text-slate-400 font-medium mb-3">{personality.role}</p>
-
-                                 <div className="bg-slate-50/50 rounded-2xl p-4 relative border border-slate-100">
-                                     <div className="absolute -top-1.5 right-6 w-3 h-3 bg-slate-50 border-t border-l border-slate-100 transform rotate-45"></div>
-                                     <h4 className="font-bold text-rose-500 text-xs mb-1">Q: {personality.questions[currentQuestion].question}</h4>
-                                     <p className="text-slate-600 text-xs leading-relaxed italic">"{personality.questions[currentQuestion].answer}"</p>
-                                 </div>
-                             </div>
-                         </div>
-                         
-                         <div className="mt-3 flex justify-end gap-2">
-                             <button onClick={() => setCurrentQuestion(prev => (prev - 1 + personality.questions.length) % personality.questions.length)} className="p-1.5 rounded-full hover:bg-slate-50 text-slate-300 hover:text-rose-500 transition-colors"><ChevronRight size={14} /></button>
-                             <button onClick={() => setCurrentQuestion(prev => (prev + 1) % personality.questions.length)} className="p-1.5 rounded-full hover:bg-slate-50 text-slate-300 hover:text-rose-500 transition-colors"><ChevronLeft size={14} /></button>
-                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* --- News Updates (Minimal List) --- */}
+            {/* --- News Updates --- */}
             <div>
                 <div className="flex items-center justify-between mb-3 px-1">
                     <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
@@ -262,7 +265,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onOpenLogin, events = [], per
             </div>
          </div>
 
-         {/* --- Inspiration/Register --- */}
+         {/* --- Inspiration --- */}
          <div className="space-y-5">
             <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-[2rem] p-6 text-white relative overflow-hidden shadow-lg shadow-purple-100 group">
               <div className="relative z-10">
