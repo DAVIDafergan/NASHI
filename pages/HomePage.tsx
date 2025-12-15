@@ -3,7 +3,8 @@ import {
   Bell, Star, Heart, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import WomanOfTheWeek from '../components/WomanOfTheWeek'; // ודא שהנתיב נכון
+import WomanOfTheWeek from '../components/WomanOfTheWeek.tsx';
+// 👆 ודא שהוספת את הסיומת .tsx ודא שהנתיב נכון
 
 // טיפוסים פנימיים למניעת תלות ב-types.ts אם יש שינויים
 interface EventItem {

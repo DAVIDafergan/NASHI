@@ -2,7 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import apiRoutes from './server/routes/index.js'; // שימו לב: חובה להוסיף סיומת .js ב-ESM
+// 🛑 התיקון: שינוי הנתיב ל-routes.js כדי להתאים לשם הקובץ בפועל
+import apiRoutes from './server/routes/routes.js'; 
 import path from 'path';
 import { fileURLToPath } from 'url';
 
