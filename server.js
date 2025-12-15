@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 // 🛑 התיקון: שינוי הנתיב ל-routes.js כדי להתאים לשם הקובץ בפועל
-import apiRoutes from './server/routes/routes.js'; 
+import apiRoutes from './server/routes.js'; 
 import path from 'path';
 import { fileURLToPath } from 'url';
 
