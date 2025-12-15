@@ -1,9 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { User, Event, Class, Lottery, Settings, GiftCode, Personality } = require('./models');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+// שים לב: ב-ESM חובה להוסיף סיומת .js לקבצים מקומיים
+import { User, Event, Class, Lottery, Settings, GiftCode, Personality } from './models.js';
 
+const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_123';
 
 // --- Middlewares ---
@@ -182,4 +183,5 @@ router.get('/lotteries', async (req, res) => { res.json(await Lottery.find()); }
 router.post('/lotteries', authenticate, isAdmin, async (req, res) => { res.json(await new Lottery(req.body).save()); });
 router.delete('/lotteries/:id', authenticate, isAdmin, async (req, res) => { await Lottery.findByIdAndDelete(req.params.id); res.json({ success: true }); });
 
-module.exports = router;
+// Export Default במקום module.exports
+export default router;

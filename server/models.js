@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // --- סכמת משתמש ---
 const UserSchema = new mongoose.Schema({
@@ -81,7 +81,7 @@ const GiftCodeSchema = new mongoose.Schema({
 });
 const GiftCode = mongoose.model('GiftCode', GiftCodeSchema);
 
-// --- סכמת אישיות השבוע (חדש!) ---
+// --- סכמת אישיות השבוע ---
 const PersonalitySchema = new mongoose.Schema({
   name: { type: String, required: true },
   role: { type: String },
@@ -95,4 +95,5 @@ const PersonalitySchema = new mongoose.Schema({
 });
 const Personality = mongoose.model('Personality', PersonalitySchema);
 
-module.exports = { User, Event, Class, Lottery, Settings, GiftCode, Personality };
+// Export בשיטה החדשה (ESM)
+export { User, Event, Class, Lottery, Settings, GiftCode, Personality };
