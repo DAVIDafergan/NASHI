@@ -1,5 +1,7 @@
 {
-  "name": "nashi---womens-culture-city-app",
+  
+"name": "nashi---womens-culture-city-app",
+    "type": "module",
   "private": true,
   "version": "1.0.0",
   "description": "Full stack app for Nashi",
