@@ -1,9 +1,14 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const apiRoutes = require('./server/routes'); 
-const path = require('path');
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import apiRoutes from './server/routes/index.js'; // שימו לב: חובה להוסיף סיומת .js ב-ESM
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// הגדרת משתנים גלובליים דומים ל-CommonJS
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -22,9 +27,9 @@ mongoose.connect(MONGO_URI)
   .catch((err) => console.error('❌ MongoDB Connection Error:', err));
 
 // Routes - API
-app.use('/api', apiRoutes); 
+app.use('/api', apiRoutes);
 
-// Health Check - הזזנו את זה ל-/health כדי שדף הבית יהיה פנוי לאתר
+// Health Check
 app.get('/health', (req, res) => {
   res.send('Nashi API is running...');
 });
