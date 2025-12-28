@@ -10,6 +10,17 @@ const getHeaders = () => {
     };
 };
 
+// פונקציית עזר לבדיקת נפח תמונה לפני שליחה לשרת (חוסמת מעל 50KB)
+const validateImageSize = (data: any) => {
+    if (data && data.image && typeof data.image === 'string' && data.image.startsWith('data:image')) {
+        const stringLength = data.image.length - data.image.indexOf(',') - 1;
+        const sizeInBytes = (stringLength * 3) / 4;
+        if (sizeInBytes > 50 * 1024) {
+            throw new Error('התמונה גדולה מדי! המקסימום המותר הוא 50KB בלבד.');
+        }
+    }
+};
+
 export const api = {
     // ================= AUTH & USER =================
     async register(userData: any): Promise<{user: User, token: string}> {
@@ -88,6 +99,7 @@ export const api = {
     },
     
     async createEvent(event: Partial<EventItem>): Promise<EventItem> {
+        validateImageSize(event);
         const res = await fetch(`${API_URL}/events`, {
             method: 'POST',
             headers: getHeaders(),
@@ -97,6 +109,7 @@ export const api = {
     },
 
     async updateEvent(event: EventItem): Promise<EventItem> {
+        validateImageSize(event);
         const res = await fetch(`${API_URL}/events/${event.id || event._id}`, {
             method: 'PUT',
             headers: getHeaders(),
@@ -131,6 +144,7 @@ export const api = {
     },
 
     async createClass(cls: Partial<ClassItem>): Promise<ClassItem> {
+        validateImageSize(cls);
         const res = await fetch(`${API_URL}/classes`, {
             method: 'POST',
             headers: getHeaders(),
@@ -140,6 +154,7 @@ export const api = {
     },
     
     async updateClass(cls: ClassItem): Promise<ClassItem> {
+        validateImageSize(cls);
         const res = await fetch(`${API_URL}/classes/${cls.id || cls._id}`, { 
             method: 'PUT',
             headers: getHeaders(),
@@ -162,6 +177,7 @@ export const api = {
     },
 
     async createLottery(lottery: Partial<LotteryItem>): Promise<LotteryItem> {
+         validateImageSize(lottery);
          const res = await fetch(`${API_URL}/lotteries`, {
             method: 'POST',
             headers: getHeaders(),
@@ -184,6 +200,7 @@ export const api = {
     },
 
     async createForumPost(post: { title: string, content: string, image?: string }) {
+        validateImageSize(post);
         const res = await fetch(`${API_URL}/forum`, {
             method: 'POST',
             headers: getHeaders(),
@@ -216,6 +233,7 @@ export const api = {
     },
 
     async createCommunityItem(item: any) {
+        validateImageSize(item);
         const res = await fetch(`${API_URL}/community`, {
             method: 'POST',
             headers: getHeaders(),
@@ -235,6 +253,7 @@ export const api = {
     },
 
     async updatePersonality(data: Partial<PersonalityProfile>) {
+        validateImageSize(data);
         const res = await fetch(`${API_URL}/personality`, {
             method: 'POST',
             headers: getHeaders(),
@@ -257,6 +276,7 @@ export const api = {
     },
 
     async submitInterview(token: string, data: Partial<PersonalityProfile>) {
+        validateImageSize(data);
         const res = await fetch(`${API_URL}/personality/fill/${token}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
