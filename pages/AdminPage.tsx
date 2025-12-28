@@ -1,115 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, Plus, Users, Calendar, Gift, Search, Trash2, Edit, Save, 
-  LogIn, BookOpen, X, Eye, Send, Activity, Upload, Image as ImageIcon,
-  Settings, Award, Copy, Sparkles, MessageSquare, Link as LinkIcon
+  X, Eye, Send, Activity, Upload, Image as ImageIcon,
+  Settings, Award, Copy, Sparkles, MessageSquare, Link as LinkIcon,
+  CheckCircle, Clock, Phone, MapPin
 } from 'lucide-react';
-import { User, EventItem, LotteryItem, ClassItem, UserLevel, LotteryEligibilityType, Review, PersonalityProfile } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { User, EventItem, LotteryItem, ClassItem, UserLevel, PersonalityProfile } from '../types';
+import { api } from '../services/api';
 
-const API_URL = 'https://nashi-production.up.railway.app/api';
-
-const authFetch = async (url: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': token ? `Bearer ${token}` : '',
-    ...options.headers,
-  };
-  try {
-    const res = await fetch(`${API_URL}${url}`, { ...options, headers });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  } catch (err) {
-    console.error("API Error:", err);
-    throw err;
-  }
-};
-
-const convertToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
-};
-
-interface AdminPageProps {
-  user: User | null;
-  onLogin: (user: User) => void;
-  // Legacy props
-  events?: EventItem[];
-  classes?: ClassItem[];
-  lotteries?: LotteryItem[];
-  reviews?: Review[];
-  personality?: PersonalityProfile;
-  // Legacy callbacks
-  onAddEvent?: (event: EventItem) => void;
-  onUpdateEvent?: (event: EventItem) => void;
-  onDeleteEvent?: (id: string) => void;
-  onAddClass?: (cls: ClassItem) => void;
-  onUpdateClass?: (cls: ClassItem) => void;
-  onDeleteClass?: (id: string) => void;
-  onAddLottery?: (lottery: LotteryItem) => void;
-  onUpdateLottery?: (lottery: LotteryItem) => void;
-  onDeleteLottery?: (id: string) => void;
-  onUpdatePersonality?: (p: PersonalityProfile) => void;
-}
-
-const Modal: React.FC<{isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode}> = ({isOpen, onClose, title, children}) => {
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up border border-white/50">
-                <div className="sticky top-0 bg-white/95 backdrop-blur-sm p-6 border-b border-slate-100 flex justify-between items-center z-10">
-                    <h3 className="text-xl font-black text-slate-800">{title}</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} /></button>
-                </div>
-                <div className="p-6">
-                    {children}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const AdminPage: React.FC<AdminPageProps> = ({ user, onLogin }) => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'events' | 'users' | 'lotteries' | 'classes' | 'settings' | 'gifts' | 'personality'>('users');
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
+const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> = ({ user, onLogin }) => {
+  // טאבים מעודכנים כולל אישורי מערכת וקהילה
+  const [activeTab, setActiveTab] = useState<'approvals' | 'community' | 'users' | 'events' | 'classes' | 'lotteries' | 'personality' | 'settings' | 'gifts'>('approvals');
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [systemMessage, setSystemMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   
-  // Data State
+  // Data States
   const [apiUsers, setApiUsers] = useState<User[]>([]);
   const [apiEvents, setApiEvents] = useState<EventItem[]>([]);
   const [apiClasses, setApiClasses] = useState<ClassItem[]>([]);
   const [apiLotteries, setApiLotteries] = useState<LotteryItem[]>([]);
+  const [communityItems, setCommunityItems] = useState<any[]>([]);
+  const [pendingData, setPendingData] = useState<{pendingUsers: User[], pendingPosts: any[]}>({pendingUsers: [], pendingPosts: []});
   
-  const [settings, setSettings] = useState({ pointsPerRegister: 50, pointsPerEventJoin: 10, pointsPerShare: 5 });
-  const [giftForm, setGiftForm] = useState({ code: '', points: 100, maxUses: 100 });
-  const [createdGiftLink, setCreatedGiftLink] = useState<string | null>(null);
-
   // Personality State
+  const [personalityLink, setPersonalityLink] = useState<string | null>(null);
   const [personalityForm, setPersonalityForm] = useState<PersonalityProfile>({
       id: '1', name: '', role: '', image: '', isActive: true, questions: [{question: '', answer: ''}]
   });
 
-  // Modals
+  // Modals & Forms
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [isLotteryModalOpen, setIsLotteryModalOpen] = useState(false);
+  const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   
-  // Edit State
-  const [editingClassId, setEditingClassId] = useState<string | null>(null);
-  const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  
-  // Forms
-  const [eventForm, setEventForm] = useState<Partial<EventItem>>({ title: '', location: '', category: '', price: 0, image: '', registrationLink: '', tags: [], isHero: false });
-  const [classForm, setClassForm] = useState<Partial<ClassItem>>({ title: '', instructor: '', contactPhone: '', day: 'ראשון', time: '17:00', location: '', price: 0, ageGroup: '', exceptions: '', category: '', image: '' });
-  const [lotteryForm, setLotteryForm] = useState<Partial<LotteryItem>>({ title: '', prize: '', drawDate: '', image: '', participants: [], isActive: true, eligibilityType: 'all', minPointsToEnter: 0, minLevel: UserLevel.BEGINNER });
+  const [eventForm, setEventForm] = useState<Partial<EventItem>>({ title: '', location: '', category: '', price: 0, image: '', registrationLink: '' });
+  const [classForm, setClassForm] = useState<Partial<ClassItem>>({ title: '', instructor: '', contactPhone: '', day: 'ראשון', time: '17:00', location: '', price: 0, ageGroup: '', category: '' });
+  const [lotteryForm, setLotteryForm] = useState<Partial<LotteryItem>>({ title: '', prize: '', drawDate: '', image: '', minPointsToEnter: 0 });
+  const [communityForm, setCommunityForm] = useState({ category: 'שיעורי תורה', title: '', location: '', phone: '', description: '', image: '' });
 
   useEffect(() => {
     if (user?.isAdmin) loadTabData();
@@ -119,233 +48,249 @@ const AdminPage: React.FC<AdminPageProps> = ({ user, onLogin }) => {
     setLoading(true);
     setSystemMessage(null);
     try {
-        if (activeTab === 'users') {
-            const data = await authFetch('/users');
-            setApiUsers(data.map((u: any) => ({ ...u, id: u._id || u.id })));
+        if (activeTab === 'approvals') {
+            const data = await api.getAdminApprovals();
+            setPendingData(data);
+        } else if (activeTab === 'community') {
+            const data = await api.getCommunityItems();
+            setCommunityItems(data);
+        } else if (activeTab === 'users') {
+            const data = await fetch('https://nashi-production.up.railway.app/api/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json());
+            setApiUsers(data);
         } else if (activeTab === 'events') {
-            const data = await authFetch('/events');
-            setApiEvents(data.map((e: any) => ({ ...e, id: e._id || e.id })));
+            setApiEvents(await api.getEvents());
         } else if (activeTab === 'classes') {
-            const data = await authFetch('/classes');
-            setApiClasses(data.map((c: any) => ({ ...c, id: c._id || c.id })));
+            setApiClasses(await api.getClasses());
         } else if (activeTab === 'lotteries') {
-            const data = await authFetch('/lotteries');
-            setApiLotteries(data.map((l: any) => ({ ...l, id: l._id || l.id })));
-        } else if (activeTab === 'settings') {
-            const data = await authFetch('/admin/settings');
-            setSettings(data);
+            setApiLotteries(await api.getLotteries());
         } else if (activeTab === 'personality') {
-            const data = await authFetch('/personality');
-            if (data && (data.name || data._id)) {
-                // Ensure questions array exists
-                if (!data.questions || data.questions.length === 0) data.questions = [{question: '', answer: ''}];
-                setPersonalityForm(data);
-            }
+            const data = await api.getPersonality();
+            if (data && data.name) setPersonalityForm(data);
         }
-    } catch (err) { console.error(err); } 
-    finally { setLoading(false); }
+    } catch (err) { console.error(err); }
+    setLoading(false);
   };
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-        const res = await authFetch('/login', { method: 'POST', body: JSON.stringify({ email: loginForm.username, password: loginForm.password }) });
-        if (res.user && res.user.isAdmin) {
-            localStorage.setItem('token', res.token);
-            onLogin(res.user);
-        } else { setError('אין הרשאת ניהול'); }
-    } catch { setError('שגיאה בהתחברות'); }
-  };
-
+  // מנגנון העלאת תמונה חכם עם בדיקת גודל (עד 2MB)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, setForm: Function) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { alert('הקובץ גדול מדי! עד 5MB'); return; }
-      const base64 = await convertToBase64(file);
-      setForm((prev: any) => ({ ...prev, image: base64 }));
+      if (file.size > 2 * 1024 * 1024) { 
+        setSystemMessage({ type: 'error', text: 'הקובץ גדול מדי! אנא העלי תמונה קטנה מ-2MB כדי למנוע שגיאות העלאה.' });
+        return; 
+      }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => setForm((prev: any) => ({ ...prev, image: reader.result }));
     }
   };
 
-  const handleSavePersonality = async () => {
-      try {
-          await authFetch('/personality', { method: 'POST', body: JSON.stringify(personalityForm) });
-          setSystemMessage({ type: 'success', text: 'אשת השבוע נשמרה בשרת!' });
-      } catch { setSystemMessage({ type: 'error', text: 'שגיאה בשמירה' }); }
+  // פעולות אישור (Approvals)
+  const approveMember = async (id: string) => {
+      await api.approveMember(id);
+      setSystemMessage({ type: 'success', text: 'המשתמשת אושרה בהצלחה!' });
+      loadTabData();
   };
 
-  const handleOpenEventModal = (event?: EventItem) => {
-      if (event) { setEditingEventId(event.id); setEventForm({ ...event, registrationLink: event.registrationLink || '' }); }
-      else { setEditingEventId(null); setEventForm({ title: '', location: '', category: '', price: 0, image: '', registrationLink: '', tags: [], isHero: false }); }
-      setIsEventModalOpen(true);
+  const approveForumPost = async (id: string) => {
+      await api.approvePost(id);
+      setSystemMessage({ type: 'success', text: 'הפוסט אושר ועלה לפורום!' });
+      loadTabData();
   };
 
-  const saveEvent = async (e: React.FormEvent) => {
-      e.preventDefault();
-      try {
-          const method = editingEventId ? 'PUT' : 'POST';
-          const url = editingEventId ? `/events/${editingEventId}` : '/events';
-          await authFetch(url, { method, body: JSON.stringify(eventForm) });
-          setSystemMessage({ type: 'success', text: 'האירוע נשמר!' });
-          setIsEventModalOpen(false); loadTabData();
-      } catch { alert('שגיאה בשמירה'); }
-  };
-  
-  const deleteEvent = async (id: string) => {
-      if(!confirm('למחוק?')) return;
-      try { await authFetch(`/events/${id}`, { method: 'DELETE' }); loadTabData(); } catch { alert('שגיאה'); }
+  const generateInterviewLink = async () => {
+      const res = await api.generateInterviewLink();
+      setPersonalityLink(res.link);
   };
 
-  const handleOpenClassModal = (cls?: ClassItem) => {
-      if (cls) { setEditingClassId(cls.id); setClassForm(cls); }
-      else { setEditingClassId(null); setClassForm({ title: '', instructor: '', contactPhone: '', day: 'ראשון', time: '17:00', location: '', price: 0, ageGroup: '', exceptions: '', category: '', image: '' }); }
-      setIsClassModalOpen(true);
-  };
+  // פילטור לחיפוש חופשי
+  const filteredData = (data: any[], field: string) => 
+      data.filter(item => (item[field] || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
-  const saveClass = async (e: React.FormEvent) => {
-      e.preventDefault();
-      try {
-          const method = editingClassId ? 'PUT' : 'POST';
-          const url = editingClassId ? `/classes/${editingClassId}` : '/classes';
-          await authFetch(url, { method, body: JSON.stringify(classForm) });
-          setSystemMessage({ type: 'success', text: 'החוג נשמר!' });
-          setIsClassModalOpen(false); loadTabData();
-      } catch { alert('שגיאה'); }
-  };
-
-  const deleteClass = async (id: string) => {
-      if(!confirm('למחוק?')) return;
-      try { await authFetch(`/classes/${id}`, { method: 'DELETE' }); loadTabData(); } catch { alert('שגיאה'); }
-  };
-
-  const saveLottery = async (e: React.FormEvent) => {
-      e.preventDefault();
-      try { await authFetch('/lotteries', { method: 'POST', body: JSON.stringify(lotteryForm) }); setSystemMessage({ type: 'success', text: 'הגרלה נשמרה!' }); setIsLotteryModalOpen(false); loadTabData(); } catch { alert('שגיאה'); }
-  };
-  
-  const updateSettings = async () => { try { await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify(settings) }); alert('נשמר'); } catch { alert('שגיאה'); } };
-  const createGift = async (e: React.FormEvent) => { e.preventDefault(); try { const res = await authFetch('/admin/gifts', { method: 'POST', body: JSON.stringify(giftForm) }); setCreatedGiftLink(res.link); } catch { alert('שגיאה'); } };
-  const handleSendPoints = async (id: string) => { const pts = prompt('נקודות?'); if(pts) try { await authFetch(`/admin/users/${id}/points`, {method:'POST', body: JSON.stringify({points: +pts})}); loadTabData(); } catch{} };
-
-  if (!user || !user.isAdmin) return <div className="flex justify-center items-center h-screen"><form onSubmit={handleAdminLogin} className="bg-white p-8 rounded shadow"><h2 className="text-xl mb-4 font-bold">כניסת מנהל</h2><input className="border p-2 w-full mb-2" placeholder="Email" value={loginForm.username} onChange={e=>setLoginForm({...loginForm, username:e.target.value})}/><input className="border p-2 w-full mb-4" type="password" placeholder="Pass" value={loginForm.password} onChange={e=>setLoginForm({...loginForm, password:e.target.value})}/><button className="bg-black text-white p-2 w-full">Login</button></form></div>;
+  if (!user || !user.isAdmin) return <div className="p-20 text-center font-bold">כניסה למורשים בלבד.</div>;
 
   return (
     <div className="p-4 md:p-8 space-y-6 pb-20">
-      <div className="flex flex-wrap gap-2 bg-white p-4 rounded-[2rem] shadow-sm justify-center">
+      
+      {/* תפריט ניהול עליון מעוגל */}
+      <div className="flex flex-wrap gap-2 bg-white p-4 rounded-[2rem] shadow-sm justify-center border border-slate-100">
         {[
-           { id: 'users', label: 'משתמשים', icon: <Users size={18} /> },
+           { id: 'approvals', label: 'אישורי מערכת', icon: <ShieldCheck size={18} /> },
+           { id: 'community', label: 'קהילה', icon: <Users size={18} /> },
            { id: 'events', label: 'אירועים', icon: <Calendar size={18} /> },
            { id: 'classes', label: 'חוגים', icon: <BookOpen size={18} /> },
            { id: 'lotteries', label: 'הגרלות', icon: <Gift size={18} /> },
            { id: 'personality', label: 'אשת השבוע', icon: <Sparkles size={18} /> },
-           { id: 'gifts', label: 'מתנות', icon: <Award size={18} /> },
-           { id: 'settings', label: 'הגדרות', icon: <Settings size={18} /> },
+           { id: 'users', label: 'משתמשים', icon: <Users size={18} /> },
         ].map(tab => (
-           <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold ${activeTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>
+           <button key={tab.id} onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); }} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>
               {tab.icon} {tab.label}
            </button>
         ))}
       </div>
 
-      {systemMessage && <div className="bg-green-100 text-green-800 p-4 rounded-xl text-center font-bold">{systemMessage.text}</div>}
+      {/* שורת חיפוש חופשי בכל טאב */}
+      <div className="relative max-w-md mx-auto">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input 
+            type="text" 
+            placeholder="חיפוש חופשי בטאב זה..." 
+            className="w-full pr-10 pl-4 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-slate-200 outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+      </div>
 
-      {activeTab === 'users' && (
-          <div className="p-6 bg-white rounded-[2rem] shadow-sm overflow-x-auto">
-             <table className="w-full text-right">
-               <thead><tr><th className="p-2">שם</th><th className="p-2">אימייל</th><th className="p-2">נק'</th><th className="p-2">פעולה</th></tr></thead>
-               <tbody>{apiUsers.map(u=><tr key={u.id}><td className="p-2">{u.name}</td><td className="p-2">{u.email}</td><td className="p-2 font-bold">{u.points}</td><td className="p-2"><button onClick={()=>handleSendPoints(u.id)} className="text-blue-500 text-xs font-bold bg-blue-50 p-1 rounded">שלח נקודות</button></td></tr>)}</tbody>
-             </table>
+      {systemMessage && (
+          <div className={`p-4 rounded-xl text-center font-bold animate-fade-in ${systemMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              {systemMessage.text}
           </div>
       )}
 
+      {/* --- טאב אישורי מערכת --- */}
+      {activeTab === 'approvals' && (
+          <div className="grid md:grid-cols-2 gap-6">
+              <section className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                  <h3 className="text-lg font-black mb-4 flex items-center gap-2"><Clock size={20} className="text-orange-500"/> בקשות הצטרפות</h3>
+                  <div className="space-y-4">
+                      {pendingData.pendingUsers.map(u => (
+                          <div key={u.id} className="p-4 bg-slate-50 rounded-2xl flex justify-between items-center">
+                              <div>
+                                  <p className="font-bold">{u.name}</p>
+                                  <p className="text-xs text-slate-500">{u.occupation} | {u.phone}</p>
+                              </div>
+                              <button onClick={() => approveMember(u.id)} className="bg-green-500 text-white px-4 py-2 rounded-xl text-xs font-bold">אשרי</button>
+                          </div>
+                      ))}
+                      {pendingData.pendingUsers.length === 0 && <p className="text-center text-slate-400 text-sm">אין בקשות ממתינות</p>}
+                  </div>
+              </section>
+
+              <section className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                  <h3 className="text-lg font-black mb-4 flex items-center gap-2"><MessageSquare size={20} className="text-blue-500"/> פוסטים לפורום</h3>
+                  <div className="space-y-4">
+                      {pendingData.pendingPosts.map(post => (
+                          <div key={post._id} className="p-4 bg-slate-50 rounded-2xl">
+                              <h4 className="font-bold text-sm">{post.title}</h4>
+                              <p className="text-xs text-slate-500 mb-3">מאת: {post.authorName}</p>
+                              <div className="flex gap-2">
+                                  <button onClick={() => approveForumPost(post._id)} className="bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">אשרי פוסט</button>
+                                  <button className="text-red-500 text-xs">מחק</button>
+                              </div>
+                          </div>
+                      ))}
+                      {pendingData.pendingPosts.length === 0 && <p className="text-center text-slate-400 text-sm">אין פוסטים לאישור</p>}
+                  </div>
+              </section>
+          </div>
+      )}
+
+      {/* --- טאב קהילה --- */}
+      {activeTab === 'community' && (
+          <div className="space-y-6">
+              <button onClick={() => setIsCommunityModalOpen(true)} className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
+                  <Plus size={20} /> הוספת גוף/עסק לקהילה
+              </button>
+              <div className="grid md:grid-cols-3 gap-4">
+                  {filteredData(communityItems, 'title').map(item => (
+                      <div key={item._id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex gap-4">
+                          <img src={item.image || 'https://via.placeholder.com/100'} className="w-16 h-16 rounded-xl object-cover" />
+                          <div>
+                              <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">{item.category}</span>
+                              <h4 className="font-bold text-slate-800 text-sm">{item.title}</h4>
+                              <p className="text-xs text-slate-400 flex items-center gap-1"><Phone size={10}/> {item.phone}</p>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          </div>
+      )}
+
+      {/* --- טאב אשת השבוע (עם הפקת לינק) --- */}
+      {activeTab === 'personality' && (
+          <div className="max-w-2xl mx-auto space-y-6">
+              <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 text-center space-y-4">
+                  <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 mx-auto">
+                      <Sparkles size={32} />
+                  </div>
+                  <h3 className="text-xl font-black">שליחת שאלון לאשת השבוע</h3>
+                  <p className="text-slate-500 text-sm">הפיקי לינק ייחודי ושלחי אותו לאישה. היא תמלא את התמונה והתשובות, והמידע ימתין לך כאן לאישור סופי.</p>
+                  <button onClick={generateInterviewLink} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all">
+                      <LinkIcon size={18} /> הפקת לינק לשאלון
+                  </button>
+                  {personalityLink && (
+                      <div className="p-3 bg-rose-50 rounded-xl border border-rose-100 flex items-center justify-between">
+                          <p className="text-xs font-mono text-rose-800 truncate flex-1">{personalityLink}</p>
+                          <button onClick={() => {navigator.clipboard.writeText(personalityLink); alert('הלינק הועתק!');}} className="mr-3 p-2 bg-white rounded-lg shadow-sm text-rose-600"><Copy size={16} /></button>
+                      </div>
+                  )}
+              </div>
+              
+              {/* עריכה ידנית */}
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                  <h4 className="font-bold mb-4">תצוגה מקדימה / עריכה ידנית</h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                      <input className="w-full p-3 bg-slate-50 rounded-xl" placeholder="שם מלא" value={personalityForm.name} onChange={e => setPersonalityForm({...personalityForm, name: e.target.value})} />
+                      <input className="w-full p-3 bg-slate-50 rounded-xl" placeholder="תפקיד" value={personalityForm.role} onChange={e => setPersonalityForm({...personalityForm, role: e.target.value})} />
+                      <div className="md:col-span-2 border-2 border-dashed p-4 text-center relative rounded-xl">
+                          <input type="file" onChange={e => handleFileUpload(e, setPersonalityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                          {personalityForm.image ? <img src={personalityForm.image} className="h-32 mx-auto rounded-lg" /> : <p className="text-slate-400">העלאת תמונת פרופיל</p>}
+                      </div>
+                  </div>
+                  <button onClick={async () => { await api.updatePersonality(personalityForm); setSystemMessage({type:'success', text:'נשמר!'}); }} className="w-full mt-4 py-3 bg-slate-900 text-white rounded-xl font-bold">עדכני באתר</button>
+              </div>
+          </div>
+      )}
+
+      {/* --- שאר הטאבים (אירועים, חוגים, הגרלות) --- */}
       {activeTab === 'events' && (
-        <div>
-           <button onClick={() => handleOpenEventModal()} className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 mb-6"> <Plus size={20} /> אירוע חדש </button>
-           <div className="grid gap-4">
-              {apiEvents.map(ev => (
-                  <div key={ev.id} className="bg-white p-4 rounded-2xl flex gap-4 items-center shadow-sm border border-slate-100 relative">
-                      <img src={ev.image || 'https://via.placeholder.com/100'} className="w-20 h-20 rounded-xl object-cover bg-slate-100" />
-                      <div className="flex-1"><h4 className="font-bold">{ev.title}</h4><p className="text-sm">{new Date(ev.date).toLocaleDateString()}</p></div>
-                      <div className="flex gap-2"><button onClick={() => handleOpenEventModal(ev)} className="text-blue-400 p-2"><Edit size={18}/></button><button onClick={() => deleteEvent(ev.id)} className="text-red-400 p-2"><Trash2 size={18}/></button></div>
+          <div className="space-y-6">
+              <button onClick={() => { setEditingEventId(null); setEventForm({title:'', location:'', category:'', price:0, image:''}); setIsEventModalOpen(true); }} className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
+                  <Plus size={20} /> אירוע חדש
+              </button>
+              <div className="grid gap-4">
+                  {filteredData(apiEvents, 'title').map(ev => (
+                      <div key={ev.id} className="bg-white p-4 rounded-2xl flex gap-4 items-center shadow-sm border border-slate-100">
+                          <img src={ev.image || 'https://via.placeholder.com/100'} className="w-16 h-16 rounded-xl object-cover" />
+                          <div className="flex-1"><h4 className="font-bold text-sm">{ev.title}</h4><p className="text-xs text-slate-400">{new Date(ev.date).toLocaleDateString()}</p></div>
+                          <div className="flex gap-2"><button onClick={() => { setEditingEventId(ev.id); setEventForm(ev); setIsEventModalOpen(true); }} className="text-blue-400"><Edit size={18}/></button><button onClick={() => deleteEvent(ev.id)} className="text-red-400"><Trash2 size={18}/></button></div>
+                      </div>
+                  ))}
+              </div>
+          </div>
+      )}
+
+      {/* מודאלים לשמירה */}
+      <Modal isOpen={isEventModalOpen} onClose={() => setIsEventModalOpen(false)} title="ניהול אירוע">
+          <form onSubmit={saveEvent} className="space-y-4">
+              <input required placeholder="שם האירוע" className="w-full p-3 bg-slate-50 rounded-xl" value={eventForm.title} onChange={e=>setEventForm({...eventForm, title:e.target.value})} />
+              <div className="grid grid-cols-2 gap-2"><input required type="date" className="w-full p-3 bg-slate-50 rounded-xl" value={eventForm.date ? new Date(eventForm.date).toISOString().split('T')[0] : ''} onChange={e=>setEventForm({...eventForm, date:e.target.value})} /><input required placeholder="מיקום" className="w-full p-3 bg-slate-50 rounded-xl" value={eventForm.location} onChange={e=>setEventForm({...eventForm, location:e.target.value})} /></div>
+              <div className="border-2 border-dashed p-4 text-center relative rounded-xl">
+                  <input type="file" onChange={e => handleFileUpload(e, setEventForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                  {eventForm.image ? <img src={eventForm.image} className="h-20 mx-auto" /> : <p className="text-slate-400">העלאת תמונה (עד 2MB)</p>}
+              </div>
+              <button className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold">שמור אירוע</button>
+          </form>
+      </Modal>
+
+      {isCommunityModalOpen && (
+          <Modal isOpen={isCommunityModalOpen} onClose={() => setIsCommunityModalOpen(false)} title="הוספת פריט לקהילה">
+              <div className="space-y-4">
+                  <select className="w-full p-3 bg-slate-50 rounded-xl" value={communityForm.category} onChange={e => setCommunityForm({...communityForm, category: e.target.value})}>
+                      <option>שיעורי תורה</option><option>גמ"חים</option><option>עסקים מקומיים</option>
+                  </select>
+                  <input placeholder="שם הגוף / העסק" className="w-full p-3 bg-slate-50 rounded-xl" value={communityForm.title} onChange={e => setCommunityForm({...communityForm, title: e.target.value})} />
+                  <input placeholder="טלפון" className="w-full p-3 bg-slate-50 rounded-xl" value={communityForm.phone} onChange={e => setCommunityForm({...communityForm, phone: e.target.value})} />
+                  <input placeholder="מיקום / כתובת" className="w-full p-3 bg-slate-50 rounded-xl" value={communityForm.location} onChange={e => setCommunityForm({...communityForm, location: e.target.value})} />
+                  <div className="border-2 border-dashed p-4 text-center relative rounded-xl">
+                      <input type="file" onChange={e => handleFileUpload(e, setCommunityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                      {communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto" /> : <p className="text-slate-400">תמונה (עד 2MB)</p>}
                   </div>
-              ))}
-           </div>
-           <Modal isOpen={isEventModalOpen} onClose={() => setIsEventModalOpen(false)} title="אירוע">
-               <form onSubmit={saveEvent} className="space-y-4">
-                   <input required placeholder="שם" className="w-full p-3 bg-slate-50 rounded-xl" value={eventForm.title} onChange={e=>setEventForm({...eventForm, title:e.target.value})} />
-                   <div className="grid grid-cols-2 gap-2"><input required type="date" className="w-full p-3 bg-slate-50 rounded-xl" value={eventForm.date ? new Date(eventForm.date).toISOString().split('T')[0] : ''} onChange={e=>setEventForm({...eventForm, date:e.target.value})} /><input required placeholder="מיקום" className="w-full p-3 bg-slate-50 rounded-xl" value={eventForm.location} onChange={e=>setEventForm({...eventForm, location:e.target.value})} /></div>
-                   <input required placeholder="קטגוריה" className="w-full p-3 bg-slate-50 rounded-xl" value={eventForm.category} onChange={e=>setEventForm({...eventForm, category:e.target.value})} />
-                   <input type="number" placeholder="מחיר" className="w-full p-3 bg-slate-50 rounded-xl" value={eventForm.price} onChange={e=>setEventForm({...eventForm, price:Number(e.target.value)})} />
-                   <div className="relative"><LinkIcon className="absolute right-3 top-3.5 text-slate-400" size={18} /><input placeholder="לינק חיצוני" className="w-full pr-10 pl-3 py-3 bg-slate-50 rounded-xl" value={eventForm.registrationLink} onChange={e=>setEventForm({...eventForm, registrationLink:e.target.value})} /></div>
-                   <div className="border-2 border-dashed p-4 text-center relative"><input type="file" onChange={e=>handleFileUpload(e, setEventForm)} className="absolute inset-0 opacity-0"/>{eventForm.image ? <img src={eventForm.image} className="h-20 mx-auto"/> : 'העלאת תמונה'}</div>
-                   <button className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold">שמור</button>
-               </form>
-           </Modal>
-        </div>
+                  <button onClick={async () => { await api.createCommunityItem(communityForm); setIsCommunityModalOpen(false); loadTabData(); }} className="w-full py-4 bg-rose-600 text-white rounded-xl font-bold">שמור בקהילה</button>
+              </div>
+          </Modal>
       )}
 
-      {activeTab === 'classes' && (
-        <div>
-           <button onClick={() => handleOpenClassModal()} className="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold mb-6"> <Plus size={20} /> חוג חדש </button>
-           <div className="grid gap-4 md:grid-cols-2">
-              {apiClasses.map(cls => (
-                  <div key={cls.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex gap-4 relative">
-                      <img src={cls.image || 'https://via.placeholder.com/100'} className="w-20 h-20 rounded-xl object-cover bg-slate-100" />
-                      <div className="flex-1"><h4 className="font-bold">{cls.title}</h4><p className="text-sm">{cls.day} {cls.time}</p></div>
-                      <div className="flex flex-col gap-2"><button onClick={() => handleOpenClassModal(cls)} className="text-blue-400 p-2"><Edit size={18}/></button><button onClick={() => deleteClass(cls.id)} className="text-red-400 p-2"><Trash2 size={18}/></button></div>
-                  </div>
-              ))}
-           </div>
-           <Modal isOpen={isClassModalOpen} onClose={() => setIsClassModalOpen(false)} title="חוג">
-               <form onSubmit={saveClass} className="space-y-4">
-                   <div className="grid grid-cols-2 gap-4"><input required placeholder="שם" className="w-full p-3 bg-slate-50 rounded-xl" value={classForm.title} onChange={e=>setClassForm({...classForm, title:e.target.value})} /><input required placeholder="מדריכה" className="w-full p-3 bg-slate-50 rounded-xl" value={classForm.instructor} onChange={e=>setClassForm({...classForm, instructor:e.target.value})} /></div>
-                   <div className="grid grid-cols-2 gap-4"><input placeholder="מיקום" className="w-full p-3 bg-slate-50 rounded-xl" value={classForm.location} onChange={e=>setClassForm({...classForm, location:e.target.value})} /><input placeholder="גילאים" className="w-full p-3 bg-slate-50 rounded-xl" value={classForm.ageGroup} onChange={e=>setClassForm({...classForm, ageGroup:e.target.value})} /></div>
-                   <input placeholder="חריגים" className="w-full p-3 bg-slate-50 rounded-xl" value={classForm.exceptions} onChange={e=>setClassForm({...classForm, exceptions:e.target.value})} />
-                   <div className="grid grid-cols-2 gap-2"><select className="w-full p-3 bg-slate-50 rounded-xl" value={classForm.day} onChange={e=>setClassForm({...classForm, day:e.target.value})}><option>ראשון</option><option>שני</option><option>שלישי</option><option>רביעי</option><option>חמישי</option><option>שישי</option></select><input required placeholder="שעה" className="w-full p-3 bg-slate-50 rounded-xl" value={classForm.time} onChange={e=>setClassForm({...classForm, time:e.target.value})} /></div>
-                   <input placeholder="טלפון" className="w-full p-3 bg-slate-50 rounded-xl" value={classForm.contactPhone} onChange={e=>setClassForm({...classForm, contactPhone:e.target.value})} />
-                   <input type="number" placeholder="מחיר" className="w-full p-3 bg-slate-50 rounded-xl" value={classForm.price} onChange={e=>setClassForm({...classForm, price:Number(e.target.value)})} />
-                   <div className="border-2 border-dashed p-4 text-center relative"><input type="file" onChange={e=>handleFileUpload(e, setClassForm)} className="absolute inset-0 opacity-0"/>{classForm.image ? <img src={classForm.image} className="h-20 mx-auto"/> : 'תמונה'}</div>
-                   <button className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold">שמור</button>
-               </form>
-           </Modal>
-        </div>
-      )}
-
-      {activeTab === 'lotteries' && (
-        <div>
-           <button onClick={() => setIsLotteryModalOpen(true)} className="bg-orange-500 text-white px-6 py-3 rounded-xl font-bold mb-6"> <Plus size={20} /> הגרלה חדשה </button>
-           <div className="grid gap-4 md:grid-cols-2">{apiLotteries.map(lot => (<div key={lot.id} className="bg-white p-4 rounded-2xl flex gap-4"><img src={lot.image} className="w-20 h-20 rounded-xl"/><div className="flex-1"><h4 className="font-bold">{lot.title}</h4><p>{lot.prize}</p></div></div>))}</div>
-           <Modal isOpen={isLotteryModalOpen} onClose={() => setIsLotteryModalOpen(false)} title="הגרלה"><form onSubmit={saveLottery} className="space-y-4"><input required placeholder="כותרת" className="w-full p-3 bg-slate-50 rounded-xl" value={lotteryForm.title} onChange={e=>setLotteryForm({...lotteryForm, title:e.target.value})} /><input required placeholder="פרס" className="w-full p-3 bg-slate-50 rounded-xl" value={lotteryForm.prize} onChange={e=>setLotteryForm({...lotteryForm, prize:e.target.value})} /><input required type="date" className="w-full p-3 bg-slate-50 rounded-xl" value={lotteryForm.drawDate} onChange={e=>setLotteryForm({...lotteryForm, drawDate:e.target.value})} /><div className="border-2 border-dashed p-4 text-center relative"><input type="file" onChange={e=>handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0"/>{lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto"/> : 'תמונה'}</div><button className="w-full bg-orange-500 text-white py-3 font-bold rounded-xl">שמור</button></form></Modal>
-        </div>
-      )}
-
-      {activeTab === 'personality' && personalityForm && (
-           <div className="p-6 max-w-3xl mx-auto bg-white rounded-[2rem] shadow-sm">
-               <h3 className="text-xl font-bold text-slate-800 mb-6">ניהול אשת השבוע</h3>
-               <div className="space-y-6">
-                   <div className="grid md:grid-cols-2 gap-4">
-                       <input className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200" placeholder="שם מלא" value={personalityForm.name} onChange={e => setPersonalityForm({...personalityForm, name: e.target.value})} />
-                       <input className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200" placeholder="תפקיד" value={personalityForm.role} onChange={e => setPersonalityForm({...personalityForm, role: e.target.value})} />
-                       <div className="md:col-span-2 border-2 border-dashed p-4 relative rounded-xl text-center"><input type="file" onChange={e => handleFileUpload(e, setPersonalityForm)} className="absolute inset-0 opacity-0" />{personalityForm.image ? <img src={personalityForm.image} className="h-32 mx-auto rounded" /> : 'העלאת תמונה'}</div>
-                   </div>
-                   <div className="space-y-4">
-                       <h4 className="font-bold text-slate-700 border-b pb-2">שאלות ותשובות</h4>
-                       {personalityForm.questions.map((q, idx) => (
-                           <div key={idx} className="bg-slate-50 p-4 rounded-2xl space-y-2 relative group">
-                               <input className="w-full p-2 bg-white rounded-lg border border-slate-200 text-sm font-bold" placeholder="שאלה" value={q.question} onChange={(e) => { const newQs = [...personalityForm.questions]; newQs[idx].question = e.target.value; setPersonalityForm({...personalityForm, questions: newQs}); }} />
-                               <textarea className="w-full p-2 bg-white rounded-lg border border-slate-200 text-sm" placeholder="תשובה" rows={3} value={q.answer} onChange={(e) => { const newQs = [...personalityForm.questions]; newQs[idx].answer = e.target.value; setPersonalityForm({...personalityForm, questions: newQs}); }} />
-                               <button onClick={() => { const newQs = personalityForm.questions.filter((_, i) => i !== idx); setPersonalityForm({...personalityForm, questions: newQs}); }} className="text-red-500 text-xs absolute top-2 left-2">מחק שאלה</button>
-                           </div>
-                       ))}
-                       <button onClick={() => setPersonalityForm({...personalityForm, questions: [...personalityForm.questions, {question: '', answer: ''}]})} className="text-rose-600 font-bold text-sm">+ הוסף שאלה</button>
-                   </div>
-                   <div className="flex items-center gap-2"><input type="checkbox" checked={personalityForm.isActive} onChange={e => setPersonalityForm({...personalityForm, isActive: e.target.checked})} className="w-5 h-5 accent-rose-500" /><span className="font-bold text-slate-700">הצג באתר</span></div>
-                   <button onClick={handleSavePersonality} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold">שמור שינויים בשרת</button>
-               </div>
-           </div>
-      )}
-
-      {activeTab === 'settings' && (<div className="max-w-lg mx-auto bg-white p-6 rounded-2xl"><h3 className="font-bold mb-4">הגדרות</h3><input type="number" value={settings.pointsPerRegister} onChange={e=>setSettings({...settings, pointsPerRegister:+e.target.value})} className="w-full p-3 border rounded-xl mb-2"/><button onClick={updateSettings} className="bg-black text-white w-full p-3 rounded-xl">שמור</button></div>)}
-      {activeTab === 'gifts' && (<div className="max-w-lg mx-auto bg-white p-6 rounded-2xl"><h3 className="font-bold mb-4">מתנה</h3><input value={giftForm.code} onChange={e=>setGiftForm({...giftForm, code:e.target.value})} className="w-full p-3 border rounded-xl mb-2"/><button onClick={createGift} className="bg-pink-600 text-white w-full p-3 rounded-xl">צור</button>{createdGiftLink && <div className="p-2 bg-green-100 mt-2 rounded">{createdGiftLink}</div>}</div>)}
     </div>
   );
 };

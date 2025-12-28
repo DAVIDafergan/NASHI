@@ -1,22 +1,59 @@
 import mongoose from 'mongoose';
 
-// --- סכמת משתמש ---
+// --- סכמת משתמש מעודכנת ---
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   phone: { type: String },
   address: { type: String },
-  communicationPref: { type: String, enum: ['email', 'sms', 'whatsapp'], default: 'email' },
+  age: { type: Number },
+  occupation: { type: String },
   avatar: { type: String },
   isAdmin: { type: Boolean, default: false },
   points: { type: Number, default: 0 },
+  
+  // שדות מעגל נשי
+  isMemberRequested: { type: Boolean, default: false },
+  isMemberApproved: { type: Boolean, default: false },
+  
   likedEventIds: [{ type: String }],
   createdAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', UserSchema);
 
-// --- סכמת אירוע ---
+// --- סכמת פורום נשי ---
+const ForumPostSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  image: { type: String },
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  authorName: String,
+  status: { type: String, enum: ['pending', 'approved'], default: 'pending' },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  comments: [{
+    authorName: String,
+    text: String,
+    createdAt: { type: Date, default: Date.now }
+  }],
+  createdAt: { type: Date, default: Date.now }
+});
+const ForumPost = mongoose.model('ForumPost', ForumPostSchema);
+
+// --- סכמת קהילה ---
+const CommunitySchema = new mongoose.Schema({
+  category: { type: String, enum: ['שיעורי תורה', 'גמ"חים', 'עסקים מקומיים'], required: true },
+  title: { type: String, required: true },
+  image: { type: String },
+  location: { type: String },
+  phone: { type: String },
+  description: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+const Community = mongoose.model('Community', CommunitySchema);
+
+// --- שאר הסכמות הקיימות ---
 const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   date: { type: Date, required: true },
@@ -32,7 +69,6 @@ const EventSchema = new mongoose.Schema({
 });
 const Event = mongoose.model('Event', EventSchema);
 
-// --- סכמת חוג ---
 const ClassSchema = new mongoose.Schema({
   title: { type: String, required: true },
   instructor: { type: String },
@@ -49,7 +85,6 @@ const ClassSchema = new mongoose.Schema({
 });
 const Class = mongoose.model('Class', ClassSchema);
 
-// --- סכמת הגרלה ---
 const LotterySchema = new mongoose.Schema({
   title: { type: String, required: true },
   prize: { type: String, required: true },
@@ -57,13 +92,10 @@ const LotterySchema = new mongoose.Schema({
   image: { type: String },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isActive: { type: Boolean, default: true },
-  eligibilityType: { type: String, default: 'all' },
-  minPointsToEnter: { type: Number, default: 0 },
-  minLevel: { type: String, default: 'BEGINNER' }
+  minPointsToEnter: { type: Number, default: 0 }
 });
 const Lottery = mongoose.model('Lottery', LotterySchema);
 
-// --- הגדרות מערכת ---
 const SettingsSchema = new mongoose.Schema({
   pointsPerRegister: { type: Number, default: 50 },
   pointsPerEventJoin: { type: Number, default: 10 },
@@ -71,29 +103,23 @@ const SettingsSchema = new mongoose.Schema({
 });
 const Settings = mongoose.model('Settings', SettingsSchema);
 
-// --- קודי מתנה ---
 const GiftCodeSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true },
   points: { type: Number, required: true },
   maxUses: { type: Number, default: 1000 },
-  usedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  expiresAt: { type: Date }
+  usedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 const GiftCode = mongoose.model('GiftCode', GiftCodeSchema);
 
-// --- סכמת אישיות השבוע ---
 const PersonalitySchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: { type: String },
   role: { type: String },
   image: { type: String },
-  questions: [{ 
-    question: { type: String }, 
-    answer: { type: String } 
-  }],
-  isActive: { type: Boolean, default: true },
+  questions: [{ question: String, answer: String }],
+  isActive: { type: Boolean, default: false },
+  externalToken: { type: String },
   updatedAt: { type: Date, default: Date.now }
 });
 const Personality = mongoose.model('Personality', PersonalitySchema);
 
-// Export בשיטה החדשה (ESM)
-export { User, Event, Class, Lottery, Settings, GiftCode, Personality };
+export { User, Event, Class, Lottery, Settings, GiftCode, Personality, ForumPost, Community };

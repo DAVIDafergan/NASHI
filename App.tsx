@@ -8,23 +8,13 @@ import ProfilePage from './pages/ProfilePage';
 import ContactPage from './pages/ContactPage';
 import AdminPage from './pages/AdminPage';
 import LotteryPage from './pages/LotteryPage';
+import ForumPage from './pages/ForumPage'; 
+import CommunityPage from './pages/CommunityPage'; 
+import FillInterviewPage from './pages/FillInterviewPage';
 import { GeminiAssistant } from './components/GeminiAssistant';
-import { User, UserLevel, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, CommunicationPreference } from './types';
-import { X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, CommunicationPreference } from './types';
+import { X, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from './services/api';
-
-const initialPersonality: PersonalityProfile = {
-  id: '1',
-  name: 'ד"ר יעל אברהמי',
-  role: 'חוקרת מח ומנהלת מעבדה',
-  image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Yael',
-  isActive: true,
-  questions: [
-    { question: 'מה נותן לך השראה?', answer: 'הטבע, והיכולת של המוח האנושי להשתנות ולהתפתח בכל גיל.' },
-    { question: 'איזה עצה היית נותנת לעצמך הצעירה?', answer: 'אל תפחדי לטעות. הטעויות הן השיעורים הכי טובים.' },
-    { question: 'מהו המקום האהוב עלייך בעיר?', answer: 'גן הפסלים החדש, מקום של שקט ויצירה.' }
-  ]
-};
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -32,9 +22,11 @@ const App: React.FC = () => {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [lotteries, setLotteries] = useState<LotteryItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [personality, setPersonality] = useState<PersonalityProfile>(initialPersonality);
   const [loading, setLoading] = useState(true);
   
+  // מצב חיפוש גלובלי עבור כל הטאבים
+  const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+
   // Auth Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -46,34 +38,32 @@ const App: React.FC = () => {
 
   // Register Form
   const [regData, setRegData] = useState({
-        name: '', phone: '', email: '', address: '', 
-        communicationPref: 'whatsapp' as CommunicationPreference, password: ''
+    name: '', phone: '', email: '', address: '', 
+    communicationPref: 'whatsapp' as CommunicationPreference, password: ''
   });
 
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
-        try {
-            const [fetchedEvents, fetchedClasses, fetchedLotteries] = await Promise.all([
-                api.getEvents(),
-                api.getClasses(),
-                api.getLotteries()
-            ]);
-            setEvents(fetchedEvents);
-            setClasses(fetchedClasses);
-            setLotteries(fetchedLotteries);
-            
-            // Restore user from local storage if token exists
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
-            }
-        } catch (error) {
-            console.error("Failed to fetch data, server might be down", error);
-            // Fallback for demo if server is not running
-        } finally {
-            setLoading(false);
+      try {
+        const [fetchedEvents, fetchedClasses, fetchedLotteries] = await Promise.all([
+          api.getEvents(),
+          api.getClasses(),
+          api.getLotteries()
+        ]);
+        setEvents(fetchedEvents);
+        setClasses(fetchedClasses);
+        setLotteries(fetchedLotteries);
+        
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
         }
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, []);
@@ -82,69 +72,71 @@ const App: React.FC = () => {
     e?.preventDefault();
     setLoginError('');
     try {
-        const { user: loggedInUser, token } = await api.login({ email: loginEmail, password: loginPassword });
-        setUser(loggedInUser);
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(loggedInUser));
-        setIsAuthModalOpen(false);
-        setLoginEmail('');
-        setLoginPassword('');
+      const { user: loggedInUser, token } = await api.login({ email: loginEmail, password: loginPassword });
+      setUser(loggedInUser);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
+      setIsAuthModalOpen(false);
+      setLoginEmail('');
+      setLoginPassword('');
     } catch (err) {
-        setLoginError('שם משתמש או סיסמה שגויים');
+      setLoginError('שם משתמש או סיסמה שגויים');
     }
   };
 
   const handleRegister = async (e?: React.FormEvent) => {
-      e?.preventDefault();
-      if (!regData.name || !regData.email || !regData.password) {
-        setLoginError('אנא מלאי את כל שדות החובה');
-        return;
-      }
-      try {
-        const { user: newUser, token } = await api.register(regData);
-        setUser(newUser);
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(newUser));
-        setIsAuthModalOpen(false);
-      } catch (err) {
-        setLoginError('שגיאה בהרשמה. נסי שוב מאוחר יותר.');
-      }
+    e?.preventDefault();
+    if (!regData.name || !regData.email || !regData.password) {
+      setLoginError('אנא מלאי את כל שדות החובה');
+      return;
+    }
+    try {
+      const { user: newUser, token } = await api.register(regData);
+      setUser(newUser);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(newUser));
+      setIsAuthModalOpen(false);
+    } catch (err) {
+      setLoginError('שגיאה בהרשמה. נסי שוב מאוחר יותר.');
+    }
   };
 
   const handleLogout = () => {
-      setUser(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+    setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
   
   const handleOpenAuth = () => {
-      setIsAuthModalOpen(true);
-      setAuthMode('login');
-      setLoginError('');
+    setIsAuthModalOpen(true);
+    setAuthMode('login');
+    setLoginError('');
+  };
+
+  const handleUpdateUser = async (updatedUser: User) => {
+    try {
+      const result = await api.updateUser(updatedUser);
+      setUser(result);
+      localStorage.setItem('user', JSON.stringify(result));
+    } catch (err) {
+      console.error('Failed to update user', err);
+      setUser(updatedUser);
+    }
   };
 
   // --- Actions ---
 
-  const handleUpdateUser = async (updatedUser: User) => {
-      try {
-          const result = await api.updateUser(updatedUser);
-          setUser(result);
-          localStorage.setItem('user', JSON.stringify(result));
-      } catch (err) {
-          console.error('Failed to update user', err);
-          // Optimistic update fallback
-          setUser(updatedUser);
-      }
-  };
-
   const handleAddPoints = (pointsToAdd: number) => {
-    if (user) {
+    if (user && user.isMemberApproved) {
       handleUpdateUser({ ...user, points: user.points + pointsToAdd });
       alert(`כל הכבוד! צברת ${pointsToAdd} נקודות חדשות.`);
+    } else if (user && !user.isMemberApproved) {
+      alert("רק חברות מאושרות במעגל הנשי יכולות לצבור נקודות.");
+    } else {
+      handleOpenAuth();
     }
   };
 
-  // Events & Reviews
   const toggleEventLike = async (eventId: string) => {
     if (!user) { handleOpenAuth(); return; }
     const isLiked = user.likedEventIds?.includes(eventId);
@@ -161,25 +153,24 @@ const App: React.FC = () => {
     
     const updatedEvent = { ...event, ratings: [...(event.ratings || []), rating] };
     try {
-        await api.updateEvent(updatedEvent);
-        setEvents(events.map(e => e.id === eventId ? updatedEvent : e));
+      await api.updateEvent(updatedEvent);
+      setEvents(events.map(e => e.id === eventId ? updatedEvent : e));
     } catch (e) { console.error(e); }
 
-    // Add Review (Locally for now, assume backend doesn't have review endpoint yet)
     const newReview: Review = {
-        id: Date.now().toString(),
-        eventId,
-        eventTitle: event.title,
-        userId: user.id,
-        userName: user.name,
-        rating,
-        comment,
-        date: new Date().toLocaleDateString('he-IL')
+      id: Date.now().toString(),
+      eventId,
+      eventTitle: event.title,
+      userId: user.id,
+      userName: user.name,
+      rating,
+      comment,
+      date: new Date().toLocaleDateString('he-IL')
     };
     setReviews([newReview, ...reviews]);
   };
 
-  // Admin Actions (Connected to API)
+  // Admin Actions
   const addEvent = async (newEvent: EventItem) => {
       try {
           const created = await api.createEvent(newEvent);
@@ -198,7 +189,6 @@ const App: React.FC = () => {
           setEvents(events.filter(e => e.id !== id));
       } catch (e) { console.error(e); }
   };
-  
   const addClass = async (newClass: ClassItem) => {
       try {
           const created = await api.createClass(newClass);
@@ -217,17 +207,10 @@ const App: React.FC = () => {
           setClasses(classes.filter(c => c.id !== id));
       } catch (e) { console.error(e); }
   };
-  
   const addLottery = async (newLottery: LotteryItem) => {
       try {
           const created = await api.createLottery(newLottery);
           setLotteries([...lotteries, created]);
-      } catch (e) { console.error(e); }
-  };
-  const updateLottery = async (updatedLottery: LotteryItem) => {
-      try {
-          const result = await api.updateLottery(updatedLottery);
-          setLotteries(lotteries.map(l => l.id === result.id ? result : l));
       } catch (e) { console.error(e); }
   };
   const deleteLottery = async (id: string) => {
@@ -237,28 +220,38 @@ const App: React.FC = () => {
       } catch (e) { console.error(e); }
   };
 
-  const updatePersonality = (p: PersonalityProfile) => setPersonality(p);
-
   if (loading) {
-      return <div className="min-h-screen flex items-center justify-center text-rose-500"><Loader2 className="animate-spin" size={40} /></div>;
+    return <div className="min-h-screen flex items-center justify-center text-rose-500"><Loader2 className="animate-spin" size={40} /></div>;
   }
 
   return (
     <HashRouter>
       <div className="min-h-screen text-slate-800 bg-slate-50 font-sans w-full overflow-x-hidden flex flex-col">
-        <Layout user={user} onLogout={handleLogout} onOpenLogin={handleOpenAuth}>
+        <Layout 
+            user={user} 
+            onLogout={handleLogout} 
+            onOpenLogin={handleOpenAuth}
+            searchTerm={globalSearchTerm}
+            setSearchTerm={setGlobalSearchTerm}
+        >
           <Routes>
-            <Route path="/" element={<HomePage user={user} onOpenLogin={handleOpenAuth} events={events} personality={personality} lotteries={lotteries} />} />
+            <Route path="/" element={<HomePage user={user} onOpenLogin={handleOpenAuth} events={events} lotteries={lotteries} onUpdateUser={handleUpdateUser} />} />
             
             <Route 
               path="/events" 
-              element={<EventsPage events={events} onToggleLike={toggleEventLike} user={user} onAddPoints={handleAddPoints} onRateEvent={handleRateEvent} />} 
+              element={<EventsPage events={events} onToggleLike={toggleEventLike} user={user} onAddPoints={handleAddPoints} onRateEvent={handleRateEvent} searchTerm={globalSearchTerm} />} 
             />
-            <Route path="/classes" element={<ClassesPage classes={classes} />} />
+            
+            <Route path="/classes" element={<ClassesPage classes={classes} searchTerm={globalSearchTerm} />} />
+            
             <Route 
               path="/lottery" 
-              element={<LotteryPage lotteries={lotteries} user={user} onUpdateUser={handleUpdateUser} onUpdateLottery={updateLottery} />} 
+              element={<LotteryPage lotteries={lotteries} user={user} onUpdateUser={handleUpdateUser} onUpdateLottery={(l) => setLotteries(lotteries.map(item => item.id === l.id ? l : item))} />} 
             />
+
+            <Route path="/forum" element={<ForumPage user={user} searchTerm={globalSearchTerm} />} />
+            <Route path="/community" element={<CommunityPage searchTerm={globalSearchTerm} />} />
+            <Route path="/fill-interview/:token" element={<FillInterviewPage />} />
 
             <Route path="/profile" element={user ? <ProfilePage user={user} events={events} onUpdateUser={handleUpdateUser} /> : <Navigate to="/" replace />} />
             <Route path="/contact" element={<ContactPage />} />
@@ -267,12 +260,15 @@ const App: React.FC = () => {
               path="/admin" 
               element={
                 <AdminPage 
-                  user={user} onLogin={(u) => {setUser(u); setIsAuthModalOpen(false);}}
-                  events={events} classes={classes} lotteries={lotteries} reviews={reviews} personality={personality}
+                  user={user} 
+                  onLogin={(u) => {setUser(u); setIsAuthModalOpen(false);}}
+                  events={events} 
+                  classes={classes} 
+                  lotteries={lotteries} 
+                  reviews={reviews}
                   onAddEvent={addEvent} onUpdateEvent={updateEvent} onDeleteEvent={deleteEvent}
                   onAddClass={addClass} onUpdateClass={updateClass} onDeleteClass={deleteClass}
-                  onAddLottery={addLottery} onUpdateLottery={updateLottery} onDeleteLottery={deleteLottery}
-                  onUpdatePersonality={updatePersonality}
+                  onAddLottery={addLottery} onDeleteLottery={deleteLottery}
                 />
               } 
             />
@@ -285,7 +281,7 @@ const App: React.FC = () => {
         {/* Global Auth Modal */}
         {isAuthModalOpen && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-              <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] w-full max-w-md shadow-2xl shadow-rose-200/50 animate-fade-in-up relative overflow-hidden border border-white">
+              <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] w-full max-w-md shadow-2xl animate-fade-in-up relative overflow-hidden border border-white">
                  <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 left-4 p-2 bg-slate-50 rounded-full hover:bg-rose-50 hover:text-rose-500 transition-colors z-10"><X size={20} /></button>
                  
                  <div className="p-8">

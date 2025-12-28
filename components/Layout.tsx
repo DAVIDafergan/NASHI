@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, User as UserIcon, ShieldCheck, ChevronDown, Home, Calendar, Gift, Heart } from 'lucide-react';
+import { 
+  LogOut, User as UserIcon, ShieldCheck, ChevronDown, Home, 
+  Calendar, Gift, Heart, MessageSquare, Users, Search 
+} from 'lucide-react';
 import { User } from '../types';
 
 interface LayoutProps {
@@ -8,9 +11,11 @@ interface LayoutProps {
   user: User | null;
   onLogout: () => void;
   onOpenLogin: () => void;
+  searchTerm: string;      // הוספה: מצב החיפוש
+  setSearchTerm: (term: string) => void; // הוספה: פונקציית עדכון חיפוש
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin }) => {
+const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, searchTerm, setSearchTerm }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
@@ -22,18 +27,23 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin }
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // עדכון רשימת הקישורים (Desktop)
   const navLinks = [
     { label: 'ראשי', path: '/' },
     { label: 'אירועים', path: '/events' },
     { label: 'חוגים', path: '/classes' },
     { label: 'הגרלות', path: '/lottery' },
+    { label: 'פורום נשי', path: '/forum' },  // חדש
+    { label: 'קהילה', path: '/community' }, // חדש
     { label: 'צור קשר', path: '/contact' },
   ];
 
+  // עדכון רשימת הקישורים (Mobile)
   const mobileNavLinks = [
       { label: 'בית', path: '/', icon: <Home size={20} strokeWidth={1.5} /> },
       { label: 'אירועים', path: '/events', icon: <Calendar size={20} strokeWidth={1.5} /> },
-      { label: 'הגרלות', path: '/lottery', icon: <Gift size={20} strokeWidth={1.5} /> },
+      { label: 'פורום', path: '/forum', icon: <MessageSquare size={20} strokeWidth={1.5} /> }, // חדש
+      { label: 'קהילה', path: '/community', icon: <Users size={20} strokeWidth={1.5} /> }, // חדש
       { label: 'פרופיל', path: '/profile', icon: <UserIcon size={20} strokeWidth={1.5} /> },
   ];
 
@@ -62,15 +72,29 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin }
             scrolled ? 'bg-white/80 backdrop-blur-xl border-white/40 h-16 shadow-sm shadow-rose-100/30' : 'bg-white/30 border-transparent h-20'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group z-50">
-            <div className="bg-gradient-to-tr from-rose-400 to-pink-500 p-1.5 rounded-full text-white shadow-lg shadow-rose-200 group-hover:scale-105 transition-transform duration-500">
-              <Heart className="fill-current" size={14} />
+        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 flex-1">
+            <Link to="/" className="flex items-center gap-2 group z-50 shrink-0">
+              <div className="bg-gradient-to-tr from-rose-400 to-pink-500 p-1.5 rounded-full text-white shadow-lg shadow-rose-200 group-hover:scale-105 transition-transform duration-500">
+                <Heart className="fill-current" size={14} />
+              </div>
+              <span className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
+                נשי<span className="text-rose-500">.</span>
+              </span>
+            </Link>
+
+            {/* שורת חיפוש חופשי (Desktop) */}
+            <div className="hidden lg:flex items-center relative group flex-1 max-w-xs">
+                <Search className="absolute right-3 text-slate-400 group-focus-within:text-rose-500 transition-colors" size={16} />
+                <input 
+                    type="text" 
+                    placeholder="חיפוש חופשי באתר..." 
+                    className="w-full pr-10 pl-4 py-2 bg-white/50 border border-white/60 rounded-full outline-none focus:ring-2 focus:ring-rose-100 text-xs transition-all"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
-            <span className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
-              נשי<span className="text-rose-500">.</span>
-            </span>
-          </Link>
+          </div>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1 bg-white/40 backdrop-blur-md px-1.5 py-1 rounded-full border border-white/60 shadow-sm">
@@ -78,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin }
               <Link 
                 key={link.path}
                 to={link.path} 
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all duration-300 ${
+                className={`px-4 py-2 rounded-full text-[11px] lg:text-xs font-bold transition-all duration-300 ${
                     isActive(link.path) 
                     ? 'bg-white text-rose-600 shadow-sm shadow-rose-100' 
                     : 'text-slate-500 hover:text-rose-500 hover:bg-white/50'
@@ -89,7 +113,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin }
             ))}
           </nav>
 
-          {/* User Profile / Login Section (Desktop & Mobile Unified Logic) */}
+          {/* User Profile / Login Section */}
           <div className="flex items-center gap-4">
             {user ? (
               <div className="relative">
@@ -99,12 +123,18 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin }
                 >
                   <div className="text-right hidden md:block pl-2">
                     <p className="text-xs font-bold text-slate-700 group-hover:text-rose-600 transition-colors">{user.name.split(' ')[0]}</p>
-                    <p className="text-[10px] text-rose-400 font-medium">{user.points} נק'</p>
+                    {/* הצגת נקודות מותנית */}
+                    {user.isMemberApproved && (
+                      <p className="text-[10px] text-rose-400 font-medium">{user.points} נק'</p>
+                    )}
                   </div>
-                  {/* Mobile Only Points display inside button */}
-                  <div className="md:hidden flex flex-col items-end pr-2 pl-1">
-                      <span className="text-[10px] font-bold text-rose-500">{user.points} נק'</span>
-                  </div>
+
+                  {/* Mobile Only Points display */}
+                  {user.isMemberApproved && (
+                    <div className="md:hidden flex flex-col items-end pr-2 pl-1">
+                        <span className="text-[10px] font-bold text-rose-500">{user.points} נק'</span>
+                    </div>
+                  )}
 
                   <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-rose-50 overflow-hidden border-2 border-white shadow-sm ring-1 ring-rose-100">
                     <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} alt={user.name} className="w-full h-full object-cover" />
@@ -144,14 +174,13 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin }
         </div>
       </main>
       
-      {/* --- Mobile Bottom Navigation (Refined) --- */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-rose-100/50 pb-safe pt-1 px-6 z-40 flex justify-between items-center h-[65px] shadow-[0_-5px_20px_rgba(251,113,133,0.1)] rounded-t-[20px]">
+      {/* --- Mobile Bottom Navigation --- */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-rose-100/50 pb-safe pt-1 px-4 z-40 flex justify-between items-center h-[65px] shadow-[0_-5px_20px_rgba(251,113,133,0.1)] rounded-t-[20px]">
          {mobileNavLinks.map((link) => {
              const active = isActive(link.path);
              const onClick = (link.path === '/profile' && !user) ? handleMobileProfileClick : undefined;
              const linkProps = onClick ? { as: 'button', onClick } : { to: link.path };
              
-             // Dynamic Component
              const Wrapper = onClick ? 'button' : Link;
 
              return (
@@ -166,7 +195,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin }
                     `}>
                         {link.icon}
                     </div>
-                    <span className={`text-[10px] font-bold transition-all ${active ? 'text-rose-500 opacity-100' : 'text-slate-400 opacity-70'}`}>
+                    <span className={`text-[9px] font-bold transition-all ${active ? 'text-rose-500 opacity-100' : 'text-slate-400 opacity-70'}`}>
                         {link.label}
                     </span>
                 </Wrapper>
@@ -175,14 +204,14 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin }
       </div>
 
       <footer className="hidden md:block bg-white/40 border-t border-rose-100/50 py-10 mt-auto backdrop-blur-sm">
-           <div className="max-w-7xl mx-auto px-6 text-center text-slate-400 text-sm">
-             <div className="flex justify-center items-center gap-2 mb-3 text-rose-300"><Heart size={14} className="fill-current" /></div>
-             <p className="mb-3 font-light text-xs text-slate-500">נשי - פלטפורמה עירונית לקידום תרבות נשים</p>
-             <div className="flex justify-center gap-6 text-[11px] font-bold text-slate-400">
-                <Link to="/contact" className="hover:text-rose-500 transition-colors">צור קשר</Link>
-                <Link to="/events" className="hover:text-rose-500 transition-colors">תנאי שימוש</Link>
-             </div>
-           </div>
+            <div className="max-w-7xl mx-auto px-6 text-center text-slate-400 text-sm">
+              <div className="flex justify-center items-center gap-2 mb-3 text-rose-300"><Heart size={14} className="fill-current" /></div>
+              <p className="mb-3 font-light text-xs text-slate-500">נשי - פלטפורמה עירונית לקידום תרבות נשים</p>
+              <div className="flex justify-center gap-6 text-[11px] font-bold text-slate-400">
+                 <Link to="/contact" className="hover:text-rose-500 transition-colors">צור קשר</Link>
+                 <Link to="/events" className="hover:text-rose-500 transition-colors">תנאי שימוש</Link>
+              </div>
+            </div>
       </footer>
     </div>
   );
