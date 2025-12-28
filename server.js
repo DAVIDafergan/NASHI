@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// 🛑 התיקון: שינוי הנתיב ל-routes.js כדי להתאים לשם הקובץ בפועל
+// שינוי הנתיב ל-routes.js כדי להתאים למבנה שלך
 import apiRoutes from './server/routes.js'; 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -15,12 +15,18 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-// תיקון: שימוש במשתנה הסביבה הנכון של Railway אם קיים
+
+// תיקון: שימוש במשתנה הסביבה הנכון של Railway
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/nashi_db';
 
-// Middleware
+// --- Middleware מעודכן עם הגבלת 16MB ---
 app.use(cors());
-app.use(express.json());
+
+// הגדלת המגבלה לקבלת נתוני JSON (עבור שליחת Base64 למשל)
+app.use(express.json({ limit: '16mb' }));
+
+// הגדלת המגבלה לקבלת נתוני טפסים (Form Data)
+app.use(express.urlencoded({ limit: '16mb', extended: true }));
 
 // Database Connection
 mongoose.connect(MONGO_URI)
@@ -37,7 +43,7 @@ app.get('/health', (req, res) => {
 
 // --- הגשת האתר (Frontend) ---
 
-// שלב 1: הגדרת התיקייה הסטטית (Vite יוצר תיקיית dist בתיקייה הראשית)
+// שלב 1: הגדרת התיקייה הסטטית (Vite יוצר תיקיית dist)
 const distPath = path.join(__dirname, 'dist');
 app.use(express.static(distPath));
 
