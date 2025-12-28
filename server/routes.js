@@ -10,6 +10,8 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_123';
 
 // --- Middlewares ---
+
+// אימות משתמש (JWT)
 const authenticate = (req, res, next) => {
     const token = req.headers['authorization'];
     if (!token) return res.status(401).json({ error: 'Access denied' });
@@ -21,15 +23,23 @@ const authenticate = (req, res, next) => {
     } catch (err) { res.status(400).json({ error: 'Invalid Token' }); }
 };
 
+// בדיקת הרשאת מנהלת
 const isAdmin = (req, res, next) => {
     if (!req.user || !req.user.isAdmin) return res.status(403).json({ error: 'Admin access required' });
     next();
 };
 
-// פונקציית עזר לקבלת הגדרות נקודות
+// פונקציית עזר לקבלת הגדרות נקודות (יוצרת הגדרות ברירת מחדל אם אין)
 async function getPointsConfig() {
     let settings = await Settings.findOne();
-    if (!settings) settings = await new Settings().save();
+    if (!settings) {
+        settings = new Settings({
+            pointsPerRegister: 50,
+            pointsPerEventJoin: 10,
+            pointsPerShare: 5
+        });
+        await settings.save();
+    }
     return settings;
 }
 
@@ -45,8 +55,8 @@ router.post('/register', async (req, res) => {
         
         const user = new User({
             name, email, password: hashedPassword, phone,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-            points: config.pointsPerRegister // נקודות פתיחה על הרשמה
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+            points: config.pointsPerRegister || 50
         });
         
         await user.save();
@@ -74,16 +84,8 @@ router.get('/me', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/users', authenticate, isAdmin, async (req, res) => {
-    try {
-        const users = await User.find().select('-password');
-        res.json(users);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 router.put('/users/:id', authenticate, async (req, res) => {
     try {
-        // רק המשתמש עצמו או מנהל יכולים לעדכן
         if (req.user.id !== req.params.id && !req.user.isAdmin) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
@@ -94,6 +96,7 @@ router.put('/users/:id', authenticate, async (req, res) => {
 
 // ================= MEMBERSHIP (מעגל נשי) =================
 
+// שליחת בקשת הצטרפות
 router.post('/membership/request', authenticate, async (req, res) => {
     try {
         const { age, occupation, address, phone } = req.body;
@@ -106,6 +109,7 @@ router.post('/membership/request', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: "שגיאה בשליחת הבקשה" }); }
 });
 
+// קבלת רשימת ממתינים (משתמשים ופוסטים) למנהלת
 router.get('/admin/approvals', authenticate, isAdmin, async (req, res) => {
     try {
         const pendingUsers = await User.find({ isMemberRequested: true, isMemberApproved: false });
@@ -114,6 +118,7 @@ router.get('/admin/approvals', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// אישור חברה במעגל
 router.put('/admin/approve-member/:id', authenticate, isAdmin, async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.params.id, { isMemberApproved: true });
@@ -195,7 +200,6 @@ router.get('/personality', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// עדכון ידני ע"י מנהלת
 router.post('/personality', authenticate, isAdmin, async (req, res) => {
     try {
         let p = await Personality.findOne();
@@ -206,7 +210,6 @@ router.post('/personality', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// הפקת לינק לשאלון
 router.post('/personality/generate-link', authenticate, isAdmin, async (req, res) => {
     try {
         const token = Math.random().toString(36).substring(2, 15);
@@ -215,7 +218,6 @@ router.post('/personality/generate-link', authenticate, isAdmin, async (req, res
         p.externalToken = token;
         p.isActive = false; 
         await p.save();
-        // בניית הלינק - וודאי שהכתובת מתאימה לדומיין שלך
         const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
         res.json({ link: `${baseUrl}/#/fill-interview/${token}` });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -302,24 +304,12 @@ router.post('/classes', authenticate, isAdmin, async (req, res) => {
     try { res.json(await new Class(req.body).save()); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/classes/:id', authenticate, isAdmin, async (req, res) => { 
-    try { res.json(await Class.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-router.delete('/classes/:id', authenticate, isAdmin, async (req, res) => { 
-    try { await Class.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 router.get('/lotteries', async (req, res) => { 
     try { res.json(await Lottery.find()); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/lotteries', authenticate, isAdmin, async (req, res) => { 
     try { res.json(await new Lottery(req.body).save()); } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-router.delete('/lotteries/:id', authenticate, isAdmin, async (req, res) => { 
-    try { await Lottery.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ================= ADMIN SETTINGS & GIFTS =================
@@ -343,16 +333,6 @@ router.post('/admin/users/:id/points', authenticate, isAdmin, async (req, res) =
         const { points } = req.body;
         const user = await User.findByIdAndUpdate(req.params.id, { $inc: { points: points } }, { new: true });
         res.json({ success: true, newPoints: user.points });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-router.post('/admin/gifts', authenticate, isAdmin, async (req, res) => {
-    try {
-        const { code, points, maxUses } = req.body;
-        const finalCode = code || Math.random().toString(36).substring(7).toUpperCase();
-        const gift = new GiftCode({ code: finalCode, points: Number(points), maxUses: maxUses || 1000 });
-        await gift.save();
-        res.json({ success: true, link: `${req.protocol}://${req.get('host')}/gift/${finalCode}`, code: finalCode });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
