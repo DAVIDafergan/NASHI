@@ -37,6 +37,11 @@ export const api = {
         return res.json();
     },
 
+    async getUsers(): Promise<User[]> {
+        const res = await fetch(`${API_URL}/users`, { headers: getHeaders() });
+        return res.json();
+    },
+
     async updateUser(user: User): Promise<User> {
         const res = await fetch(`${API_URL}/users/${user.id || user._id}`, {
             method: 'PUT',
@@ -46,7 +51,14 @@ export const api = {
         return res.json();
     },
 
-    // ================= MEMBERSHIP (מעגל נשי) =================
+    async deleteUser(userId: string): Promise<void> {
+        await fetch(`${API_URL}/users/${userId}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+    },
+
+    // ================= MEMBERSHIP (מעגל נשי) & APPROVALS =================
     async requestMembership(data: { age: number, occupation: string, address: string, phone: string }) {
         const res = await fetch(`${API_URL}/membership/request`, {
             method: 'POST',
@@ -219,6 +231,15 @@ export const api = {
     // ================= PERSONALITY (אשת השבוע) =================
     async getPersonality() {
         const res = await fetch(`${API_URL}/personality`);
+        return res.json();
+    },
+
+    async updatePersonality(data: Partial<PersonalityProfile>) {
+        const res = await fetch(`${API_URL}/personality`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
         return res.json();
     },
 
