@@ -27,7 +27,6 @@ const isAdmin = (req, res, next) => {
     next();
 };
 
-// פונקציית עזר לקבלת הגדרות נקודות
 async function getPointsConfig() {
     let settings = await Settings.findOne();
     if (!settings) {
@@ -43,7 +42,6 @@ async function getPointsConfig() {
 
 // ================= 1. אישורים (APPROVALS) =================
 
-// קבלת רשימת ממתינים (משתמשים ופוסטים) למנהלת
 router.get('/admin/approvals', authenticate, isAdmin, async (req, res) => {
     try {
         const pendingUsers = await User.find({ isMemberRequested: true, isMemberApproved: false });
@@ -52,7 +50,6 @@ router.get('/admin/approvals', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// אישור חברה במעגל
 router.put('/admin/approve-member/:id', authenticate, isAdmin, async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.params.id, { isMemberApproved: true });
@@ -60,7 +57,6 @@ router.put('/admin/approve-member/:id', authenticate, isAdmin, async (req, res) 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// אישור פוסט בפורום
 router.put('/admin/approve-post/:id', authenticate, isAdmin, async (req, res) => {
     try {
         await ForumPost.findByIdAndUpdate(req.params.id, { status: 'approved' });
@@ -69,6 +65,13 @@ router.put('/admin/approve-post/:id', authenticate, isAdmin, async (req, res) =>
 });
 
 // ================= 2. משתמשים (USERS) =================
+
+router.get('/users', authenticate, isAdmin, async (req, res) => {
+    try {
+        const users = await User.find().select('-password');
+        res.json(users);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 router.post('/register', async (req, res) => {
     try {
@@ -79,30 +82,11 @@ router.post('/register', async (req, res) => {
         const user = new User({
             name, email, password: hashedPassword, phone,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
-            points: config.pointsPerRegister
+            points: config.pointsPerRegister || 50
         });
         await user.save();
         const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
         res.json({ token, user: { ...user.toObject(), id: user._id } });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-router.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(400).json({ error: 'Invalid credentials' });
-        }
-        const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
-        res.json({ token, user: { ...user.toObject(), id: user._id } });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-router.get('/users', authenticate, isAdmin, async (req, res) => {
-    try {
-        const users = await User.find().select('-password');
-        res.json(users);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -235,7 +219,6 @@ router.put('/admin/settings', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// מתן נקודות ידני
 router.post('/admin/users/:id/points', authenticate, isAdmin, async (req, res) => {
     try {
         const user = await User.findByIdAndUpdate(req.params.id, { $inc: { points: req.body.points } }, { new: true });
@@ -243,7 +226,6 @@ router.post('/admin/users/:id/points', authenticate, isAdmin, async (req, res) =
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// הפקת לינק הטבה (Gift Code)
 router.post('/admin/gifts', authenticate, isAdmin, async (req, res) => {
     try {
         const { points, maxUses } = req.body;
