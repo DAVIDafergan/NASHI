@@ -90,6 +90,21 @@ router.post('/register', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// נתיב ההתחברות החדש שהיה חסר:
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ error: 'משתמש לא נמצא' });
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ error: 'סיסמה שגויה' });
+
+        const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token, user: { ...user.toObject(), id: user._id } });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.put('/users/:id', authenticate, async (req, res) => {
     try {
         if (req.user.id !== req.params.id && !req.user.isAdmin) {
