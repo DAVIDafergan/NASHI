@@ -10,7 +10,7 @@ import AdminPage from './pages/AdminPage';
 import LotteryPage from './pages/LotteryPage';
 import ForumPage from './pages/ForumPage'; 
 import CommunityPage from './pages/CommunityPage'; 
-import FillInterviewPage from './pages/FillInterviewPage';
+import InterviewPage from './pages/InterviewPage'; // עדכון שם הקובץ ל-InterviewPage
 import { GeminiAssistant } from './components/GeminiAssistant';
 import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, CommunicationPreference } from './types';
 import { X, AlertCircle, Loader2 } from 'lucide-react';
@@ -251,7 +251,9 @@ const App: React.FC = () => {
 
             <Route path="/forum" element={<ForumPage user={user} searchTerm={globalSearchTerm} />} />
             <Route path="/community" element={<CommunityPage searchTerm={globalSearchTerm} />} />
-            <Route path="/fill-interview/:token" element={<FillInterviewPage />} />
+            
+            {/* נתיב לראיון אשת השבוע */}
+            <Route path="/interview/:token" element={<InterviewPage />} />
 
             <Route path="/profile" element={user ? <ProfilePage user={user} events={events} onUpdateUser={handleUpdateUser} /> : <Navigate to="/" replace />} />
             <Route path="/contact" element={<ContactPage />} />
@@ -286,8 +288,8 @@ const App: React.FC = () => {
                  
                  <div className="p-8">
                     <div className="text-center mb-6">
-                       <h2 className="text-3xl font-black text-slate-800 mb-2">{authMode === 'login' ? 'ברוכה הבאה!' : 'הצטרפות לקהילה'}</h2>
-                       <p className="text-slate-500 text-sm font-medium">המקום שלך לצמוח, להשפיע ולהנות.</p>
+                        <h2 className="text-3xl font-black text-slate-800 mb-2">{authMode === 'login' ? 'ברוכה הבאה!' : 'הצטרפות לקהילה'}</h2>
+                        <p className="text-slate-500 text-sm font-medium">המקום שלך לצמוח, להשפיע ולהנות.</p>
                     </div>
 
                     {loginError && (

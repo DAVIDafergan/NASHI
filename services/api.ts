@@ -252,6 +252,7 @@ export const api = {
         return res.json();
     },
 
+    // שליחת שאלון חדש (ריק) לצורך יצירת לינק
     async updatePersonality(data: Partial<PersonalityProfile>) {
         validateImageSize(data);
         const res = await fetch(`${API_URL}/personality`, {
@@ -281,6 +282,21 @@ export const api = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    // קבלת ראיונות שהושלמו וממתינים לאישור המנהלת
+    async getPendingInterviews(): Promise<PersonalityProfile[]> {
+        const res = await fetch(`${API_URL}/admin/personality/pending`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    // אישור סופי של ראיון והצגתו באתר
+    async approvePersonality(interviewId: string) {
+        const res = await fetch(`${API_URL}/admin/personality/approve/${interviewId}`, {
+            method: 'POST',
+            headers: getHeaders()
         });
         return res.json();
     },

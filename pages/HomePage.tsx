@@ -34,10 +34,11 @@ const categories = [
 const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin: () => void, onUpdateUser?: (u: any) => void }) => {
   const navigate = useNavigate();
   
-  // --- State (ללא שינוי) ---
+  // --- State (ללא שינוי + הוספת communityItems) ---
   const [events, setEvents] = useState<EventItem[]>([]);
   const [lotteries, setLotteries] = useState<LotteryItem[]>([]);
   const [personality, setPersonality] = useState<any>(null);
+  const [communityItems, setCommunityItems] = useState<any[]>([]); // הוספת סטייט לקהילה
   const [currentSlide, setCurrentSlide] = useState(0);
   const [upcomingLottery, setUpcomingLottery] = useState<LotteryItem | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
@@ -45,11 +46,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [showFullInterview, setShowFullInterview] = useState(false);
   const [membershipForm, setMembershipForm] = useState({ age: '', occupation: '', address: '', phone: user?.phone || '' });
 
-  // --- Effects (Fetching Data & Logic) - ללא שינוי ---
+  // --- Effects (Fetching Data & Logic) ---
   useEffect(() => {
     fetch(`${API_URL}/events`).then(res => res.json()).then(data => setEvents(data.map((e: any) => ({...e, id: e._id || e.id})))).catch(console.error);
     fetch(`${API_URL}/lotteries`).then(res => res.json()).then(data => setLotteries(data.map((l: any) => ({...l, id: l._id || l.id})))).catch(console.error);
     api.getPersonality().then(setPersonality).catch(console.error);
+    api.getCommunityItems().then(setCommunityItems).catch(console.error); // משיכת פריטי הקהילה
   }, []);
 
   const heroEvents = events.filter(e => e.isHero);
@@ -96,30 +98,20 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   };
 
   return (
-    // המיכל הראשי - כאן מוגדר הרקע החדש לכל העמוד
     <div className="min-h-screen pb-24 relative overflow-x-hidden font-sans">
       
-      {/* --- שכבות רקע "נתזי צבע חדים" לכל העמוד --- */}
       <div className="fixed inset-0 z-0">
-          {/* שכבת הבסיס - תמונת הרקע שלך פרוסה על הכל */}
           <div className="absolute inset-0 bg-cover bg-center bg-fixed"
                style={{ backgroundImage: "url('/images/header-bg.jpg')" }}>
           </div>
-          
-          {/* שכבת חידוד צבעים - הופכת את הצבעים לרוויים וחדים מאוד (Saturated & Vivid) */}
           <div className="absolute inset-0 bg-gradient-to-tr from-rose-500/30 via-transparent to-yellow-500/30 mix-blend-overlay saturate-[1.5] pointer-events-none"></div>
-          
-          {/* שכבת טקסטורה עדינה - מוסיפה תחושת "רטוב" */}
           <div className="absolute inset-0 bg-black/5 mix-blend-soft-light pointer-events-none"></div>
       </div>
 
-      {/* --- תוכן הדף (נמצא מעל הרקע בעזרת z-10) --- */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-20 relative z-10 space-y-8">
         
-        {/* --- מדד נקודות והצטרפות למעגל --- */}
         <div className="mx-2">
           {user?.isMemberApproved ? (
-             // כרטיס ניקוד (למאושרות) - רקע לבן חצי שקוף כדי לבלוט על הרקע הצבעוני
              <div className="bg-white/90 backdrop-blur-xl p-5 md:p-7 rounded-[3rem] border-2 border-yellow-400 flex items-center justify-between shadow-2xl animate-bounce-in">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-yellow-100 rounded-2xl shadow-inner"><Star className="text-yellow-500 fill-current" size={32} /></div>
@@ -131,7 +123,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <Link to="/lottery" className="bg-slate-900 text-white px-8 py-4 rounded-2xl text-xs font-black hover:bg-rose-600 transition-all shadow-lg active:scale-95">מימוש הטבות</Link>
              </div>
           ) : (
-            // באנר הצטרפות (ללא מאושרות)
             <div className="bg-slate-900/95 backdrop-blur-xl p-8 md:p-10 rounded-[4rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden border border-white/10">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/20 rounded-full blur-[100px]"></div>
                 <div className="text-center md:text-right space-y-3 relative z-10">
@@ -150,7 +141,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           )}
         </div>
 
-        {/* --- Upcoming Lottery --- */}
         {upcomingLottery && user?.isMemberApproved && (
             <Link to="/lottery" className="block animate-fade-in-up">
                 <div className="bg-gradient-to-r from-purple-800/90 to-fuchsia-600/90 backdrop-blur-md rounded-[3rem] p-6 md:p-8 shadow-2xl border border-white/20 flex items-center justify-between overflow-hidden relative group">
@@ -173,7 +163,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </Link>
         )}
 
-        {/* --- Hero Slider --- */}
         <section className="relative h-[350px] md:h-[500px] w-full overflow-hidden rounded-[4rem] shadow-2xl border-4 border-white/50">
             {displayEvents.map((event, index) => (
             <div key={event.id} className={`absolute inset-0 transition-all duration-1000 ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`}>
@@ -191,7 +180,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             ))}
         </section>
 
-        {/* --- Categories --- */}
         <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar px-2">
             {categories.map((cat, idx) => (
               <button key={idx} onClick={() => navigate('/events', { state: { category: cat.name } })} 
@@ -203,7 +191,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         <div className="grid lg:grid-cols-3 gap-10">
             <div className="lg:col-span-2 space-y-10">
-                {personality && personality.isActive && (
+                {personality && personality.name && (
                     <section className="bg-white/90 backdrop-blur-md p-8 md:p-12 rounded-[4rem] shadow-2xl border border-white/50 relative group overflow-hidden">
                         <div className="absolute top-0 left-0 w-48 h-48 bg-rose-500/5 rounded-full -ml-24 -mt-24 transition-transform group-hover:scale-150 duration-700"></div>
                         <div className="flex flex-col md:flex-row items-center gap-10">
@@ -245,6 +233,27 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                                 </div>
                             </div>
                         )}
+                    </section>
+                )}
+
+                {/* --- COMMUNITY ITEMS SECTION (תיקון הקהילה) --- */}
+                {communityItems && communityItems.length > 0 && (
+                    <section className="space-y-6 animate-fade-in">
+                        <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 px-4">
+                            <HeartHandshake className="text-emerald-500" size={28}/> מה קורה בקהילה
+                        </h3>
+                        <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar px-2">
+                            {communityItems.map((item) => (
+                                <div key={item._id || item.id} className="bg-white/90 backdrop-blur-md p-5 rounded-[2.5rem] shadow-lg border border-white/50 flex items-center gap-4 shrink-0 w-72 group hover:border-emerald-200 transition-all hover:translate-y-[-4px]">
+                                    <img src={item.image} className="w-16 h-16 rounded-2xl object-cover shrink-0 shadow-inner" />
+                                    <div className="flex-1 overflow-hidden">
+                                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{item.category}</span>
+                                        <h4 className="font-black text-slate-800 text-sm truncate">{item.title}</h4>
+                                        <p className="text-slate-500 text-[10px] font-bold truncate">{item.location}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </section>
                 )}
 
@@ -299,7 +308,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         </div>
       </div>
 
-      {/* מודאל הצטרפות */}
       {showMembershipModal && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
               <div className="bg-white/95 backdrop-blur-xl rounded-[4rem] w-full max-w-xl p-10 md:p-14 relative shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-y-auto max-h-[95vh] no-scrollbar border border-white/20">

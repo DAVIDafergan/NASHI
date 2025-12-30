@@ -258,19 +258,19 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב קהילה */}
+        {/* טאב קהילה - מתוקן עם שדות חסרים ואיפוס טופס */}
         {activeTab === 'community' && (
           <div className="space-y-6 animate-fade-in">
             <button onClick={() => setIsCommunityModalOpen(true)} className="w-full md:w-auto bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2"><Plus/> הוספה לקהילה</button>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {communityItems.map(item => (
-                <div key={item._id} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex items-center gap-4 animate-fade-in-up">
+                <div key={item._id || item.id} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex items-center gap-4 animate-fade-in-up">
                   <img src={item.image} className="w-16 h-16 rounded-xl object-cover shrink-0" />
                   <div className="flex-1 overflow-hidden">
                     <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter">{item.category}</span>
                     <h4 className="font-bold text-sm truncate">{item.title}</h4>
                   </div>
-                  <button onClick={() => handleDelete(item._id, 'community', item.title)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
+                  <button onClick={() => handleDelete(item._id || item.id, 'community', item.title)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
                 </div>
               ))}
             </div>
@@ -373,10 +373,24 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </form>
       </Modal>
 
+      {/* מודאל קהילה מתוקן עם שדות טלפון, מיקום ואיפוס טופס */}
       <Modal isOpen={isCommunityModalOpen} onClose={()=>setIsCommunityModalOpen(false)} title="הוספה לקהילה">
-         <form onSubmit={async (e)=>{e.preventDefault(); await api.createCommunityItem(communityForm); setIsCommunityModalOpen(false); loadTabData();}} className="space-y-4">
-            <select className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={communityForm.category} onChange={e=>setCommunityForm({...communityForm, category:e.target.value})}><option>גמ"ח</option><option>שיעור תורה</option><option>עסק מקומי</option></select>
-            <input placeholder="שם הגוף/עסק" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={communityForm.title} onChange={e=>setCommunityForm({...communityForm, title:e.target.value})} />
+         <form onSubmit={async (e)=>{
+           e.preventDefault(); 
+           await api.createCommunityItem(communityForm); 
+           // איפוס הטופס לאחר השליחה
+           setCommunityForm({ category: 'גמ"ח', title: '', phone: '', location: '', image: '', description: '' });
+           setIsCommunityModalOpen(false); 
+           loadTabData();
+         }} className="space-y-4">
+            <select className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={communityForm.category} onChange={e=>setCommunityForm({...communityForm, category:e.target.value})}>
+              <option value='גמ"ח'>גמ"ח</option>
+              <option value="שיעור תורה">שיעור תורה</option>
+              <option value="עסק מקומי">עסק מקומי</option>
+            </select>
+            <input required placeholder="שם הגוף/עסק" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={communityForm.title} onChange={e=>setCommunityForm({...communityForm, title:e.target.value})} />
+            <input placeholder="טלפון" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={communityForm.phone} onChange={e=>setCommunityForm({...communityForm, phone:e.target.value})} />
+            <input placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={communityForm.location} onChange={e=>setCommunityForm({...communityForm, location:e.target.value})} />
             <div className="relative border-2 border-dashed p-6 text-center rounded-2xl">
                <input type="file" onChange={e => handleFileUpload(e, setCommunityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
                {communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto rounded-lg" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה (עד 50KB)</p>}
