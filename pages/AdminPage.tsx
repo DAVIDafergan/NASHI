@@ -4,7 +4,7 @@ import {
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, GraduationCap, Copy
 } from 'lucide-react';
-import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile } from '../types';
+import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
 
 // קומפוננטת מודאל פנימית לשימוש בדף עם כל האפקטים המקוריים
@@ -17,7 +17,7 @@ const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose:
           <h3 className="text-xl font-black text-slate-800">{title}</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} /></button>
         </div>
-        <div className="p-6 overflow-y-auto no-scrollbar">{children}</div>
+        <div className="p-6 overflow-y-auto no-scrollbar text-right" dir="rtl">{children}</div>
       </div>
     </div>
   );
@@ -33,7 +33,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [apiEvents, setApiEvents] = useState<EventItem[]>([]);
   const [apiClasses, setApiClasses] = useState<ClassItem[]>([]);
   const [apiLotteries, setApiLotteries] = useState<LotteryItem[]>([]);
-  const [communityItems, setCommunityItems] = useState<any[]>([]);
+  const [communityItems, setCommunityItems] = useState<CommunityItem[]>([]);
   const [pendingData, setPendingData] = useState<{pendingUsers: User[], pendingPosts: any[]}>({pendingUsers: [], pendingPosts: []});
   
   // Form States
@@ -47,9 +47,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [lotteryForm, setLotteryForm] = useState<Partial<LotteryItem>>({ title: '', prize: '', drawDate: '', image: '', minPointsToEnter: 0 });
 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
-  const [communityForm, setCommunityForm] = useState({ category: 'גמ"ח', title: '', phone: '', location: '', image: '', description: '' });
+  const [communityForm, setCommunityForm] = useState<Partial<CommunityItem>>({ category: 'גמ"חים', title: '', phone: '', location: '', image: '', description: '' });
 
   const [personalityForm, setPersonalityForm] = useState<PersonalityProfile>({ id: '1', name: '', role: '', image: '', isActive: true, questions: [] });
+  const [pendingInterviews, setPendingInterviews] = useState<PersonalityProfile[]>([]); // סטייט לראיונות ממתינים
   const [generatedLink, setGeneratedLink] = useState(''); // סטייט ללינק שנוצר כדי שיהיה אפשר להעתיק
   
   const [pointsSettings, setPointsSettings] = useState({ pointsPerRegister: 50, pointsPerEventJoin: 10, pointsPerShare: 5 });
@@ -68,7 +69,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         else if (activeTab === 'events') setApiEvents(await api.getEvents());
         else if (activeTab === 'classes') setApiClasses(await api.getClasses());
         else if (activeTab === 'lotteries') setApiLotteries(await api.getLotteries());
-        else if (activeTab === 'personality') setPersonalityForm(await api.getPersonality());
+        else if (activeTab === 'personality') {
+            setPersonalityForm(await api.getPersonality());
+            setPendingInterviews(await api.getPendingInterviews()); // טעינת ראיונות שמילאו נשים
+        }
         else if (activeTab === 'settings') setPointsSettings(await api.getSettings());
     } catch (err) { console.error(err); }
     setLoading(false);
@@ -157,26 +161,31 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {activeTab === 'approvals' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
             <div className="bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
-               <h3 className="font-black text-xl flex items-center gap-2"><HeartHandshake className="text-rose-500"/> ממתינות למעגל</h3>
+               <h3 className="font-black text-xl flex items-center gap-2 text-right"><HeartHandshake className="text-rose-500"/> ממתינות למעגל</h3>
                <div className="space-y-4">
                  {pendingData.pendingUsers.map(u => (
-                   <div key={u._id || u.id} className="p-4 bg-slate-50 rounded-2xl flex justify-between items-center animate-fade-in-up">
-                     <div className="overflow-hidden"><p className="font-black truncate">{u.name}</p><p className="text-[10px] text-slate-400 truncate">{u.occupation} | {u.phone}</p></div>
-                     <button onClick={() => api.approveMember(u._id || u.id).then(loadTabData)} className="bg-green-500 text-white p-2 rounded-xl shrink-0"><CheckCircle size={20}/></button>
+                   <div key={u._id || u.id} className="p-4 bg-slate-50 rounded-2xl flex justify-between items-center animate-fade-in-up shadow-sm">
+                     <div className="overflow-hidden text-right"><p className="font-black truncate">{u.name}</p><p className="text-[10px] text-slate-400 truncate">{u.occupation} | {u.phone}</p></div>
+                     <button onClick={async () => {
+                        await api.approveMember(u._id || u.id);
+                        alert(`אישרת את ${u.name} למעגל! כעת יופיעו לה הנקודות.`);
+                        loadTabData();
+                     }} className="bg-green-500 text-white p-2 rounded-xl shrink-0"><CheckCircle size={20}/></button>
                    </div>
                  ))}
                  {pendingData.pendingUsers.length === 0 && <p className="text-center text-slate-400 italic">אין בקשות חדשות</p>}
                </div>
             </div>
             <div className="bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
-               <h3 className="font-black text-xl flex items-center gap-2"><MessageSquare className="text-blue-500"/> פוסטים לאישור</h3>
+               <h3 className="font-black text-xl flex items-center gap-2 text-right"><MessageSquare className="text-blue-500"/> פוסטים לאישור</h3>
                <div className="space-y-4">
                  {pendingData.pendingPosts.map(p => (
                    <div key={p._id} className="p-4 bg-slate-50 rounded-2xl space-y-2 animate-fade-in-up">
                      <div className="flex justify-between items-center gap-2"><p className="font-black text-sm truncate">{p.title}</p><button onClick={() => api.approvePost(p._id).then(loadTabData)} className="text-green-600 shrink-0"><CheckCircle/></button></div>
-                     <p className="text-xs text-slate-500 line-clamp-2">{p.content}</p>
+                     <p className="text-xs text-slate-500 line-clamp-2 text-right">{p.content}</p>
                    </div>
                  ))}
+                 {pendingData.pendingPosts.length === 0 && <p className="text-center text-slate-400 italic">אין פוסטים שמחכים</p>}
                </div>
             </div>
           </div>
@@ -206,73 +215,19 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב אירועים */}
-        {activeTab === 'events' && (
-          <div className="space-y-6 animate-fade-in">
-            <button onClick={() => setIsEventModalOpen(true)} className="w-full md:w-auto bg-rose-600 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> אירוע חדש</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {apiEvents.map(ev => (
-                <div key={ev._id || ev.id} className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100 animate-fade-in-up">
-                  {ev.isHero && <Sparkles className="text-yellow-400 mb-2 animate-pulse" size={16}/>}
-                  <img src={ev.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-slate-800">{ev.title}</h4>
-                  <div className="flex justify-between items-center mt-4">
-                    <span className="text-[10px] text-slate-400">{ev.location}</span>
-                    <button className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDelete(ev._id || ev.id, 'event', ev.title)}><Trash2 size={18}/></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* טאב חוגים */}
-        {activeTab === 'classes' && (
-          <div className="space-y-6 animate-fade-in">
-            <button onClick={() => setIsClassModalOpen(true)} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2"><Plus/> חוג חדש</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {apiClasses.map(c => (
-                <div key={c._id || c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up">
-                  <img src={c.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-lg">{c.title}</h4>
-                  <p className="text-xs text-slate-400">{c.instructor} | {c.gender}</p>
-                  <button onClick={() => handleDelete(c._id || c.id, 'class', c.title)} className="text-red-500 mt-4 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* טאב הגרלות */}
-        {activeTab === 'lotteries' && (
-          <div className="space-y-6 animate-fade-in">
-            <button onClick={() => setIsLotteryModalOpen(true)} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2"><Plus/> הגרלה חדשה</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {apiLotteries.map(l => (
-                <div key={l._id || l.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up">
-                  <img src={l.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-lg">{l.title}</h4>
-                  <p className="text-xs text-slate-400">{new Date(l.drawDate).toLocaleString()}</p>
-                  <button onClick={() => handleDelete(l._id || l.id, 'lottery', l.title)} className="text-red-500 mt-4 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* טאב קהילה - מתוקן עם מירכאות תקינות ל-Build */}
+        {/* טאב קהילה - מתוקן עם קטגוריות תואמות */}
         {activeTab === 'community' && (
           <div className="space-y-6 animate-fade-in">
             <button onClick={() => setIsCommunityModalOpen(true)} className="w-full md:w-auto bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2"><Plus/> הוספה לקהילה</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-right">
               {communityItems.map(item => (
-                <div key={item._id || item.id} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex items-center gap-4 animate-fade-in-up shadow-sm">
+                <div key={item._id} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex items-center gap-4 animate-fade-in-up shadow-sm">
                   <img src={item.image} className="w-16 h-16 rounded-xl object-cover shrink-0 bg-slate-50" />
                   <div className="flex-1 overflow-hidden">
                     <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter">{item.category}</span>
                     <h4 className="font-bold text-sm truncate">{item.title}</h4>
                   </div>
-                  <button onClick={() => handleDelete(item._id || item.id, 'community', item.title)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
+                  <button onClick={() => handleDelete(item._id, 'community', item.title)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
                 </div>
               ))}
             </div>
@@ -281,75 +236,102 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
         {/* טאב אשת השבוע - תיקון הלינק, המחיקה והעתקה */}
         {activeTab === 'personality' && (
-          <div className="max-w-3xl mx-auto bg-white p-6 md:p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8 animate-fade-in">
-            <div className="flex justify-between items-center">
-              <h3 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3"><Sparkles className="text-rose-500"/> ניהול אשת השבוע</h3>
-              {personalityForm.name && (
-                <button 
-                  onClick={async () => {
-                    if(window.confirm("למחוק את אשת השבוע הנוכחית מהאתר?")) {
-                      await api.updatePersonality({ name: '', role: '', image: '', questions: [], isActive: false });
-                      alert("נמחק!");
-                      loadTabData();
-                    }
-                  }}
-                  className="text-red-500 font-bold text-xs hover:underline"
-                >
-                  מחיקה
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input placeholder="שם מלא" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={personalityForm.name} onChange={e=>setPersonalityForm({...personalityForm, name:e.target.value})} />
-              <input placeholder="תפקיד" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={personalityForm.role} onChange={e=>setPersonalityForm({...personalityForm, role:e.target.value})} />
-            </div>
-            <div className="relative border-2 border-dashed border-slate-200 p-8 text-center rounded-[2.5rem]">
-               <input type="file" onChange={e => handleFileUpload(e, setPersonalityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-               {personalityForm.image ? <img src={personalityForm.image} className="h-40 mx-auto rounded-3xl shadow-lg animate-fade-in" /> : <p className="font-bold text-slate-400">העלאת תמונה (עד 50KB)</p>}
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center"><h4 className="font-black">שאלון דינמי</h4><button onClick={addQuestion} className="text-rose-500 font-bold">+ הוספת שאלה</button></div>
-              <div className="space-y-3">
-                {personalityForm.questions?.map((q, i) => (
-                  <div key={i} className="p-4 bg-slate-50 rounded-2xl space-y-2 relative animate-fade-in-up">
-                    <button onClick={()=>{const qs=[...personalityForm.questions!]; qs.splice(i,1); setPersonalityForm({...personalityForm, questions:qs});}} className="absolute -top-2 -left-2 text-red-500 bg-white rounded-full p-1 shadow-sm"><X size={16}/></button>
-                    <input placeholder="שאלה" className="w-full p-2 bg-white rounded-xl text-sm font-bold outline-none text-right" value={q.question} onChange={e=>updateQuestion(i,'question',e.target.value)} />
-                    <textarea placeholder="תשובה" className="w-full p-2 bg-white rounded-xl text-sm resize-none outline-none text-right" value={q.answer} onChange={e=>updateQuestion(i,'answer',e.target.value)} />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-4">
-              <button onClick={async () => { await api.updatePersonality({...personalityForm, isActive: true}); alert('עודכן!'); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all">עדכון ישיר באתר</button>
-              
-              <div className="space-y-2">
-                <button 
-                  onClick={async () => { 
-                    const res = await api.generateInterviewLink(); 
-                    const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
-                    setGeneratedLink(fullLink);
-                  }} 
-                  className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-md"
-                >
-                  <LinkIcon size={18}/> הפקת לינק לשליחה לאישה
-                </button>
-
-                {generatedLink && (
-                  <div className="p-4 bg-blue-50 rounded-2xl border-2 border-blue-100 flex items-center gap-3 animate-fade-in-up">
-                    <input readOnly className="flex-1 bg-transparent font-mono text-[10px] text-blue-800 outline-none overflow-hidden" value={generatedLink} />
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(generatedLink);
-                        alert("הלינק הועתק בהצלחה!");
-                      }}
-                      className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                      <Copy size={16} />
-                    </button>
-                  </div>
+          <div className="max-w-4xl mx-auto space-y-12 animate-fade-in text-right">
+            <div className="bg-white p-8 md:p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8">
+              <div className="flex justify-between items-center border-b pb-4">
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3"><Sparkles className="text-rose-500"/> ניהול אשת השבוע</h3>
+                {personalityForm.name && (
+                  <button 
+                    onClick={async () => {
+                      if(window.confirm("למחוק את אשת השבוע הנוכחית מהאתר?")) {
+                        await api.updatePersonality({ name: '', role: '', image: '', questions: [], isActive: false });
+                        alert("נמחק!");
+                        loadTabData();
+                      }
+                    }}
+                    className="text-red-500 font-bold text-xs hover:underline"
+                  >
+                    מחיקת אשת שבוע נוכחית
+                  </button>
                 )}
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input placeholder="שם מלא" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={personalityForm.name} onChange={e=>setPersonalityForm({...personalityForm, name:e.target.value})} />
+                <input placeholder="תפקיד" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={personalityForm.role} onChange={e=>setPersonalityForm({...personalityForm, role:e.target.value})} />
+              </div>
+              <div className="relative border-2 border-dashed border-slate-200 p-8 text-center rounded-[2.5rem]">
+                 <input type="file" onChange={e => handleFileUpload(e, setPersonalityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                 {personalityForm.image ? <img src={personalityForm.image} className="h-40 mx-auto rounded-3xl shadow-lg animate-fade-in" /> : <p className="font-bold text-slate-400">העלאת תמונת פרופיל (עד 50KB)</p>}
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center"><h4 className="font-black">הגדרת שאלון (ללא תשובות)</h4><button onClick={addQuestion} className="text-rose-500 font-bold">+ הוספת שאלה</button></div>
+                <div className="space-y-3">
+                  {personalityForm.questions?.map((q, i) => (
+                    <div key={i} className="p-4 bg-slate-50 rounded-2xl space-y-2 relative animate-fade-in-up">
+                      <button onClick={()=>{const qs=[...personalityForm.questions!]; qs.splice(i,1); setPersonalityForm({...personalityForm, questions:qs});}} className="absolute -top-2 -left-2 text-red-500 bg-white rounded-full p-1 shadow-sm"><X size={16}/></button>
+                      <input placeholder="שאלה" className="w-full p-2 bg-white rounded-xl text-sm font-bold outline-none text-right" value={q.question} onChange={e=>updateQuestion(i,'question',e.target.value)} />
+                      <textarea placeholder="תשובה (השאירי ריק כדי שהאישה תמלא)" className="w-full p-2 bg-white rounded-xl text-sm resize-none outline-none text-right" value={q.answer} onChange={e=>updateQuestion(i,'answer',e.target.value)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <button onClick={async () => { await api.updatePersonality({...personalityForm, isActive: true}); alert('עודכן!'); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all text-center">עדכון ישיר באתר</button>
+                
+                <div className="space-y-3 pt-6 border-t">
+                  <button 
+                    onClick={async () => { 
+                      const res = await api.generateInterviewLink(); 
+                      const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
+                      setGeneratedLink(fullLink);
+                    }} 
+                    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-md text-center"
+                  >
+                    <LinkIcon size={18}/> הפקת לינק לשליחה לאישה
+                  </button>
+
+                  {generatedLink && (
+                    <div className="p-4 bg-blue-50 rounded-2xl border-2 border-blue-100 flex items-center gap-3 animate-fade-in-up">
+                      <input readOnly className="flex-1 bg-transparent font-mono text-[10px] text-blue-800 text-left outline-none overflow-hidden" value={generatedLink} />
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedLink);
+                          alert("הלינק הועתק בהצלחה!");
+                        }}
+                        className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        <Copy size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* ראיונות שהושלמו וממתינים לאישור */}
+            {pendingInterviews.length > 0 && (
+               <div className="space-y-4">
+                  <h4 className="font-black text-xl text-slate-700 pr-4">ראיונות שהושלמו וממתינים לאישורך:</h4>
+                  {pendingInterviews.map((interview) => (
+                    <div key={interview._id || interview.id} className="bg-white p-6 rounded-[2.5rem] shadow-md border-r-8 border-emerald-500 flex justify-between items-center animate-fade-in-up">
+                       <div className="text-right">
+                          <p className="font-black text-xl text-slate-800">{interview.name}</p>
+                          <p className="text-sm text-slate-500">{interview.role}</p>
+                       </div>
+                       <button 
+                        onClick={async () => {
+                          await api.approvePersonality(interview._id || interview.id);
+                          alert("אשת השבוע עודכנה באתר!");
+                          loadTabData();
+                        }}
+                        className="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-md"
+                       >
+                         אישור ופרסום באתר
+                       </button>
+                    </div>
+                  ))}
+               </div>
+            )}
           </div>
         )}
 
@@ -372,17 +354,17 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </div>
 
-      {/* מודאלים */}
+      {/* מודאלים קבועים */}
       <Modal isOpen={isEventModalOpen} onClose={()=>setIsEventModalOpen(false)} title="אירוע חדש">
         <form onSubmit={async (e)=>{e.preventDefault(); await api.createEvent(eventForm); setIsEventModalOpen(false); loadTabData();}} className="space-y-4">
           <input required placeholder="שם האירוע" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.title} onChange={e=>setEventForm({...eventForm, title:e.target.value})} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-right">
               <input required type="date" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.date} onChange={e=>setEventForm({...eventForm, date:e.target.value})} />
               <input required placeholder="מחיר" type="number" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.price} onChange={e=>setEventForm({...eventForm, price:Number(e.target.value)})} />
           </div>
           <input required placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-right" value={eventForm.location} onChange={e=>setEventForm({...eventForm, location:e.target.value})} />
           <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-2xl"><input type="checkbox" className="w-4 h-4" checked={eventForm.isHero} onChange={e=>setEventForm({...eventForm, isHero:e.target.checked})}/><label className="text-sm font-bold">הצגה בסליידר הראשי</label></div>
-          <div className="relative border-2 border-dashed p-6 text-center rounded-2xl">
+          <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
               <input type="file" onChange={e => handleFileUpload(e, setEventForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
               {eventForm.image ? <img src={eventForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">לחצי להעלאת תמונה (עד 50KB)</p>}
           </div>
@@ -390,6 +372,35 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </form>
       </Modal>
 
+      <Modal isOpen={isCommunityModalOpen} onClose={()=>setIsCommunityModalOpen(false)} title="הוספה לקהילה">
+         <form onSubmit={async (e)=>{
+           e.preventDefault(); 
+           try {
+             const res = await api.createCommunityItem(communityForm); 
+             if(res) {
+               setCommunityForm({ category: 'גמ"חים', title: '', phone: '', location: '', image: '', description: '' });
+               setIsCommunityModalOpen(false); 
+               loadTabData();
+             }
+           } catch(err) { alert("שגיאה בשמירה. ודאי שהתמונה קטנה מ-50KB."); }
+         }} className="space-y-4 text-right">
+            <select className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={communityForm.category} onChange={e=>setCommunityForm({...communityForm, category:e.target.value as any})}>
+              <option value='גמ"חים'>גמ"חים</option>
+              <option value="שיעורי תורה">שיעורי תורה</option>
+              <option value="עסק מקומי">עסקים מקומיים</option>
+            </select>
+            <input required placeholder="שם הגוף/עסק" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.title} onChange={e=>setCommunityForm({...communityForm, title:e.target.value})} />
+            <input placeholder="טלפון ליצירת קשר" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.phone} onChange={e=>setCommunityForm({...communityForm, phone:e.target.value})} />
+            <input placeholder="מיקום (שכונה/רחוב)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.location} onChange={e=>setCommunityForm({...communityForm, location:e.target.value})} />
+            <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
+               <input type="file" onChange={e => handleFileUpload(e, setCommunityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+               {communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">לחצי להעלאת תמונה (עד 50KB)</p>}
+            </div>
+            <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black">שמירה ופרסום באתר</button>
+         </form>
+      </Modal>
+
+      {/* שאר המודאלים ללא שינוי - חוגים והגרלות */}
       <Modal isOpen={isClassModalOpen} onClose={()=>setIsClassModalOpen(false)} title="חוג חדש">
         <form onSubmit={async (e)=>{e.preventDefault(); await api.createClass(classForm); setIsClassModalOpen(false); loadTabData();}} className="space-y-4 text-right">
           <input required placeholder="שם החוג" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.title} onChange={e=>setClassForm({...classForm, title:e.target.value})} />
@@ -410,44 +421,12 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
            <input required placeholder="שם ההגרלה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.title} onChange={e=>setLotteryForm({...lotteryForm, title:e.target.value})} />
            <input required placeholder="הפרס" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize} onChange={e=>setLotteryForm({...lotteryForm, prize:e.target.value})} />
            <input required type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.drawDate} onChange={e=>setLotteryForm({...lotteryForm, drawDate:e.target.value})} />
-           <div className="relative border-2 border-dashed p-6 text-center rounded-2xl">
+           <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
               <input type="file" onChange={e => handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
               {lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto rounded-lg" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס (עד 50KB)</p>}
            </div>
            <button className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black">פרסום</button>
         </form>
-      </Modal>
-
-      {/* מודאל קהילה - תיקון הקהילה שלא עולה */}
-      <Modal isOpen={isCommunityModalOpen} onClose={()=>setIsCommunityModalOpen(false)} title="הוספה לקהילה">
-         <form onSubmit={async (e)=>{
-           e.preventDefault(); 
-           try {
-             const res = await api.createCommunityItem(communityForm); 
-             if(res) {
-               setCommunityForm({ category: 'גמ"ח', title: '', phone: '', location: '', image: '', description: '' });
-               setIsCommunityModalOpen(false); 
-               loadTabData();
-             }
-           } catch(err) {
-             console.error(err);
-             alert("שגיאה בשמירה לקהילה. ודאי שהתמונה קטנה מ-50KB.");
-           }
-         }} className="space-y-4">
-            <select className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={communityForm.category} onChange={e=>setCommunityForm({...communityForm, category:e.target.value})}>
-              <option value='גמ"ח'>גמ"ח</option>
-              <option value="שיעור תורה">שיעור תורה</option>
-              <option value="עסק מקומי">עסק מקומי</option>
-            </select>
-            <input required placeholder="שם הגוף/עסק" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={communityForm.title} onChange={e=>setCommunityForm({...communityForm, title:e.target.value})} />
-            <input placeholder="טלפון" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={communityForm.phone} onChange={e=>setCommunityForm({...communityForm, phone:e.target.value})} />
-            <input placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={communityForm.location} onChange={e=>setCommunityForm({...communityForm, location:e.target.value})} />
-            <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
-               <input type="file" onChange={e => handleFileUpload(e, setCommunityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-               {communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto rounded-lg" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה (עד 50KB)</p>}
-            </div>
-            <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום</button>
-         </form>
       </Modal>
 
     </div>

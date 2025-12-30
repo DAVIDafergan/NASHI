@@ -1,4 +1,4 @@
-import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile } from '../types';
+import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, ForumPost } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
 
@@ -194,8 +194,8 @@ export const api = {
     },
 
     // ================= FORUM (פורום נשי) =================
-    async getForumPosts() {
-        const res = await fetch(`${API_URL}/forum`);
+    async getForumPosts(): Promise<ForumPost[]> {
+        const res = await fetch(`${API_URL}/forum`, { headers: getHeaders() });
         return res.json();
     },
 
@@ -212,6 +212,14 @@ export const api = {
     async approvePost(postId: string) {
         const res = await fetch(`${API_URL}/admin/approve-post/${postId}`, {
             method: 'PUT',
+            headers: getHeaders()
+        });
+        return res.json();
+    },
+
+    async likePost(postId: string) {
+        const res = await fetch(`${API_URL}/forum/${postId}/like`, {
+            method: 'POST',
             headers: getHeaders()
         });
         return res.json();
@@ -252,7 +260,6 @@ export const api = {
         return res.json();
     },
 
-    // שליחת שאלון חדש (ריק) לצורך יצירת לינק
     async updatePersonality(data: Partial<PersonalityProfile>) {
         validateImageSize(data);
         const res = await fetch(`${API_URL}/personality`, {
@@ -286,13 +293,11 @@ export const api = {
         return res.json();
     },
 
-    // קבלת ראיונות שהושלמו וממתינים לאישור המנהלת
     async getPendingInterviews(): Promise<PersonalityProfile[]> {
         const res = await fetch(`${API_URL}/admin/personality/pending`, { headers: getHeaders() });
         return res.json();
     },
 
-    // אישור סופי של ראיון והצגתו באתר
     async approvePersonality(interviewId: string) {
         const res = await fetch(`${API_URL}/admin/personality/approve/${interviewId}`, {
             method: 'POST',

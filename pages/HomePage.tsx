@@ -108,9 +108,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-20 relative z-10 space-y-12">
         
-        {/* ניקוד / הצטרפות */}
+        {/* --- לוגיקה מעודכנת: ניקוד (רק למאושרות) או באנר הצטרפות --- */}
         <div className="mx-2">
           {user?.isMemberApproved ? (
+             /* מצב חברת מעגל מאושרת: מציג ניקוד */
              <div className="bg-white/90 backdrop-blur-xl p-5 md:p-7 rounded-[3rem] border-2 border-yellow-400 flex items-center justify-between shadow-2xl animate-bounce-in">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-yellow-100 rounded-2xl shadow-inner"><Star className="text-yellow-500 fill-current" size={32} /></div>
@@ -122,20 +123,28 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <Link to="/lottery" className="bg-slate-900 text-white px-8 py-4 rounded-2xl text-xs font-black hover:bg-rose-600 transition-all shadow-lg active:scale-95">מימוש הטבות</Link>
              </div>
           ) : (
+            /* מצב משתמשת לא מאושרת: מציג באנר הצטרפות */
             <div className="bg-slate-900/95 backdrop-blur-xl p-8 md:p-10 rounded-[4rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden border border-white/10">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/20 rounded-full blur-[100px]"></div>
                 <div className="text-center md:text-right space-y-3 relative z-10">
                     <h3 className="text-2xl md:text-3xl font-black flex items-center justify-center md:justify-start gap-3">
-                       <Sparkles className="text-yellow-400 animate-pulse" size={30} /> מועדון "נשי" מחכה לך
+                       <Sparkles className="text-yellow-400 animate-pulse" size={30} /> 
+                       {user?.isMemberRequested ? 'הבקשה שלך בטיפול' : 'מועדון "נשי" מחכה לך'}
                     </h3>
-                    <p className="text-sm md:text-base opacity-70 font-bold max-w-lg leading-relaxed">הצטרפי למעגל הנשי המקומי, תרמי לקהילה ותהני מעולם שלם של הטבות, נקודות והגרלות בלעדיות.</p>
+                    <p className="text-sm md:text-base opacity-70 font-bold max-w-lg leading-relaxed text-right">
+                       {user?.isMemberRequested 
+                         ? 'המנהלת בוחנת את בקשתך להצטרפות למעגל. ברגע שתאושרי, תוכלי לצבור נקודות על כל פעילות באתר.'
+                         : 'הצטרפי למעגל הנשי המקומי, תרמי לקהילה ותהני מצבירת נקודות, הטבות בלעדיות והגרלות יוקרתיות.'}
+                    </p>
                 </div>
-                <button 
-                  onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} 
-                  className="bg-gradient-to-r from-rose-500 to-pink-500 px-10 py-5 rounded-[2rem] font-black text-base shadow-[0_10px_30px_rgba(225,29,72,0.4)] hover:scale-105 transition-all active:scale-95 relative z-10 flex items-center gap-3"
-                >
-                  <HeartHandshake size={24} /> הצטרפי למעגל עכשיו
-                </button>
+                {!user?.isMemberRequested && (
+                  <button 
+                    onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} 
+                    className="bg-gradient-to-r from-rose-500 to-pink-500 px-10 py-5 rounded-[2rem] font-black text-base shadow-[0_10px_30px_rgba(225,29,72,0.4)] hover:scale-105 transition-all active:scale-95 relative z-10 flex items-center gap-3"
+                  >
+                    <HeartHandshake size={24} /> הצטרפי למעגל עכשיו
+                  </button>
+                )}
             </div>
           )}
         </div>
@@ -194,7 +203,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         <div className="grid lg:grid-cols-3 gap-10">
             <div className="lg:col-span-2 space-y-10">
                 
-                {/* --- אשת השבוע: עיצוב אלמנט קטן ויוקרתי (חצי דף) --- */}
+                {/* --- אשת השבוע: עיצוב אלמנט קומפקטי ויוקרתי --- */}
                 {personality && personality.name && (
                     <section className="animate-fade-in group">
                         <div className="bg-white/90 backdrop-blur-xl rounded-[3rem] p-6 md:p-8 shadow-xl border border-white/50 flex flex-col md:flex-row items-center gap-8 max-w-2xl">
@@ -207,23 +216,23 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                                 <h3 className="text-2xl md:text-4xl font-black text-slate-900">{personality.name}</h3>
                                 <p className="text-sm md:text-lg text-slate-500 font-bold leading-tight line-clamp-2">{personality.role}</p>
                                 <button onClick={() => setShowFullInterview(true)} className="mt-4 text-sm font-black text-rose-600 flex items-center gap-2 hover:gap-3 transition-all mx-auto md:mr-0">
-                                   קראי את הראיון המלא <Send size={14} className="rotate-180" />
+                                   לראיון המלא <Send size={14} className="rotate-180" />
                                 </button>
                             </div>
                         </div>
 
-                        {/* מודאל הראיון המלא (ללא גלילה פנימית, גלילה על כל הדף) */}
+                        {/* מודאל הראיון המלא */}
                         {showFullInterview && (
                             <div className="fixed inset-0 z-[200] bg-white overflow-y-auto animate-fade-in no-scrollbar text-right" dir="rtl">
                                 <div className="sticky top-0 bg-white/80 backdrop-blur-md p-6 flex justify-between items-center border-b z-50">
                                     <button onClick={() => setShowFullInterview(false)} className="p-3 bg-slate-100 rounded-full hover:bg-rose-100 transition-colors"><X size={24}/></button>
-                                    <h4 className="font-black text-rose-600 text-xl">ראיון השבוע הבלעדי</h4>
+                                    <h4 className="font-black text-rose-600 text-xl tracking-tight">ראיון השבוע בלעדי</h4>
                                 </div>
                                 <div className="max-w-3xl mx-auto p-8 md:p-20 space-y-12">
                                     <div className="text-center space-y-6">
-                                        <img src={personality.image} className="w-48 h-48 md:w-64 md:h-64 rounded-[4rem] mx-auto object-cover shadow-2xl border-8 border-rose-50" />
+                                        <img src={personality.image} className="w-48 h-48 md:w-64 md:h-64 rounded-[4rem] mx-auto object-cover shadow-2xl border-8 border-rose-50 rotate-2" />
                                         <h2 className="text-4xl md:text-7xl font-black text-slate-900 leading-none">{personality.name}</h2>
-                                        <div className="h-2 w-32 bg-rose-500 mx-auto rounded-full"></div>
+                                        <div className="h-2 w-32 bg-rose-500 mx-auto rounded-full shadow-lg"></div>
                                         <p className="text-xl md:text-3xl text-slate-500 font-bold">{personality.role}</p>
                                     </div>
                                     <div className="space-y-12">
@@ -270,11 +279,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                                     <span className="text-lg leading-none">{item.date.split('/')[0]}</span>
                                     <span className="text-xs opacity-60">{item.date.split('/')[1]}</span>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right flex-1">
                                     <h4 className="font-black text-slate-800 text-base md:text-lg group-hover:text-rose-600 transition-colors">{item.title}</h4>
                                     <p className="text-slate-500 text-sm line-clamp-1 font-bold">{item.description}</p>
                                 </div>
-                                {item.important && <div className="mr-auto w-3 h-3 bg-rose-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(225,29,72,0.6)]"></div>}
                             </div>
                         ))}
                     </div>
@@ -285,7 +293,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <div className="bg-slate-900/95 backdrop-blur-xl rounded-[4rem] p-12 text-white relative overflow-hidden shadow-2xl group border border-white/10 text-right">
                     <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/20 rounded-full blur-[80px] -mr-24 -mt-24"></div>
                     <div className="relative z-10 space-y-8">
-                        <p className="text-2xl md:text-3xl font-serif italic leading-relaxed font-bold opacity-95">"הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך."</p>
+                        <p className="text-2xl md:text-3xl font-serif italic font-bold opacity-95">"הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך."</p>
                         <div className="flex items-center gap-4 justify-end">
                             <span className="text-xs font-black opacity-50 tracking-[0.3em] uppercase">השראה יומית</span>
                             <div className="w-12 h-12 rounded-2xl bg-rose-500 flex items-center justify-center font-black text-sm shadow-xl shadow-rose-900/40">נ.ש</div>
@@ -304,8 +312,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   <div className="bg-white/90 backdrop-blur-md p-10 rounded-[4rem] shadow-2xl border border-white/50 text-center space-y-6 flex flex-col items-center">
                       <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto text-rose-500 shadow-inner"><Phone size={32}/></div>
                       <h3 className="text-2xl font-black text-slate-800">דברי איתנו</h3>
-                      <p className="text-sm text-slate-500 font-bold leading-relaxed max-w-sm">לכל שאלה, הצעה או שיתוף פעולה - הצוות שלנו זמין עבורך תמיד.</p>
-                      <a href="tel:0500000000" className="block w-full py-5 bg-slate-50 text-slate-800 rounded-2xl font-black text-base hover:bg-rose-50 hover:text-rose-600 transition-all border border-slate-100 shadow-sm">חיוג מהיר למוקד</a>
+                      <p className="text-sm text-slate-500 font-bold leading-relaxed max-w-sm text-right">לכל שאלה, הצעה או שיתוף פעולה - הצוות שלנו זמין עבורך תמיד.</p>
+                      <a href="tel:0500000000" className="block w-full py-5 bg-slate-50 text-slate-800 rounded-2xl font-black text-base hover:bg-rose-600 transition-all border border-slate-100 shadow-sm text-center">חיוג מהיר למוקד</a>
                   </div>
                 )}
             </div>
@@ -315,24 +323,20 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       {/* מודאל הצטרפות */}
       {showMembershipModal && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in text-right">
-              <div className="bg-white/95 backdrop-blur-xl rounded-[4rem] w-full max-w-xl p-10 md:p-14 relative shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-y-auto max-h-[95vh] no-scrollbar border border-white/20">
+              <div className="bg-white/95 backdrop-blur-xl rounded-[4rem] w-full max-w-xl p-10 md:p-14 relative shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-y-auto max-h-[95vh] no-scrollbar border border-white/20 shadow-2xl">
                   <button onClick={() => setShowMembershipModal(false)} className="absolute top-10 left-10 p-3 hover:bg-slate-100 rounded-full transition-colors"><X size={24}/></button>
                   <div className="text-right space-y-8">
                       <div className="w-20 h-20 bg-rose-50 rounded-[2rem] flex items-center justify-center text-rose-500 shadow-inner rotate-12"><Sparkles size={40}/></div>
                       <h2 className="text-4xl font-black text-slate-900 leading-tight">נתינה פוגשת עוצמה</h2>
-                      <p className="text-slate-500 text-base md:text-lg leading-relaxed font-bold">
-                        הצטרפות למעגל מאפשרת לך להיות חלק משפיע, להוביל מיזמים חברתיים ולצבור נקודות "נשי" המעניקות הנחות ענק להופעות, סדנאות והגרלות בלעדיות.
-                      </p>
-                      
                       <form onSubmit={handleMembershipSubmit} className="space-y-5 pt-8 border-t border-slate-100">
-                          <div className="grid grid-cols-2 gap-5 text-right">
+                          <div className="grid grid-cols-2 gap-5">
                             <input required type="number" placeholder="גיל" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
                             <input required type="text" placeholder="עיסוק" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
                           </div>
                           <input required type="text" placeholder="כתובת מגורים מלאה" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
                           <input required type="tel" placeholder="טלפון ליצירת קשר" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
                           <button type="submit" className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-xl shadow-2xl hover:bg-rose-600 transition-all active:scale-95 flex items-center justify-center gap-4">
-                             <Send size={24}/> שליחת בקשה
+                             <Send size={24}/> שליחת בקשה להצטרפות
                           </button>
                       </form>
                   </div>
