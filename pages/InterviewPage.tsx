@@ -12,18 +12,29 @@ const InterviewPage = () => {
     const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {
-        if (token) {
-            api.getInterviewByToken(token)
-                .then(data => {
+        const fetchInterview = async () => {
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+            
+            try {
+                const data = await api.getInterviewByToken(token);
+                if (data && !data.error) {
                     setProfile(data);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('לינק לא תקין או פג תוקף');
-                    navigate('/');
-                });
-        }
+                } else {
+                    throw new Error("Invalid token data");
+                }
+            } catch (err) {
+                console.error("Interview load error:", err);
+                alert('הלינק אינו תקין, פג תוקף או שכבר נעשה בו שימוש.');
+                navigate('/');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchInterview();
     }, [token, navigate]);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
