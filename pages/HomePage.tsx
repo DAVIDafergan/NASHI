@@ -34,11 +34,10 @@ const categories = [
 const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin: () => void, onUpdateUser?: (u: any) => void }) => {
   const navigate = useNavigate();
   
-  // --- State (ללא שינוי + הוספת communityItems) ---
   const [events, setEvents] = useState<EventItem[]>([]);
   const [lotteries, setLotteries] = useState<LotteryItem[]>([]);
   const [personality, setPersonality] = useState<any>(null);
-  const [communityItems, setCommunityItems] = useState<any[]>([]); 
+  const [communityItems, setCommunityItems] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [upcomingLottery, setUpcomingLottery] = useState<LotteryItem | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
@@ -46,12 +45,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [showFullInterview, setShowFullInterview] = useState(false);
   const [membershipForm, setMembershipForm] = useState({ age: '', occupation: '', address: '', phone: user?.phone || '' });
 
-  // --- Effects (Fetching Data & Logic) ---
   useEffect(() => {
     fetch(`${API_URL}/events`).then(res => res.json()).then(data => setEvents(data.map((e: any) => ({...e, id: e._id || e.id})))).catch(console.error);
     fetch(`${API_URL}/lotteries`).then(res => res.json()).then(data => setLotteries(data.map((l: any) => ({...l, id: l._id || l.id})))).catch(console.error);
     api.getPersonality().then(setPersonality).catch(console.error);
-    api.getCommunityItems().then(setCommunityItems).catch(console.error); 
+    api.getCommunityItems().then(setCommunityItems).catch(console.error);
   }, []);
 
   const heroEvents = events.filter(e => e.isHero);
@@ -110,6 +108,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-20 relative z-10 space-y-12">
         
+        {/* ניקוד / הצטרפות */}
         <div className="mx-2">
           {user?.isMemberApproved ? (
              <div className="bg-white/90 backdrop-blur-xl p-5 md:p-7 rounded-[3rem] border-2 border-yellow-400 flex items-center justify-between shadow-2xl animate-bounce-in">
@@ -141,6 +140,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           )}
         </div>
 
+        {/* הגרלה פעילה */}
         {upcomingLottery && user?.isMemberApproved && (
             <Link to="/lottery" className="block animate-fade-in-up">
                 <div className="bg-gradient-to-r from-purple-800/90 to-fuchsia-600/90 backdrop-blur-md rounded-[3rem] p-6 md:p-8 shadow-2xl border border-white/20 flex items-center justify-between overflow-hidden relative group">
@@ -163,6 +163,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </Link>
         )}
 
+        {/* סליידר אירועים */}
         <section className="relative h-[350px] md:h-[500px] w-full overflow-hidden rounded-[4rem] shadow-2xl border-4 border-white/50">
             {displayEvents.map((event, index) => (
             <div key={event.id} className={`absolute inset-0 transition-all duration-1000 ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`}>
@@ -180,6 +181,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             ))}
         </section>
 
+        {/* קטגוריות */}
         <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar px-2">
             {categories.map((cat, idx) => (
               <button key={idx} onClick={() => navigate('/events', { state: { category: cat.name } })} 
@@ -189,124 +191,124 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             ))}
         </div>
 
-        {/* --- אשת השבוע: עיצוב כתבת פרופיל יוקרתית (חדש ומעודכן) --- */}
-        {personality && personality.name && (
-          <section className="relative animate-fade-in py-10">
-            <div className="bg-white/80 backdrop-blur-xl rounded-[4rem] shadow-2xl border border-white/50 overflow-hidden">
-              {/* כותרת הכתבה */}
-              <div className="bg-gradient-to-l from-rose-500 to-pink-600 p-10 md:p-20 text-white text-right relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-[100px] -ml-48 -mt-48"></div>
-                <div className="relative z-10 space-y-6">
-                  <span className="bg-white/20 backdrop-blur-md px-6 py-2 rounded-full text-xs font-black uppercase tracking-[0.2em] inline-block">אשת השבוע שלנו</span>
-                  <h2 className="text-5xl md:text-9xl font-black leading-none drop-shadow-2xl">{personality.name}</h2>
-                  <div className="h-2 w-32 bg-yellow-400 rounded-full"></div>
-                  <p className="text-2xl md:text-4xl font-bold opacity-95">{personality.role}</p>
-                </div>
-              </div>
-
-              <div className="p-8 md:p-20 flex flex-col lg:flex-row gap-16 items-start">
-                {/* תמונת הפרופיל - עומדת יציב בצד הכתבה */}
-                <div className="w-full lg:w-2/5">
-                   <div className="relative">
-                      <img src={personality.image} alt={personality.name} className="w-full aspect-[4/5] object-cover rounded-[3.5rem] shadow-2xl border-8 border-white" />
-                      <div className="absolute -bottom-6 -right-6 bg-yellow-400 p-6 rounded-3xl shadow-2xl">
-                        <Sparkles className="text-white" size={40}/>
-                      </div>
-                   </div>
-                </div>
-
-                {/* תוכן הראיון - זרימה חלקה ללא גלילה פנימית */}
-                <div className="w-full lg:w-3/5 space-y-16">
-                  {personality.questions?.filter((q:any) => q.answer)?.map((q: any, i: number) => (
-                    <div key={i} className="space-y-6 relative">
-                      <h4 className="text-rose-500 font-black text-2xl md:text-3xl flex items-start gap-4">
-                        <span className="text-5xl md:text-7xl opacity-10 font-serif italic leading-none shrink-0">{String(i+1).padStart(2, '0')}</span>
-                        <span className="pt-2">{q.question}</span>
-                      </h4>
-                      <p className="text-slate-800 text-xl md:text-3xl leading-relaxed font-medium pr-10 border-r-4 border-rose-100 italic">
-                        "{q.answer}"
-                      </p>
-                    </div>
-                  ))}
-                  
-                  <div className="pt-12 flex items-center gap-6">
-                     <div className="h-px flex-1 bg-slate-100"></div>
-                     <span className="text-slate-300 font-black text-xs uppercase tracking-[0.4em]">מוקדש לכל הנשים בעיר</span>
-                     <div className="h-px flex-1 bg-slate-100"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* --- COMMUNITY ITEMS SECTION --- */}
-        {communityItems && communityItems.length > 0 && (
-            <section className="space-y-6 animate-fade-in pt-10">
-                <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 px-4">
-                    <HeartHandshake className="text-emerald-500" size={28}/> מה קורה בקהילה
-                </h3>
-                <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar px-2">
-                    {communityItems.map((item) => (
-                        <div key={item._id || item.id} className="bg-white/90 backdrop-blur-md p-5 rounded-[2.5rem] shadow-lg border border-white/50 flex items-center gap-4 shrink-0 w-80 group hover:border-emerald-200 transition-all hover:translate-y-[-4px]">
-                            <img src={item.image} className="w-20 h-20 rounded-2xl object-cover shrink-0 shadow-inner" />
-                            <div className="flex-1 overflow-hidden">
-                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{item.category}</span>
-                                <h4 className="font-black text-slate-800 text-base truncate">{item.title}</h4>
-                                <p className="text-slate-500 text-xs font-bold truncate">{item.location}</p>
+        <div className="grid lg:grid-cols-3 gap-10">
+            <div className="lg:col-span-2 space-y-10">
+                
+                {/* --- אשת השבוע: עיצוב אלמנט קטן ויוקרתי (חצי דף) --- */}
+                {personality && personality.name && (
+                    <section className="animate-fade-in group">
+                        <div className="bg-white/90 backdrop-blur-xl rounded-[3rem] p-6 md:p-8 shadow-xl border border-white/50 flex flex-col md:flex-row items-center gap-8 max-w-2xl">
+                            <div className="relative shrink-0">
+                                <img src={personality.image} className="w-32 h-32 md:w-48 md:h-48 rounded-[2.5rem] object-cover shadow-lg border-4 border-white group-hover:rotate-2 transition-transform duration-500" alt={personality.name} />
+                                <div className="absolute -bottom-2 -right-2 bg-yellow-400 p-3 rounded-2xl shadow-lg animate-pulse"><Sparkles className="text-white" size={20}/></div>
+                            </div>
+                            <div className="text-center md:text-right space-y-2 flex-1">
+                                <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-4 py-1 rounded-full">אשת השבוע</span>
+                                <h3 className="text-2xl md:text-4xl font-black text-slate-900">{personality.name}</h3>
+                                <p className="text-sm md:text-lg text-slate-500 font-bold leading-tight line-clamp-2">{personality.role}</p>
+                                <button onClick={() => setShowFullInterview(true)} className="mt-4 text-sm font-black text-rose-600 flex items-center gap-2 hover:gap-3 transition-all mx-auto md:mr-0">
+                                   לראיון המלא <Send size={14} className="rotate-180" />
+                                </button>
                             </div>
                         </div>
-                    ))}
-                </div>
-            </section>
-        )}
 
-        <div className="space-y-6 pt-10">
-            <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 px-4"><Bell className="text-rose-500" size={28}/> עדכונים חמים</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-                {mockNews.map((item) => (
-                    <div key={item.id} className="bg-white/90 backdrop-blur-md p-7 rounded-[2.5rem] shadow-lg border border-white/50 flex items-center gap-6 group hover:border-rose-200 transition-all hover:translate-y-[-4px]">
-                        <div className="w-16 h-16 bg-rose-50 rounded-3xl flex flex-col items-center justify-center text-rose-600 shrink-0 font-black shadow-inner text-center">
-                            <span className="text-lg leading-none">{item.date.split('/')[0]}</span>
-                            <span className="text-xs opacity-60">{item.date.split('/')[1]}</span>
+                        {/* מודאל הראיון המלא (ללא גלילה פנימית, גלילה על כל הדף) */}
+                        {showFullInterview && (
+                            <div className="fixed inset-0 z-[200] bg-white overflow-y-auto animate-fade-in no-scrollbar">
+                                <div className="sticky top-0 bg-white/80 backdrop-blur-md p-6 flex justify-between items-center border-b z-50">
+                                    <button onClick={() => setShowFullInterview(false)} className="p-3 bg-slate-100 rounded-full hover:bg-rose-100 transition-colors"><X size={24}/></button>
+                                    <h4 className="font-black text-rose-600">ראיון בלעדי</h4>
+                                </div>
+                                <div className="max-w-3xl mx-auto p-8 md:p-20 space-y-12 text-right">
+                                    <div className="text-center space-y-6">
+                                        <img src={personality.image} className="w-48 h-48 md:w-64 md:h-64 rounded-[4rem] mx-auto object-cover shadow-2xl border-8 border-rose-50" />
+                                        <h2 className="text-4xl md:text-6xl font-black text-slate-900">{personality.name}</h2>
+                                        <p className="text-xl text-slate-500 font-bold">{personality.role}</p>
+                                    </div>
+                                    <div className="space-y-12">
+                                        {personality.questions?.map((q: any, i: number) => q.answer && (
+                                            <div key={i} className="border-r-4 border-rose-500 pr-6 space-y-2">
+                                                <h5 className="font-black text-rose-600 text-lg">Q: {q.question}</h5>
+                                                <p className="text-slate-800 text-xl md:text-2xl font-medium leading-relaxed italic">"{q.answer}"</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {/* קהילה */}
+                {communityItems && communityItems.length > 0 && (
+                    <section className="space-y-6 animate-fade-in">
+                        <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 px-4">
+                            <HeartHandshake className="text-emerald-500" size={28}/> מה קורה בקהילה
+                        </h3>
+                        <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar px-2">
+                            {communityItems.map((item) => (
+                                <div key={item._id || item.id} className="bg-white/90 backdrop-blur-md p-5 rounded-[2.5rem] shadow-lg border border-white/50 flex items-center gap-4 shrink-0 w-72 group hover:border-emerald-200 transition-all hover:translate-y-[-4px]">
+                                    <img src={item.image} className="w-16 h-16 rounded-2xl object-cover shrink-0 shadow-inner" />
+                                    <div className="flex-1 overflow-hidden text-right">
+                                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{item.category}</span>
+                                        <h4 className="font-black text-slate-800 text-sm truncate">{item.title}</h4>
+                                        <p className="text-slate-500 text-[10px] font-bold truncate">{item.location}</p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        <div className="text-right">
-                            <h4 className="font-black text-slate-800 text-base md:text-lg group-hover:text-rose-600 transition-colors">{item.title}</h4>
-                            <p className="text-slate-500 text-sm line-clamp-1 font-bold">{item.description}</p>
-                        </div>
-                        {item.important && <div className="mr-auto w-3 h-3 bg-rose-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(225,29,72,0.6)]"></div>}
-                    </div>
-                ))}
-            </div>
-        </div>
+                    </section>
+                )}
 
-        <div className="grid lg:grid-cols-2 gap-10 pt-10">
-            <div className="bg-slate-900/95 backdrop-blur-xl rounded-[4rem] p-12 text-white relative overflow-hidden shadow-2xl group border border-white/10">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/20 rounded-full blur-[80px] -mr-24 -mt-24"></div>
-                <div className="relative z-10 space-y-8">
-                    <p className="text-2xl md:text-4xl font-serif italic leading-relaxed font-bold opacity-95 text-right">"הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך."</p>
-                    <div className="flex items-center gap-4 justify-end">
-                        <span className="text-xs font-black opacity-50 tracking-[0.3em] uppercase">השראה יומית</span>
-                        <div className="w-12 h-12 rounded-2xl bg-rose-500 flex items-center justify-center font-black text-sm shadow-xl shadow-rose-900/40">נ.ש</div>
+                <div className="space-y-6">
+                    <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 px-4"><Bell className="text-rose-500" size={28}/> עדכונים חמים</h3>
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {mockNews.map((item) => (
+                            <div key={item.id} className="bg-white/90 backdrop-blur-md p-7 rounded-[2.5rem] shadow-lg border border-white/50 flex items-center gap-6 group hover:border-rose-200 transition-all hover:translate-y-[-4px]">
+                                <div className="w-16 h-16 bg-rose-50 rounded-3xl flex flex-col items-center justify-center text-rose-600 shrink-0 font-black shadow-inner">
+                                    <span className="text-lg leading-none">{item.date.split('/')[0]}</span>
+                                    <span className="text-xs opacity-60">{item.date.split('/')[1]}</span>
+                                </div>
+                                <div className="text-right">
+                                    <h4 className="font-black text-slate-800 text-base md:text-lg group-hover:text-rose-600 transition-colors">{item.title}</h4>
+                                    <p className="text-slate-500 text-sm line-clamp-1 font-bold">{item.description}</p>
+                                </div>
+                                {item.important && <div className="mr-auto w-3 h-3 bg-rose-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(225,29,72,0.6)]"></div>}
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
 
-            {!user ? (
-               <div onClick={onOpenLogin} className="cursor-pointer bg-gradient-to-br from-rose-600/90 to-pink-600/90 backdrop-blur-md rounded-[4rem] p-10 text-white shadow-2xl shadow-rose-200/50 text-center space-y-6 hover:scale-[1.03] transition-transform border border-white/20 flex flex-col items-center">
-                  <HeartHandshake size={60} className="mx-auto drop-shadow-lg" />
-                  <h3 className="text-3xl font-black">הצטרפי למעגל</h3>
-                  <p className="text-sm font-bold opacity-90 leading-relaxed max-w-sm">תהיי חלק מהשינוי בעיר. תרמי לקהילה ותקבלי עולם שלם של תרבות והטבות.</p>
-                  <button className="bg-white text-rose-600 px-10 py-4 rounded-[1.5rem] font-black text-base shadow-2xl hover:bg-slate-50 transition-colors">הרשמה מהירה</button>
-               </div>
-            ) : (
-              <div className="bg-white/90 backdrop-blur-md p-10 rounded-[4rem] shadow-2xl border border-white/50 text-center space-y-6 flex flex-col items-center">
-                  <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto text-rose-500 shadow-inner"><Phone size={32}/></div>
-                  <h3 className="text-2xl font-black text-slate-800">דברי איתנו</h3>
-                  <p className="text-sm text-slate-500 font-bold leading-relaxed max-w-sm">לכל שאלה, הצעה או שיתוף פעולה - הצוות שלנו זמין עבורך תמיד.</p>
-                  <a href="tel:0500000000" className="block w-full py-5 bg-slate-50 text-slate-800 rounded-2xl font-black text-base hover:bg-rose-50 hover:text-rose-600 transition-all border border-slate-100 shadow-sm">חיוג מהיר למוקד</a>
-              </div>
-            )}
+            {/* צד שמאל - השראה ומוקד */}
+            <div className="space-y-10">
+                <div className="bg-slate-900/95 backdrop-blur-xl rounded-[4rem] p-12 text-white relative overflow-hidden shadow-2xl group border border-white/10">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/20 rounded-full blur-[80px] -mr-24 -mt-24"></div>
+                    <div className="relative z-10 space-y-8 text-right">
+                        <p className="text-2xl md:text-3xl font-serif italic leading-relaxed font-bold opacity-95">"הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך."</p>
+                        <div className="flex items-center gap-4 justify-end">
+                            <span className="text-xs font-black opacity-50 tracking-[0.3em] uppercase">השראה יומית</span>
+                            <div className="w-12 h-12 rounded-2xl bg-rose-500 flex items-center justify-center font-black text-sm shadow-xl shadow-rose-900/40">נ.ש</div>
+                        </div>
+                    </div>
+                </div>
+
+                {!user ? (
+                   <div onClick={onOpenLogin} className="cursor-pointer bg-gradient-to-br from-rose-600/90 to-pink-600/90 backdrop-blur-md rounded-[4rem] p-10 text-white shadow-2xl shadow-rose-200/50 text-center space-y-6 hover:scale-[1.03] transition-transform border border-white/20 flex flex-col items-center">
+                      <HeartHandshake size={60} className="mx-auto drop-shadow-lg" />
+                      <h3 className="text-3xl font-black">הצטרפי למעגל</h3>
+                      <p className="text-sm font-bold opacity-90 leading-relaxed max-w-sm">תהיי חלק מהשינוי בעיר. תרמי לקהילה ותקבלי עולם שלם של תרבות והטבות.</p>
+                      <button className="bg-white text-rose-600 px-10 py-4 rounded-[1.5rem] font-black text-base shadow-2xl hover:bg-slate-50 transition-colors">הרשמה מהירה</button>
+                   </div>
+                ) : (
+                  <div className="bg-white/90 backdrop-blur-md p-10 rounded-[4rem] shadow-2xl border border-white/50 text-center space-y-6 flex flex-col items-center">
+                      <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto text-rose-500 shadow-inner"><Phone size={32}/></div>
+                      <h3 className="text-2xl font-black text-slate-800">דברי איתנו</h3>
+                      <p className="text-sm text-slate-500 font-bold leading-relaxed max-w-sm">לכל שאלה, הצעה או שיתוף פעולה - הצוות שלנו זמין עבורך תמיד.</p>
+                      <a href="tel:0500000000" className="block w-full py-5 bg-slate-50 text-slate-800 rounded-2xl font-black text-base hover:bg-rose-50 hover:text-rose-600 transition-all border border-slate-100 shadow-sm">חיוג מהיר למוקד</a>
+                  </div>
+                )}
+            </div>
         </div>
       </div>
 
@@ -323,7 +325,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                       </p>
                       
                       <form onSubmit={handleMembershipSubmit} className="space-y-5 pt-8 border-t border-slate-100">
-                          <div className="grid grid-cols-2 gap-5">
+                          <div className="grid grid-cols-2 gap-5 text-right">
                             <input required type="number" placeholder="גיל" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
                             <input required type="text" placeholder="עיסוק" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
                           </div>
