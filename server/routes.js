@@ -90,7 +90,6 @@ router.post('/register', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב ההתחברות החדש שהיה חסר:
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -192,9 +191,12 @@ router.delete('/community/:id', authenticate, isAdmin, async (req, res) => {
 
 // ================= 7. אשת השבוע (PERSONALITY) =================
 
+// קבלת אשת השבוע הפעילה באתר
 router.get('/personality', async (req, res) => {
-    try { const p = await Personality.findOne().sort({ updatedAt: -1 }); res.json(p || {}); } 
-    catch (err) { res.status(500).json({ error: err.message }); }
+    try { 
+        const p = await Personality.findOne({ isActive: true }).sort({ updatedAt: -1 }); 
+        res.json(p || {}); 
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/personality', authenticate, isAdmin, async (req, res) => {
@@ -207,19 +209,109 @@ router.post('/personality', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// יצירת לינק למילוי שאלון
 router.post('/personality/generate-link', authenticate, isAdmin, async (req, res) => {
     try {
         const token = Math.random().toString(36).substring(2, 15);
-        let p = await Personality.findOne() || new Personality({ name: 'ממתין' });
-        p.externalToken = token;
-        p.isActive = false;
+        // יצירת פרופיל "טיוטה" חדש עם הטוקן
+        const p = new Personality({ 
+            name: req.body.name || 'ממתין למילוי',
+            role: req.body.role || '',
+            questions: req.body.questions || [],
+            externalToken: token, 
+            isActive: false 
+        });
         await p.save();
-        const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
-        res.json({ link: `${baseUrl}/#/fill-interview/${token}` });
+        res.json({ token });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ================= 8. הגדרות (SETTINGS) =================
+// קבלת שאלון למילוי (עבור האישה) - פותר את בעיית "לינק לא תקין"
+router.get('/personality/fill/:token', async (req, res) => {
+    try {
+        const p = await Personality.findOne({ externalToken: req.params.token });
+        if (!p) return res.status(404).json({ error: 'Link invalid or expired' });
+        res.json(p);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// שליחת תשובות לשאלון (על ידי האישה)
+router.post('/personality/fill/:token', async (req, res) => {
+    try {
+        const p = await Personality.findOneAndUpdate(
+            { externalToken: req.params.token },
+            { ...req.body, externalToken: null, updatedAt: Date.now() }, // מחיקת הטוקן לאחר שימוש
+            { new: true }
+        );
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// קבלת ראיונות שהושלמו וממתינים לאישור (עבור המנהלת)
+router.get('/admin/personality/pending', authenticate, isAdmin, async (req, res) => {
+    try {
+        const pending = await Personality.find({ isActive: false, externalToken: null });
+        res.json(pending);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// אישור סופי של אשת השבוע והפיכתה לפעילה באתר
+router.post('/admin/personality/approve/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        // הפיכת כל שאר הראיונות ללא פעילים
+        await Personality.updateMany({}, { isActive: false });
+        // הפיכת הראיון הנבחר לפעיל
+        await Personality.findByIdAndUpdate(req.params.id, { isActive: true });
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 8. פורום (FORUM) =================
+
+// קבלת פוסטים מאושרים בלבד לפורום - פותר את הבעיה שהפורום נשאר ריק
+router.get('/forum', async (req, res) => {
+    try {
+        const posts = await ForumPost.find({ status: 'approved' }).sort({ createdAt: -1 });
+        res.json(posts);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/forum', authenticate, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        const post = new ForumPost({ ...req.body, author: user._id, authorName: user.name, status: 'pending' });
+        await post.save();
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// לייק לפוסט בפורום
+router.post('/forum/:id/like', authenticate, async (req, res) => {
+    try {
+        const post = await ForumPost.findById(req.params.id);
+        const userId = req.user.id;
+        if (post.likes.includes(userId)) {
+            post.likes = post.likes.filter(id => id.toString() !== userId);
+        } else {
+            post.likes.push(userId);
+        }
+        await post.save();
+        res.json({ success: true, likes: post.likes.length });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// הוספת תגובה לפוסט בפורום
+router.post('/forum/:id/comment', authenticate, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        const post = await ForumPost.findByIdAndUpdate(req.params.id, {
+            $push: { comments: { authorName: user.name, text: req.body.text } }
+        }, { new: true });
+        res.json(post);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 9. הגדרות (SETTINGS) =================
 
 router.get('/admin/settings', authenticate, isAdmin, async (req, res) => {
     try { res.json(await getPointsConfig()); } catch (err) { res.status(500).json({ error: err.message }); }
@@ -252,7 +344,7 @@ router.post('/admin/gifts', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- שונות (פורום ופרופיל) ---
+// --- שונות (פרופיל) ---
 
 router.get('/me', authenticate, async (req, res) => {
     try { res.json(await User.findById(req.user.id).select('-password')); } 
@@ -263,15 +355,6 @@ router.post('/membership/request', authenticate, async (req, res) => {
     try {
         const user = await User.findByIdAndUpdate(req.user.id, { ...req.body, isMemberRequested: true, isMemberApproved: false }, { new: true }).select('-password');
         res.json({ success: true, user });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-router.post('/forum', authenticate, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-        const post = new ForumPost({ ...req.body, author: user._id, authorName: user.name, status: 'pending' });
-        await post.save();
-        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
