@@ -258,7 +258,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב קהילה - מתוקן עם שדות חסרים ואיפוס טופס */}
+        {/* טאב קהילה - מתוקן עם מירכאות תקינות ל-Build */}
         {activeTab === 'community' && (
           <div className="space-y-6 animate-fade-in">
             <button onClick={() => setIsCommunityModalOpen(true)} className="w-full md:w-auto bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2"><Plus/> הוספה לקהילה</button>
@@ -277,10 +277,26 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב אשת השבוע */}
+        {/* טאב אשת השבוע - מתוקן עם מחיקה ולינק תקין */}
         {activeTab === 'personality' && (
           <div className="max-w-3xl mx-auto bg-white p-6 md:p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8 animate-fade-in">
-            <h3 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3"><Sparkles className="text-rose-500"/> עריכת אשת השבוע</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3"><Sparkles className="text-rose-500"/> עריכת אשת השבוע</h3>
+              {personalityForm.name && (
+                <button 
+                  onClick={async () => {
+                    if(window.confirm("למחוק את אשת השבוע הנוכחית?")) {
+                      await api.updatePersonality({ name: '', role: '', image: '', questions: [], isActive: false });
+                      alert("נמחק!");
+                      loadTabData();
+                    }
+                  }}
+                  className="text-red-500 font-bold text-xs hover:underline"
+                >
+                  מחיקת הקודמת
+                </button>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input placeholder="שם מלא" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={personalityForm.name} onChange={e=>setPersonalityForm({...personalityForm, name:e.target.value})} />
               <input placeholder="תפקיד" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={personalityForm.role} onChange={e=>setPersonalityForm({...personalityForm, role:e.target.value})} />
@@ -302,8 +318,15 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <button onClick={async () => { await api.updatePersonality(personalityForm); alert('עודכן!'); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all">שמירה באתר</button>
-              <button onClick={async () => { const res = await api.generateInterviewLink(); alert(`לינק לשאלון: ${res.link}`); }} className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200"><LinkIcon size={18}/> הפקת לינק חיצוני</button>
+              <button onClick={async () => { await api.updatePersonality({...personalityForm, isActive: true}); alert('עודכן!'); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all">שמירה באתר</button>
+              <button onClick={async () => { 
+                const res = await api.generateInterviewLink(); 
+                const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
+                navigator.clipboard.writeText(fullLink);
+                alert(`הלינק הועתק ללוח! שלחי אותו לאישה:\n${fullLink}`); 
+              }} className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200">
+                <LinkIcon size={18}/> הפקת לינק למילוי ושליחה לאישה
+              </button>
             </div>
           </div>
         )}
@@ -373,7 +396,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </form>
       </Modal>
 
-      {/* מודאל קהילה מתוקן עם שדות טלפון, מיקום ואיפוס טופס */}
+      {/* מודאל קהילה מתוקן עם שדות טלפון, מיקום ואיפוס טופס - מירכאות בודדות בערך גמ"ח ל-Build */}
       <Modal isOpen={isCommunityModalOpen} onClose={()=>setIsCommunityModalOpen(false)} title="הוספה לקהילה">
          <form onSubmit={async (e)=>{
            e.preventDefault(); 
