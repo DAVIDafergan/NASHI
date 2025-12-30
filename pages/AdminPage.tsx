@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, Plus, Users, Calendar, Gift, Search, Trash2, Edit, Save, 
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
-  Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, GraduationCap, Copy
+  Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, GraduationCap, Copy, Eye
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -53,6 +53,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [pendingInterviews, setPendingInterviews] = useState<PersonalityProfile[]>([]); // סטייט לראיונות ממתינים
   const [generatedLink, setGeneratedLink] = useState(''); // סטייט ללינק שנוצר כדי שיהיה אפשר להעתיק
   
+  // States לתצוגה מקדימה של ראיון
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [selectedInterview, setSelectedInterview] = useState<PersonalityProfile | null>(null);
+
   const [pointsSettings, setPointsSettings] = useState({ pointsPerRegister: 50, pointsPerEventJoin: 10, pointsPerShare: 5 });
 
   useEffect(() => { if (user?.isAdmin) loadTabData(); }, [activeTab, user]);
@@ -289,7 +293,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב אשת השבוע */}
+        {/* טאב אשת השבוע - תיקון שליחת שאלות ותצוגה מקדימה */}
         {activeTab === 'personality' && (
           <div className="max-w-4xl mx-auto space-y-12 animate-fade-in text-right">
             <div className="bg-white p-8 md:p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8">
@@ -324,12 +328,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <button onClick={async () => { await api.updatePersonality({...personalityForm, isActive: true}); alert('האתר עודכן!'); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all text-center">עדכון ישיר של הכתבה באתר</button>
                 
                 <div className="space-y-3 pt-6 border-t">
+                  {/* תיקון: שליחת ה-personalityForm הכולל שאלות לשרת */}
                   <button onClick={async () => { 
-                      const res = await api.generateInterviewLink(); 
+                      const res = await api.generateInterviewLink(personalityForm); 
                       const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
                       setGeneratedLink(fullLink);
                   }} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 transition-all">
-                    <LinkIcon size={18}/> הפקת לינק לשליחה לאישה
+                    <LinkIcon size={18}/> הפקת לינק עם השאלות שהגדרתי
                   </button>
 
                   {generatedLink && (
@@ -342,6 +347,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               </div>
             </div>
 
+            {/* תצוגת ראיונות שהושלמו עם אפשרות צפייה */}
             {pendingInterviews.length > 0 && (
                <div className="space-y-4">
                   <h4 className="font-black text-xl text-slate-700 pr-4">ראיונות שהושלמו וממתינים לאישורך:</h4>
@@ -351,7 +357,15 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                           <p className="font-black text-xl text-slate-800">{interview.name}</p>
                           <p className="text-sm text-slate-500">{interview.role}</p>
                        </div>
-                       <button onClick={async () => { await api.approvePersonality(interview._id || interview.id); alert("אשת השבוע עודכנה באתר!"); loadTabData(); }} className="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-md">אישור ופרסום באתר</button>
+                       <div className="flex gap-2">
+                          <button 
+                            onClick={() => { setSelectedInterview(interview); setIsPreviewModalOpen(true); }}
+                            className="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl font-black hover:bg-slate-200 transition-all flex items-center gap-2"
+                          >
+                             <Eye size={18}/> צפייה בראיון
+                          </button>
+                          <button onClick={async () => { await api.approvePersonality(interview._id || interview.id); alert("אשת השבוע עודכנה באתר!"); loadTabData(); }} className="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-md">אישור ופרסום</button>
+                       </div>
                     </div>
                   ))}
                </div>
@@ -380,6 +394,39 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
       {/* --- מודאלים לניהול --- */}
       
+      {/* מודאל צפייה מקדימה בראיון לפני אישור */}
+      <Modal isOpen={isPreviewModalOpen} onClose={() => setIsPreviewModalOpen(false)} title="צפייה בראיון שהושלם">
+        {selectedInterview && (
+          <div className="space-y-8 text-right font-sans">
+             <div className="text-center space-y-4">
+                {selectedInterview.image && <img src={selectedInterview.image} className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-rose-100 shadow-lg" />}
+                <h4 className="text-2xl font-black text-slate-900">{selectedInterview.name}</h4>
+                <p className="text-rose-500 font-bold">{selectedInterview.role}</p>
+                {selectedInterview.motto && <p className="italic text-slate-500 bg-slate-50 p-4 rounded-2xl">"{selectedInterview.motto}"</p>}
+             </div>
+             <div className="space-y-6">
+                {selectedInterview.questions?.map((q, i) => (
+                  <div key={i} className="border-b pb-4">
+                    <p className="font-black text-slate-800 mb-2">{q.question}</p>
+                    <p className="text-slate-600 leading-relaxed font-medium">{q.answer || '(לא מולאה תשובה)'}</p>
+                  </div>
+                ))}
+             </div>
+             <button 
+                onClick={async () => { 
+                    await api.approvePersonality(selectedInterview._id || selectedInterview.id); 
+                    setIsPreviewModalOpen(false); 
+                    alert("פורסם בהצלחה!"); 
+                    loadTabData(); 
+                }} 
+                className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg"
+             >
+                נראה מעולה, פרסמי באתר!
+             </button>
+          </div>
+        )}
+      </Modal>
+
       <Modal isOpen={isEventModalOpen} onClose={()=>setIsEventModalOpen(false)} title="אירוע חדש">
         <form onSubmit={async (e)=>{e.preventDefault(); await api.createEvent(eventForm); setIsEventModalOpen(false); loadTabData();}} className="space-y-4">
           <input required placeholder="שם האירוע" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.title} onChange={e=>setEventForm({...eventForm, title:e.target.value})} />
