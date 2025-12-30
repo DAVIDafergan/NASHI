@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles,
-  X, Send, MapPin, Phone, HeartHandshake
+  X, Send, MapPin, Phone, HeartHandshake, Quote
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -23,12 +23,12 @@ const mockNews = [
 ];
 
 const categories = [
-  { name: 'מוזיקה', icon: <Music size={14} /> },
-  { name: 'אמנות', icon: <Palette size={14} /> },
-  { name: 'סדנאות', icon: <Activity size={14} /> },
-  { name: 'קריירה', icon: <Briefcase size={14} /> },
-  { name: 'העשרה', icon: <Mic size={14} /> },
-  { name: 'קהילה', icon: <HeartHandshake size={14} /> },
+  { name: 'מוזיקה', icon: <Music size={12} /> },
+  { name: 'אמנות', icon: <Palette size={12} /> },
+  { name: 'סדנאות', icon: <Activity size={12} /> },
+  { name: 'קריירה', icon: <Briefcase size={12} /> },
+  { name: 'העשרה', icon: <Mic size={12} /> },
+  { name: 'קהילה', icon: <HeartHandshake size={12} /> },
 ];
 
 const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin: () => void, onUpdateUser?: (u: any) => void }) => {
@@ -96,106 +96,99 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   };
 
   return (
-    <div className="min-h-screen pb-24 relative overflow-x-hidden font-sans text-right" dir="rtl">
+    <div className="min-h-screen pb-24 relative overflow-x-hidden font-sans text-right bg-rose-50/30" dir="rtl">
       
       <div className="fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-cover bg-center bg-fixed"
+          <div className="absolute inset-0 bg-cover bg-center bg-fixed opacity-40"
                style={{ backgroundImage: "url('/images/header-bg.jpg')" }}>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-rose-500/30 via-transparent to-yellow-500/30 mix-blend-overlay saturate-[1.5] pointer-events-none"></div>
-          <div className="absolute inset-0 bg-black/5 mix-blend-soft-light pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-rose-100/40 via-white/50 to-amber-50/40 pointer-events-none"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-20 relative z-10 space-y-12">
+      <div className="max-w-6xl mx-auto px-4 md:px-12 pt-16 relative z-10 space-y-10">
         
-        {/* --- לוגיקה מעודכנת: ניקוד (רק למאושרות) או באנר הצטרפות --- */}
         <div className="mx-2">
           {user?.isMemberApproved ? (
-             /* מצב חברת מעגל מאושרת: מציג ניקוד */
-             <div className="bg-white/90 backdrop-blur-xl p-5 md:p-7 rounded-[3rem] border-2 border-yellow-400 flex items-center justify-between shadow-2xl animate-bounce-in">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-yellow-100 rounded-2xl shadow-inner"><Star className="text-yellow-500 fill-current" size={32} /></div>
+             <div className="bg-white/80 backdrop-blur-md p-4 md:p-6 rounded-[2rem] border border-rose-100 flex items-center justify-between shadow-sm animate-bounce-in">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-rose-50 rounded-xl"><Star className="text-rose-400 fill-current" size={24} /></div>
                     <div>
-                      <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">הניקוד שצברת</p>
-                      <span className="font-black text-slate-800 text-xl md:text-3xl">{user.points} נקודות</span>
+                      <p className="text-[9px] font-bold text-rose-300 uppercase tracking-[0.2em]">הניקוד שלך</p>
+                      <span className="font-bold text-slate-700 text-lg md:text-2xl">{user.points} נקודות</span>
                     </div>
                 </div>
-                <Link to="/lottery" className="bg-slate-900 text-white px-8 py-4 rounded-2xl text-xs font-black hover:bg-rose-600 transition-all shadow-lg active:scale-95">מימוש הטבות</Link>
+                <Link to="/lottery" className="bg-rose-500 text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-rose-600 transition-all shadow-sm active:scale-95">מימוש הטבות</Link>
              </div>
           ) : (
-            /* מצב משתמשת לא מאושרת: מציג באנר הצטרפות */
-            <div className="bg-slate-900/95 backdrop-blur-xl p-8 md:p-10 rounded-[4rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden border border-white/10">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/20 rounded-full blur-[100px]"></div>
-                <div className="text-center md:text-right space-y-3 relative z-10">
-                    <h3 className="text-2xl md:text-3xl font-black flex items-center justify-center md:justify-start gap-3">
-                       <Sparkles className="text-yellow-400 animate-pulse" size={30} /> 
-                       {user?.isMemberRequested ? 'הבקשה שלך בטיפול' : 'מועדון "נשי" מחכה לך'}
+            <div className="bg-white/90 backdrop-blur-xl p-6 md:p-10 rounded-[3rem] text-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden border border-rose-100">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-rose-200/20 rounded-full blur-[60px]"></div>
+                <div className="text-center md:text-right space-y-2 relative z-10">
+                    <h3 className="text-xl md:text-2xl font-bold flex items-center justify-center md:justify-start gap-2 text-rose-600">
+                       <Sparkles size={20} className="text-rose-400" /> 
+                       {user?.isMemberRequested ? 'הבקשה בטיפול' : 'הצטרפי למעגל הנשי'}
                     </h3>
-                    <p className="text-sm md:text-base opacity-70 font-bold max-w-lg leading-relaxed text-right">
+                    <p className="text-xs md:text-sm text-slate-500 font-medium max-w-md leading-relaxed">
                        {user?.isMemberRequested 
-                         ? 'המנהלת בוחנת את בקשתך להצטרפות למעגל. ברגע שתאושרי, תוכלי לצבור נקודות על כל פעילות באתר.'
-                         : 'הצטרפי למעגל הנשי המקומי, תרמי לקהילה ותהני מצבירת נקודות, הטבות בלעדיות והגרלות יוקרתיות.'}
+                         ? 'אנחנו מעבדים את פנייתך. ברגע שתאושרי, כל האתר יפתח בפנייך.'
+                         : 'גלי עולם של תרבות, קהילה והטבות בלעדיות לנשות העיר.'}
                     </p>
                 </div>
                 {!user?.isMemberRequested && (
                   <button 
                     onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} 
-                    className="bg-gradient-to-r from-rose-500 to-pink-500 px-10 py-5 rounded-[2rem] font-black text-base shadow-[0_10px_30px_rgba(225,29,72,0.4)] hover:scale-105 transition-all active:scale-95 relative z-10 flex items-center gap-3"
+                    className="bg-rose-500 text-white px-8 py-3.5 rounded-full font-bold text-sm shadow-md hover:bg-rose-600 transition-all active:scale-95 relative z-10 flex items-center gap-2"
                   >
-                    <HeartHandshake size={24} /> הצטרפי למעגל עכשיו
+                    <HeartHandshake size={18} /> הצטרפי אלינו
                   </button>
                 )}
             </div>
           )}
         </div>
 
-        {/* הגרלה פעילה */}
         {upcomingLottery && user?.isMemberApproved && (
             <Link to="/lottery" className="block animate-fade-in-up">
-                <div className="bg-gradient-to-r from-purple-800/90 to-fuchsia-600/90 backdrop-blur-md rounded-[3rem] p-6 md:p-8 shadow-2xl border border-white/20 flex items-center justify-between overflow-hidden relative group">
-                    <div className="flex items-center gap-5 relative z-10">
-                        <div className="w-14 h-14 md:w-16 md:h-16 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center text-white border border-white/30 shadow-inner">
-                            <Gift size={32} className="animate-bounce" />
+                <div className="bg-gradient-to-r from-rose-50/80 to-rose-100/80 backdrop-blur-sm rounded-[2.5rem] p-5 md:p-7 shadow-sm border border-rose-200 flex items-center justify-between overflow-hidden relative group">
+                    <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-rose-500 border border-rose-50 shadow-sm">
+                            <Gift size={24} className="animate-pulse" />
                         </div>
-                        <div className="text-white">
-                            <h3 className="font-black text-lg md:text-xl tracking-tight">הגרלה פעילה!</h3>
-                            <p className="text-xs md:text-sm text-purple-100 opacity-90 font-bold">הפרס המיוחד: {upcomingLottery.prize}</p>
+                        <div className="text-slate-700">
+                            <h3 className="font-bold text-base md:text-lg">הגרלה פעילה</h3>
+                            <p className="text-[11px] text-rose-400 font-bold uppercase tracking-wide">פרס השבוע: {upcomingLottery.prize}</p>
                         </div>
                     </div>
-                    <div className="text-left relative z-10 bg-black/20 p-4 rounded-3xl backdrop-blur-sm border border-white/10">
-                        <p className="text-[10px] text-purple-200 font-black mb-1 uppercase tracking-widest">זמן שנותר:</p>
-                        <div className="font-mono text-xl md:text-3xl font-black text-white flex items-center gap-2">
-                            <Clock size={24} className="text-pink-300" /> {timeLeft}
+                    <div className="text-left bg-white/60 px-4 py-2 rounded-2xl border border-rose-50">
+                        <p className="text-[9px] text-rose-300 font-bold uppercase mb-1">נסגר בעוד:</p>
+                        <div className="font-mono text-lg md:text-xl font-bold text-rose-500 flex items-center gap-2">
+                            <Clock size={16} /> {timeLeft}
                         </div>
                     </div>
                 </div>
             </Link>
         )}
 
-        {/* סליידר אירועים */}
-        <section className="relative h-[350px] md:h-[500px] w-full overflow-hidden rounded-[4rem] shadow-2xl border-4 border-white/50">
+        <section className="relative h-[300px] md:h-[450px] w-full overflow-hidden rounded-[3rem] shadow-xl border border-white">
             {displayEvents.map((event, index) => (
-            <div key={event.id} className={`absolute inset-0 transition-all duration-1000 ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`}>
+            <div key={event.id} className={`absolute inset-0 transition-all duration-1000 ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
                 <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 right-0 p-10 md:p-16 text-right">
-                    <span className="bg-rose-600 text-white px-5 py-2 rounded-full text-xs font-black uppercase mb-5 inline-block shadow-lg">המלצת השבוע</span>
-                    <h2 className="text-4xl md:text-7xl font-black text-white mb-3 drop-shadow-2xl">{event.title}</h2>
-                    <p className="text-sm md:text-xl text-white/90 font-bold mb-8 flex items-center gap-3 md:justify-start justify-center text-right">
-                       <MapPin size={20} className="text-rose-400" /> {event.location} • {new Date(event.date).toLocaleDateString('he-IL')}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 text-right">
+                    <span className="bg-rose-500/90 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase mb-4 inline-block tracking-widest">אירוע נבחר</span>
+                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-2">{event.title}</h2>
+                    <p className="text-xs md:text-base text-white/80 font-medium mb-6 flex items-center gap-2">
+                       <MapPin size={16} className="text-rose-400" /> {event.location} • {new Date(event.date).toLocaleDateString('he-IL')}
                     </p>
-                    <Link to="/events" className="inline-block bg-white text-rose-600 px-10 py-4 rounded-2xl font-black text-base hover:scale-105 transition-transform shadow-2xl">פרטים והרשמה</Link>
+                    <Link to="/events" className="inline-block bg-white text-rose-600 px-8 py-3 rounded-xl font-bold text-xs hover:bg-rose-50 transition-all shadow-lg">לפרטים והרשמה</Link>
                 </div>
             </div>
             ))}
         </section>
 
-        {/* קטגוריות */}
-        <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar px-2">
+        <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar px-2">
             {categories.map((cat, idx) => (
               <button key={idx} onClick={() => navigate('/events', { state: { category: cat.name } })} 
-                      className="flex items-center gap-4 px-8 py-5 bg-white/90 backdrop-blur-md rounded-[2rem] text-base font-black text-slate-700 shadow-md border border-white/50 hover:border-rose-300 hover:text-rose-600 transition-all flex-shrink-0 group">
-                <span className="text-rose-500 p-3 bg-rose-50 rounded-2xl group-hover:bg-rose-500 group-hover:text-white transition-colors">{cat.icon}</span>{cat.name}
+                      className="flex items-center gap-2 px-6 py-3 bg-white/80 backdrop-blur-sm rounded-2xl text-[13px] font-bold text-slate-600 shadow-sm border border-rose-50 hover:border-rose-300 hover:text-rose-600 transition-all flex-shrink-0 group">
+                <span className="text-rose-400 p-2 bg-rose-50 rounded-xl group-hover:bg-rose-500 group-hover:text-white transition-colors">{cat.icon}</span>{cat.name}
               </button>
             ))}
         </div>
@@ -203,43 +196,55 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         <div className="grid lg:grid-cols-3 gap-10">
             <div className="lg:col-span-2 space-y-10">
                 
-                {/* --- אשת השבוע: עיצוב אלמנט קומפקטי ויוקרתי --- */}
                 {personality && personality.name && (
                     <section className="animate-fade-in group">
-                        <div className="bg-white/90 backdrop-blur-xl rounded-[3rem] p-6 md:p-8 shadow-xl border border-white/50 flex flex-col md:flex-row items-center gap-8 max-w-2xl">
+                        <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-5 md:p-8 shadow-sm border border-white flex flex-col md:flex-row items-center gap-6 md:gap-10">
                             <div className="relative shrink-0">
-                                <img src={personality.image} className="w-32 h-32 md:w-48 md:h-48 rounded-[2.5rem] object-cover shadow-lg border-4 border-white group-hover:rotate-2 transition-transform duration-500" alt={personality.name} />
-                                <div className="absolute -bottom-2 -right-2 bg-yellow-400 p-3 rounded-2xl shadow-lg animate-pulse"><Sparkles className="text-white" size={20}/></div>
+                                <img src={personality.image} className="w-28 h-28 md:w-40 md:h-40 rounded-[2rem] object-cover shadow-md border-2 border-white" alt={personality.name} />
+                                <div className="absolute -bottom-2 -right-2 bg-amber-400 p-2 rounded-xl text-white shadow-sm"><Sparkles size={16}/></div>
                             </div>
-                            <div className="text-center md:text-right space-y-2 flex-1">
-                                <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 px-4 py-1 rounded-full">אשת השבוע</span>
-                                <h3 className="text-2xl md:text-4xl font-black text-slate-900">{personality.name}</h3>
-                                <p className="text-sm md:text-lg text-slate-500 font-bold leading-tight line-clamp-2">{personality.role}</p>
-                                <button onClick={() => setShowFullInterview(true)} className="mt-4 text-sm font-black text-rose-600 flex items-center gap-2 hover:gap-3 transition-all mx-auto md:mr-0">
-                                   לראיון המלא <Send size={14} className="rotate-180" />
+                            <div className="text-center md:text-right space-y-3 flex-1">
+                                <span className="text-[9px] font-bold text-rose-400 uppercase tracking-[0.2em] bg-rose-50 px-3 py-1 rounded-full">אשת השבוע</span>
+                                <div>
+                                    <h3 className="text-2xl md:text-3xl font-bold text-slate-800 leading-tight">{personality.name}</h3>
+                                    <p className="text-xs md:text-sm text-slate-400 font-bold">{personality.role}</p>
+                                </div>
+                                
+                                {/* הוספת המוטו בתצוגה מקדימה */}
+                                {personality.motto && (
+                                  <div className="relative py-2">
+                                     <p className="text-sm md:text-base text-rose-600/80 font-medium italic leading-relaxed">
+                                       <Quote size={12} className="inline ml-1 opacity-50 rotate-180" />
+                                       {personality.motto}
+                                       <Quote size={12} className="inline mr-1 opacity-50" />
+                                     </p>
+                                  </div>
+                                )}
+
+                                <button onClick={() => setShowFullInterview(true)} className="text-[11px] font-bold text-slate-400 hover:text-rose-500 flex items-center gap-2 transition-all mx-auto md:mr-0 pt-2 border-t border-rose-50/50">
+                                    קראי את הראיון המלא <Send size={10} className="rotate-180" />
                                 </button>
                             </div>
                         </div>
 
-                        {/* מודאל הראיון המלא */}
                         {showFullInterview && (
-                            <div className="fixed inset-0 z-[200] bg-white overflow-y-auto animate-fade-in no-scrollbar text-right" dir="rtl">
-                                <div className="sticky top-0 bg-white/80 backdrop-blur-md p-6 flex justify-between items-center border-b z-50">
-                                    <button onClick={() => setShowFullInterview(false)} className="p-3 bg-slate-100 rounded-full hover:bg-rose-100 transition-colors"><X size={24}/></button>
-                                    <h4 className="font-black text-rose-600 text-xl tracking-tight">ראיון השבוע בלעדי</h4>
+                            <div className="fixed inset-0 z-[200] bg-rose-50/95 overflow-y-auto animate-fade-in no-scrollbar text-right" dir="rtl">
+                                <div className="sticky top-0 bg-white/80 backdrop-blur-md p-5 flex justify-between items-center border-b z-50">
+                                    <button onClick={() => setShowFullInterview(false)} className="p-2 bg-slate-50 rounded-full hover:bg-rose-50"><X size={20}/></button>
+                                    <h4 className="font-bold text-rose-500 text-lg">ראיון השבוע</h4>
                                 </div>
-                                <div className="max-w-3xl mx-auto p-8 md:p-20 space-y-12">
-                                    <div className="text-center space-y-6">
-                                        <img src={personality.image} className="w-48 h-48 md:w-64 md:h-64 rounded-[4rem] mx-auto object-cover shadow-2xl border-8 border-rose-50 rotate-2" />
-                                        <h2 className="text-4xl md:text-7xl font-black text-slate-900 leading-none">{personality.name}</h2>
-                                        <div className="h-2 w-32 bg-rose-500 mx-auto rounded-full shadow-lg"></div>
-                                        <p className="text-xl md:text-3xl text-slate-500 font-bold">{personality.role}</p>
+                                <div className="max-w-2xl mx-auto p-8 md:p-16 space-y-10">
+                                    <div className="text-center space-y-4">
+                                        <img src={personality.image} className="w-40 h-40 md:w-56 md:h-56 rounded-[3rem] mx-auto object-cover shadow-xl border-4 border-white" />
+                                        <h2 className="text-3xl md:text-5xl font-bold text-slate-800">{personality.name}</h2>
+                                        <p className="text-lg text-rose-400 font-bold">{personality.role}</p>
+                                        {personality.motto && <p className="text-xl italic text-slate-600 max-w-lg mx-auto">"{personality.motto}"</p>}
                                     </div>
-                                    <div className="space-y-12">
+                                    <div className="space-y-8">
                                         {personality.questions?.map((q: any, i: number) => q.answer && (
-                                            <div key={i} className="border-r-[10px] border-rose-500 pr-8 py-4 space-y-4 animate-fade-in-up" style={{animationDelay: `${i*0.1}s`}}>
-                                                <h5 className="font-black text-rose-600 text-lg md:text-2xl leading-tight">Q: {q.question}</h5>
-                                                <p className="text-slate-800 text-xl md:text-4xl font-medium leading-relaxed italic">"{q.answer}"</p>
+                                            <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border-r-4 border-rose-400 animate-fade-in-up" style={{animationDelay: `${i*0.1}s`}}>
+                                                <h5 className="font-bold text-rose-500 text-base md:text-lg mb-2">{q.question}</h5>
+                                                <p className="text-slate-700 text-sm md:text-base leading-relaxed">{q.answer}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -249,20 +254,19 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </section>
                 )}
 
-                {/* --- COMMUNITY ITEMS SECTION --- */}
                 {communityItems && communityItems.length > 0 && (
-                    <section className="space-y-6 animate-fade-in">
-                        <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 px-4">
-                            <HeartHandshake className="text-emerald-500" size={28}/> מה קורה בקהילה
+                    <section className="space-y-4 animate-fade-in px-2">
+                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <HeartHandshake className="text-rose-400" size={20}/> בקהילה שלנו
                         </h3>
-                        <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar px-2">
+                        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
                             {communityItems.map((item) => (
-                                <div key={item._id || item.id} className="bg-white/90 backdrop-blur-md p-5 rounded-[2.5rem] shadow-lg border border-white/50 flex items-center gap-4 shrink-0 w-72 group hover:border-emerald-200 transition-all hover:translate-y-[-4px]">
-                                    <img src={item.image} className="w-16 h-16 rounded-2xl object-cover shrink-0 shadow-inner" />
-                                    <div className="flex-1 overflow-hidden text-right">
-                                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{item.category}</span>
-                                        <h4 className="font-black text-slate-800 text-sm truncate">{item.title}</h4>
-                                        <p className="text-slate-500 text-[10px] font-bold truncate">{item.location}</p>
+                                <div key={item._id || item.id} className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-rose-50 flex items-center gap-3 shrink-0 w-64 group hover:border-rose-200 transition-all">
+                                    <img src={item.image} className="w-12 h-12 rounded-xl object-cover shrink-0 shadow-sm" />
+                                    <div className="flex-1 overflow-hidden">
+                                        <span className="text-[8px] font-bold text-rose-400 uppercase tracking-widest">{item.category}</span>
+                                        <h4 className="font-bold text-slate-700 text-xs truncate">{item.title}</h4>
+                                        <p className="text-slate-400 text-[9px] truncate">{item.location}</p>
                                     </div>
                                 </div>
                             ))}
@@ -270,18 +274,18 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </section>
                 )}
 
-                <div className="space-y-6">
-                    <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 px-4"><Bell className="text-rose-500" size={28}/> עדכונים חמים</h3>
-                    <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4 px-2">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Bell className="text-rose-400" size={20}/> עדכונים</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
                         {mockNews.map((item) => (
-                            <div key={item.id} className="bg-white/90 backdrop-blur-md p-7 rounded-[2.5rem] shadow-lg border border-white/50 flex items-center gap-6 group hover:border-rose-200 transition-all hover:translate-y-[-4px]">
-                                <div className="w-16 h-16 bg-rose-50 rounded-3xl flex flex-col items-center justify-center text-rose-600 shrink-0 font-black shadow-inner">
-                                    <span className="text-lg leading-none">{item.date.split('/')[0]}</span>
-                                    <span className="text-xs opacity-60">{item.date.split('/')[1]}</span>
+                            <div key={item.id} className="bg-white/80 backdrop-blur-sm p-5 rounded-2xl shadow-sm border border-rose-50 flex items-center gap-4 group hover:border-rose-100 transition-all">
+                                <div className="w-12 h-12 bg-rose-50 rounded-xl flex flex-col items-center justify-center text-rose-400 shrink-0 font-bold border border-rose-100/50">
+                                    <span className="text-base leading-none">{item.date.split('/')[0]}</span>
+                                    <span className="text-[8px] opacity-60 uppercase">{item.date.split('/')[1]}</span>
                                 </div>
                                 <div className="text-right flex-1">
-                                    <h4 className="font-black text-slate-800 text-base md:text-lg group-hover:text-rose-600 transition-colors">{item.title}</h4>
-                                    <p className="text-slate-500 text-sm line-clamp-1 font-bold">{item.description}</p>
+                                    <h4 className="font-bold text-slate-700 text-sm group-hover:text-rose-500 transition-colors">{item.title}</h4>
+                                    <p className="text-slate-400 text-[11px] line-clamp-1">{item.description}</p>
                                 </div>
                             </div>
                         ))}
@@ -290,53 +294,56 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
 
             <div className="space-y-10">
-                <div className="bg-slate-900/95 backdrop-blur-xl rounded-[4rem] p-12 text-white relative overflow-hidden shadow-2xl group border border-white/10 text-right">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/20 rounded-full blur-[80px] -mr-24 -mt-24"></div>
-                    <div className="relative z-10 space-y-8">
-                        <p className="text-2xl md:text-3xl font-serif italic font-bold opacity-95">"הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך."</p>
-                        <div className="flex items-center gap-4 justify-end">
-                            <span className="text-xs font-black opacity-50 tracking-[0.3em] uppercase">השראה יומית</span>
-                            <div className="w-12 h-12 rounded-2xl bg-rose-500 flex items-center justify-center font-black text-sm shadow-xl shadow-rose-900/40">נ.ש</div>
+                <div className="bg-slate-800/90 backdrop-blur-xl rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl text-right">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-rose-400/10 rounded-full blur-[40px] -mr-16 -mt-16"></div>
+                    <div className="relative z-10 space-y-6">
+                        <p className="text-lg md:text-xl font-serif italic opacity-90 leading-relaxed">"הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך."</p>
+                        <div className="flex items-center gap-3 justify-end">
+                            <span className="text-[9px] font-bold opacity-40 tracking-widest uppercase">השראה יומית</span>
+                            <div className="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center font-bold text-[10px] shadow-lg shadow-rose-900/20">נ.ש</div>
                         </div>
                     </div>
                 </div>
 
                 {!user ? (
-                   <div onClick={onOpenLogin} className="cursor-pointer bg-gradient-to-br from-rose-600/90 to-pink-600/90 backdrop-blur-md rounded-[4rem] p-10 text-white shadow-2xl shadow-rose-200/50 text-center space-y-6 hover:scale-[1.03] transition-transform border border-white/20 flex flex-col items-center">
-                      <HeartHandshake size={60} className="mx-auto drop-shadow-lg" />
-                      <h3 className="text-3xl font-black">הצטרפי למעגל</h3>
-                      <p className="text-sm font-bold opacity-90 leading-relaxed max-w-sm">תהיי חלק מהשינוי בעיר. תרמי לקהילה ותקבלי עולם שלם של תרבות והטבות.</p>
-                      <button className="bg-white text-rose-600 px-10 py-4 rounded-[1.5rem] font-black text-base shadow-2xl hover:bg-slate-50 transition-colors">הרשמה מהירה</button>
+                   <div onClick={onOpenLogin} className="cursor-pointer bg-white rounded-[2.5rem] p-8 text-center space-y-4 hover:translate-y-[-5px] transition-all border border-rose-100 shadow-sm flex flex-col items-center">
+                      <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500"><HeartHandshake size={32} /></div>
+                      <h3 className="text-xl font-bold text-slate-800">הצטרפי למעגל</h3>
+                      <p className="text-[11px] text-slate-400 font-medium leading-relaxed max-w-[200px]">תהיי חלק מהשינוי בעיר ותיהני מעולם של תרבות והטבות.</p>
+                      <button className="bg-rose-500 text-white px-8 py-3 rounded-xl font-bold text-xs shadow-md hover:bg-rose-600 transition-all">הרשמה מהירה</button>
                    </div>
                 ) : (
-                  <div className="bg-white/90 backdrop-blur-md p-10 rounded-[4rem] shadow-2xl border border-white/50 text-center space-y-6 flex flex-col items-center">
-                      <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto text-rose-500 shadow-inner"><Phone size={32}/></div>
-                      <h3 className="text-2xl font-black text-slate-800">דברי איתנו</h3>
-                      <p className="text-sm text-slate-500 font-bold leading-relaxed max-w-sm text-right">לכל שאלה, הצעה או שיתוף פעולה - הצוות שלנו זמין עבורך תמיד.</p>
-                      <a href="tel:0500000000" className="block w-full py-5 bg-slate-50 text-slate-800 rounded-2xl font-black text-base hover:bg-rose-600 transition-all border border-slate-100 shadow-sm text-center">חיוג מהיר למוקד</a>
+                  <div className="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] shadow-sm border border-rose-50 text-center space-y-4 flex flex-col items-center">
+                      <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto text-rose-400"><Phone size={24}/></div>
+                      <h3 className="text-lg font-bold text-slate-800">צרי קשר</h3>
+                      <p className="text-[11px] text-slate-400 font-medium max-w-[180px]">אנחנו כאן לכל שאלה, הצעה או שיתוף פעולה.</p>
+                      <a href="tel:0500000000" className="block w-full py-3 bg-slate-50 text-slate-700 rounded-xl font-bold text-xs hover:bg-rose-50 transition-all border border-slate-100">חיוג למוקד</a>
                   </div>
                 )}
             </div>
         </div>
       </div>
 
-      {/* מודאל הצטרפות */}
+      {/* מודאל הצטרפות - עידון עיצובי */}
       {showMembershipModal && (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in text-right">
-              <div className="bg-white/95 backdrop-blur-xl rounded-[4rem] w-full max-w-xl p-10 md:p-14 relative shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-y-auto max-h-[95vh] no-scrollbar border border-white/20 shadow-2xl">
-                  <button onClick={() => setShowMembershipModal(false)} className="absolute top-10 left-10 p-3 hover:bg-slate-100 rounded-full transition-colors"><X size={24}/></button>
-                  <div className="text-right space-y-8">
-                      <div className="w-20 h-20 bg-rose-50 rounded-[2rem] flex items-center justify-center text-rose-500 shadow-inner rotate-12"><Sparkles size={40}/></div>
-                      <h2 className="text-4xl font-black text-slate-900 leading-tight">נתינה פוגשת עוצמה</h2>
-                      <form onSubmit={handleMembershipSubmit} className="space-y-5 pt-8 border-t border-slate-100">
-                          <div className="grid grid-cols-2 gap-5">
-                            <input required type="number" placeholder="גיל" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
-                            <input required type="text" placeholder="עיסוק" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-rose-900/20 backdrop-blur-sm animate-fade-in text-right">
+              <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] w-full max-w-md p-8 md:p-10 relative shadow-2xl border border-white">
+                  <button onClick={() => setShowMembershipModal(false)} className="absolute top-6 left-6 p-2 hover:bg-rose-50 rounded-full transition-colors text-slate-300"><X size={20}/></button>
+                  <div className="text-right space-y-6">
+                      <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-400 shadow-inner"><Sparkles size={24}/></div>
+                      <div className="space-y-1">
+                        <h2 className="text-2xl font-bold text-slate-800">בקשת הצטרפות</h2>
+                        <p className="text-xs text-slate-400">מלאי את הפרטים והמתיני לאישור המנהלת</p>
+                      </div>
+                      <form onSubmit={handleMembershipSubmit} className="space-y-4 pt-4 border-t border-rose-50">
+                          <div className="grid grid-cols-2 gap-3">
+                            <input required type="number" placeholder="גיל" className="p-4 bg-rose-50/50 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-rose-100 transition-all text-right" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
+                            <input required type="text" placeholder="עיסוק" className="p-4 bg-rose-50/50 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-rose-100 transition-all text-right" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
                           </div>
-                          <input required type="text" placeholder="כתובת מגורים מלאה" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
-                          <input required type="tel" placeholder="טלפון ליצירת קשר" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
-                          <button type="submit" className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-xl shadow-2xl hover:bg-rose-600 transition-all active:scale-95 flex items-center justify-center gap-4">
-                             <Send size={24}/> שליחת בקשה להצטרפות
+                          <input required type="text" placeholder="כתובת מגורים" className="w-full p-4 bg-rose-50/50 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-rose-100 transition-all text-right" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
+                          <input required type="tel" placeholder="טלפון" className="w-full p-4 bg-rose-50/50 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-rose-100 transition-all text-right" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
+                          <button type="submit" className="w-full py-4 bg-rose-500 text-white rounded-xl font-bold text-base shadow-lg hover:bg-rose-600 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4">
+                             <Send size={18}/> שליחת בקשה
                           </button>
                       </form>
                   </div>
