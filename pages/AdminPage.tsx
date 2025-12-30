@@ -269,26 +269,26 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב קהילה - מתוקן עם קטגוריות תואמות ל-types.ts */}
+        {/* טאב קהילה */}
         {activeTab === 'community' && (
           <div className="space-y-6 animate-fade-in">
             <button onClick={() => setIsCommunityModalOpen(true)} className="w-full md:w-auto bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2"><Plus/> הוספה לקהילה</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-right">
               {communityItems.map(item => (
-                <div key={item._id || item._id} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex items-center gap-4 animate-fade-in-up shadow-sm">
+                <div key={item._id} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex items-center gap-4 animate-fade-in-up shadow-sm">
                   <img src={item.image} className="w-16 h-16 rounded-xl object-cover shrink-0 bg-slate-50" />
                   <div className="flex-1 overflow-hidden">
                     <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter">{item.category}</span>
                     <h4 className="font-bold text-sm truncate">{item.title}</h4>
                   </div>
-                  <button onClick={() => handleDelete(item._id || item._id, 'community', item.title)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
+                  <button onClick={() => handleDelete(item._id, 'community', item.title)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* טאב אשת השבוע - תיקון הלינק, המחיקה והעתקה */}
+        {/* טאב אשת השבוע */}
         {activeTab === 'personality' && (
           <div className="max-w-4xl mx-auto space-y-12 animate-fade-in text-right">
             <div className="bg-white p-8 md:p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8">
@@ -324,13 +324,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     <div key={i} className="p-4 bg-slate-50 rounded-2xl space-y-2 relative animate-fade-in-up">
                       <button onClick={()=>{const qs=[...personalityForm.questions!]; qs.splice(i,1); setPersonalityForm({...personalityForm, questions:qs});}} className="absolute -top-2 -left-2 text-red-500 bg-white rounded-full p-1 shadow-sm"><X size={16}/></button>
                       <input placeholder="שאלה" className="w-full p-2 bg-white rounded-xl text-sm font-bold outline-none text-right" value={q.question} onChange={e=>updateQuestion(i,'question',e.target.value)} />
-                      <textarea placeholder="תשובה (השאירי ריק כדי שהאישה תמלא)" className="w-full p-2 bg-white rounded-xl text-sm resize-none outline-none text-right" value={q.answer} onChange={e=>updateQuestion(i,'answer',e.target.value)} />
+                      <textarea placeholder="תשובה" className="w-full p-2 bg-white rounded-xl text-sm resize-none outline-none text-right" value={q.answer} onChange={e=>updateQuestion(i,'answer',e.target.value)} />
                     </div>
                   ))}
                 </div>
               </div>
               <div className="flex flex-col gap-4">
-                <button onClick={async () => { await api.updatePersonality({...personalityForm, isActive: true}); alert('האתר עודכן!'); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all text-center">עדכון ידני של הכתבה באתר</button>
+                <button onClick={async () => { await api.updatePersonality({...personalityForm, isActive: true}); alert('עודכן!'); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all text-center">עדכון ישיר באתר</button>
                 
                 <div className="space-y-3 pt-6 border-t">
                   <button 
@@ -408,7 +408,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </div>
 
-      {/* מודאלים לניהול שחזרו לפעילות מלאה */}
+      {/* מודאלים לניהול */}
       <Modal isOpen={isEventModalOpen} onClose={()=>setIsEventModalOpen(false)} title="אירוע חדש">
         <form onSubmit={async (e)=>{e.preventDefault(); await api.createEvent(eventForm); setIsEventModalOpen(false); loadTabData();}} className="space-y-4">
           <input required placeholder="שם האירוע" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.title} onChange={e=>setEventForm({...eventForm, title:e.target.value})} />
@@ -452,7 +452,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
            <input required type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.drawDate} onChange={e=>setLotteryForm({...lotteryForm, drawDate:e.target.value})} />
            <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
               <input type="file" onChange={e => handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-              {lotteryForm.image ? <img lotteryForm.image className="h-20 mx-auto rounded-lg" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס (עד 50KB)</p>}
+              {lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto rounded-lg" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס (עד 50KB)</p>}
            </div>
            <button className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black">פרסום</button>
         </form>
