@@ -207,29 +207,30 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                                 <h3 className="text-2xl md:text-4xl font-black text-slate-900">{personality.name}</h3>
                                 <p className="text-sm md:text-lg text-slate-500 font-bold leading-tight line-clamp-2">{personality.role}</p>
                                 <button onClick={() => setShowFullInterview(true)} className="mt-4 text-sm font-black text-rose-600 flex items-center gap-2 hover:gap-3 transition-all mx-auto md:mr-0">
-                                   לראיון המלא <Send size={14} className="rotate-180" />
+                                   קראי את הראיון המלא <Send size={14} className="rotate-180" />
                                 </button>
                             </div>
                         </div>
 
                         {/* מודאל הראיון המלא (ללא גלילה פנימית, גלילה על כל הדף) */}
                         {showFullInterview && (
-                            <div className="fixed inset-0 z-[200] bg-white overflow-y-auto animate-fade-in no-scrollbar">
+                            <div className="fixed inset-0 z-[200] bg-white overflow-y-auto animate-fade-in no-scrollbar text-right" dir="rtl">
                                 <div className="sticky top-0 bg-white/80 backdrop-blur-md p-6 flex justify-between items-center border-b z-50">
                                     <button onClick={() => setShowFullInterview(false)} className="p-3 bg-slate-100 rounded-full hover:bg-rose-100 transition-colors"><X size={24}/></button>
-                                    <h4 className="font-black text-rose-600">ראיון בלעדי</h4>
+                                    <h4 className="font-black text-rose-600 text-xl">ראיון השבוע הבלעדי</h4>
                                 </div>
-                                <div className="max-w-3xl mx-auto p-8 md:p-20 space-y-12 text-right">
+                                <div className="max-w-3xl mx-auto p-8 md:p-20 space-y-12">
                                     <div className="text-center space-y-6">
                                         <img src={personality.image} className="w-48 h-48 md:w-64 md:h-64 rounded-[4rem] mx-auto object-cover shadow-2xl border-8 border-rose-50" />
-                                        <h2 className="text-4xl md:text-6xl font-black text-slate-900">{personality.name}</h2>
-                                        <p className="text-xl text-slate-500 font-bold">{personality.role}</p>
+                                        <h2 className="text-4xl md:text-7xl font-black text-slate-900 leading-none">{personality.name}</h2>
+                                        <div className="h-2 w-32 bg-rose-500 mx-auto rounded-full"></div>
+                                        <p className="text-xl md:text-3xl text-slate-500 font-bold">{personality.role}</p>
                                     </div>
                                     <div className="space-y-12">
                                         {personality.questions?.map((q: any, i: number) => q.answer && (
-                                            <div key={i} className="border-r-4 border-rose-500 pr-6 space-y-2">
-                                                <h5 className="font-black text-rose-600 text-lg">Q: {q.question}</h5>
-                                                <p className="text-slate-800 text-xl md:text-2xl font-medium leading-relaxed italic">"{q.answer}"</p>
+                                            <div key={i} className="border-r-[10px] border-rose-500 pr-8 py-4 space-y-4 animate-fade-in-up" style={{animationDelay: `${i*0.1}s`}}>
+                                                <h5 className="font-black text-rose-600 text-lg md:text-2xl leading-tight">Q: {q.question}</h5>
+                                                <p className="text-slate-800 text-xl md:text-4xl font-medium leading-relaxed italic">"{q.answer}"</p>
                                             </div>
                                         ))}
                                     </div>
@@ -239,7 +240,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </section>
                 )}
 
-                {/* קהילה */}
+                {/* --- COMMUNITY ITEMS SECTION --- */}
                 {communityItems && communityItems.length > 0 && (
                     <section className="space-y-6 animate-fade-in">
                         <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 px-4">
@@ -280,11 +281,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 </div>
             </div>
 
-            {/* צד שמאל - השראה ומוקד */}
             <div className="space-y-10">
-                <div className="bg-slate-900/95 backdrop-blur-xl rounded-[4rem] p-12 text-white relative overflow-hidden shadow-2xl group border border-white/10">
+                <div className="bg-slate-900/95 backdrop-blur-xl rounded-[4rem] p-12 text-white relative overflow-hidden shadow-2xl group border border-white/10 text-right">
                     <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/20 rounded-full blur-[80px] -mr-24 -mt-24"></div>
-                    <div className="relative z-10 space-y-8 text-right">
+                    <div className="relative z-10 space-y-8">
                         <p className="text-2xl md:text-3xl font-serif italic leading-relaxed font-bold opacity-95">"הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך."</p>
                         <div className="flex items-center gap-4 justify-end">
                             <span className="text-xs font-black opacity-50 tracking-[0.3em] uppercase">השראה יומית</span>
@@ -314,7 +314,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       {/* מודאל הצטרפות */}
       {showMembershipModal && (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in text-right">
               <div className="bg-white/95 backdrop-blur-xl rounded-[4rem] w-full max-w-xl p-10 md:p-14 relative shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-y-auto max-h-[95vh] no-scrollbar border border-white/20">
                   <button onClick={() => setShowMembershipModal(false)} className="absolute top-10 left-10 p-3 hover:bg-slate-100 rounded-full transition-colors"><X size={24}/></button>
                   <div className="text-right space-y-8">
@@ -332,7 +332,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                           <input required type="text" placeholder="כתובת מגורים מלאה" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
                           <input required type="tel" placeholder="טלפון ליצירת קשר" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-100 transition-all text-right" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
                           <button type="submit" className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-xl shadow-2xl hover:bg-rose-600 transition-all active:scale-95 flex items-center justify-center gap-4">
-                             <Send size={24}/> שליחת בקשה להצטרפות
+                             <Send size={24}/> שליחת בקשה
                           </button>
                       </form>
                   </div>
