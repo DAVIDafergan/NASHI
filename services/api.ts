@@ -270,10 +270,11 @@ export const api = {
         return res.json();
     },
 
-    async generateInterviewLink() {
+    async generateInterviewLink(data: any) {
         const res = await fetch(`${API_URL}/personality/generate-link`, {
             method: 'POST',
-            headers: getHeaders()
+            headers: getHeaders(),
+            body: JSON.stringify(data)
         });
         return res.json();
     },

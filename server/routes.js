@@ -210,14 +210,14 @@ router.post('/personality', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 1. יצירת לינק למילוי שאלון (מנהלת מגדירה שאלות)
+// 1. יצירת לינק למילוי שאלון (מנהלת מגדירה שאלות) - כאן נשמרות השאלות ללינק!
 router.post('/personality/generate-link', authenticate, isAdmin, async (req, res) => {
     try {
         const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         const p = new Personality({ 
-            name: req.body.name || 'ממתין למילוי',
-            role: req.body.role || '',
-            questions: req.body.questions || [], // השאלות שהמנהלת הגדירה
+            name: 'ממתין למילוי',
+            role: '',
+            questions: req.body.questions || [], // השאלות שהמנהלת הגדירה בניהול נשמרות בטוקן
             externalToken: token, 
             isActive: false 
         });
@@ -235,7 +235,7 @@ router.get('/personality/fill/:token', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 3. שליחת התשובות מהאישה (ציבורי)
+// 3. שליחת התשובות מהאישה (ציבורי) - האישה ממלאת שם, תפקיד, מוטו ותשובות
 router.post('/personality/fill/:token', async (req, res) => {
     try {
         const p = await Personality.findOneAndUpdate(
@@ -252,7 +252,7 @@ router.post('/personality/fill/:token', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 4. קבלת ראיונות שהושלמו לאישור (מנהלת)
+// 4. קבלת ראיונות שהושלמו לאישור (מנהלת) - כאן את יכולה לצפות בתוכן המלא
 router.get('/admin/personality/pending', authenticate, isAdmin, async (req, res) => {
     try {
         const pending = await Personality.find({ isActive: false, externalToken: null });
@@ -271,7 +271,7 @@ router.post('/admin/personality/approve/:id', authenticate, isAdmin, async (req,
 
 // ================= 8. פורום (FORUM) =================
 
-// קבלת פוסטים מאושרים בלבד לפורום - פותר את הבעיה שהפורום נשאר ריק
+// קבלת פוסטים מאושרים בלבד לפורום
 router.get('/forum', async (req, res) => {
     try {
         const posts = await ForumPost.find({ status: 'approved' }).sort({ createdAt: -1 });
