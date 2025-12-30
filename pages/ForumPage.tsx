@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  MessageSquare, Plus, ThumbsUp, ThumbsDown, Send, Search, 
-  Image as ImageIcon, X, Clock, User as UserIcon, MessageCircle, AlertCircle, CheckCircle
+  MessageSquare, Plus, ThumbsUp, Send, Search, 
+  Image as ImageIcon, X, Clock, User as UserIcon, MessageCircle, CheckCircle
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -24,7 +24,12 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
     setLoading(true);
     try {
       const data = await api.getForumPosts();
-      setPosts(Array.isArray(data) ? data : []);
+      // הצגת פוסטים מאושרים בלבד למשתמשות רגילות
+      // אם המשתמש הוא אדמין, הוא יוכל לראות הכל (אופציונלי)
+      const visiblePosts = Array.isArray(data) 
+        ? data.filter((p: any) => p.status === 'approved' || user?.isAdmin) 
+        : [];
+      setPosts(visiblePosts);
     } catch (err) { 
       console.error("Failed to load forum posts", err); 
     }
@@ -38,17 +43,27 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
     setIsSubmitting(true);
     try {
       const res = await api.createForumPost(newPost);
-      if (res.success) {
+      if (res) {
         setIsModalOpen(false);
         setNewPost({ title: '', content: '', image: '' });
         setShowSuccessMessage(true);
-        // הסתרת הודעת ההצלחה לאחר 5 שניות
         setTimeout(() => setShowSuccessMessage(false), 5000);
+        loadPosts(); // רענון הרשימה
       }
     } catch (err) {
       alert("שגיאה בשליחת הפוסט. נסי שוב מאוחר יותר.");
     }
     setIsSubmitting(false);
+  };
+
+  const handleLike = async (postId: string) => {
+    if (!user) return alert("התחברי כדי לעשות לייק");
+    try {
+      await api.likePost(postId);
+      loadPosts(); // רענון כדי לראות את הלייק המעודכן
+    } catch (err) {
+      console.error("Failed to like post", err);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,7 +97,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 pt-6 px-4 md:px-8">
+    <div className="min-h-screen bg-slate-50 pb-24 pt-6 px-4 md:px-8 text-right" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-8">
         
         {/* כותרת הפורום ועיצוב עליון */}
@@ -131,7 +146,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                       <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 shadow-inner">
                         <UserIcon size={24}/>
                       </div>
-                      <div>
+                      <div className="text-right">
                         <h4 className="font-black text-slate-800">{post.authorName}</h4>
                         <p className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
                           <Clock size={12}/> {new Date(post.createdAt).toLocaleDateString('he-IL')}
@@ -155,8 +170,12 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                   {/* אינטראקציה ותגובות */}
                   <div className="pt-6 border-t border-slate-50">
                     <div className="flex items-center gap-6 mb-6">
-                      <button className="flex items-center gap-2 text-slate-400 hover:text-rose-500 transition-colors">
-                        <ThumbsUp size={20}/> <span className="text-xs font-black">{post.likes?.length || 0}</span>
+                      <button 
+                        onClick={() => handleLike(post._id)}
+                        className={`flex items-center gap-2 transition-colors ${post.likes?.includes(user?.id) ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500'}`}
+                      >
+                        <ThumbsUp size={20} className={post.likes?.includes(user?.id) ? "fill-current" : ""} /> 
+                        <span className="text-xs font-black">{post.likes?.length || 0}</span>
                       </button>
                       <button className="flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors">
                         <MessageCircle size={20}/> <span className="text-xs font-black">{post.comments?.length || 0} תגובות</span>
@@ -173,20 +192,22 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                       ))}
                       
                       {/* הוספת תגובה */}
-                      <div className="flex gap-2 pt-2">
-                        <input 
-                          placeholder="כתבי תגובה לשיחה..." 
-                          className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium shadow-sm outline-none focus:ring-2 focus:ring-rose-200 transition-all"
-                          value={commentText[post._id] || ''}
-                          onChange={(e) => setCommentText({ ...commentText, [post._id]: e.target.value })}
-                        />
-                        <button 
-                          onClick={() => handleAddComment(post._id)} 
-                          className="bg-slate-900 text-white p-3 rounded-xl shadow-lg hover:bg-rose-600 transition-colors"
-                        >
-                          <Send size={18}/>
-                        </button>
-                      </div>
+                      {user && (
+                        <div className="flex gap-2 pt-2">
+                          <input 
+                            placeholder="כתבי תגובה לשיחה..." 
+                            className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium shadow-sm outline-none focus:ring-2 focus:ring-rose-200 transition-all text-right"
+                            value={commentText[post._id] || ''}
+                            onChange={(e) => setCommentText({ ...commentText, [post._id]: e.target.value })}
+                          />
+                          <button 
+                            onClick={() => handleAddComment(post._id)} 
+                            className="bg-slate-900 text-white p-3 rounded-xl shadow-lg hover:bg-rose-600 transition-colors"
+                          >
+                            <Send size={18} className="rotate-180" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -198,7 +219,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
 
       {/* מודאל פתיחת נושא חדש */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in text-right">
           <div className="bg-white rounded-[3rem] w-full max-w-lg p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-black text-slate-800">פתיחת נושא חדש</h3>
@@ -211,7 +232,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                 <input 
                   required
                   placeholder="על מה תרצי לדבר?" 
-                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-200 transition-all"
+                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-rose-200 transition-all text-right"
                   value={newPost.title}
                   onChange={e => setNewPost({ ...newPost, title: e.target.value })}
                 />
@@ -223,7 +244,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                   required
                   placeholder="שתפי אותנו בפרטים..." 
                   rows={5} 
-                  className="w-full p-4 bg-slate-50 rounded-2xl font-medium outline-none focus:ring-2 focus:ring-rose-200 resize-none transition-all"
+                  className="w-full p-4 bg-slate-50 rounded-2xl font-medium outline-none focus:ring-2 focus:ring-rose-200 resize-none transition-all text-right"
                   value={newPost.content}
                   onChange={e => setNewPost({ ...newPost, content: e.target.value })}
                 />
@@ -249,7 +270,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                 disabled={isSubmitting}
                 className={`w-full py-5 rounded-[1.5rem] font-black text-lg shadow-xl flex items-center justify-center gap-3 transition-all ${isSubmitting ? 'bg-slate-400' : 'bg-slate-900 text-white hover:bg-rose-600 active:scale-95'}`}
               >
-                {isSubmitting ? 'שולח לבדיקה...' : <><Send size={20}/> שליחת פוסט לאישור</>}
+                {isSubmitting ? 'שולח לבדיקה...' : <><Send size={20} className="rotate-180"/> שליחת פוסט לאישור</>}
               </button>
               <p className="text-[10px] text-center text-slate-400 font-bold tracking-widest uppercase">הפוסט יפורסם לאחר אישור מנהלת המערכת</p>
             </form>

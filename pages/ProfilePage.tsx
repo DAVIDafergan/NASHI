@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { User, Award, Star, Settings, QrCode, TrendingUp, Heart, Calendar, Edit2, Save, X, Camera } from 'lucide-react';
+import { User, Award, Star, Settings, QrCode, TrendingUp, Heart, Calendar, Edit2, Save, X, Camera, HeartHandshake, Lock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { UserLevel, EventItem } from '../types';
+import { Link } from 'react-router-dom';
 
 interface ProfilePageProps {
     user: User;
@@ -61,7 +62,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUs
   };
 
   return (
-    <div className="space-y-6 w-full max-w-5xl mx-auto pb-10">
+    <div className="space-y-6 w-full max-w-5xl mx-auto pb-10 text-right" dir="rtl">
       
       {/* Header & Edit Section */}
       <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100 relative overflow-visible">
@@ -97,24 +98,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUs
                  <div className="grid md:grid-cols-2 gap-4 animate-fade-in-up">
                      <div className="space-y-1 text-right">
                          <label className="text-xs font-bold text-slate-500">שם מלא</label>
-                         <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50" />
+                         <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 text-right" />
                      </div>
                      <div className="space-y-1 text-right">
                          <label className="text-xs font-bold text-slate-500">טלפון</label>
-                         <input type="text" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50" />
+                         <input type="text" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 text-right" />
                      </div>
                      <div className="space-y-1 text-right">
                          <label className="text-xs font-bold text-slate-500">אימייל</label>
-                         <input type="text" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50" />
+                         <input type="text" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 text-right" />
                      </div>
                      <div className="space-y-1 text-right">
                          <label className="text-xs font-bold text-slate-500">כתובת</label>
-                         <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50" />
+                         <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 text-right" />
                      </div>
                  </div>
              ) : (
                 <>
-                    <div className="flex flex-col md:flex-row items-center gap-3">
+                    <div className="flex flex-col md:flex-row items-center gap-3 justify-center md:justify-start">
                         <h2 className="text-3xl md:text-4xl font-black text-slate-900">{user.name}</h2>
                         <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-md ${getLevelStyle(user.level)}`}>
                             {user.level}
@@ -130,13 +131,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUs
                 </>
              )}
              
-             {!isEditing && (
+             {/* מדד התקדמות - מופיע רק למאושרות */}
+             {!isEditing && user.isMemberApproved && (
                 <div className="mt-4 max-w-md w-full mx-auto md:mx-0">
                     <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
                     <span>{user.points} נקודות</span>
                     <span>{nextLevelPoints} ליעד הבא</span>
                     </div>
-                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                     <div className="h-full bg-gradient-to-r from-rose-400 to-purple-500 transition-all duration-1000 shadow-[0_0_10px_rgba(244,63,94,0.5)]" style={{ width: `${progress}%` }}></div>
                     </div>
                 </div>
@@ -162,7 +164,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUs
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-6">
             {/* Digital Card */}
-            <div className={`rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500 ${user.level === UserLevel.AMBASSADOR ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-gradient-to-br from-slate-800 to-slate-900'}`}>
+            <div className={`rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500 ${user.isMemberApproved ? (user.level === UserLevel.AMBASSADOR ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-gradient-to-br from-slate-800 to-slate-900') : 'bg-slate-400 grayscale'}`}>
                 <div className="flex justify-between items-start mb-8 relative z-10">
                     <div>
                         <p className="text-xs opacity-70 tracking-[0.2em] font-medium mb-1">כרטיס תושבת</p>
@@ -192,7 +194,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUs
                     <div className="space-y-3">
                         {likedEvents.map(event => (
                             <div key={event.id} className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 hover:border-rose-200 transition-colors group">
-                                <img src={event.image} className="w-16 h-16 rounded-xl object-cover" />
+                                <img src={event.image} className="w-16 h-16 rounded-xl object-cover shadow-sm" />
                                 <div className="flex-1">
                                     <h4 className="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-rose-600 transition-colors">{event.title}</h4>
                                     <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
@@ -214,49 +216,76 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUs
 
         {/* Benefits & History */}
         <div className="space-y-6">
-             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 h-full flex flex-col">
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-slate-800">
                     <Award size={20} className="text-yellow-500" />
                     ההטבות שלי
                 </h3>
-                <ul className="space-y-3">
-                    {[
-                    { text: '10% הנחה בחוגי העשרה', active: true },
-                    { text: 'כניסה חינם למוזיאון העיר', active: true },
-                    { text: 'קדימות ברכישת כרטיסים למופעים', active: user.level !== UserLevel.BEGINNER },
-                    { text: 'הזמנה לאירועי VIP', active: user.level === UserLevel.AMBASSADOR || user.level === UserLevel.LEADER },
-                    ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                        <div className={`w-2.5 h-2.5 rounded-full ${item.active ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-slate-300'}`}></div>
-                        <span className={`font-medium ${item.active ? 'text-slate-700' : 'text-slate-400 line-through'}`}>{item.text}</span>
-                    </li>
-                    ))}
-                </ul>
+                
+                {user.isMemberApproved ? (
+                  /* תצוגה למאושרות */
+                  <ul className="space-y-3 flex-1">
+                      {[
+                      { text: '10% הנחה בחוגי העשרה', active: true },
+                      { text: 'כניסה חינם למוזיאון העיר', active: true },
+                      { text: 'קדימות ברכישת כרטיסים למופעים', active: user.level !== UserLevel.BEGINNER },
+                      { text: 'הזמנה לאירועי VIP', active: user.level === UserLevel.AMBASSADOR || user.level === UserLevel.LEADER },
+                      ].map((item, i) => (
+                      <li key={i} className="flex items-center gap-3 text-sm p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                          <div className={`w-2.5 h-2.5 rounded-full ${item.active ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-slate-300'}`}></div>
+                          <span className={`font-medium ${item.active ? 'text-slate-700' : 'text-slate-400 line-through'}`}>{item.text}</span>
+                      </li>
+                      ))}
+                  </ul>
+                ) : (
+                  /* באנר הצטרפות למי שלא אושרה */
+                  <div className="flex-1 flex flex-col items-center justify-center space-y-6 bg-slate-50 rounded-3xl p-8 border border-dashed border-slate-200 text-center">
+                      <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center text-rose-500">
+                        <Lock size={32} />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="font-black text-slate-800">הטבות המעגל חסומות</h4>
+                        <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                          {user.isMemberRequested 
+                            ? "בקשתך בטיפול. מיד לאחר אישור המנהלת, כל ההטבות והנקודות יופיעו כאן עבורך!" 
+                            : "הצטרפי למעגל הנשי של העיר כדי להתחיל לצבור נקודות וליהנות מהטבות בלעדיות."}
+                        </p>
+                      </div>
+                      {!user.isMemberRequested && (
+                        <Link to="/" className="bg-rose-600 text-white px-8 py-3 rounded-2xl font-black text-sm shadow-lg hover:bg-rose-700 transition-all flex items-center gap-2">
+                          <HeartHandshake size={18} /> הצטרפי למעגל עכשיו
+                        </Link>
+                      )}
+                  </div>
+                )}
             </div>
 
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                    <TrendingUp size={20} className="text-purple-500" />
-                    צבירת נקודות שנתית
-                </h3>
-                <div className="h-48 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={mockData}>
-                        <XAxis dataKey="name" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
-                        <YAxis hide />
-                        <Tooltip 
-                            cursor={{fill: '#f1f5f9'}} 
-                            contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
-                        />
-                        <Bar dataKey="points" radius={[6, 6, 6, 6]}>
-                            {mockData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={index === mockData.length - 1 ? '#e11d48' : '#e2e8f0'} />
-                            ))}
-                        </Bar>
-                    </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
+            {/* גרף צבירה - מופיע רק למאושרות */}
+            {user.isMemberApproved && (
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
+                      <TrendingUp size={20} className="text-purple-500" />
+                      צבירת נקודות שנתית
+                  </h3>
+                  <div className="h-48 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={mockData}>
+                          <XAxis dataKey="name" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
+                          <YAxis hide />
+                          <Tooltip 
+                              cursor={{fill: '#f1f5f9'}} 
+                              contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                          />
+                          <Bar dataKey="points" radius={[6, 6, 6, 6]}>
+                              {mockData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={index === mockData.length - 1 ? '#e11d48' : '#e2e8f0'} />
+                              ))}
+                          </Bar>
+                      </BarChart>
+                      </ResponsiveContainer>
+                  </div>
+              </div>
+            )}
         </div>
       </div>
     </div>
