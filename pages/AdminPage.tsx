@@ -160,7 +160,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב אישורים */}
         {activeTab === 'approvals' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
-            <div className="bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
+            <div className="bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-6 text-right">
                <h3 className="font-black text-xl flex items-center gap-2 text-right"><HeartHandshake className="text-rose-500"/> ממתינות למעגל</h3>
                <div className="space-y-4">
                  {pendingData.pendingUsers.map(u => (
@@ -176,7 +176,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                  {pendingData.pendingUsers.length === 0 && <p className="text-center text-slate-400 italic">אין בקשות חדשות</p>}
                </div>
             </div>
-            <div className="bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
+            <div className="bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-6 text-right">
                <h3 className="font-black text-xl flex items-center gap-2 text-right"><MessageSquare className="text-blue-500"/> פוסטים לאישור</h3>
                <div className="space-y-4">
                  {pendingData.pendingPosts.map(p => (
@@ -224,7 +224,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <div key={ev._id || ev.id} className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100 animate-fade-in-up">
                   {ev.isHero && <Sparkles className="text-yellow-400 mb-2 animate-pulse" size={16}/>}
                   <img src={ev.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-slate-800">{ev.title}</h4>
+                  <h4 className="font-black text-slate-800 text-right">{ev.title}</h4>
                   <div className="flex justify-between items-center mt-4">
                     <span className="text-[10px] text-slate-400">{ev.location}</span>
                     <button className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDelete(ev._id || ev.id, 'event', ev.title)}><Trash2 size={18}/></button>
@@ -238,13 +238,14 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב חוגים */}
         {activeTab === 'classes' && (
           <div className="space-y-6 animate-fade-in">
-            <button onClick={() => setIsClassModalOpen(true)} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2"><Plus/> חוג חדש</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <button onClick={() => setIsClassModalOpen(true)} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> חוג חדש</button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
               {apiClasses.map(c => (
-                <div key={c._id || c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up">
+                <div key={c._id || c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up shadow-sm">
                   <img src={c.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
                   <h4 className="font-black text-lg">{c.title}</h4>
-                  <p className="text-xs text-slate-400">{c.instructor} | {c.gender}</p>
+                  <p className="text-xs text-slate-500 font-bold">{c.instructor} | {c.gender}</p>
+                  <p className="text-[10px] text-slate-400 mt-1">{c.day} ב-{c.time} | {c.location}</p>
                   <button onClick={() => handleDelete(c._id || c.id, 'class', c.title)} className="text-red-500 mt-4 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
                 </div>
               ))}
@@ -255,10 +256,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב הגרלות */}
         {activeTab === 'lotteries' && (
           <div className="space-y-6 animate-fade-in">
-            <button onClick={() => setIsLotteryModalOpen(true)} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2"><Plus/> הגרלה חדשה</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <button onClick={() => setIsLotteryModalOpen(true)} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה חדשה</button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
               {apiLotteries.map(l => (
-                <div key={l._id || l.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up">
+                <div key={l._id || l.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm animate-fade-in-up shadow-sm">
                   <img src={l.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
                   <h4 className="font-black text-lg">{l.title}</h4>
                   <p className="text-xs text-slate-400">{new Date(l.drawDate).toLocaleString()}</p>
@@ -272,7 +273,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב קהילה */}
         {activeTab === 'community' && (
           <div className="space-y-6 animate-fade-in">
-            <button onClick={() => setIsCommunityModalOpen(true)} className="w-full md:w-auto bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2"><Plus/> הוספה לקהילה</button>
+            <button onClick={() => setIsCommunityModalOpen(true)} className="w-full md:w-auto bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הוספה לקהילה</button>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-right">
               {communityItems.map(item => (
                 <div key={item._id} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex items-center gap-4 animate-fade-in-up shadow-sm">
@@ -281,7 +282,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter">{item.category}</span>
                     <h4 className="font-bold text-sm truncate">{item.title}</h4>
                   </div>
-                  <button onClick={() => handleDelete(item._id, 'community', item.title)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
+                  <button onClick={() => handleDelete(item._id, 'community', item.title)} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 size={16}/></button>
                 </div>
               ))}
             </div>
@@ -295,74 +296,52 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               <div className="flex justify-between items-center border-b pb-4">
                 <h3 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3"><Sparkles className="text-rose-500"/> ניהול אשת השבוע</h3>
                 {personalityForm.name && (
-                  <button 
-                    onClick={async () => {
+                  <button onClick={async () => {
                       if(window.confirm("למחוק את אשת השבוע הנוכחית מהאתר?")) {
                         await api.updatePersonality({ name: '', role: '', image: '', questions: [], isActive: false });
-                        alert("נמחק!");
-                        loadTabData();
+                        alert("נמחק!"); loadTabData();
                       }
-                    }}
-                    className="text-red-500 font-bold text-xs hover:underline"
-                  >
-                    מחיקת אשת שבוע נוכחית
-                  </button>
+                  }} className="text-red-500 font-bold text-xs hover:underline">מחיקת אשת שבוע נוכחית</button>
                 )}
               </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input placeholder="שם מלא" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={personalityForm.name} onChange={e=>setPersonalityForm({...personalityForm, name:e.target.value})} />
-                <input placeholder="תפקיד / תיאור" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={personalityForm.role} onChange={e=>setPersonalityForm({...personalityForm, role:e.target.value})} />
+                <input placeholder="שם מלא של האישה" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none focus:ring-2 focus:ring-rose-100" value={personalityForm.name} onChange={e=>setPersonalityForm({...personalityForm, name:e.target.value})} />
+                <input placeholder="תפקיד / תיאור קצר" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none focus:ring-2 focus:ring-rose-100" value={personalityForm.role} onChange={e=>setPersonalityForm({...personalityForm, role:e.target.value})} />
               </div>
-              <div className="relative border-2 border-dashed border-slate-200 p-8 text-center rounded-[2.5rem]">
-                 <input type="file" onChange={e => handleFileUpload(e, setPersonalityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-                 {personalityForm.image ? <img src={personalityForm.image} className="h-40 mx-auto rounded-3xl shadow-lg animate-fade-in" /> : <p className="font-bold text-slate-400">העלאת תמונת פרופיל (עד 50KB)</p>}
+
+              <div className="space-y-4 bg-slate-50 p-6 rounded-[2rem]">
+                <div className="flex justify-between items-center mb-4"><h4 className="font-black text-lg">הגדרת השאלון</h4><button onClick={addQuestion} className="text-rose-500 font-bold text-sm">+ הוספת שאלה</button></div>
+                {personalityForm.questions?.map((q, i) => (
+                  <div key={i} className="flex gap-2 mb-3">
+                    <input placeholder="כתבי את השאלה כאן..." className="flex-1 p-3 bg-white border border-slate-100 rounded-xl font-bold text-right outline-none focus:border-rose-200" value={q.question} onChange={e=>updateQuestion(i,'question',e.target.value)} />
+                    <button onClick={()=>{const qs=[...personalityForm.questions!]; qs.splice(i,1); setPersonalityForm({...personalityForm, questions:qs});}} className="text-red-400 p-2"><Trash2 size={18}/></button>
+                  </div>
+                ))}
               </div>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center"><h4 className="font-black">הגדרת שאלון (ללא תשובות)</h4><button onClick={addQuestion} className="text-rose-500 font-bold">+ הוספת שאלה</button></div>
-                <div className="space-y-3">
-                  {personalityForm.questions?.map((q, i) => (
-                    <div key={i} className="p-4 bg-slate-50 rounded-2xl space-y-2 relative animate-fade-in-up">
-                      <button onClick={()=>{const qs=[...personalityForm.questions!]; qs.splice(i,1); setPersonalityForm({...personalityForm, questions:qs});}} className="absolute -top-2 -left-2 text-red-500 bg-white rounded-full p-1 shadow-sm"><X size={16}/></button>
-                      <input placeholder="שאלה" className="w-full p-2 bg-white rounded-xl text-sm font-bold outline-none text-right" value={q.question} onChange={e=>updateQuestion(i,'question',e.target.value)} />
-                      <textarea placeholder="תשובה" className="w-full p-2 bg-white rounded-xl text-sm resize-none outline-none text-right" value={q.answer} onChange={e=>updateQuestion(i,'answer',e.target.value)} />
-                    </div>
-                  ))}
-                </div>
-              </div>
+
               <div className="flex flex-col gap-4">
-                <button onClick={async () => { await api.updatePersonality({...personalityForm, isActive: true}); alert('עודכן!'); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all text-center">עדכון ישיר באתר</button>
+                <button onClick={async () => { await api.updatePersonality({...personalityForm, isActive: true}); alert('האתר עודכן!'); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all text-center">עדכון ישיר של הכתבה באתר</button>
                 
                 <div className="space-y-3 pt-6 border-t">
-                  <button 
-                    onClick={async () => { 
+                  <button onClick={async () => { 
                       const res = await api.generateInterviewLink(); 
                       const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
                       setGeneratedLink(fullLink);
-                    }} 
-                    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-md text-center"
-                  >
+                  }} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 transition-all">
                     <LinkIcon size={18}/> הפקת לינק לשליחה לאישה
                   </button>
 
                   {generatedLink && (
                     <div className="p-4 bg-blue-50 rounded-2xl border-2 border-blue-100 flex items-center gap-3 animate-fade-in-up">
                       <input readOnly className="flex-1 bg-transparent font-mono text-[10px] text-blue-800 text-left outline-none overflow-hidden" value={generatedLink} />
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(generatedLink);
-                          alert("הלינק הועתק בהצלחה!");
-                        }}
-                        className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                      >
-                        <Copy size={16} />
-                      </button>
+                      <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert("הלינק הועתק!"); }} className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"><Copy size={16}/></button>
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* ראיונות שהושלמו וממתינים לאישור */}
             {pendingInterviews.length > 0 && (
                <div className="space-y-4">
                   <h4 className="font-black text-xl text-slate-700 pr-4">ראיונות שהושלמו וממתינים לאישורך:</h4>
@@ -372,16 +351,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                           <p className="font-black text-xl text-slate-800">{interview.name}</p>
                           <p className="text-sm text-slate-500">{interview.role}</p>
                        </div>
-                       <button 
-                        onClick={async () => {
-                          await api.approvePersonality(interview._id || interview.id);
-                          alert("אשת השבוע עודכנה באתר!");
-                          loadTabData();
-                        }}
-                        className="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-md"
-                       >
-                         אישור ופרסום באתר
-                       </button>
+                       <button onClick={async () => { await api.approvePersonality(interview._id || interview.id); alert("אשת השבוע עודכנה באתר!"); loadTabData(); }} className="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-md">אישור ופרסום באתר</button>
                     </div>
                   ))}
                </div>
@@ -391,8 +361,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
         {/* טאב הגדרות */}
         {activeTab === 'settings' && (
-          <div className="max-w-xl mx-auto bg-white p-8 md:p-12 rounded-[4rem] shadow-2xl space-y-8 animate-fade-in">
-            <h3 className="text-2xl font-black flex items-center gap-3"><Settings className="text-rose-500"/> הגדרות ניקוד</h3>
+          <div className="max-w-xl mx-auto bg-white p-8 md:p-12 rounded-[4rem] shadow-2xl space-y-8 animate-fade-in text-right">
+            <h3 className="text-2xl font-black flex items-center gap-3 justify-end"><Settings className="text-rose-500"/> הגדרות ניקוד</h3>
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400">נקודות על הרשמה</label>
@@ -408,7 +378,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </div>
 
-      {/* מודאלים לניהול */}
+      {/* --- מודאלים לניהול --- */}
+      
       <Modal isOpen={isEventModalOpen} onClose={()=>setIsEventModalOpen(false)} title="אירוע חדש">
         <form onSubmit={async (e)=>{e.preventDefault(); await api.createEvent(eventForm); setIsEventModalOpen(false); loadTabData();}} className="space-y-4">
           <input required placeholder="שם האירוע" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.title} onChange={e=>setEventForm({...eventForm, title:e.target.value})} />
@@ -417,7 +388,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               <input required placeholder="מחיר" type="number" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.price} onChange={e=>setEventForm({...eventForm, price:Number(e.target.value)})} />
           </div>
           <input required placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-right" value={eventForm.location} onChange={e=>setEventForm({...eventForm, location:e.target.value})} />
-          <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-2xl"><input type="checkbox" className="w-4 h-4" checked={eventForm.isHero} onChange={e=>setEventForm({...eventForm, isHero:e.target.checked})}/><label className="text-sm font-bold">הצגה בסליידר הראשי</label></div>
+          <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-2xl text-right"><input type="checkbox" className="w-4 h-4" checked={eventForm.isHero} onChange={e=>setEventForm({...eventForm, isHero:e.target.checked})}/><label className="text-sm font-bold">הצגה בסליידר הראשי</label></div>
           <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
               <input type="file" onChange={e => handleFileUpload(e, setEventForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
               {eventForm.image ? <img src={eventForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">לחצי להעלאת תמונה (עד 50KB)</p>}
@@ -429,32 +400,39 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
       <Modal isOpen={isClassModalOpen} onClose={()=>setIsClassModalOpen(false)} title="חוג חדש">
         <form onSubmit={async (e)=>{e.preventDefault(); await api.createClass(classForm); setIsClassModalOpen(false); loadTabData();}} className="space-y-4 text-right">
           <input required placeholder="שם החוג" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.title} onChange={e=>setClassForm({...classForm, title:e.target.value})} />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 text-right">
               <select className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.gender} onChange={e=>setClassForm({...classForm, gender:e.target.value as any})}>
                 <option value="נשים">נשים</option>
                 <option value="בנות">בנות</option>
                 <option value="בנים">בנים</option>
               </select>
-              <input placeholder="גילאים" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.ageGroup} onChange={e=>setClassForm({...classForm, ageGroup:e.target.value})} />
+              <input placeholder="גילאים (למשל: 5-10)" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.ageGroup} onChange={e=>setClassForm({...classForm, ageGroup:e.target.value})} />
           </div>
+          <input required placeholder="שם המדריך/ה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.instructor} onChange={e=>setClassForm({...classForm, instructor:e.target.value})} />
+          <div className="grid grid-cols-2 gap-2 text-right">
+              <input required placeholder="יום בשבוע" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.day} onChange={e=>setClassForm({...classForm, day:e.target.value})} />
+              <input required type="time" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.time} onChange={e=>setClassForm({...classForm, time:e.target.value})} />
+          </div>
+          <input required placeholder="טלפון המדריך/ה ליצירת קשר" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.contactPhone} onChange={e=>setClassForm({...classForm, contactPhone:e.target.value})} />
+          <input required placeholder="מיקום החוג" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.location} onChange={e=>setClassForm({...classForm, location:e.target.value})} />
           <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
               <input type="file" onChange={e => handleFileUpload(e, setClassForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-              {classForm.image ? <img src={classForm.image} className="h-20 mx-auto rounded-lg" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה (עד 50KB)</p>}
+              {classForm.image ? <img src={classForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה (עד 50KB)</p>}
           </div>
-          <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black">שמירת חוג</button>
+          <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמירת חוג</button>
         </form>
       </Modal>
 
       <Modal isOpen={isLotteryModalOpen} onClose={()=>setIsLotteryModalOpen(false)} title="הגרלה חדשה">
         <form onSubmit={async (e)=>{e.preventDefault(); await api.createLottery(lotteryForm); setIsLotteryModalOpen(false); loadTabData();}} className="space-y-4">
            <input required placeholder="שם ההגרלה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.title} onChange={e=>setLotteryForm({...lotteryForm, title:e.target.value})} />
-           <input required placeholder="הפרס" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize} onChange={e=>setLotteryForm({...lotteryForm, prize:e.target.value})} />
+           <input required placeholder="הפרס המיוחד" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize} onChange={e=>setLotteryForm({...lotteryForm, prize:e.target.value})} />
            <input required type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.drawDate} onChange={e=>setLotteryForm({...lotteryForm, drawDate:e.target.value})} />
            <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
               <input type="file" onChange={e => handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-              {lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto rounded-lg" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס (עד 50KB)</p>}
+              {lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס (עד 50KB)</p>}
            </div>
-           <button className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black">פרסום</button>
+           <button className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg">פרסום הגרלה</button>
         </form>
       </Modal>
 
@@ -465,8 +443,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
              const res = await api.createCommunityItem(communityForm); 
              if(res) {
                setCommunityForm({ category: 'גמ"חים', title: '', phone: '', location: '', image: '', description: '' });
-               setIsCommunityModalOpen(false); 
-               loadTabData();
+               setIsCommunityModalOpen(false); loadTabData();
              }
            } catch(err) { alert("שגיאה בשמירה לקהילה. ודאי שהתמונה קטנה מ-50KB."); }
          }} className="space-y-4 text-right">
@@ -480,9 +457,9 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             <input placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.location} onChange={e=>setCommunityForm({...communityForm, location:e.target.value})} />
             <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
                <input type="file" onChange={e => handleFileUpload(e, setCommunityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-               {communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto rounded-lg" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה (עד 50KB)</p>}
+               {communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה (עד 50KB)</p>}
             </div>
-            <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום</button>
+            <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום באתר</button>
          </form>
       </Modal>
 
