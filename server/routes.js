@@ -199,9 +199,10 @@ router.get('/personality', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// עדכון הגדרות כלליות (מנהלת)
 router.post('/personality', authenticate, isAdmin, async (req, res) => {
     try {
-        let p = await Personality.findOne();
+        let p = await Personality.findOne({ isActive: true });
         if (!p) p = new Personality(req.body);
         else Object.assign(p, req.body, { updatedAt: Date.now() });
         await p.save();
@@ -209,15 +210,14 @@ router.post('/personality', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// יצירת לינק למילוי שאלון
+// 1. יצירת לינק למילוי שאלון (מנהלת מגדירה שאלות)
 router.post('/personality/generate-link', authenticate, isAdmin, async (req, res) => {
     try {
-        const token = Math.random().toString(36).substring(2, 15);
-        // יצירת פרופיל "טיוטה" חדש עם הטוקן
+        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         const p = new Personality({ 
             name: req.body.name || 'ממתין למילוי',
             role: req.body.role || '',
-            questions: req.body.questions || [],
+            questions: req.body.questions || [], // השאלות שהמנהלת הגדירה
             externalToken: token, 
             isActive: false 
         });
@@ -226,7 +226,7 @@ router.post('/personality/generate-link', authenticate, isAdmin, async (req, res
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// קבלת שאלון למילוי (עבור האישה) - פותר את בעיית "לינק לא תקין"
+// 2. קבלת השאלון למילוי (ציבורי - לפי טוקן)
 router.get('/personality/fill/:token', async (req, res) => {
     try {
         const p = await Personality.findOne({ externalToken: req.params.token });
@@ -235,19 +235,24 @@ router.get('/personality/fill/:token', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// שליחת תשובות לשאלון (על ידי האישה)
+// 3. שליחת התשובות מהאישה (ציבורי)
 router.post('/personality/fill/:token', async (req, res) => {
     try {
         const p = await Personality.findOneAndUpdate(
             { externalToken: req.params.token },
-            { ...req.body, externalToken: null, updatedAt: Date.now() }, // מחיקת הטוקן לאחר שימוש
+            { 
+                ...req.body, 
+                externalToken: null, // ביטול הטוקן לאחר שימוש
+                updatedAt: Date.now() 
+            },
             { new: true }
         );
+        if (!p) return res.status(404).json({ error: 'Interview not found' });
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// קבלת ראיונות שהושלמו וממתינים לאישור (עבור המנהלת)
+// 4. קבלת ראיונות שהושלמו לאישור (מנהלת)
 router.get('/admin/personality/pending', authenticate, isAdmin, async (req, res) => {
     try {
         const pending = await Personality.find({ isActive: false, externalToken: null });
@@ -255,12 +260,10 @@ router.get('/admin/personality/pending', authenticate, isAdmin, async (req, res)
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// אישור סופי של אשת השבוע והפיכתה לפעילה באתר
+// 5. אישור סופי ופרסום באתר
 router.post('/admin/personality/approve/:id', authenticate, isAdmin, async (req, res) => {
     try {
-        // הפיכת כל שאר הראיונות ללא פעילים
         await Personality.updateMany({}, { isActive: false });
-        // הפיכת הראיון הנבחר לפעיל
         await Personality.findByIdAndUpdate(req.params.id, { isActive: true });
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -285,13 +288,13 @@ router.post('/forum', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// לייק לפוסט בפורום
+// לייק לפוסט
 router.post('/forum/:id/like', authenticate, async (req, res) => {
     try {
         const post = await ForumPost.findById(req.params.id);
         const userId = req.user.id;
         if (post.likes.includes(userId)) {
-            post.likes = post.likes.filter(id => id.toString() !== userId);
+            post.likes = post.likes.filter(id => id.toString() !== userId.toString());
         } else {
             post.likes.push(userId);
         }
@@ -300,7 +303,7 @@ router.post('/forum/:id/like', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// הוספת תגובה לפוסט בפורום
+// הוספת תגובה
 router.post('/forum/:id/comment', authenticate, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
