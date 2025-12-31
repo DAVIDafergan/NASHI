@@ -1,4 +1,4 @@
-import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, ForumPost } from '../types';
+import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, ForumPost, CommunityItem } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
 
@@ -108,9 +108,9 @@ export const api = {
         return res.json();
     },
 
-    async updateEvent(event: EventItem): Promise<EventItem> {
+    async updateEvent(id: string, event: Partial<EventItem>): Promise<EventItem> {
         validateImageSize(event);
-        const res = await fetch(`${API_URL}/events/${event.id || event._id}`, {
+        const res = await fetch(`${API_URL}/events/${id}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(event)
@@ -153,9 +153,9 @@ export const api = {
         return res.json();
     },
     
-    async updateClass(cls: ClassItem): Promise<ClassItem> {
+    async updateClass(id: string, cls: Partial<ClassItem>): Promise<ClassItem> {
         validateImageSize(cls);
-        const res = await fetch(`${API_URL}/classes/${cls.id || cls._id}`, { 
+        const res = await fetch(`${API_URL}/classes/${id}`, { 
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(cls)
@@ -235,15 +235,25 @@ export const api = {
     },
 
     // ================= COMMUNITY (קהילה) =================
-    async getCommunityItems() {
+    async getCommunityItems(): Promise<CommunityItem[]> {
         const res = await fetch(`${API_URL}/community`);
         return res.json();
     },
 
-    async createCommunityItem(item: any) {
+    async createCommunityItem(item: Partial<CommunityItem>) {
         validateImageSize(item);
         const res = await fetch(`${API_URL}/community`, {
             method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(item)
+        });
+        return res.json();
+    },
+
+    async updateCommunityItem(id: string, item: Partial<CommunityItem>) {
+        validateImageSize(item);
+        const res = await fetch(`${API_URL}/community/${id}`, {
+            method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(item)
         });
