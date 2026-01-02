@@ -217,6 +217,13 @@ export const api = {
         return res.json();
     },
 
+    async deletePost(postId: string): Promise<void> {
+        await fetch(`${API_URL}/forum/${postId}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+    },
+
     async likePost(postId: string) {
         const res = await fetch(`${API_URL}/forum/${postId}/like`, {
             method: 'POST',

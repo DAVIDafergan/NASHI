@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// --- Types (Internal Definition to ensure safety) ---
+// --- Types ---
+interface EventSession {
+  name: string;
+  date: string;
+}
+
 interface EventItem {
   id: string;
   _id?: string;
@@ -11,19 +16,20 @@ interface EventItem {
   location: string;
   category: string;
   price: number;
+  earlyBirdPrice?: number; // שדה חדש
+  earlyBirdEndDate?: string; // שדה חדש
+  sessions?: EventSession[]; // שדה חדש
   image: string;
   isHero?: boolean;
   ratings?: number[];
 }
 
-// --- API Helper ---
 const API_URL = 'https://nashi-production.up.railway.app/api';
 
 const EventsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // State
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -31,22 +37,19 @@ const EventsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   
-  // Review State
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [userRating, setUserRating] = useState(0);
 
-  // 1. טעינת נתונים מהשרת (התיקון למסך הלבן)
   useEffect(() => {
     fetch(`${API_URL}/events`)
       .then(res => res.json())
       .then(data => {
-        // המרה של _id ל-id כדי שהממשק לא יקרוס
         const formattedEvents = data.map((item: any) => ({
             ...item,
             id: item._id || item.id,
-            date: item.date || new Date().toISOString(), // הגנה מפני תאריך חסר
-            image: item.image || 'https://via.placeholder.com/400x300', // תמונת ברירת מחדל
+            date: item.date || new Date().toISOString(),
+            image: item.image || 'https://via.placeholder.com/400x300',
             ratings: item.ratings || []
         }));
         setEvents(formattedEvents);
@@ -58,14 +61,12 @@ const EventsPage = () => {
       });
   }, []);
 
-  // קבלת קטגוריה מדף הבית
   useEffect(() => {
     if (location.state && location.state.category) {
         setSelectedCategory(location.state.category);
     }
   }, [location.state]);
 
-  // איפוס טופס ביקורת כשפותחים אירוע
   useEffect(() => {
       if (selectedEvent) {
           setUserRating(0);
@@ -74,7 +75,18 @@ const EventsPage = () => {
       }
   }, [selectedEvent]);
 
-  // סינון אירועים
+  // פונקציית עזר לחישוב המחיר הנוכחי (מכירה מוקדמת או רגיל)
+  const getDisplayPrice = (event: EventItem) => {
+    if (event.earlyBirdPrice && event.earlyBirdEndDate) {
+      const now = new Date();
+      const deadline = new Date(event.earlyBirdEndDate);
+      if (now <= deadline) {
+        return { value: event.earlyBirdPrice, isEarly: true };
+      }
+    }
+    return { value: event.price, isEarly: false };
+  };
+
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(filter.toLowerCase()) || event.location.toLowerCase().includes(filter.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
@@ -82,8 +94,6 @@ const EventsPage = () => {
   });
 
   const categories = ['all', 'מוזיקה', 'העשרה', 'סדנאות', 'קהילה', 'בידור', 'אופנה'];
-
-  // --- Actions ---
 
   const handleJoin = async (event: EventItem) => {
       const token = localStorage.getItem('token');
@@ -112,7 +122,6 @@ const EventsPage = () => {
       const token = localStorage.getItem('token');
       const url = window.location.href;
       
-      // Share UI
       if (navigator.share) {
           try { await navigator.share({ title: 'Nashi Event', url }); } catch {}
       } else {
@@ -120,7 +129,6 @@ const EventsPage = () => {
           alert('הקישור הועתק!');
       }
 
-      // Add points via API
       if (token && selectedEvent) {
           fetch(`${API_URL}/events/${selectedEvent.id}/share`, {
               method: 'POST',
@@ -136,7 +144,6 @@ const EventsPage = () => {
           alert('יש להתחבר כדי לדרג');
           return;
       }
-      // כאן ניתן להוסיף קריאה לשרת לשמירת הביקורת בעתיד
       setReviewSubmitted(true);
       setTimeout(() => {
           setReviewText('');
@@ -151,8 +158,6 @@ const EventsPage = () => {
       return (sum / ratings.length).toFixed(1);
   };
 
-  // --- Render ---
-
   if (loading) return (
       <div className="flex items-center justify-center min-h-[50vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
@@ -160,10 +165,10 @@ const EventsPage = () => {
   );
 
   return (
-    <div className="space-y-6 w-full pb-20 p-4 md:p-8">
+    <div className="space-y-6 w-full pb-20 p-4 md:p-8 text-right" dir="rtl">
       
       {/* Header with Back Button */}
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-4 mb-4 justify-start">
            <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-sm text-slate-600 hover:bg-slate-50"><ArrowLeft size={20}/></button>
            <h1 className="text-2xl font-black text-slate-800">לוח אירועים</h1>
       </div>
@@ -175,7 +180,7 @@ const EventsPage = () => {
           <input 
             type="text" 
             placeholder="חיפוש אירוע..." 
-            className="w-full pr-9 pl-3 py-2.5 bg-white border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-200 transition-all text-xs font-medium placeholder-slate-400 shadow-sm"
+            className="w-full pr-9 pl-3 py-2.5 bg-white border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-200 transition-all text-xs font-medium placeholder-slate-400 shadow-sm text-right"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
@@ -201,6 +206,7 @@ const EventsPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
         {filteredEvents.map(event => {
             const avgRating = getAverageRating(event.ratings);
+            const { value: displayPrice, isEarly } = getDisplayPrice(event);
             
             return (
                 <div 
@@ -217,10 +223,15 @@ const EventsPage = () => {
                             <Tag size={10} className="text-rose-400" />
                             {event.category}
                         </div>
+
+                        {/* באנר מכירה מוקדמת */}
+                        {isEarly && (
+                          <div className="absolute top-2 left-2 bg-rose-500 text-white px-2 py-0.5 rounded-full text-[8px] font-black animate-pulse shadow-lg">מכירה מוקדמת!</div>
+                        )}
                     </div>
                     
                     {/* Content Section */}
-                    <div className="px-3 sm:px-2 pb-1 sm:pb-2 pt-0 sm:pt-2 flex-1 min-w-0 flex flex-col justify-center sm:justify-start h-full sm:h-auto">
+                    <div className="px-3 sm:px-2 pb-1 sm:pb-2 pt-0 sm:pt-2 flex-1 min-w-0 flex flex-col justify-center sm:justify-start h-full sm:h-auto text-right">
                         
                         <div className="flex justify-between items-start mb-1 sm:mb-2">
                             <h3 className="text-sm md:text-base font-black text-slate-800 leading-tight line-clamp-2 sm:line-clamp-2 ml-1 group-hover:text-rose-600 transition-colors">
@@ -233,7 +244,7 @@ const EventsPage = () => {
                             )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] md:text-xs text-slate-400 mb-1 sm:mb-3">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] md:text-xs text-slate-400 mb-1 sm:mb-3 justify-start">
                             <div className="flex items-center gap-1">
                                 <Calendar size={11} className="text-rose-300" />
                                 <span>{new Date(event.date).toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit'})}</span>
@@ -245,8 +256,9 @@ const EventsPage = () => {
                         </div>
 
                         <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-50 sm:border-slate-50 border-transparent w-full">
-                            <div className="font-black text-sm text-slate-700">
-                                {event.price === 0 ? <span className="text-emerald-500">חינם</span> : `₪${event.price}`}
+                            <div className="font-black text-sm text-slate-700 flex items-center gap-1">
+                                {displayPrice === 0 ? <span className="text-emerald-500">חינם</span> : `₪${displayPrice}`}
+                                {isEarly && <span className="text-[10px] text-slate-300 line-through font-medium">₪{event.price}</span>}
                             </div>
                             <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2.5 py-1 rounded-full group-hover:bg-rose-100 transition-colors">
                                 פרטים
@@ -259,13 +271,13 @@ const EventsPage = () => {
       </div>
       
       {filteredEvents.length === 0 && (
-         <div className="text-center py-16 bg-white/50 rounded-[2rem] border border-dashed border-slate-200">
-           <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-3 text-rose-300">
-               <Calendar size={20} />
-           </div>
-           <p className="text-slate-400 text-sm font-medium">לא נמצאו אירועים.</p>
-           <button onClick={() => {setFilter(''); setSelectedCategory('all');}} className="mt-2 text-rose-500 text-xs font-bold">ניקוי סינון</button>
-         </div>
+          <div className="text-center py-16 bg-white/50 rounded-[2rem] border border-dashed border-slate-200">
+            <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-3 text-rose-300">
+                <Calendar size={20} />
+            </div>
+            <p className="text-slate-400 text-sm font-medium">לא נמצאו אירועים.</p>
+            <button onClick={() => {setFilter(''); setSelectedCategory('all');}} className="mt-2 text-rose-500 text-xs font-bold">ניקוי סינון</button>
+          </div>
       )}
 
       {/* --- Detailed Event Modal --- */}
@@ -278,13 +290,13 @@ const EventsPage = () => {
                   <div className="h-64 w-full relative">
                       <img src={selectedEvent.image} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
-                      <div className="absolute bottom-10 right-6 text-white max-w-[80%]">
+                      <div className="absolute bottom-10 right-6 text-white max-w-[80%] text-right">
                            <span className="bg-rose-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold mb-2 inline-block tracking-wide shadow-sm border border-white/20">{selectedEvent.category}</span>
                            <h2 className="text-3xl font-black leading-tight shadow-sm drop-shadow-md mb-2">{selectedEvent.title}</h2>
                       </div>
                   </div>
                   
-                  <div className="px-6 py-6 bg-white rounded-t-[2.5rem] -mt-8 relative z-10">
+                  <div className="px-6 py-6 bg-white rounded-t-[2.5rem] -mt-8 relative z-10 text-right">
                       
                       <div className="flex gap-3 mb-6">
                           <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100 flex flex-col items-center justify-center">
@@ -297,14 +309,32 @@ const EventsPage = () => {
                           </div>
                           <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100 flex flex-col items-center justify-center">
                               <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">מחיר</p>
-                              <p className="font-bold text-rose-500 text-sm">{selectedEvent.price === 0 ? 'חינם' : `₪${selectedEvent.price}`}</p>
+                              <p className="font-bold text-rose-500 text-sm">{getDisplayPrice(selectedEvent).value === 0 ? 'חינם' : `₪${getDisplayPrice(selectedEvent).value}`}</p>
                           </div>
                       </div>
 
+                      {/* רשימת מפגשים נוספים - מוצג רק אם קיימים */}
+                      {selectedEvent.sessions && selectedEvent.sessions.length > 0 && (
+                        <div className="mb-6 space-y-3 bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
+                           <h4 className="font-black text-sm text-slate-800 flex items-center gap-2">
+                             <Sparkles size={16} className="text-rose-500" />
+                             מפגשי הסדרה:
+                           </h4>
+                           <div className="space-y-2">
+                              {selectedEvent.sessions.map((session, idx) => (
+                                <div key={idx} className="flex justify-between items-center bg-white px-3 py-2 rounded-xl text-xs border border-slate-100">
+                                   <span className="font-bold text-slate-700">{session.name}</span>
+                                   <span className="text-slate-400 font-medium">{new Date(session.date).toLocaleDateString('he-IL')}</span>
+                                </div>
+                              ))}
+                           </div>
+                        </div>
+                      )}
+
                       <div className="space-y-4 mb-8">
-                          <div className="flex items-start gap-3">
+                          <div className="flex items-start gap-3 justify-start">
                               <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 shrink-0 border border-rose-100"><MapPin size={18} /></div>
-                              <div>
+                              <div className="text-right">
                                   <h4 className="font-bold text-slate-800 text-sm">מיקום האירוע</h4>
                                   <p className="text-slate-500 text-sm mt-0.5">{selectedEvent.location}</p>
                               </div>
@@ -324,8 +354,8 @@ const EventsPage = () => {
                           </div>
                       </div>
 
-                      <div className="border-t border-slate-50 pt-5">
-                          <h4 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-1.5">
+                      <div className="border-t border-slate-50 pt-5 text-right">
+                          <h4 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-1.5 justify-start">
                               <MessageSquare size={14} className="text-slate-300" />
                               דירוג
                           </h4>
@@ -343,7 +373,7 @@ const EventsPage = () => {
                                     ))}
                                   </div>
                                   <input 
-                                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-xs focus:ring-2 focus:ring-rose-200 outline-none placeholder-slate-400" 
+                                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-xs focus:ring-2 focus:ring-rose-200 outline-none placeholder-slate-400 text-right" 
                                     placeholder="איך היה? כתבי תגובה..."
                                     value={reviewText}
                                     onChange={e => setReviewText(e.target.value)}
@@ -355,7 +385,7 @@ const EventsPage = () => {
                           )}
                       </div>
                   </div>
-              </div>
+                </div>
             </div>
         </div>
       )}

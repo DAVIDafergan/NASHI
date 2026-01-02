@@ -62,6 +62,11 @@ const EventSchema = new mongoose.Schema({
   image: { type: String },
   category: { type: String },
   price: { type: Number, default: 0 },
+  // שדות חדשים למחיר מוקדם ומפגשים
+  earlyBirdPrice: { type: Number },
+  earlyBirdEndDate: { type: Date },
+  sessions: [{ name: String, date: Date }],
+  // המשך שדות קיימים
   isHero: { type: Boolean, default: false },
   registrationLink: { type: String },
   attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
@@ -73,6 +78,9 @@ const ClassSchema = new mongoose.Schema({
   title: { type: String, required: true },
   instructor: { type: String },
   contactPhone: { type: String },
+  // שדה חדש לטלפון הרשמה
+  registrationPhone: { type: String },
+  // המשך שדות קיימים
   day: { type: String },
   time: { type: String },
   location: { type: String },
