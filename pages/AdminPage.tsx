@@ -532,7 +532,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </div>
 
-      {/* מודאלים */}
+      {/* מודאלים מורחבים */}
       
       <Modal isOpen={isEventModalOpen} onClose={()=>setIsEventModalOpen(false)} title={eventForm._id || eventForm.id ? "עריכת אירוע" : "אירוע חדש"}>
         <form onSubmit={async (e)=>{
@@ -543,11 +543,57 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             setIsEventModalOpen(false); loadTabData();
         }} className="space-y-4">
           <input required placeholder="שם האירוע" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.title} onChange={e=>setEventForm({...eventForm, title:e.target.value})} />
-          <div className="grid grid-cols-2 gap-2">
-              <input required placeholder="מחיר" type="number" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.price} onChange={e=>setEventForm({...eventForm, price:Number(e.target.value)})} />
-              <input required type="date" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.date?.split('T')[0]} onChange={e=>setEventForm({...eventForm, date:e.target.value})} />
+          
+          <div className="grid grid-cols-2 gap-2 text-right">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-slate-400">מחיר קבוע</label>
+                <input required placeholder="מחיר קבוע" type="number" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.price} onChange={e=>setEventForm({...eventForm, price:Number(e.target.value)})} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-rose-400">מחיר מכירה מוקדמת</label>
+                <input placeholder="מכירה מוקדמת" type="number" className="w-full p-4 bg-rose-50 rounded-2xl font-bold outline-none text-right border border-rose-100" value={eventForm.earlyBirdPrice} onChange={e=>setEventForm({...eventForm, earlyBirdPrice:Number(e.target.value)})} />
+              </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-2 text-right">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-slate-400">תאריך האירוע</label>
+                <input required type="date" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.date?.split('T')[0]} onChange={e=>setEventForm({...eventForm, date:e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-rose-400">סיום מכירה מוקדמת</label>
+                <input type="date" className="w-full p-4 bg-rose-50 rounded-2xl font-bold outline-none text-right border border-rose-100" value={eventForm.earlyBirdEndDate} onChange={e=>setEventForm({...eventForm, earlyBirdEndDate:e.target.value})} />
+              </div>
+          </div>
+
           <input required placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-right" value={eventForm.location} onChange={e=>setEventForm({...eventForm, location:e.target.value})} />
+          
+          {/* ניהול מפגשים נוספים */}
+          <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+             <div className="flex justify-between items-center">
+                <h4 className="font-black text-sm text-slate-700">מפגשים נוספים באירוע</h4>
+                <button type="button" onClick={addEventSession} className="text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg flex items-center gap-1"><Plus size={14}/> הוספת מפגש</button>
+             </div>
+             {eventForm.sessions?.map((session, idx) => (
+                <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded-xl border border-slate-200 animate-fade-in-up">
+                   <span className="text-[10px] font-black text-slate-400 shrink-0">מפגש {idx + 1}</span>
+                   <input placeholder="שם המפגש" className="flex-1 p-2 text-xs bg-slate-50 rounded-lg text-right outline-none" value={session.name} onChange={e => updateEventSession(idx, 'name', e.target.value)} />
+                   <input type="date" className="w-32 p-2 text-xs bg-slate-50 rounded-lg text-right outline-none" value={session.date} onChange={e => updateEventSession(idx, 'date', e.target.value)} />
+                   <button type="button" onClick={() => {
+                      const newSessions = [...(eventForm.sessions || [])];
+                      newSessions.splice(idx, 1);
+                      setEventForm({ ...eventForm, sessions: newSessions });
+                   }} className="text-red-400"><Trash2 size={16}/></button>
+                </div>
+             ))}
+          </div>
+
+          <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-2xl text-right"><input type="checkbox" className="w-4 h-4" checked={eventForm.isHero} onChange={e=>setEventForm({...eventForm, isHero:e.target.checked})}/><label className="text-sm font-bold">הצגה בסליידר הראשי</label></div>
+          
+          <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
+              <input type="file" onChange={e => handleFileUpload(e, setEventForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+              {eventForm.image ? <img src={eventForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">לחצי להעלאת תמונה</p>}
+          </div>
           <button className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg">שמירה</button>
         </form>
       </Modal>
@@ -561,16 +607,45 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             setIsClassModalOpen(false); loadTabData();
         }} className="space-y-4 text-right">
           <input placeholder="שם החוג" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.title} onChange={e=>setClassForm({...classForm, title:e.target.value})} />
+          
           <div className="grid grid-cols-2 gap-2 text-right">
               <select className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.gender} onChange={e=>setClassForm({...classForm, gender:e.target.value as any})}>
                 <option value="נשים">נשים</option>
                 <option value="בנות">בנות</option>
+                <option value="בנים">בנים</option>
               </select>
-              <input placeholder="מחיר" type="number" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.price} onChange={e=>setClassForm({...classForm, price:Number(e.target.value)})} />
+              <input placeholder="גילאים" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.ageGroup} onChange={e=>setClassForm({...classForm, ageGroup:e.target.value})} />
           </div>
-          <input placeholder="שם המדריך/ה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.instructor} onChange={e=>setClassForm({...classForm, instructor:e.target.value})} />
-          <input placeholder="טלפון ליצירת קשר" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.contactPhone} onChange={e=>setClassForm({...classForm, contactPhone:e.target.value})} />
+
+          <div className="grid grid-cols-2 gap-2 text-right">
+              <div className="space-y-1 text-right">
+                <label className="text-[10px] font-bold pr-2 text-slate-400">מחיר</label>
+                <input placeholder="מחיר" type="number" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.price} onChange={e=>setClassForm({...classForm, price:Number(e.target.value)})} />
+              </div>
+              <div className="space-y-1 text-right">
+                <label className="text-[10px] font-bold pr-2 text-slate-400">שם המדריך/ה</label>
+                <input placeholder="שם המדריך/ה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.instructor} onChange={e=>setClassForm({...classForm, instructor:e.target.value})} />
+              </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-right">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-slate-400">טלפון מדריך</label>
+                <input placeholder="טלפון מדריך" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.contactPhone} onChange={e=>setClassForm({...classForm, contactPhone:e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-blue-400">טלפון להרשמה</label>
+                <input placeholder="טלפון להרשמה" className="w-full p-4 bg-blue-50/50 border border-blue-100 rounded-2xl font-bold text-right outline-none" value={classForm.registrationPhone} onChange={e=>setClassForm({...classForm, registrationPhone:e.target.value})} />
+              </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-right">
+              <input placeholder="יום בשבוע" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.day} onChange={e=>setClassForm({...classForm, day:e.target.value})} />
+              <input type="time" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.time} onChange={e=>setClassForm({...classForm, time:e.target.value})} />
+          </div>
+
           <input placeholder="מיקום החוג" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.location} onChange={e=>setClassForm({...classForm, location:e.target.value})} />
+          
           <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
               <input type="file" onChange={e => handleFileUpload(e, setClassForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
               {classForm.image ? <img src={classForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה</p>}
@@ -619,28 +694,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             </div>
             <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום</button>
          </form>
-      </Modal>
-
-      {/* שאר המודאלים (Lottery, Preview) נשארים כפי שהם... */}
-      <Modal isOpen={isPreviewModalOpen} onClose={() => setIsPreviewModalOpen(false)} title="צפייה בראיון שהושלם">
-        {selectedInterview && (
-          <div className="space-y-8 text-right font-sans">
-             <div className="text-center space-y-4">
-                {selectedInterview.image && <img src={selectedInterview.image} className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-rose-100 shadow-lg" />}
-                <h4 className="text-2xl font-black text-slate-900">{selectedInterview.name}</h4>
-                <p className="text-rose-500 font-bold">{selectedInterview.role}</p>
-             </div>
-             <div className="space-y-6">
-                {selectedInterview.questions?.map((q, i) => (
-                  <div key={i} className="border-b pb-4">
-                    <p className="font-black text-slate-800 mb-2">{q.question}</p>
-                    <p className="text-slate-600 leading-relaxed font-medium">{q.answer || '(לא מולאה תשובה)'}</p>
-                  </div>
-                ))}
-             </div>
-             <button onClick={async () => { await api.approvePersonality(selectedInterview._id || selectedInterview.id); setIsPreviewModalOpen(false); alert("פורסם!"); loadTabData(); }} className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg">פרסמי באתר!</button>
-          </div>
-        )}
       </Modal>
 
       <Modal isOpen={isLotteryModalOpen} onClose={()=>setIsLotteryModalOpen(false)} title="הגרלה חדשה">
