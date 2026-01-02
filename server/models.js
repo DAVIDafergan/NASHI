@@ -41,7 +41,7 @@ const ForumPostSchema = new mongoose.Schema({
 });
 const ForumPost = mongoose.model('ForumPost', ForumPostSchema);
 
-// --- סכמת קהילה ---
+// --- סכמת קהילה מעודכנת ---
 const CommunitySchema = new mongoose.Schema({
   category: { type: String, enum: ['שיעורי תורה', 'גמ"חים', 'עסקים מקומיים'], required: true },
   title: { type: String, required: true },
@@ -49,6 +49,11 @@ const CommunitySchema = new mongoose.Schema({
   location: { type: String },
   phone: { type: String },
   description: { type: String },
+  // שדות חדשים שהתווספו לבקשתך
+  startTime: { type: String },
+  targetAudience: { type: String }, // למי זה מיועד
+  isPaid: { type: Boolean, default: false },
+  price: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
 const Community = mongoose.model('Community', CommunitySchema);
@@ -75,7 +80,7 @@ const EventSchema = new mongoose.Schema({
 const Event = mongoose.model('Event', EventSchema);
 
 const ClassSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+  title: { type: String, required: true }, // הכותרת נשארה חובה למניעת שגיאות אינדוקס
   instructor: { type: String },
   contactPhone: { type: String },
   // שדה חדש לטלפון הרשמה
@@ -84,7 +89,7 @@ const ClassSchema = new mongoose.Schema({
   day: { type: String },
   time: { type: String },
   location: { type: String },
-  price: { type: Number },
+  price: { type: Number, default: 0 },
   ageGroup: { type: String },
   exceptions: { type: String },
   category: { type: String },
