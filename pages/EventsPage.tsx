@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles } from 'lucide-react';
+import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2 } from 'lucide-react'; // נוספו אייקונים לסינון
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // --- Types ---
@@ -16,12 +16,15 @@ interface EventItem {
   location: string;
   category: string;
   price: number;
-  earlyBirdPrice?: number; // שדה חדש
-  earlyBirdEndDate?: string; // שדה חדש
-  sessions?: EventSession[]; // שדה חדש
+  earlyBirdPrice?: number;
+  earlyBirdEndDate?: string;
+  sessions?: EventSession[];
   image: string;
   isHero?: boolean;
   ratings?: number[];
+  // שדות חדשים מניהול:
+  notes?: string; 
+  targetAges?: string;
 }
 
 const API_URL = 'https://nashi-production.up.railway.app/api';
@@ -37,6 +40,11 @@ const EventsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   
+  // מצבי סינון מתקדמים חדשים:
+  const [sortBy, setSortBy] = useState<'date' | 'price-low' | 'price-high'>('date');
+  const [showPastEvents, setShowPastEvents] = useState(false);
+  const [onlyFree, setOnlyFree] = useState(false);
+
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [userRating, setUserRating] = useState(0);
@@ -87,10 +95,20 @@ const EventsPage = () => {
     return { value: event.price, isEarly: false };
   };
 
+  // לוגיקת סינון ומיון מתקדמת משופרת
   const filteredEvents = events.filter(event => {
+    const isPast = new Date(event.date) < new Date();
     const matchesSearch = event.title.toLowerCase().includes(filter.toLowerCase()) || event.location.toLowerCase().includes(filter.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesPastStatus = showPastEvents ? true : !isPast;
+    const matchesFree = onlyFree ? getDisplayPrice(event).value === 0 : true;
+    
+    return matchesSearch && matchesCategory && matchesPastStatus && matchesFree;
+  }).sort((a, b) => {
+      if (sortBy === 'date') return new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (sortBy === 'price-low') return getDisplayPrice(a).value - getDisplayPrice(b).value;
+      if (sortBy === 'price-high') return getDisplayPrice(b).value - getDisplayPrice(a).value;
+      return 0;
   });
 
   const categories = ['all', 'מוזיקה', 'העשרה', 'סדנאות', 'קהילה', 'בידור', 'אופנה'];
@@ -169,36 +187,58 @@ const EventsPage = () => {
       
       {/* Header with Back Button */}
       <div className="flex items-center gap-4 mb-4 justify-start">
-           <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-sm text-slate-600 hover:bg-slate-50"><ArrowLeft size={20}/></button>
-           <h1 className="text-2xl font-black text-slate-800">לוח אירועים</h1>
+            <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-sm text-slate-600 hover:bg-slate-50"><ArrowLeft size={20}/></button>
+            <h1 className="text-2xl font-black text-slate-800">לוח אירועים</h1>
       </div>
 
       {/* --- Filter Bar (Sticky & Glass) --- */}
-      <div className="bg-white/80 backdrop-blur-xl p-2 md:p-3 rounded-2xl shadow-sm border border-white sticky top-16 md:top-20 z-40 flex flex-col md:flex-row gap-2 shadow-rose-100/10 transition-all">
-        <div className="relative w-full md:w-64">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input 
-            type="text" 
-            placeholder="חיפוש אירוע..." 
-            className="w-full pr-9 pl-3 py-2.5 bg-white border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-200 transition-all text-xs font-medium placeholder-slate-400 shadow-sm text-right"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
+      <div className="bg-white/80 backdrop-blur-xl p-2 md:p-4 rounded-[2rem] shadow-sm border border-white sticky top-16 md:top-20 z-40 space-y-3">
+        <div className="flex flex-col md:flex-row gap-2">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input 
+              type="text" 
+              placeholder="חיפוש אירוע..." 
+              className="w-full pr-9 pl-3 py-2.5 bg-white border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-200 transition-all text-xs font-medium placeholder-slate-400 shadow-sm text-right"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-1.5 w-full overflow-x-auto pb-1 md:pb-0 scrollbar-hide no-scrollbar items-center">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-full text-[11px] md:text-xs font-bold whitespace-nowrap transition-all border ${
+                  selectedCategory === cat 
+                    ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-200' 
+                    : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-rose-500 hover:shadow-sm'
+                }`}
+              >
+                {cat === 'all' ? 'הכל' : cat}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-1.5 w-full overflow-x-auto pb-1 md:pb-0 scrollbar-hide no-scrollbar items-center">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-full text-[11px] md:text-xs font-bold whitespace-nowrap transition-all border ${
-                selectedCategory === cat 
-                  ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-200' 
-                  : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-rose-500 hover:shadow-sm'
-              }`}
-            >
-              {cat === 'all' ? 'הכל' : cat}
+
+        {/* שורת סינון מתקדם נוספת - מותאמת לנייד */}
+        <div className="flex gap-2 items-center overflow-x-auto no-scrollbar pt-1 border-t border-slate-50">
+            <button onClick={() => setOnlyFree(!onlyFree)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border ${onlyFree ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-500 border-slate-100'}`}>
+                <Ticket size={12}/> חינם בלבד
             </button>
-          ))}
+            <button onClick={() => setShowPastEvents(!showPastEvents)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border ${showPastEvents ? 'bg-slate-700 text-white border-slate-700' : 'bg-white text-slate-500 border-slate-100'}`}>
+                <History size={12}/> אירועי עבר
+            </button>
+            <div className="h-4 w-px bg-slate-200 mx-1"></div>
+            <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-white border-slate-100 text-slate-500 text-[10px] font-bold rounded-lg px-2 py-1.5 focus:outline-none"
+            >
+                <option value="date">לפי תאריך</option>
+                <option value="price-low">מחיר: מהנמוך</option>
+                <option value="price-high">מחיר: מהגבוה</option>
+            </select>
         </div>
       </div>
 
@@ -207,25 +247,31 @@ const EventsPage = () => {
         {filteredEvents.map(event => {
             const avgRating = getAverageRating(event.ratings);
             const { value: displayPrice, isEarly } = getDisplayPrice(event);
+            const isPast = new Date(event.date) < new Date();
             
             return (
                 <div 
                     key={event.id} 
                     onClick={() => setSelectedEvent(event)}
-                    className="bg-white rounded-[1.8rem] md:rounded-[2rem] p-1.5 md:p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] border border-white hover:shadow-xl hover:shadow-rose-100/50 transition-all duration-300 group cursor-pointer active:scale-[0.98] flex flex-row sm:flex-col h-28 sm:h-auto items-center sm:items-stretch"
+                    className={`bg-white rounded-[1.8rem] md:rounded-[2rem] p-1.5 md:p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] border border-white hover:shadow-xl hover:shadow-rose-100/50 transition-all duration-300 group cursor-pointer active:scale-[0.98] flex flex-row sm:flex-col h-28 sm:h-auto items-center sm:items-stretch relative ${isPast ? 'opacity-70' : ''}`}
                 >
                     {/* Image Section */}
                     <div className="h-full w-28 sm:w-full sm:h-40 md:h-48 overflow-hidden relative rounded-[1.4rem] shrink-0 bg-slate-100">
-                        <img src={event.image} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                        <img src={event.image} alt={event.title} className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isPast ? 'grayscale' : ''}`} />
                         
-                        {/* Desktop Only Overlays */}
-                        <div className="hidden sm:flex absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-700 shadow-sm items-center gap-1">
-                            <Tag size={10} className="text-rose-400" />
+                        {/* Overlays */}
+                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[9px] font-bold text-slate-700 shadow-sm flex items-center gap-1">
+                            <Tag size={9} className="text-rose-400" />
                             {event.category}
                         </div>
 
-                        {/* באנר מכירה מוקדמת */}
-                        {isEarly && (
+                        {isPast && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <span className="bg-white/20 backdrop-blur-md text-white border border-white/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">אירוע חלף</span>
+                            </div>
+                        )}
+
+                        {isEarly && !isPast && (
                           <div className="absolute top-2 left-2 bg-rose-500 text-white px-2 py-0.5 rounded-full text-[8px] font-black animate-pulse shadow-lg">מכירה מוקדמת!</div>
                         )}
                     </div>
@@ -234,7 +280,7 @@ const EventsPage = () => {
                     <div className="px-3 sm:px-2 pb-1 sm:pb-2 pt-0 sm:pt-2 flex-1 min-w-0 flex flex-col justify-center sm:justify-start h-full sm:h-auto text-right">
                         
                         <div className="flex justify-between items-start mb-1 sm:mb-2">
-                            <h3 className="text-sm md:text-base font-black text-slate-800 leading-tight line-clamp-2 sm:line-clamp-2 ml-1 group-hover:text-rose-600 transition-colors">
+                            <h3 className="text-xs md:text-base font-black text-slate-800 leading-tight line-clamp-2 sm:line-clamp-2 ml-1 group-hover:text-rose-600 transition-colors">
                                 {event.title}
                             </h3>
                             {Number(avgRating) > 0 && (
@@ -244,24 +290,26 @@ const EventsPage = () => {
                             )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] md:text-xs text-slate-400 mb-1 sm:mb-3 justify-start">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] md:text-xs text-slate-400 mb-1 sm:mb-3 justify-start">
                             <div className="flex items-center gap-1">
-                                <Calendar size={11} className="text-rose-300" />
+                                <Calendar size={10} className="text-rose-300" />
                                 <span>{new Date(event.date).toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit'})}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                                <MapPin size={11} className="text-rose-300" />
-                                <span className="truncate max-w-[80px] md:max-w-[100px]">{event.location}</span>
-                            </div>
+                            {event.targetAges && (
+                                <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded-md text-slate-500">
+                                    <Users2 size={10} className="text-slate-400" />
+                                    <span className="font-bold">{event.targetAges}</span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-50 sm:border-slate-50 border-transparent w-full">
-                            <div className="font-black text-sm text-slate-700 flex items-center gap-1">
+                            <div className="font-black text-xs md:text-sm text-slate-700 flex items-center gap-1">
                                 {displayPrice === 0 ? <span className="text-emerald-500">חינם</span> : `₪${displayPrice}`}
                                 {isEarly && <span className="text-[10px] text-slate-300 line-through font-medium">₪{event.price}</span>}
                             </div>
-                            <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2.5 py-1 rounded-full group-hover:bg-rose-100 transition-colors">
-                                פרטים
+                            <span className="text-[9px] md:text-[10px] font-bold text-rose-500 bg-rose-50 px-2 md:px-2.5 py-1 rounded-full group-hover:bg-rose-100 transition-colors">
+                                {isPast ? 'סיכום' : 'פרטים'}
                             </span>
                         </div>
                     </div>
@@ -276,58 +324,75 @@ const EventsPage = () => {
                 <Calendar size={20} />
             </div>
             <p className="text-slate-400 text-sm font-medium">לא נמצאו אירועים.</p>
-            <button onClick={() => {setFilter(''); setSelectedCategory('all');}} className="mt-2 text-rose-500 text-xs font-bold">ניקוי סינון</button>
+            <button onClick={() => {setFilter(''); setSelectedCategory('all'); setShowPastEvents(true);}} className="mt-2 text-rose-500 text-xs font-bold">ניקוי סינון או הצגת אירועי עבר</button>
           </div>
       )}
 
       {/* --- Detailed Event Modal --- */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-900/30 backdrop-blur-md animate-fade-in">
-            <div className="bg-white w-full md:w-auto md:max-w-lg md:rounded-[2.5rem] rounded-t-[2.5rem] max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up md:animate-scale-in relative border border-white">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-900/40 backdrop-blur-md animate-fade-in">
+            <div className="bg-white w-full md:w-auto md:max-w-lg md:rounded-[2.5rem] rounded-t-[2.5rem] max-h-[95vh] overflow-y-auto shadow-2xl animate-slide-up md:animate-scale-in relative border border-white no-scrollbar">
                 <button onClick={() => setSelectedEvent(null)} className="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur-md rounded-full hover:bg-rose-50 hover:text-rose-500 z-10 text-slate-800 transition-colors shadow-sm"><X size={18} /></button>
                 
                 <div className="pb-6">
-                  <div className="h-64 w-full relative">
-                      <img src={selectedEvent.image} className="w-full h-full object-cover" />
+                  <div className="h-64 md:h-72 w-full relative">
+                      <img src={selectedEvent.image} className={`w-full h-full object-cover ${new Date(selectedEvent.date) < new Date() ? 'grayscale' : ''}`} />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
                       <div className="absolute bottom-10 right-6 text-white max-w-[80%] text-right">
                            <span className="bg-rose-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold mb-2 inline-block tracking-wide shadow-sm border border-white/20">{selectedEvent.category}</span>
-                           <h2 className="text-3xl font-black leading-tight shadow-sm drop-shadow-md mb-2">{selectedEvent.title}</h2>
+                           <h2 className="text-2xl md:text-3xl font-black leading-tight shadow-sm drop-shadow-md mb-2">{selectedEvent.title}</h2>
+                           {new Date(selectedEvent.date) < new Date() && <p className="text-rose-300 text-xs font-bold bg-white/10 backdrop-blur-md inline-block px-2 py-0.5 rounded-md">אירוע זה כבר התקיים</p>}
                       </div>
                   </div>
                   
                   <div className="px-6 py-6 bg-white rounded-t-[2.5rem] -mt-8 relative z-10 text-right">
                       
-                      <div className="flex gap-3 mb-6">
-                          <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100 flex flex-col items-center justify-center">
-                              <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">תאריך</p>
-                              <p className="font-bold text-slate-700 text-sm">{new Date(selectedEvent.date).toLocaleDateString('he-IL')}</p>
+                      <div className="flex gap-2 mb-6">
+                          <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mb-0.5">תאריך</p>
+                              <p className="font-bold text-slate-700 text-xs md:text-sm">{new Date(selectedEvent.date).toLocaleDateString('he-IL')}</p>
                           </div>
-                          <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100 flex flex-col items-center justify-center">
-                              <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">שעה</p>
-                              <p className="font-bold text-slate-700 text-sm">{new Date(selectedEvent.date).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</p>
+                          <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mb-0.5">שעה</p>
+                              <p className="font-bold text-slate-700 text-xs md:text-sm">{new Date(selectedEvent.date).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</p>
                           </div>
-                          <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100 flex flex-col items-center justify-center">
-                              <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">מחיר</p>
-                              <p className="font-bold text-rose-500 text-sm">{getDisplayPrice(selectedEvent).value === 0 ? 'חינם' : `₪${getDisplayPrice(selectedEvent).value}`}</p>
+                          <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
+                              <p className="text-[9px] text-slate-400 font-bold uppercase mb-0.5">מחיר</p>
+                              <p className="font-bold text-rose-500 text-xs md:text-sm">{getDisplayPrice(selectedEvent).value === 0 ? 'חינם' : `₪${getDisplayPrice(selectedEvent).value}`}</p>
                           </div>
                       </div>
 
-                      {/* רשימת מפגשים נוספים - מוצג רק אם קיימים */}
+                      {/* הצגת קהל יעד */}
+                      {selectedEvent.targetAges && (
+                          <div className="mb-4 flex items-center gap-2 bg-blue-50/50 p-3 rounded-xl border border-blue-100/50 text-blue-700">
+                              <Users2 size={16} />
+                              <span className="text-xs font-bold">קהל יעד: {selectedEvent.targetAges}</span>
+                          </div>
+                      )}
+
+                      {/* הצגת הערות מהניהול */}
+                      {selectedEvent.notes && (
+                          <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100/50 text-right">
+                              <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-tighter mb-1">הערות ומידע נוסף:</h4>
+                              <p className="text-xs md:text-sm text-amber-900 leading-relaxed font-medium">{selectedEvent.notes}</p>
+                          </div>
+                      )}
+
+                      {/* רשימת מפגשים נוספים */}
                       {selectedEvent.sessions && selectedEvent.sessions.length > 0 && (
                         <div className="mb-6 space-y-3 bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
-                           <h4 className="font-black text-sm text-slate-800 flex items-center gap-2">
-                             <Sparkles size={16} className="text-rose-500" />
-                             מפגשי הסדרה:
-                           </h4>
-                           <div className="space-y-2">
-                              {selectedEvent.sessions.map((session, idx) => (
-                                <div key={idx} className="flex justify-between items-center bg-white px-3 py-2 rounded-xl text-xs border border-slate-100">
-                                   <span className="font-bold text-slate-700">{session.name}</span>
-                                   <span className="text-slate-400 font-medium">{new Date(session.date).toLocaleDateString('he-IL')}</span>
-                                </div>
-                              ))}
-                           </div>
+                            <h4 className="font-black text-sm text-slate-800 flex items-center gap-2">
+                              <Sparkles size={16} className="text-rose-500" />
+                              מפגשי הסדרה:
+                            </h4>
+                            <div className="space-y-2">
+                               {selectedEvent.sessions.map((session, idx) => (
+                                 <div key={idx} className="flex justify-between items-center bg-white px-3 py-2 rounded-xl text-xs border border-slate-100">
+                                    <span className="font-bold text-slate-700">{session.name}</span>
+                                    <span className="text-slate-400 font-medium">{new Date(session.date).toLocaleDateString('he-IL')}</span>
+                                 </div>
+                               ))}
+                            </div>
                         </div>
                       )}
 
@@ -342,8 +407,12 @@ const EventsPage = () => {
                       </div>
 
                       <div className="flex gap-3 mb-6">
-                          <button onClick={() => handleJoin(selectedEvent)} className="flex-[2] bg-gradient-to-r from-slate-900 to-slate-800 text-white py-4 rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl transition-all flex justify-center items-center gap-2 active:scale-95">
-                              <Ticket size={18} /> הרשמה לאירוע
+                          <button 
+                            disabled={new Date(selectedEvent.date) < new Date()}
+                            onClick={() => handleJoin(selectedEvent)} 
+                            className={`flex-[2] py-4 rounded-2xl font-bold text-sm shadow-xl transition-all flex justify-center items-center gap-2 active:scale-95 ${new Date(selectedEvent.date) < new Date() ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-slate-900 to-slate-800 text-white hover:shadow-2xl'}`}
+                          >
+                              <Ticket size={18} /> {new Date(selectedEvent.date) < new Date() ? 'ההרשמה הסתיימה' : 'הרשמה לאירוע'}
                           </button>
                           
                           <div className="flex flex-col items-center justify-center gap-1">
@@ -357,7 +426,7 @@ const EventsPage = () => {
                       <div className="border-t border-slate-50 pt-5 text-right">
                           <h4 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-1.5 justify-start">
                               <MessageSquare size={14} className="text-slate-300" />
-                              דירוג
+                              דירוג ומשוב
                           </h4>
                           {reviewSubmitted ? (
                               <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl text-center text-xs font-bold border border-emerald-100 flex items-center justify-center gap-2">
@@ -366,11 +435,11 @@ const EventsPage = () => {
                           ) : (
                               <form onSubmit={handleSubmitReview} className="space-y-3">
                                   <div className="flex justify-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <button key={star} type="button" onClick={() => setUserRating(star)} className="focus:outline-none transition-transform active:scale-90 p-1">
-                                            <Star size={24} className={`${star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'} transition-colors`} />
-                                        </button>
-                                    ))}
+                                      {[1, 2, 3, 4, 5].map((star) => (
+                                          <button key={star} type="button" onClick={() => setUserRating(star)} className="focus:outline-none transition-transform active:scale-90 p-1">
+                                              <Star size={24} className={`${star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'} transition-colors`} />
+                                          </button>
+                                      ))}
                                   </div>
                                   <input 
                                     className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-xs focus:ring-2 focus:ring-rose-200 outline-none placeholder-slate-400 text-right" 
