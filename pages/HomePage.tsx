@@ -32,14 +32,34 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [timeLeft, setTimeLeft] = useState('');
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [membershipForm, setMembershipForm] = useState({ age: '', occupation: '', address: '', phone: user?.phone || '' });
+  const [isLoading, setIsLoading] = useState(true); // מצב טעינה למניעת מסך לבן
 
   // טעינת נתונים
   useEffect(() => {
-    fetch(`${API_URL}/events`).then(res => res.json()).then(data => setEvents(data.map((e: any) => ({...e, id: e._id || e.id})))).catch(console.error);
-    fetch(`${API_URL}/lotteries`).then(res => res.json()).then(data => setLotteries(data.map((l: any) => ({...l, id: l._id || l.id})))).catch(console.error);
-    fetch(`${API_URL}/ads`).then(res => res.json()).then(setAds).catch(console.error);
-    api.getPersonality().then(setPersonality).catch(console.error);
-    api.getCommunityItems().then(setCommunityItems).catch(console.error);
+    const loadAllData = async () => {
+      try {
+        setIsLoading(true);
+        const [evRes, lotRes, adsRes, persData, commData] = await Promise.all([
+          fetch(`${API_URL}/events`).then(res => res.json()),
+          fetch(`${API_URL}/lotteries`).then(res => res.json()),
+          fetch(`${API_URL}/ads`).then(res => res.json()),
+          api.getPersonality(),
+          api.getCommunityItems()
+        ]);
+
+        setEvents(evRes.map((e: any) => ({...e, id: e._id || e.id})));
+        setLotteries(lotRes.map((l: any) => ({...l, id: l._id || l.id})));
+        setAds(adsRes || []);
+        setPersonality(persData);
+        setCommunityItems(commData || []);
+      } catch (err) {
+        console.error("Error loading home data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAllData();
   }, []);
 
   const heroEvents = events.filter(e => e.isHero);
@@ -54,6 +74,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
   useEffect(() => {
     const checkLottery = () => {
+        if (!lotteries || lotteries.length === 0) return;
         const now = new Date().getTime();
         const active = lotteries.find(l => {
             const drawTime = new Date(l.drawDate).getTime();
@@ -85,24 +106,33 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       } catch (err) { alert("שגיאה בשליחה"); }
   };
 
-  // פונקציה לרינדור הבאנר
+  const categories = [
+    { name: 'מוזיקה', icon: <Music size={12} /> },
+    { name: 'אמנות', icon: <Palette size={12} /> },
+    { name: 'סדנאות', icon: <Activity size={12} /> },
+    { name: 'קריירה', icon: <Briefcase size={12} /> },
+    { name: 'העשרה', icon: <Mic size={12} /> },
+    { name: 'קהילה', icon: <HeartHandshake size={12} /> },
+  ];
+
+  // פונקציה לרינדור הבאנר עם הגנה מפני Undefined
   const renderAdBanner = () => {
-    if (ads.length === 0) return null;
-    const ad = ads[0]; // מציג את הפרסומת הראשונה
+    if (!ads || ads.length === 0 || !ads[0]) return null;
+    const ad = ads[0]; 
     return (
       <div className="mx-2 md:mx-0 animate-fade-in">
-        <a href={ad.link} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden rounded-3xl shadow-md border border-rose-100">
+        <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden rounded-3xl shadow-md border border-rose-100">
           {ad.type === 'image' ? (
-            <img src={ad.content} alt={ad.title} className="w-full h-24 md:h-32 object-cover transition-transform duration-700 group-hover:scale-105" />
+            <img src={ad.content} alt={ad.title || 'Ad'} className="w-full h-24 md:h-32 object-cover transition-transform duration-700 group-hover:scale-105" />
           ) : (
             <div className="w-full h-24 md:h-32 bg-slate-900 flex items-center justify-center text-white text-xs font-bold">
-               {ad.title} (וידאו פרסומי)
+               {ad.title || 'וידאו פרסומי'}
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-l from-black/40 to-transparent flex items-center justify-end px-6">
              <div className="text-right text-white">
                 <p className="text-[10px] font-bold opacity-80 uppercase tracking-tighter">בשיתוף פעולה</p>
-                <h4 className="text-sm md:text-lg font-black">{ad.title}</h4>
+                <h4 className="text-sm md:text-lg font-black">{ad.title || ''}</h4>
              </div>
           </div>
           <div className="absolute bottom-2 left-2 bg-white/20 backdrop-blur-md p-1.5 rounded-lg">
@@ -112,6 +142,18 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       </div>
     );
   };
+
+  // מסך טעינה זמני כדי למנוע קריסה בזמן שהנתונים בדרך
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-rose-50/30" dir="rtl">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin mx-auto"></div>
+          <p className="text-rose-500 font-bold animate-pulse">טוען את המעגל שלך...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-24 relative overflow-x-hidden font-sans text-right bg-gradient-to-b from-rose-50/50 via-white to-rose-50/30" dir="rtl">
@@ -192,7 +234,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         {/* סליידר אירועים */}
         <section className="relative h-[240px] md:h-[450px] w-full overflow-hidden rounded-[2.5rem] md:rounded-[3rem] shadow-xl border border-white mx-1 md:mx-0">
-            {displayEvents.map((event, index) => (
+            {displayEvents.length > 0 && displayEvents.map((event, index) => (
             <div key={event.id} className={`absolute inset-0 transition-all duration-1000 ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
                 <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -200,7 +242,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     <span className="bg-rose-500/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[8px] md:text-[10px] font-bold uppercase mb-2 md:mb-4 inline-block tracking-widest">אירוע נבחר</span>
                     <h2 className="text-xl md:text-5xl font-bold text-white mb-1 md:mb-2 leading-tight">{event.title}</h2>
                     <p className="text-[10px] md:text-base text-white/80 font-medium mb-4 md:mb-6 flex items-center gap-1.5 justify-end">
-                       <MapPin size={14} className="text-rose-400" /> {event.location} • {new Date(event.date).toLocaleDateString('he-IL')}
+                       <MapPin size={14} className="text-rose-400" /> {event.location} • {event.date ? new Date(event.date).toLocaleDateString('he-IL') : ''}
                     </p>
                     <Link to="/events" className="inline-block bg-white text-rose-600 px-6 md:px-8 py-2 md:py-3 rounded-xl font-bold text-[10px] md:text-xs hover:bg-rose-50 transition-all shadow-lg active:scale-95">לפרטים והרשמה</Link>
                 </div>
@@ -210,7 +252,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         {/* קטגוריות וחוגים */}
         <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar px-2">
-            {/* כפתור חוגים ייעודי */}
             <button onClick={() => navigate('/classes')} 
                     className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 rounded-2xl text-[11px] md:text-[13px] font-bold text-white shadow-md transition-all flex-shrink-0 active:scale-95">
               <GraduationCap size={16} className="text-rose-400" /> חוגי העיר
@@ -226,7 +267,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         <div className="grid lg:grid-cols-3 gap-8 md:gap-10">
             <div className="lg:col-span-2 space-y-8 md:space-y-10">
                 
-                {/* אשת השבוע - משופר עם קישור לארכיון */}
+                {/* אשת השבוע */}
                 {personality && personality.name && (
                     <section className="animate-fade-in group px-1">
                         <div className="bg-white/70 backdrop-blur-xl rounded-[2rem] md:rounded-[2.5rem] p-4 md:p-8 shadow-sm border border-white flex flex-col md:flex-row items-center gap-5 md:gap-10 relative">
@@ -259,7 +300,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </section>
                 )}
 
-                {/* קהילה - כרטיסים קטנים וברורים */}
+                {/* קהילה */}
                 {communityItems && communityItems.length > 0 && (
                     <section className="space-y-3 md:space-y-4 animate-fade-in px-2">
                         <h3 className="text-sm md:text-lg font-bold text-slate-800 flex items-center gap-2 px-1">
@@ -279,30 +320,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                         </div>
                     </section>
                 )}
-
-                {/* עדכונים - פריסה נקייה */}
-                <div className="space-y-3 md:space-y-4 px-2">
-                    <h3 className="text-sm md:text-lg font-bold text-slate-800 flex items-center gap-2 px-1"><Bell className="text-rose-400" size={18}/> עדכונים</h3>
-                    <div className="grid md:grid-cols-2 gap-3 md:gap-4">
-                        {mockNews.map((item) => (
-                            <div key={item.id} className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-rose-50 flex items-center gap-3 group hover:border-rose-100 transition-all">
-                                <div className="w-10 h-10 md:w-12 md:h-12 bg-rose-50 rounded-xl flex flex-col items-center justify-center text-rose-400 shrink-0 font-bold border border-rose-100/50 leading-none">
-                                    <span className="text-sm md:text-base">{item.date.split('/')[0]}</span>
-                                    <span className="text-[7px] md:text-[8px] opacity-60 uppercase">{item.date.split('/')[1]}</span>
-                                </div>
-                                <div className="text-right flex-1 overflow-hidden">
-                                    <h4 className="font-bold text-slate-700 text-[11px] md:text-sm group-hover:text-rose-500 transition-colors truncate">{item.title}</h4>
-                                    <p className="text-slate-400 text-[9px] md:text-[11px] line-clamp-1">{item.description}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
             </div>
 
-            {/* סיידבר - רספונסיבי */}
+            {/* סיידבר */}
             <div className="space-y-8 md:space-y-10 px-1 md:px-0">
-                {/* השראה יומית בעיצוב נשי ורך */}
                 <div className="bg-slate-800/90 backdrop-blur-xl rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 text-white relative overflow-hidden shadow-xl text-right">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-rose-400/10 rounded-full blur-[40px] -mr-16 -mt-16"></div>
                     <div className="relative z-10 space-y-4 md:space-y-6">
@@ -315,7 +336,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </div>
                 </div>
 
-                {/* הצטרפות/קשר */}
                 {!user ? (
                    <div onClick={onOpenLogin} className="cursor-pointer bg-white/90 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 text-center space-y-3 md:space-y-4 hover:translate-y-[-5px] transition-all border border-rose-100 shadow-sm flex flex-col items-center">
                       <div className="w-12 h-12 md:w-16 md:h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500"><HeartHandshake size={28} /></div>
