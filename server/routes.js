@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
-    Personality, ForumPost, Community 
+    Personality, ForumPost, Community, Inspiration, Ad // הוספת המודלים החדשים לייבוא
 } from './models.js';
 
 const router = express.Router();
@@ -185,6 +185,11 @@ router.post('/community', authenticate, isAdmin, async (req, res) => {
     try { res.json(await new Community(req.body).save()); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// נתיב לעדכון קהילה (חדש - לתיקון עריכה והחלפת תמונה)
+router.put('/community/:id', authenticate, isAdmin, async (req, res) => {
+    try { res.json(await Community.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.delete('/community/:id', authenticate, isAdmin, async (req, res) => {
     try { await Community.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -345,6 +350,40 @@ router.post('/admin/gifts', authenticate, isAdmin, async (req, res) => {
         const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
         res.json({ success: true, link: `${baseUrl}/#/gift/${code}`, code });
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 10. השראות ופרסומים (INSPIRATIONS & ADS) =================
+
+// --- נתיבי השראה יומית ---
+router.get('/inspirations', async (req, res) => {
+    try { res.json(await Inspiration.find().sort({ createdAt: -1 })); } 
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/inspirations', authenticate, isAdmin, async (req, res) => {
+    try { res.json(await new Inspiration(req.body).save()); } 
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/inspirations/:id', authenticate, isAdmin, async (req, res) => {
+    try { await Inspiration.findByIdAndDelete(req.params.id); res.json({ success: true }); } 
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- נתיבי פרסומים (ADS) ---
+router.get('/ads', async (req, res) => {
+    try { res.json(await Ad.find().sort({ createdAt: -1 })); } 
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/ads', authenticate, isAdmin, async (req, res) => {
+    try { res.json(await new Ad(req.body).save()); } 
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/ads/:id', authenticate, isAdmin, async (req, res) => {
+    try { await Ad.findByIdAndDelete(req.params.id); res.json({ success: true }); } 
+    catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // --- שונות (פרופיל) ---
