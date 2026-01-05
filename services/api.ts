@@ -10,13 +10,14 @@ const getHeaders = () => {
     };
 };
 
-// פונקציית עזר לבדיקת נפח תמונה לפני שליחה לשרת (חוסמת מעל 50KB)
+// פונקציית עזר לבדיקת נפח תמונה לפני שליחה לשרת (מעודכן ל-5MB כדי לאפשר באנרים ופרסומים)
 const validateImageSize = (data: any) => {
-    if (data && data.image && typeof data.image === 'string' && data.image.startsWith('data:image')) {
-        const stringLength = data.image.length - data.image.indexOf(',') - 1;
+    if (data && (data.image || data.content) && typeof (data.image || data.content) === 'string' && (data.image || data.content).startsWith('data:image')) {
+        const imgStr = data.image || data.content;
+        const stringLength = imgStr.length - imgStr.indexOf(',') - 1;
         const sizeInBytes = (stringLength * 3) / 4;
-        if (sizeInBytes > 50 * 1024) {
-            throw new Error('התמונה גדולה מדי! המקסימום המותר הוא 50KB בלבד.');
+        if (sizeInBytes > 5000 * 1024) { // הגדלנו מ-50 ל-5000 כדי שהמערכת תעבוד
+            throw new Error('התמונה גדולה מדי! המקסימום המותר הוא 5MB.');
         }
     }
 };
@@ -322,6 +323,64 @@ export const api = {
             headers: getHeaders()
         });
         return res.json();
+    },
+
+    // ================= INSPIRATIONS (השראה יומית) =================
+    async getInspirations() {
+        const res = await fetch(`${API_URL}/inspirations`);
+        return res.json();
+    },
+
+    async createInspiration(data: any) {
+        const res = await fetch(`${API_URL}/inspirations`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async updateInspiration(id: string, data: any) {
+        const res = await fetch(`${API_URL}/inspirations/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async deleteInspiration(id: string) {
+        return fetch(`${API_URL}/inspirations/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
+    },
+
+    // ================= ADS (פרסומים) =================
+    async getAds() {
+        const res = await fetch(`${API_URL}/ads`);
+        return res.json();
+    },
+
+    async createAd(data: any) {
+        validateImageSize(data);
+        const res = await fetch(`${API_URL}/ads`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async updateAd(id: string, data: any) {
+        validateImageSize(data);
+        const res = await fetch(`${API_URL}/ads/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async deleteAd(id: string) {
+        return fetch(`${API_URL}/ads/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
     },
 
     // ================= ADMIN SETTINGS & POINTS =================

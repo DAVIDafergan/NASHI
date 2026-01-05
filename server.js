@@ -19,14 +19,14 @@ const PORT = process.env.PORT || 5000;
 // תיקון: שימוש במשתנה הסביבה הנכון של Railway
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/nashi_db';
 
-// --- Middleware מעודכן עם הגבלת 16MB ---
+// --- Middleware מעודכן ---
 app.use(cors());
 
-// הגדלת המגבלה לקבלת נתוני JSON (עבור שליחת Base64 למשל)
-app.use(express.json({ limit: '16mb' }));
+// הגדלת המגבלה ל-50mb עבור שליחת תמונות Base64 כבדות ובאנרים של פרסומות
+app.use(express.json({ limit: '50mb' }));
 
 // הגדלת המגבלה לקבלת נתוני טפסים (Form Data)
-app.use(express.urlencoded({ limit: '16mb', extended: true }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Database Connection
 mongoose.connect(MONGO_URI)
