@@ -23,12 +23,16 @@ const InterviewPage = () => {
                 // בדיקה שהמידע תקין ולא מכיל שגיאה מהשרת
                 if (data && !data.error) {
                     // מוודא שיש שדות בסיסיים אם הם לא קיימים בטיוטה
+                    // מאפס את התשובות כך שהשדות תמיד יהיו ריקים בטעינה ראשונה
                     setProfile({
                         ...data,
                         name: data.name || '',
                         role: data.role || '',
                         motto: data.motto || '',
-                        questions: data.questions || []
+                        questions: (data.questions || []).map((q: any) => ({
+                            ...q,
+                            answer: '' // מאפס את התשובה לטקסט ריק
+                        }))
                     });
                 } else {
                     throw new Error("Invalid token data");
