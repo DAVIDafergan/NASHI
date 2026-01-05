@@ -4,7 +4,7 @@ import {
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
-  Quote, Megaphone, Video // נוספו אייקונים חדשים
+  Quote, Megaphone, Video, PlayCircle, Trophy // נוספו אייקונים חדשים
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -68,7 +68,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   });
 
   const [isLotteryModalOpen, setIsLotteryModalOpen] = useState(false);
-  const [lotteryForm, setLotteryForm] = useState<Partial<LotteryItem>>({ title: '', prize: '', drawDate: '', image: '', minPointsToEnter: 0 });
+  const [lotteryForm, setLotteryForm] = useState<Partial<any>>({ 
+    title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', 
+    minPointsToEnter: 0, participationType: 'everyone' 
+  });
 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [communityForm, setCommunityForm] = useState<Partial<any>>({ 
@@ -76,11 +79,11 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     startTime: '', targetAudience: '', isPaid: false, price: 0 
   });
 
-  // חדש: פורם השראה יומית
+  // פורם השראה יומית
   const [isInspirationModalOpen, setIsInspirationModalOpen] = useState(false);
   const [inspirationForm, setInspirationForm] = useState({ _id: '', text: '', author: '' });
 
-  // חדש: פורם פרסומות
+  // פורם פרסומות
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [adForm, setAdForm] = useState({ _id: '', type: 'image', content: '', link: '', title: '' });
 
@@ -153,7 +156,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
           const dataUrl = canvas.toDataURL('image/jpeg', 0.8); 
           setter((prev: any) => ({ ...prev, image: dataUrl, content: prev.type === 'image' ? dataUrl : prev.content }));
-          // טיפול ספציפי לפורם פרסומת אם זה תוכן
           if (activeTab === 'ads') setAdForm(prev => ({ ...prev, content: dataUrl }));
         };
         img.src = event.target?.result as string;
@@ -197,6 +199,15 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     const qs = [...(personalityForm.questions || [])];
     qs[i][f] = v;
     setPersonalityForm({ ...personalityForm, questions: qs });
+  };
+
+  const runLiveLottery = async (lotteryId: string) => {
+    if(window.confirm("להפעיל את ההגרלה בשידור חי?")) {
+        alert("מפעיל רולטה... הזוכה תפורסם אוטומטית בדף הבית בסיום!");
+        // כאן יתבצע החיבור לסקריפט הרולטה
+        await api.runLotteryLive(lotteryId);
+        loadTabData();
+    }
   };
 
   const sendPersonalBenefit = async (email: string) => {
@@ -353,7 +364,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב השראה יומית - חדש */}
+        {/* טאב השראה יומית */}
         {activeTab === 'inspirations' && (
           <div className="space-y-6 animate-fade-in">
             <button onClick={() => { setInspirationForm({ _id: '', text: '', author: '' }); setIsInspirationModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> השראה חדשה</button>
@@ -375,7 +386,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב פרסומים - חדש */}
+        {/* טאב פרסומים */}
         {activeTab === 'ads' && (
           <div className="space-y-8 animate-fade-in">
             <div className="bg-blue-50 p-6 rounded-[2rem] border border-blue-100 flex items-start gap-4">
@@ -491,14 +502,31 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב הגרלות */}
         {activeTab === 'lotteries' && (
           <div className="space-y-6 animate-fade-in">
-            <button onClick={() => setIsLotteryModalOpen(true)} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה חדשה</button>
+            <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה חדשה</button>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
               {apiLotteries.map(l => (
-                <div key={l._id || l.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm animate-fade-in-up">
-                  <img src={l.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-lg">{l.title}</h4>
-                  <p className="text-xs text-slate-400">{new Date(l.drawDate).toLocaleString()}</p>
-                  <button onClick={() => handleDelete(l._id || l.id, 'lottery', l.title)} className="text-red-500 mt-4 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                <div key={l._id || l.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm animate-fade-in-up flex flex-col justify-between">
+                  <div>
+                    <img src={l.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
+                    <h4 className="font-black text-lg">{l.title}</h4>
+                    <div className="space-y-1 mt-2">
+                        <p className="text-[10px] text-emerald-600 font-bold">🎁 פרס 1: {l.prize}</p>
+                        {l.prize2 && <p className="text-[10px] text-slate-500">🎁 פרס 2: {l.prize2}</p>}
+                        {l.prize3 && <p className="text-[10px] text-slate-500">🎁 פרס 3: {l.prize3}</p>}
+                    </div>
+                    <div className="bg-slate-50 p-2 rounded-xl mt-3">
+                        <p className="text-[10px] font-bold text-slate-500">זכאות: {l.participationType === 'everyone' ? 'כולן' : l.participationType === 'points' ? `מעל ${l.minPointsToEnter} נק'` : 'לינק בלבד'}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
+                    <button onClick={() => runLiveLottery(l._id || l.id)} className="w-full bg-slate-900 text-white py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2 hover:bg-rose-600 transition-colors">
+                        <PlayCircle size={16}/> הפעלת הגרלה בלייב
+                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={() => { setLotteryForm(l); setIsLotteryModalOpen(true); }} className="flex-1 text-blue-500 p-2 hover:bg-blue-50 rounded-lg flex justify-center"><Edit size={16}/></button>
+                        <button onClick={() => handleDelete(l._id || l.id, 'lottery', l.title)} className="flex-1 text-red-500 p-2 hover:bg-red-50 rounded-lg flex justify-center"><Trash2 size={16}/></button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -626,13 +654,18 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
       {/* מודאלים מורחבים */}
       
-      {/* מודאל השראה יומית - חדש */}
+      {/* מודאל השראה יומית */}
       <Modal isOpen={isInspirationModalOpen} onClose={() => setIsInspirationModalOpen(false)} title={inspirationForm._id ? "עריכת השראה" : "הוספת השראה יומית"}>
         <form onSubmit={async (e) => {
           e.preventDefault();
-          if (inspirationForm._id) await api.updateInspiration(inspirationForm._id, inspirationForm);
-          else await api.createInspiration(inspirationForm);
-          setIsInspirationModalOpen(false); loadTabData();
+          try {
+              const data = {...inspirationForm};
+              if(!data._id) delete (data as any)._id;
+              if (inspirationForm._id) await api.updateInspiration(inspirationForm._id, data);
+              else await api.createInspiration(data);
+              alert("השראה נשמרה!");
+              setIsInspirationModalOpen(false); loadTabData();
+          } catch(err: any) { alert("שגיאה בשמירה: " + err.message); }
         }} className="space-y-4">
           <textarea required placeholder="כתבי את ההשראה כאן..." className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right h-32" value={inspirationForm.text} onChange={e => setInspirationForm({ ...inspirationForm, text: e.target.value })} />
           <input required placeholder="שם המצוטט (למשל: רבי נחמן)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.author} onChange={e => setInspirationForm({ ...inspirationForm, author: e.target.value })} />
@@ -640,13 +673,18 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </form>
       </Modal>
 
-      {/* מודאל פרסומים - חדש */}
+      {/* מודאל פרסומים */}
       <Modal isOpen={isAdModalOpen} onClose={() => setIsAdModalOpen(false)} title={adForm._id ? "עריכת פרסום" : "פרסום חדש"}>
         <form onSubmit={async (e) => {
           e.preventDefault();
-          if (adForm._id) await api.updateAd(adForm._id, adForm);
-          else await api.createAd(adForm);
-          setIsAdModalOpen(false); loadTabData();
+          try {
+              const data = {...adForm};
+              if(!data._id) delete (data as any)._id;
+              if (adForm._id) await api.updateAd(adForm._id, data);
+              else await api.createAd(data);
+              alert("פרסום נשמר!");
+              setIsAdModalOpen(false); loadTabData();
+          } catch(err: any) { alert("שגיאה בשמירה: " + err.message); }
         }} className="space-y-4">
           <input required placeholder="כותרת הפרסום (לניהול פנימי)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={adForm.title} onChange={e => setAdForm({ ...adForm, title: e.target.value })} />
           
@@ -682,9 +720,11 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           
           <select required className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.category} onChange={e=>setEventForm({...eventForm, category:e.target.value})}>
               <option value="מוזיקה">מוזיקה</option>
+              <option value="העשרה">העשרה</option>
               <option value="סדנאות">סדנאות</option>
-              <option value="הרצאות">הרצאות</option>
-              <option value="טיולים">טיולים</option>
+              <option value="קהילה">קהילה</option>
+              <option value="בידור">בידור</option>
+              <option value="אופנה">אופנה</option>
               <option value="אחר">אחר</option>
           </select>
 
@@ -844,16 +884,45 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </form>
       </Modal>
 
-      <Modal isOpen={isLotteryModalOpen} onClose={()=>setIsLotteryModalOpen(false)} title="הגרלה חדשה">
-        <form onSubmit={async (e)=>{e.preventDefault(); await api.createLottery(lotteryForm); setIsLotteryModalOpen(false); loadTabData();}} className="space-y-4">
+      <Modal isOpen={isLotteryModalOpen} onClose={()=>setIsLotteryModalOpen(false)} title={lotteryForm._id ? "עריכת הגרלה" : "הגרלה חדשה"}>
+        <form onSubmit={async (e)=>{
+            e.preventDefault(); 
+            try {
+                const data = {...lotteryForm};
+                if(!data._id) delete data._id;
+                if(lotteryForm._id) await api.updateLottery(lotteryForm._id, data);
+                else await api.createLottery(data);
+                alert("ההגרלה נשמרה!");
+                setIsLotteryModalOpen(false); loadTabData();
+            } catch(err: any) { alert("שגיאה: " + err.message); }
+        }} className="space-y-4">
             <input required placeholder="שם ההגרלה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.title} onChange={e=>setLotteryForm({...lotteryForm, title:e.target.value})} />
-            <input required placeholder="הפרס המיוחד" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize} onChange={e=>setLotteryForm({...lotteryForm, prize:e.target.value})} />
+            
+            <div className="space-y-2">
+                <input required placeholder="פרס ראשון 🏆" className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-2xl font-black outline-none text-right" value={lotteryForm.prize} onChange={e=>setLotteryForm({...lotteryForm, prize:e.target.value})} />
+                <input placeholder="פרס שני (אופציונלי)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize2} onChange={e=>setLotteryForm({...lotteryForm, prize2:e.target.value})} />
+                <input placeholder="פרס שלישי (אופציונלי)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize3} onChange={e=>setLotteryForm({...lotteryForm, prize3:e.target.value})} />
+            </div>
+
+            <div className="space-y-3 bg-purple-50 p-5 rounded-[2rem] border border-purple-100">
+                <h4 className="font-black text-xs text-purple-700">מי זכאית להשתתף?</h4>
+                <select className="w-full p-3 bg-white rounded-xl font-bold text-xs outline-none" value={lotteryForm.participationType} onChange={e=>setLotteryForm({...lotteryForm, participationType: e.target.value})}>
+                    <option value="everyone">כולן (כל מי שלוחצת "להשתתפות")</option>
+                    <option value="points">סף נקודות מסוים (שאת מגדירה)</option>
+                    <option value="link_only">לינק אישי בלבד (שנשלח למשתמשת)</option>
+                </select>
+                {lotteryForm.participationType === 'points' && (
+                    <input type="number" placeholder="כמה נקודות מינימום?" className="w-full p-3 bg-white rounded-xl font-black text-xs outline-none" value={lotteryForm.minPointsToEnter} onChange={e=>setLotteryForm({...lotteryForm, minPointsToEnter: Number(e.target.value)})} />
+                )}
+            </div>
+
             <input required type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.drawDate} onChange={e=>setLotteryForm({...lotteryForm, drawDate:e.target.value})} />
+            
             <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
                <input type="file" onChange={e => handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
                {lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס / החלפת קיימת</p>}
             </div>
-            <button className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg">פרסום הגרלה</button>
+            <button className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום הגרלה</button>
         </form>
       </Modal>
 

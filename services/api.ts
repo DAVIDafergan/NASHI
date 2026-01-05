@@ -187,6 +187,24 @@ export const api = {
         return res.json();
     },
 
+    async updateLottery(id: string, lottery: Partial<LotteryItem>): Promise<LotteryItem> {
+         validateImageSize(lottery);
+         const res = await fetch(`${API_URL}/lotteries/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(lottery)
+        });
+        return res.json();
+    },
+
+    async runLotteryLive(id: string) {
+        const res = await fetch(`${API_URL}/admin/lotteries/${id}/run`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        return res.json();
+    },
+
     async deleteLottery(id: string): Promise<void> {
          await fetch(`${API_URL}/lotteries/${id}`, {
             method: 'DELETE',
@@ -275,6 +293,11 @@ export const api = {
     // ================= PERSONALITY (אשת השבוע) =================
     async getPersonality() {
         const res = await fetch(`${API_URL}/personality`);
+        return res.json();
+    },
+
+    async getAllPersonalities(): Promise<PersonalityProfile[]> {
+        const res = await fetch(`${API_URL}/personality/archive`);
         return res.json();
     },
 
