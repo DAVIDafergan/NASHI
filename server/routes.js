@@ -365,6 +365,12 @@ router.post('/inspirations', authenticate, isAdmin, async (req, res) => {
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// נתיב עדכון השראה (PUT) - מבטיח שמירה של עריכות
+router.put('/inspirations/:id', authenticate, isAdmin, async (req, res) => {
+    try { res.json(await Inspiration.findByIdAndUpdate(req.params.id, req.body, { new: true })); } 
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.delete('/inspirations/:id', authenticate, isAdmin, async (req, res) => {
     try { await Inspiration.findByIdAndDelete(req.params.id); res.json({ success: true }); } 
     catch (err) { res.status(500).json({ error: err.message }); }
@@ -378,6 +384,12 @@ router.get('/ads', async (req, res) => {
 
 router.post('/ads', authenticate, isAdmin, async (req, res) => {
     try { res.json(await new Ad(req.body).save()); } 
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// נתיב עדכון פרסום (PUT) - מבטיח שמירה של עריכות והחלפת תמונות
+router.put('/ads/:id', authenticate, isAdmin, async (req, res) => {
+    try { res.json(await Ad.findByIdAndUpdate(req.params.id, req.body, { new: true })); } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
