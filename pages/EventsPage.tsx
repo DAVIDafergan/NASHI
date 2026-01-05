@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2 } from 'lucide-react'; // נוספו אייקונים לסינון
+import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2, ExternalLink } from 'lucide-react'; // נוספו אייקונים לסינון
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // --- Types ---
@@ -25,6 +25,9 @@ interface EventItem {
   // שדות חדשים מניהול:
   notes?: string; 
   targetAges?: string;
+  hebrewDate?: string; // שדה חדש
+  ticketLink?: string; // שדה חדש
+  logo?: string; // שדה חדש
 }
 
 const API_URL = 'https://nashi-production.up.railway.app/api';
@@ -293,7 +296,7 @@ const EventsPage = () => {
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] md:text-xs text-slate-400 mb-1 sm:mb-3 justify-start">
                             <div className="flex items-center gap-1">
                                 <Calendar size={10} className="text-rose-300" />
-                                <span>{new Date(event.date).toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit'})}</span>
+                                <span className="font-bold">{event.hebrewDate || new Date(event.date).toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit'})}</span>
                             </div>
                             {event.targetAges && (
                                 <div className="flex items-center gap-1 bg-slate-50 px-1.5 py-0.5 rounded-md text-slate-500">
@@ -337,6 +340,14 @@ const EventsPage = () => {
                 <div className="pb-6">
                   <div className="h-64 md:h-72 w-full relative">
                       <img src={selectedEvent.image} className={`w-full h-full object-cover ${new Date(selectedEvent.date) < new Date() ? 'grayscale' : ''}`} />
+                      
+                      {/* תצוגת לוגו קטן אם קיים */}
+                      {selectedEvent.logo && (
+                        <div className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-lg border border-white/50 z-20 overflow-hidden">
+                           <img src={selectedEvent.logo} className="w-full h-full object-contain" alt="Logo" />
+                        </div>
+                      )}
+
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
                       <div className="absolute bottom-10 right-6 text-white max-w-[80%] text-right">
                            <span className="bg-rose-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold mb-2 inline-block tracking-wide shadow-sm border border-white/20">{selectedEvent.category}</span>
@@ -350,7 +361,9 @@ const EventsPage = () => {
                       <div className="flex gap-2 mb-6">
                           <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
                               <p className="text-[9px] text-slate-400 font-bold uppercase mb-0.5">תאריך</p>
-                              <p className="font-bold text-slate-700 text-xs md:text-sm">{new Date(selectedEvent.date).toLocaleDateString('he-IL')}</p>
+                              <p className="font-bold text-slate-700 text-[10px] md:text-xs">
+                                {selectedEvent.hebrewDate || new Date(selectedEvent.date).toLocaleDateString('he-IL')}
+                              </p>
                           </div>
                           <div className="flex-1 bg-slate-50 p-3 rounded-2xl text-center border border-slate-100">
                               <p className="text-[9px] text-slate-400 font-bold uppercase mb-0.5">שעה</p>
@@ -362,7 +375,18 @@ const EventsPage = () => {
                           </div>
                       </div>
 
-                      {/* הצגת קהל יעד */}
+                      {/* כפתור רכישת כרטיסים חיצוני אם קיים לינק */}
+                      {selectedEvent.ticketLink && (
+                        <a 
+                          href={selectedEvent.ticketLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="w-full mb-4 bg-emerald-500 hover:bg-emerald-600 text-white py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 transition-all active:scale-95"
+                        >
+                           <ExternalLink size={18} /> רכישת כרטיסים לאירוע
+                        </a>
+                      )}
+
                       {selectedEvent.targetAges && (
                           <div className="mb-4 flex items-center gap-2 bg-blue-50/50 p-3 rounded-xl border border-blue-100/50 text-blue-700">
                               <Users2 size={16} />
@@ -370,7 +394,6 @@ const EventsPage = () => {
                           </div>
                       )}
 
-                      {/* הצגת הערות מהניהול */}
                       {selectedEvent.notes && (
                           <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100/50 text-right">
                               <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-tighter mb-1">הערות ומידע נוסף:</h4>
@@ -378,7 +401,6 @@ const EventsPage = () => {
                           </div>
                       )}
 
-                      {/* רשימת מפגשים נוספים */}
                       {selectedEvent.sessions && selectedEvent.sessions.length > 0 && (
                         <div className="mb-6 space-y-3 bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
                             <h4 className="font-black text-sm text-slate-800 flex items-center gap-2">
@@ -412,7 +434,7 @@ const EventsPage = () => {
                             onClick={() => handleJoin(selectedEvent)} 
                             className={`flex-[2] py-4 rounded-2xl font-bold text-sm shadow-xl transition-all flex justify-center items-center gap-2 active:scale-95 ${new Date(selectedEvent.date) < new Date() ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-slate-900 to-slate-800 text-white hover:shadow-2xl'}`}
                           >
-                              <Ticket size={18} /> {new Date(selectedEvent.date) < new Date() ? 'ההרשמה הסתיימה' : 'הרשמה לאירוע'}
+                              <Ticket size={18} /> {new Date(selectedEvent.date) < new Date() ? 'ההרשמה הסתיימה' : 'הרשמה מהירה'}
                           </button>
                           
                           <div className="flex flex-col items-center justify-center gap-1">

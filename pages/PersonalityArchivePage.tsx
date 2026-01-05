@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Quote, Calendar, X, Heart, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Sparkles, Quote, Calendar, Heart, MessageSquare, Briefcase } from 'lucide-react';
 import { api } from '../services/api';
 
 const PersonalityArchivePage = () => {
     const navigate = useNavigate();
     const [personalities, setPersonalities] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedInterview, setSelectedInterview] = useState<any>(null);
+    // המדינה הזו עכשיו מחזיקה את האישה שמוצגת כרגע בראש הדף
+    const [displayUser, setDisplayUser] = useState<any>(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -20,6 +21,11 @@ const PersonalityArchivePage = () => {
                     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
                 });
                 setPersonalities(sorted);
+                
+                // כברירת מחדל, נציג בראש הדף את האישה הפעילה/אחרונה
+                if (sorted.length > 0) {
+                    setDisplayUser(sorted[0]);
+                }
             } catch (err) {
                 console.error("Error loading archive:", err);
             } finally {
@@ -29,82 +35,122 @@ const PersonalityArchivePage = () => {
         loadData();
     }, []);
 
+    // פונקציה להחלפת התצוגה בראש הדף
+    const handleSelectFromArchive = (p: any) => {
+        setDisplayUser(p);
+        // גלילה חלקה לראש הדף כדי לראות את הבחירה
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-rose-50/30">
             <div className="w-10 h-10 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
         </div>
     );
 
-    const activeOne = personalities.find(p => p.isActive);
-    const archive = personalities.filter(p => !p.isActive);
+    // רשימת הארכיון היא כל מי שלא מוצג כרגע בראש הדף
+    const archiveList = personalities.filter(p => p._id !== displayUser?._id);
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white pb-20 pt-6 px-4 md:px-8 text-right font-sans" dir="rtl">
+        <div className="min-h-screen bg-gradient-to-b from-rose-50/50 via-white to-white pb-20 pt-6 px-4 md:px-8 text-right font-sans" dir="rtl">
             
             {/* Header */}
-            <div className="max-w-5xl mx-auto flex items-center justify-between mb-10">
+            <div className="max-w-5xl mx-auto flex items-center justify-between mb-8">
                 <button onClick={() => navigate(-1)} className="p-2 bg-white rounded-full shadow-sm text-slate-400 hover:text-rose-500 transition-colors border border-rose-50">
                     <ArrowLeft size={20} />
                 </button>
                 <div className="text-right">
-                    <h1 className="text-2xl md:text-4xl font-black text-slate-800">נשות המעגל</h1>
-                    <p className="text-xs md:text-sm text-rose-400 font-bold">מקום להשראה, עוצמה וחיבור נשי</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">נשות המעגל</h1>
+                    <p className="text-[10px] md:text-sm text-rose-400 font-bold uppercase tracking-widest">מקום להשראה וחיבור נשי</p>
                 </div>
             </div>
 
-            <div className="max-w-5xl mx-auto space-y-12">
+            <div className="max-w-4xl mx-auto space-y-16">
                 
-                {/* אשת השבוע הנוכחית - Hero Section */}
-                {activeOne && (
-                    <section className="animate-fade-in">
-                        <div className="bg-white rounded-[3rem] p-6 md:p-10 shadow-xl shadow-rose-100/50 border border-white relative overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-32 h-32 bg-rose-100/30 rounded-full -ml-16 -mt-16 blur-2xl"></div>
-                            <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-                                <div className="relative shrink-0">
-                                    <img src={activeOne.image} alt={activeOne.name} className="w-40 h-40 md:w-56 md:h-56 rounded-[2.5rem] object-cover shadow-2xl border-4 border-white" />
-                                    <div className="absolute -bottom-2 -right-2 bg-amber-400 p-2.5 rounded-2xl text-white shadow-lg animate-bounce">
-                                        <Sparkles size={20} />
-                                    </div>
-                                </div>
-                                <div className="text-center md:text-right flex-1 space-y-4">
-                                    <span className="bg-rose-500 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md shadow-rose-200">השבוע במעגל</span>
-                                    <h2 className="text-3xl md:text-5xl font-black text-slate-800 leading-tight">{activeOne.name}</h2>
-                                    <p className="text-lg md:text-xl text-rose-400 font-bold">{activeOne.role}</p>
-                                    <p className="text-slate-600 italic text-base md:text-xl leading-relaxed max-w-xl">
-                                        <Quote size={18} className="inline ml-2 opacity-20 rotate-180" />
-                                        {activeOne.motto || "מאמינה בכוחן של נשים לשנות את העולם."}
-                                        <Quote size={18} className="inline mr-2 opacity-20" />
-                                    </p>
-                                    <button onClick={() => setSelectedInterview(activeOne)} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-sm hover:bg-rose-600 transition-all shadow-lg active:scale-95">
-                                        קראי את הראיון המלא
-                                    </button>
+                {/* תצוגה ראשית - האישה הנבחרת */}
+                {displayUser && (
+                    <section className="animate-fade-in space-y-10">
+                        {/* כרטיס פרופיל ראשי */}
+                        <div className="text-center space-y-6">
+                            <div className="relative inline-block">
+                                <img 
+                                    src={displayUser.image} 
+                                    className="w-40 h-40 md:w-56 md:h-56 rounded-[3rem] mx-auto object-cover shadow-2xl border-4 border-white transition-all duration-500" 
+                                    alt={displayUser.name} 
+                                />
+                                <div className="absolute -bottom-2 -right-2 bg-rose-500 p-3 rounded-2xl text-white shadow-lg shadow-rose-200">
+                                    <Sparkles size={20} />
                                 </div>
                             </div>
+                            
+                            <div className="space-y-2">
+                                <h2 className="text-3xl md:text-5xl font-black text-slate-800">{displayUser.name}</h2>
+                                <div className="flex items-center justify-center gap-2 text-rose-400 font-bold">
+                                    <Briefcase size={16} />
+                                    <p className="text-base md:text-lg">{displayUser.role}</p>
+                                </div>
+                                {displayUser.motto && (
+                                    <div className="pt-4 max-w-lg mx-auto">
+                                        <p className="text-xl md:text-2xl italic text-slate-500 font-serif leading-relaxed">
+                                            <Quote size={20} className="inline ml-2 opacity-20 rotate-180" />
+                                            {displayUser.motto}
+                                            <Quote size={20} className="inline mr-2 opacity-20" />
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* שאלות ותשובות */}
+                        <div className="grid gap-6">
+                            {displayUser.questions?.map((q: any, i: number) => q.answer && (
+                                <div key={i} className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-rose-50 hover:border-rose-100 transition-all animate-fade-in-up" style={{animationDelay: `${i*0.1}s`}}>
+                                    <div className="flex items-start gap-4">
+                                        <div className="p-2 bg-rose-50 rounded-xl text-rose-500 shrink-0">
+                                            <MessageSquare size={20} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h5 className="font-black text-slate-800 text-lg md:text-xl leading-tight">{q.question}</h5>
+                                            <p className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-wrap">{q.answer}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </section>
                 )}
 
-                {/* ארכיון - ראיונות קודמים */}
-                {archive.length > 0 && (
-                    <section className="space-y-6">
-                        <h3 className="text-xl font-black text-slate-700 flex items-center gap-2 pr-2">
-                            <Calendar size={20} className="text-rose-400" /> ראיונות קודמים
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {archive.map((p) => (
+                <hr className="border-rose-100/50" />
+
+                {/* שורת ארכיון - נשות המעגל הקודמות */}
+                {archiveList.length > 0 && (
+                    <section className="space-y-8">
+                        <div className="flex items-center justify-between px-2">
+                            <h3 className="text-xl font-black text-slate-700 flex items-center gap-2">
+                                <Calendar size={20} className="text-rose-400" /> נשים נוספות מהמעגל
+                            </h3>
+                        </div>
+                        
+                        {/* גריד של כרטיסים קטנים */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                            {archiveList.map((p) => (
                                 <div 
                                     key={p._id} 
-                                    onClick={() => setSelectedInterview(p)}
-                                    className="bg-white/70 backdrop-blur-sm rounded-[2.5rem] p-5 shadow-sm border border-white hover:shadow-xl hover:shadow-rose-50 transition-all cursor-pointer group active:scale-95"
+                                    onClick={() => handleSelectFromArchive(p)}
+                                    className="bg-white/70 backdrop-blur-sm rounded-[2rem] p-4 shadow-sm border border-white hover:shadow-xl hover:border-rose-200 transition-all cursor-pointer group active:scale-95 text-center flex flex-col items-center"
                                 >
-                                    <div className="flex items-center gap-4">
-                                        <img src={p.image} className="w-20 h-20 rounded-2xl object-cover grayscale group-hover:grayscale-0 transition-all shadow-sm" alt={p.name} />
-                                        <div className="overflow-hidden">
-                                            <h4 className="font-black text-slate-800 text-lg truncate">{p.name}</h4>
-                                            <p className="text-xs text-rose-400 font-bold truncate">{p.role}</p>
-                                            <p className="text-[10px] text-slate-400 mt-1">{new Date(p.updatedAt).toLocaleDateString('he-IL')}</p>
-                                        </div>
+                                    <div className="relative mb-3">
+                                        <img 
+                                            src={p.image} 
+                                            className="w-20 h-20 md:w-24 md:h-24 rounded-[1.5rem] object-cover grayscale group-hover:grayscale-0 transition-all duration-500 shadow-md" 
+                                            alt={p.name} 
+                                        />
                                     </div>
+                                    <h4 className="font-black text-slate-800 text-sm md:text-base line-clamp-1">{p.name}</h4>
+                                    <p className="text-[10px] text-rose-400 font-bold line-clamp-1">{p.role}</p>
+                                    <button className="mt-3 text-[9px] font-black text-slate-400 group-hover:text-rose-500 uppercase tracking-tighter transition-colors">
+                                        צפייה בראיון
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -112,49 +158,11 @@ const PersonalityArchivePage = () => {
                 )}
             </div>
 
-            {/* מודאל ראיון מלא - Overlay */}
-            {selectedInterview && (
-                <div className="fixed inset-0 z-[200] bg-rose-50/98 overflow-y-auto animate-fade-in no-scrollbar">
-                    <div className="sticky top-0 bg-white/80 backdrop-blur-md p-5 flex justify-between items-center border-b z-50 px-6 md:px-12">
-                        <button onClick={() => setSelectedInterview(null)} className="p-2 bg-slate-50 rounded-full hover:bg-rose-100 text-slate-500 transition-colors">
-                            <X size={24}/>
-                        </button>
-                        <div className="flex items-center gap-2">
-                            <h4 className="font-black text-rose-500 text-lg">סיפור אישי</h4>
-                            <Heart size={20} className="text-rose-400 fill-current" />
-                        </div>
-                    </div>
-                    
-                    <div className="max-w-2xl mx-auto p-8 md:p-16 space-y-12 text-right">
-                        <div className="text-center space-y-4">
-                            <img src={selectedInterview.image} className="w-48 h-48 md:w-64 md:h-64 rounded-[3.5rem] mx-auto object-cover shadow-2xl border-4 border-white" />
-                            <h2 className="text-4xl md:text-6xl font-black text-slate-800 tracking-tight">{selectedInterview.name}</h2>
-                            <p className="text-xl text-rose-400 font-bold">{selectedInterview.role}</p>
-                            {selectedInterview.motto && (
-                                <p className="text-2xl italic text-slate-500 max-w-lg mx-auto font-serif">"{selectedInterview.motto}"</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-8">
-                            {selectedInterview.questions?.map((q: any, i: number) => q.answer && (
-                                <div key={i} className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border-r-8 border-rose-400 animate-fade-in-up" style={{animationDelay: `${i*0.1}s`}}>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <div className="p-2 bg-rose-50 rounded-lg text-rose-500">
-                                            <MessageSquare size={18} />
-                                        </div>
-                                        <h5 className="font-black text-slate-800 text-lg md:text-xl">{q.question}</h5>
-                                    </div>
-                                    <p className="text-slate-700 text-base md:text-lg leading-relaxed whitespace-pre-wrap">{q.answer}</p>
-                                </div>
-                            ))}
-                        </div>
-                        
-                        <button onClick={() => setSelectedInterview(null)} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-rose-500 transition-all mt-10">
-                            סגירה וחזרה לארכיון
-                        </button>
-                    </div>
-                </div>
-            )}
+            {/* Footer עדין */}
+            <div className="max-w-lg mx-auto text-center mt-20 opacity-30">
+                <Heart size={20} className="mx-auto text-rose-400 mb-2" />
+                <p className="text-[10px] font-bold text-slate-400">מעגל נשי - מקום שלכן ועבורכן</p>
+            </div>
         </div>
     );
 };

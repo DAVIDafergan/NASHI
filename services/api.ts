@@ -348,6 +348,13 @@ export const api = {
         return res.json();
     },
 
+    async deletePersonality(id: string) {
+        return fetch(`${API_URL}/personality/${id}`, { 
+            method: 'DELETE', 
+            headers: getHeaders() 
+        }).then(res => res.json());
+    },
+
     // ================= INSPIRATIONS (השראה יומית) =================
     async getInspirations() {
         const res = await fetch(`${API_URL}/inspirations`);

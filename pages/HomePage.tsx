@@ -30,6 +30,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [ads, setAds] = useState<AdItem[]>([]);
   const [inspirations, setInspirations] = useState<any[]>([]); // חדש: מצב להשראות
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0); // חדש: אינדקס לפרסומות
   const [upcomingLottery, setUpcomingLottery] = useState<LotteryItem | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
   const [showMembershipModal, setShowMembershipModal] = useState(false);
@@ -65,6 +66,16 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
     loadAllData();
   }, []);
+
+  // לוגיקת קרוסלת פרסומות אוטומטית (כל 3 שניות לתמונה)
+  useEffect(() => {
+    if (ads.length > 1 && ads[currentAdIndex]?.type === 'image') {
+      const adTimer = setInterval(() => {
+        setCurrentAdIndex((prev) => (prev + 1) % ads.length);
+      }, 3000);
+      return () => clearInterval(adTimer);
+    }
+  }, [ads, currentAdIndex]);
 
   const heroEvents = events.filter(e => e.isHero);
   const displayEvents = heroEvents.length > 0 ? heroEvents : events.slice(0, 3);
@@ -120,16 +131,23 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   ];
 
   const renderAdBanner = () => {
-    if (!ads || ads.length === 0 || !ads[0]) return null;
-    const ad = ads[0]; 
+    if (!ads || ads.length === 0) return null;
+    const ad = ads[currentAdIndex]; 
+    if (!ad) return null;
+
     return (
-      <div className="mx-2 md:mx-0 animate-fade-in">
+      <div className="mx-2 md:mx-0 animate-fade-in transition-all duration-700">
         <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden rounded-[1.5rem] md:rounded-3xl shadow-sm border border-rose-100">
           {ad.type === 'image' ? (
-            <img src={ad.content} alt={ad.title || 'Ad'} className="w-full h-20 md:h-32 object-cover transition-transform duration-700 group-hover:scale-105" />
+            <img src={ad.content} alt={ad.title || 'Ad'} className="w-full h-24 md:h-32 object-cover transition-transform duration-700 group-hover:scale-105" />
           ) : (
-            <div className="w-full h-20 md:h-32 bg-slate-900 flex items-center justify-center text-white text-[9px] font-bold">
-               {ad.title || 'וידאו פרסומי'}
+            <div className="w-full h-24 md:h-32 bg-slate-900 flex items-center justify-center overflow-hidden">
+                <video 
+                  src={ad.content} 
+                  autoPlay muted playsInline
+                  onEnded={() => setCurrentAdIndex((prev) => (prev + 1) % ads.length)}
+                  className="w-full h-full object-cover"
+                />
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-l from-black/50 to-transparent flex items-center justify-end px-4 md:px-6">
@@ -157,7 +175,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     );
   }
 
-  // ההשראה האחרונה שנוספה
+  // השראה דינמית מהשרת
   const latestInspiration = inspirations[0] || { text: "הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך.", author: "נ.ש" };
 
   return (
@@ -254,7 +272,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             ))}
         </section>
 
-        {/* קטגוריות וחוגים - כפתורים עדינים יותר */}
+        {/* קטגוריות וחוגים */}
         <div className="flex gap-1.5 overflow-x-auto pb-4 no-scrollbar px-2">
             <button onClick={() => navigate('/classes')} 
                     className="flex items-center gap-1.5 px-3.5 py-2 md:py-2.5 bg-slate-900 rounded-xl md:rounded-2xl text-[9px] md:text-[13px] font-black text-white shadow-md transition-all flex-shrink-0 active:scale-95">
@@ -274,7 +292,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-10">
             <div className="lg:col-span-2 space-y-5 md:space-y-10">
                 
-                {/* אשת השבוע עם קישור לדף הארכיון PersonalityArchivePage */}
+                {/* אשת השבוע */}
                 {personality && personality.name && (
                     <section className="animate-fade-in px-1">
                         <Link to="/personality-archive" className="block bg-white/40 backdrop-blur-xl rounded-[1.5rem] md:rounded-[3rem] p-3.5 md:p-8 shadow-sm border border-white flex flex-col md:flex-row items-center gap-4 md:gap-10 relative overflow-hidden group">
@@ -289,7 +307,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                                     <h3 className="text-base md:text-3xl font-black text-slate-800 leading-tight tracking-tight">{personality.name}</h3>
                                     <p className="text-[8px] md:text-sm text-slate-400 font-bold tracking-wide">{personality.role}</p>
                                 </div>
-                                
                                 {personality.motto && (
                                   <div className="relative py-0.5">
                                      <p className="text-[10px] md:text-base text-rose-600/70 font-bold italic leading-relaxed line-clamp-2">
@@ -299,7 +316,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                                      </p>
                                   </div>
                                 )}
-
                                 <div className="text-[8px] md:text-[11px] font-black text-slate-400 group-hover:text-rose-500 flex items-center gap-1 transition-all mx-auto md:mr-0 pt-1.5 border-t border-rose-50/50 justify-center md:justify-start">
                                     לכל נשות המעגל והראיון המלא <ChevronLeft size={10} md:size={12} />
                                 </div>
@@ -308,7 +324,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </section>
                 )}
 
-                {/* קהילה בעיצוב קומפקטי */}
+                {/* קהילה */}
                 {communityItems && communityItems.length > 0 && (
                     <section className="space-y-2 md:space-y-4 animate-fade-in px-2">
                         <h3 className="text-[10px] md:text-lg font-black text-slate-800 flex items-center gap-2 px-1 tracking-tight">
@@ -329,7 +345,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </section>
                 )}
 
-                {/* עדכונים - עיצוב נקי יותר */}
+                {/* עדכונים אחרונים (השורות שהיו חסרות) */}
                 <div className="space-y-2 md:space-y-4 px-2">
                     <h3 className="text-[10px] md:text-lg font-black text-slate-800 flex items-center gap-2 px-1 tracking-tight"><Bell className="text-rose-400" size={14} md:size={16}/> עדכונים אחרונים</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
@@ -352,55 +368,55 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 </div>
             </div>
 
-            {/* סיידבר רספונסיבי משודרג - הכרטיסים הקטנים והנוחים */}
-            <div className="space-y-4 md:space-y-10 px-1 md:px-0">
-                {/* כרטיס השראה יומית - מקצועי וקטן יותר בנייד */}
-                <div className="bg-slate-900 rounded-[1.5rem] md:rounded-[3rem] p-5 md:p-8 text-white relative overflow-hidden shadow-xl text-right">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/10 rounded-full blur-3xl -mr-12 -mt-12"></div>
-                    <div className="relative z-10 space-y-3 md:space-y-6">
-                        <Quote className="text-rose-400/30 -mb-1" size={16} md:size={20} />
-                        <p className="text-xs md:text-xl font-serif italic opacity-95 leading-relaxed tracking-tight">
+            {/* סיידבר - אופטימיזציה לנייד */}
+            <div className="space-y-3.5 md:space-y-10 px-1 md:px-0">
+                {/* השראה יומית דינמית מהשרת */}
+                <div className="bg-slate-900 rounded-[1.2rem] md:rounded-[3rem] p-4 md:p-8 text-white relative overflow-hidden shadow-xl text-right">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                    <div className="relative z-10 space-y-2 md:space-y-6">
+                        <Quote className="text-rose-400/30 -mb-1" size={14} md:size={20} />
+                        <p className="text-[11px] md:text-xl font-serif italic opacity-95 leading-relaxed tracking-tight">
                             "{latestInspiration.text}"
                         </p>
-                        <div className="flex items-center gap-2 justify-end pt-2 border-t border-white/5">
-                            <span className="text-[6px] md:text-[9px] font-black opacity-40 tracking-[0.2em] uppercase">השראה יומית</span>
-                            <div className="px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-400 font-black text-[7px] md:text-[10px] border border-rose-500/20">
+                        <div className="flex items-center gap-2 justify-end pt-1.5 border-t border-white/5">
+                            <span className="text-[6px] md:text-[9px] font-black opacity-40 tracking-widest uppercase">השראה</span>
+                            <div className="px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-400 font-black text-[7px] md:text-[10px] border border-rose-500/10">
                                 {latestInspiration.author}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* הצטרפות/קשר - כרטיס דקיק ונוח */}
+                {/* יצירת קשר / הצטרפות - כרטיס נוח */}
                 {!user ? (
-                   <div onClick={onOpenLogin} className="cursor-pointer bg-white rounded-[1.5rem] md:rounded-[3rem] p-5 md:p-8 text-center space-y-2 md:space-y-4 hover:translate-y-[-2px] transition-all border border-rose-100/50 shadow-sm flex flex-col items-center">
+                   <div onClick={onOpenLogin} className="cursor-pointer bg-white rounded-[1.2rem] md:rounded-[3rem] p-4 md:p-8 text-center space-y-2 md:space-y-4 hover:translate-y-[-2px] transition-all border border-rose-100/50 shadow-sm flex flex-col items-center">
                       <div className="w-10 h-10 md:w-16 md:h-16 bg-rose-50 rounded-xl md:rounded-2xl flex items-center justify-center text-rose-500"><HeartHandshake size={20} md:size={24} /></div>
                       <h3 className="text-xs md:text-xl font-black text-slate-800 tracking-tight">הצטרפי למעגל</h3>
                       <p className="text-[8px] md:text-[11px] text-slate-400 font-medium leading-tight max-w-[150px] md:max-w-[180px]">תהיי חלק מהשינוי בעיר ותיהני מעולם של תרבות והטבות.</p>
                       <button className="bg-rose-500 text-white px-6 py-2 rounded-lg md:rounded-xl font-black text-[8px] md:text-xs shadow-lg hover:bg-rose-600 transition-all active:scale-95">הרשמה מהירה</button>
                    </div>
                 ) : (
-                  <div className="bg-white/60 backdrop-blur-md p-5 md:p-8 rounded-[1.5rem] md:rounded-[3rem] shadow-sm border border-rose-100/50 text-center space-y-2 md:space-y-4 flex flex-col items-center">
-                      <div className="w-9 h-9 md:w-14 md:h-14 bg-rose-50 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto text-rose-400"><Phone size={16} md:size={20}/></div>
+                  <div className="bg-white/60 backdrop-blur-md p-4 md:p-8 rounded-[1.2rem] md:rounded-[3rem] shadow-sm border border-rose-100/50 text-center space-y-2 md:space-y-4 flex flex-col items-center">
+                      <div className="w-9 h-9 md:w-14 md:h-14 bg-rose-50 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto text-rose-400"><Phone size={14} md:size={20}/></div>
                       <h3 className="text-xs md:text-lg font-black text-slate-800">צרי קשר</h3>
                       <p className="text-[8px] md:text-[11px] text-slate-400 font-medium max-w-[140px] md:max-w-[160px]">אנחנו כאן לכל שאלה, הצעה או שיתוף פעולה.</p>
-                      <a href="tel:0500000000" className="block w-full py-2 bg-white text-slate-700 rounded-lg md:rounded-xl font-black text-[8px] md:text-xs hover:bg-rose-50 transition-all border border-rose-100 shadow-sm">חיוג למוקד</a>
+                      <a href="tel:0500000000" className="block w-full py-2 bg-white text-slate-700 rounded-lg md:rounded-xl font-black text-[8px] md:text-xs hover:bg-rose-50 transition-all border border-rose-100 shadow-sm">חיוג מהיר</a>
                   </div>
                 )}
             </div>
         </div>
       </div>
 
-      {/* מודאל הצטרפות עדין */}
+      {/* מודאל הצטרפות */}
       {showMembershipModal && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-3 bg-rose-900/10 backdrop-blur-sm animate-fade-in text-right">
-              <div className="bg-white rounded-[2rem] w-full max-w-md p-5 md:p-10 relative shadow-2xl border border-white mx-2 overflow-hidden">
+              <div className="bg-white rounded-[1.5rem] w-full max-w-md p-5 md:p-10 relative shadow-2xl border border-white mx-2 overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
                   <button onClick={() => setShowMembershipModal(false)} className="absolute top-4 left-4 p-1.5 hover:bg-rose-50 rounded-full transition-colors text-slate-300"><X size={16}/></button>
                   <div className="text-right space-y-4">
                       <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400 shadow-inner"><Sparkles size={16}/></div>
                       <div className="space-y-0.5">
-                        <h2 className="text-lg md:text-2xl font-black text-slate-800 tracking-tight">בקשת הצטרפות</h2>
+                        <h2 className="text-lg md:text-2xl font-black text-slate-800 tracking-tight leading-none">בקשת הצטרפות</h2>
                         <p className="text-[9px] md:text-xs text-slate-400 font-bold">מלאי את הפרטים והמתיני לאישור המנהלת</p>
                       </div>
                       <form onSubmit={handleMembershipSubmit} className="space-y-2.5 md:space-y-4 pt-3 border-t border-rose-50">

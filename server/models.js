@@ -43,7 +43,7 @@ const ForumPost = mongoose.model('ForumPost', ForumPostSchema);
 
 // --- סכמת קהילה מעודכנת ---
 const CommunitySchema = new mongoose.Schema({
-  category: { type: String, enum: ['שיעורי תורה', 'גמ"חים', 'עסקים מקומיים'], required: true },
+  category: { type: String, enum: ['שיעורי תורה', 'גמ"חים', 'עסקים מקומיים', 'עסק מקומי'], required: true },
   title: { type: String, required: true },
   image: { type: String },
   location: { type: String },
@@ -74,6 +74,10 @@ const EventSchema = new mongoose.Schema({
   // שדות חדשים נוספים (גילאים והערות)
   targetAges: { type: String },
   notes: { type: String },
+  // שדות חדשים שנוספו כעת
+  hebrewDate: { type: String }, // תאריך עברי
+  ticketLink: { type: String }, // לינק לרכישת כרטיסים חיצונית
+  logo: { type: String }, // לוגו קטן לאירוע
   // המשך שדות קיימים
   isHero: { type: Boolean, default: false },
   registrationLink: { type: String },
@@ -104,11 +108,17 @@ const Class = mongoose.model('Class', ClassSchema);
 const LotterySchema = new mongoose.Schema({
   title: { type: String, required: true },
   prize: { type: String, required: true },
+  // שדות חדשים לפרסים נוספים
+  prize2: { type: String },
+  prize3: { type: String },
   drawDate: { type: Date, required: true },
   image: { type: String },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isActive: { type: Boolean, default: true },
-  minPointsToEnter: { type: Number, default: 0 }
+  // שדות חדשים לזכאות וניהול זוכה
+  participationType: { type: String, enum: ['everyone', 'points', 'link_only'], default: 'everyone' },
+  minPointsToEnter: { type: Number, default: 0 },
+  winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } // מזהה הזוכה לאחר ההגרלה
 });
 const Lottery = mongoose.model('Lottery', LotterySchema);
 
@@ -131,6 +141,7 @@ const PersonalitySchema = new mongoose.Schema({
   name: { type: String },
   role: { type: String },
   image: { type: String },
+  motto: { type: String }, // הוספת מוטו לסכמה
   questions: [{ question: String, answer: String }],
   isActive: { type: Boolean, default: false },
   externalToken: { type: String },

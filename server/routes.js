@@ -314,6 +314,14 @@ router.post('/admin/personality/approve/:id', authenticate, isAdmin, async (req,
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// מחיקת ראיון מהארכיון (חדש!)
+router.delete('/personality/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        await Personality.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ================= 8. פורום (FORUM) =================
 
 router.get('/forum', async (req, res) => {
@@ -353,6 +361,14 @@ router.post('/forum/:id/comment', authenticate, async (req, res) => {
             $push: { comments: { authorName: user.name, text: req.body.text } }
         }, { new: true });
         res.json(post);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// מחיקת פוסט מהפורום (חדש!)
+router.delete('/forum/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        await ForumPost.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
