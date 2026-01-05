@@ -11,6 +11,7 @@ import LotteryPage from './pages/LotteryPage';
 import ForumPage from './pages/ForumPage'; 
 import CommunityPage from './pages/CommunityPage'; 
 import InterviewPage from './pages/InterviewPage'; // עדכון שם הקובץ ל-InterviewPage
+import PersonalityArchivePage from './pages/PersonalityArchivePage'; // ייבוא דף ארכיון נשות השבוע החדש
 import { GeminiAssistant } from './components/GeminiAssistant';
 import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, CommunicationPreference } from './types';
 import { X, AlertCircle, Loader2 } from 'lucide-react';
@@ -254,6 +255,9 @@ const App: React.FC = () => {
             
             {/* נתיב לראיון אשת השבוע */}
             <Route path="/interview/:token" element={<InterviewPage />} />
+            
+            {/* נתיב לארכיון נשות השבוע */}
+            <Route path="/personality-archive" element={<PersonalityArchivePage />} />
 
             <Route path="/profile" element={user ? <ProfilePage user={user} events={events} onUpdateUser={handleUpdateUser} /> : <Navigate to="/" replace />} />
             <Route path="/contact" element={<ContactPage />} />

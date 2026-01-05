@@ -129,7 +129,11 @@ router.get('/events', async (req, res) => {
 });
 
 router.post('/events', authenticate, isAdmin, async (req, res) => {
-    try { res.json(await new Event(req.body).save()); } 
+    try {
+        const data = { ...req.body };
+        if (data._id === '') delete data._id;
+        res.json(await new Event(data).save());
+    } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -150,7 +154,11 @@ router.get('/classes', async (req, res) => {
 });
 
 router.post('/classes', authenticate, isAdmin, async (req, res) => {
-    try { res.json(await new Class(req.body).save()); } catch (err) { res.status(500).json({ error: err.message }); }
+    try {
+        const data = { ...req.body };
+        if (data._id === '') delete data._id;
+        res.json(await new Class(data).save());
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.put('/classes/:id', authenticate, isAdmin, async (req, res) => {
@@ -168,7 +176,33 @@ router.get('/lotteries', async (req, res) => {
 });
 
 router.post('/lotteries', authenticate, isAdmin, async (req, res) => {
-    try { res.json(await new Lottery(req.body).save()); } catch (err) { res.status(500).json({ error: err.message }); }
+    try {
+        const data = { ...req.body };
+        if (data._id === '') delete data._id;
+        res.json(await new Lottery(data).save());
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// נתיב עדכון הגרלה (חדש!)
+router.put('/lotteries/:id', authenticate, isAdmin, async (req, res) => {
+    try { res.json(await Lottery.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// נתיב הפעלת הגרלה בשידור חי (Live Draw)
+router.post('/admin/lotteries/:id/run', authenticate, isAdmin, async (req, res) => {
+    try {
+        const lottery = await Lottery.findById(req.params.id);
+        if (!lottery) return res.status(404).json({ error: 'Lottery not found' });
+        
+        // בחירת זוכה רנדומלית מתוך המשתתפות
+        if (lottery.participants.length > 0) {
+            const randomIndex = Math.floor(Math.random() * lottery.participants.length);
+            lottery.winnerId = lottery.participants[randomIndex];
+            lottery.isActive = false;
+            await lottery.save();
+        }
+        res.json({ success: true, winnerId: lottery.winnerId });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.delete('/lotteries/:id', authenticate, isAdmin, async (req, res) => {
@@ -182,10 +216,13 @@ router.get('/community', async (req, res) => {
 });
 
 router.post('/community', authenticate, isAdmin, async (req, res) => {
-    try { res.json(await new Community(req.body).save()); } catch (err) { res.status(500).json({ error: err.message }); }
+    try {
+        const data = { ...req.body };
+        if (data._id === '') delete data._id;
+        res.json(await new Community(data).save());
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב לעדכון קהילה (חדש - לתיקון עריכה והחלפת תמונה)
 router.put('/community/:id', authenticate, isAdmin, async (req, res) => {
     try { res.json(await Community.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -204,6 +241,14 @@ router.get('/personality', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// קבלת כל הראיונות (ארכיון) - חדש!
+router.get('/personality/archive', async (req, res) => {
+    try {
+        const all = await Personality.find().sort({ updatedAt: -1 });
+        res.json(all);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // עדכון הגדרות כלליות (מנהלת)
 router.post('/personality', authenticate, isAdmin, async (req, res) => {
     try {
@@ -215,14 +260,13 @@ router.post('/personality', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 1. יצירת לינק למילוי שאלון (מנהלת מגדירה שאלות) - כאן נשמרות השאלות ללינק!
 router.post('/personality/generate-link', authenticate, isAdmin, async (req, res) => {
     try {
         const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         const p = new Personality({ 
             name: 'ממתין למילוי',
             role: '',
-            questions: req.body.questions || [], // השאלות שהמנהלת הגדירה בניהול נשמרות בטוקן
+            questions: req.body.questions || [],
             externalToken: token, 
             isActive: false 
         });
@@ -231,7 +275,6 @@ router.post('/personality/generate-link', authenticate, isAdmin, async (req, res
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 2. קבלת השאלון למילוי (ציבורי - לפי טוקן)
 router.get('/personality/fill/:token', async (req, res) => {
     try {
         const p = await Personality.findOne({ externalToken: req.params.token });
@@ -240,14 +283,13 @@ router.get('/personality/fill/:token', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 3. שליחת התשובות מהאישה (ציבורי) - האישה ממלאת שם, תפקיד, מוטו ותשובות
 router.post('/personality/fill/:token', async (req, res) => {
     try {
         const p = await Personality.findOneAndUpdate(
             { externalToken: req.params.token },
             { 
                 ...req.body, 
-                externalToken: null, // ביטול הטוקן לאחר שימוש
+                externalToken: null,
                 updatedAt: Date.now() 
             },
             { new: true }
@@ -257,7 +299,6 @@ router.post('/personality/fill/:token', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 4. קבלת ראיונות שהושלמו לאישור (מנהלת) - כאן את יכולה לצפות בתוכן המלא
 router.get('/admin/personality/pending', authenticate, isAdmin, async (req, res) => {
     try {
         const pending = await Personality.find({ isActive: false, externalToken: null });
@@ -265,7 +306,6 @@ router.get('/admin/personality/pending', authenticate, isAdmin, async (req, res)
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 5. אישור סופי ופרסום באתר
 router.post('/admin/personality/approve/:id', authenticate, isAdmin, async (req, res) => {
     try {
         await Personality.updateMany({}, { isActive: false });
@@ -276,7 +316,6 @@ router.post('/admin/personality/approve/:id', authenticate, isAdmin, async (req,
 
 // ================= 8. פורום (FORUM) =================
 
-// קבלת פוסטים מאושרים בלבד לפורום
 router.get('/forum', async (req, res) => {
     try {
         const posts = await ForumPost.find({ status: 'approved' }).sort({ createdAt: -1 });
@@ -293,7 +332,6 @@ router.post('/forum', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// לייק לפוסט
 router.post('/forum/:id/like', authenticate, async (req, res) => {
     try {
         const post = await ForumPost.findById(req.params.id);
@@ -308,7 +346,6 @@ router.post('/forum/:id/like', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// הוספת תגובה
 router.post('/forum/:id/comment', authenticate, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
@@ -354,18 +391,21 @@ router.post('/admin/gifts', authenticate, isAdmin, async (req, res) => {
 
 // ================= 10. השראות ופרסומים (INSPIRATIONS & ADS) =================
 
-// --- נתיבי השראה יומית ---
 router.get('/inspirations', async (req, res) => {
     try { res.json(await Inspiration.find().sort({ createdAt: -1 })); } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/inspirations', authenticate, isAdmin, async (req, res) => {
-    try { res.json(await new Inspiration(req.body).save()); } 
+    try {
+        const data = { ...req.body };
+        if (data._id === '') delete data._id; // מניעת שגיאת ID ריק
+        const resObj = await new Inspiration(data).save();
+        res.json(resObj);
+    } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב עדכון השראה (PUT) - מבטיח שמירה של עריכות
 router.put('/inspirations/:id', authenticate, isAdmin, async (req, res) => {
     try { res.json(await Inspiration.findByIdAndUpdate(req.params.id, req.body, { new: true })); } 
     catch (err) { res.status(500).json({ error: err.message }); }
@@ -376,18 +416,21 @@ router.delete('/inspirations/:id', authenticate, isAdmin, async (req, res) => {
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- נתיבי פרסומים (ADS) ---
 router.get('/ads', async (req, res) => {
     try { res.json(await Ad.find().sort({ createdAt: -1 })); } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/ads', authenticate, isAdmin, async (req, res) => {
-    try { res.json(await new Ad(req.body).save()); } 
+    try {
+        const data = { ...req.body };
+        if (data._id === '') delete data._id; // מניעת שגיאת ID ריק
+        const resObj = await new Ad(data).save();
+        res.json(resObj);
+    } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב עדכון פרסום (PUT) - מבטיח שמירה של עריכות והחלפת תמונות
 router.put('/ads/:id', authenticate, isAdmin, async (req, res) => {
     try { res.json(await Ad.findByIdAndUpdate(req.params.id, req.body, { new: true })); } 
     catch (err) { res.status(500).json({ error: err.message }); }
