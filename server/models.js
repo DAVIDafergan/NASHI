@@ -58,7 +58,7 @@ const CommunitySchema = new mongoose.Schema({
 });
 const Community = mongoose.model('Community', CommunitySchema);
 
-// --- שאר הסכמות הקיימות ---
+// --- סכמת אירוע מעודכנת ---
 const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   date: { type: Date, required: true },
@@ -71,6 +71,9 @@ const EventSchema = new mongoose.Schema({
   earlyBirdPrice: { type: Number },
   earlyBirdEndDate: { type: Date },
   sessions: [{ name: String, date: Date }],
+  // שדות חדשים נוספים (גילאים והערות)
+  targetAges: { type: String },
+  notes: { type: String },
   // המשך שדות קיימים
   isHero: { type: Boolean, default: false },
   registrationLink: { type: String },
@@ -135,4 +138,25 @@ const PersonalitySchema = new mongoose.Schema({
 });
 const Personality = mongoose.model('Personality', PersonalitySchema);
 
-export { User, Event, Class, Lottery, Settings, GiftCode, Personality, ForumPost, Community };
+// --- מודלים חדשים: השראה יומית ופרסומות ---
+
+const InspirationSchema = new mongoose.Schema({
+  text: { type: String, required: true },
+  author: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const Inspiration = mongoose.model('Inspiration', InspirationSchema);
+
+const AdSchema = new mongoose.Schema({
+  title: { type: String },
+  type: { type: String, enum: ['image', 'video'], default: 'image' },
+  content: { type: String, required: true }, // ה-DataURL או הלינק
+  link: { type: String }, // לינק חיצוני ללחיצה
+  createdAt: { type: Date, default: Date.now }
+});
+const Ad = mongoose.model('Ad', AdSchema);
+
+export { 
+  User, Event, Class, Lottery, Settings, GiftCode, 
+  Personality, ForumPost, Community, Inspiration, Ad 
+};
