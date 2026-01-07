@@ -4,7 +4,7 @@ import {
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
-  Quote, Megaphone, Video, PlayCircle, Trophy, Hash // נוספו אייקונים
+  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -13,33 +13,40 @@ import { api } from '../services/api';
 const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-right" dir="rtl">
       <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-fade-in-up relative overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
           <h3 className="text-xl font-black text-slate-800">{title}</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} /></button>
         </div>
-        <div className="p-6 overflow-y-auto no-scrollbar text-right" dir="rtl">{children}</div>
+        <div className="p-6 overflow-y-auto no-scrollbar">{children}</div>
       </div>
     </div>
   );
 };
 
-// קומפוננטת כרטיס סטטיסטיקה לטאב הסיכום
-const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: number | string, icon: any, color: string }) => (
-  <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5 transition-all hover:shadow-md">
-    <div className={`p-4 rounded-2xl ${color}`}>
-      <Icon size={24} className="text-white" />
+// קומפוננטת כרטיס סטטיסטיקה משודרגת
+const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, value: number | string, icon: any, color: string, trend?: string }) => (
+  <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 group">
+    <div className="flex justify-between items-start mb-4">
+      <div className={`p-4 rounded-2xl ${color} text-white shadow-lg`}>
+        <Icon size={24} />
+      </div>
+      {trend && (
+        <span className="flex items-center gap-1 text-emerald-500 text-xs font-black bg-emerald-50 px-3 py-1 rounded-full">
+          {trend} <ArrowUpRight size={14} />
+        </span>
+      )}
     </div>
     <div className="text-right">
-      <p className="text-slate-500 text-sm font-bold">{title}</p>
-      <h4 className="text-2xl font-black text-slate-800">{value}</h4>
+      <p className="text-slate-500 text-sm font-bold mb-1">{title}</p>
+      <h4 className="text-3xl font-black text-slate-800 tracking-tighter">{value}</h4>
     </div>
   </div>
 );
 
 const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> = ({ user }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements'>('summary');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -51,9 +58,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [communityItems, setCommunityItems] = useState<CommunityItem[]>([]);
   const [pendingData, setPendingData] = useState<{pendingUsers: User[], pendingPosts: any[]}>({pendingUsers: [], pendingPosts: []});
   const [forumPosts, setForumPosts] = useState<any[]>([]); 
-  const [apiInspirations, setApiInspirations] = useState<any[]>([]); // חדש: השראה יומית
-  const [apiAds, setApiAds] = useState<any[]>([]); // חדש: פרסומות
-  const [allInterviews, setAllInterviews] = useState<PersonalityProfile[]>([]); // חדש: כל הראיונות
+  const [apiInspirations, setApiInspirations] = useState<any[]>([]);
+  const [apiAds, setApiAds] = useState<any[]>([]);
+  const [apiAnnouncements, setApiAnnouncements] = useState<any[]>([]); // חדש
+  const [allInterviews, setAllInterviews] = useState<PersonalityProfile[]>([]); 
   
   // Form States
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -72,7 +80,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [isLotteryModalOpen, setIsLotteryModalOpen] = useState(false);
   const [lotteryForm, setLotteryForm] = useState<Partial<any>>({ 
     title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', 
-    minPointsToEnter: 0, participationType: 'everyone' 
+    minPointsToEnter: 0, participationType: 'everyone', missionText: '' // נוסף שדה משימה
   });
 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
@@ -81,13 +89,15 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     startTime: '', targetAudience: '', isPaid: false, price: 0 
   });
 
-  // פורם השראה יומית
   const [isInspirationModalOpen, setIsInspirationModalOpen] = useState(false);
   const [inspirationForm, setInspirationForm] = useState({ _id: '', text: '', author: '' });
 
-  // פורם פרסומות
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [adForm, setAdForm] = useState({ _id: '', type: 'image', content: '', link: '', title: '' });
+
+  // פורם הודעות הנהלה
+  const [isAnnModalOpen, setIsAnnModalOpen] = useState(false);
+  const [annForm, setAnnForm] = useState({ _id: '', title: '', content: '' });
 
   const [personalityForm, setPersonalityForm] = useState<PersonalityProfile>({ id: '1', name: '', role: '', image: '', isActive: true, questions: [] });
   const [pendingInterviews, setPendingInterviews] = useState<PersonalityProfile[]>([]); 
@@ -95,6 +105,9 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<PersonalityProfile | null>(null);
+
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [currentParticipants, setCurrentParticipants] = useState<any[]>([]);
 
   const [pointsSettings, setPointsSettings] = useState({ pointsPerRegister: 50, pointsPerEventJoin: 10, pointsPerShare: 5 });
 
@@ -124,7 +137,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         if (activeTab === 'personality') {
             setPersonalityForm(await api.getPersonality());
             setPendingInterviews(await api.getPendingInterviews()); 
-            setAllInterviews(await api.getAllPersonalities()); // משיכת כל הראיונות
+            setAllInterviews(await api.getAllPersonalities());
         }
         else if (activeTab === 'settings') setPointsSettings(await api.getSettings());
         else if (activeTab === 'forum') {
@@ -138,6 +151,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         else if (activeTab === 'ads') {
             const ads = await api.getAds();
             setApiAds(ads || []);
+        }
+        else if (activeTab === 'announcements') {
+            const anns = await api.getAnnouncements();
+            setApiAnnouncements(anns || []);
         }
     } catch (err) { console.error(err); }
     setLoading(false);
@@ -166,7 +183,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     }
   };
 
-  const handleDelete = async (id: string, type: 'user' | 'event' | 'class' | 'lottery' | 'community' | 'post' | 'inspiration' | 'ad' | 'personality', name: string) => {
+  const handleDelete = async (id: string, type: 'user' | 'event' | 'class' | 'lottery' | 'community' | 'post' | 'inspiration' | 'ad' | 'personality' | 'announcement', name: string) => {
     if (!id) return alert('שגיאה: מזהה חסר');
     if (window.confirm(`למחוק את ${name} לצמיתות?`)) {
       try {
@@ -178,7 +195,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         else if (type === 'post') await api.deletePost(id); 
         else if (type === 'inspiration') await api.deleteInspiration(id);
         else if (type === 'ad') await api.deleteAd(id);
-        else if (type === 'personality') await api.deletePersonality(id); // מחיקת ראיון
+        else if (type === 'personality') await api.deletePersonality(id);
+        else if (type === 'announcement') await api.deleteAnnouncement(id);
         loadTabData();
       } catch (err) { alert('שגיאה במחיקה'); }
     }
@@ -212,6 +230,12 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     }
   };
 
+  const viewParticipants = async (lotteryId: string) => {
+    const participants = await api.getLotteryParticipants(lotteryId);
+    setCurrentParticipants(participants || []);
+    setIsParticipantsModalOpen(true);
+  };
+
   const sendPersonalBenefit = async (email: string) => {
       const res = await api.createGiftCode({ points: 100, maxUses: 1 });
       alert(`לינק הטבה נוצר: ${res.link}\nשלחי אותו למשתמשת!`);
@@ -227,6 +251,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {[
            { id: 'summary', label: 'סיכום חודשי', icon: <BarChart3 size={16} /> },
            { id: 'approvals', label: 'אישורים', icon: <CheckCircle size={16} /> },
+           { id: 'announcements', label: 'הודעות הנהלה', icon: <Bell size={16} /> },
            { id: 'users', label: 'משתמשים', icon: <Users size={16} /> },
            { id: 'events', label: 'אירועים', icon: <Calendar size={16} /> },
            { id: 'classes', label: 'חוגים', icon: <GraduationCap size={16} /> },
@@ -260,25 +285,43 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
       <div className="max-w-7xl mx-auto">
         
-        {/* טאב סיכום חודשי */}
+        {/* טאב סיכום חודשי משודרג */}
         {activeTab === 'summary' && (
-          <div className="space-y-8 animate-fade-in">
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="סה״כ משתמשות" value={apiUsers.length} icon={Users2} color="bg-blue-500" />
+          <div className="space-y-10 animate-fade-in">
+              <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-l from-slate-900 to-slate-800 p-10 rounded-[3.5rem] text-white shadow-2xl relative overflow-hidden">
+                <div className="relative z-10">
+                  <h2 className="text-4xl font-black mb-2">סקירת המעגל הנשי 💫</h2>
+                  <p className="opacity-70 font-bold">הנתונים המעודכנים של הפעילות שלך נכון להיום.</p>
+                </div>
+                <div className="flex gap-4 relative z-10">
+                   <div className="bg-white/10 backdrop-blur-md p-4 rounded-3xl border border-white/20">
+                      <p className="text-[10px] uppercase font-black opacity-60">משתמשות חדשות</p>
+                      <p className="text-2xl font-black">+24</p>
+                   </div>
+                   <div className="bg-rose-500 p-4 rounded-3xl shadow-lg border border-rose-400">
+                      <p className="text-[10px] uppercase font-black opacity-80">צפי השתתפות</p>
+                      <p className="text-2xl font-black">88%</p>
+                   </div>
+                </div>
+                <Activity className="absolute left-[-20px] bottom-[-20px] text-white/5 w-64 h-64" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard title="סה״כ משתמשות" value={apiUsers.length} icon={Users2} color="bg-blue-500" trend="+12%" />
                 <StatCard title="חוגים פעילים" value={apiClasses.length} icon={GraduationCap} color="bg-purple-500" />
                 <StatCard title="אירועים החודש" value={apiEvents.length} icon={Calendar} color="bg-rose-500" />
-                <StatCard title="נקודות שנצברו" value={apiUsers.reduce((acc, u) => acc + (u.points || 0), 0)} icon={TrendingUp} color="bg-emerald-500" />
-             </div>
+                <StatCard title="נקודות שנצברו" value={apiUsers.reduce((acc, u) => acc + (u.points || 0), 0).toLocaleString()} icon={TrendingUp} color="bg-emerald-500" trend="שיא חודשי" />
+              </div>
 
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
                    <h3 className="text-xl font-black mb-6 flex items-center gap-2"><PieChart className="text-rose-500" /> התפלגות קהילה</h3>
                    <div className="space-y-4">
                       {['גמ"חים', 'שיעורי תורה', 'עסקים מקומיים'].map(cat => (
-                        <div key={cat} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+                        <div key={cat} className="flex justify-between items-center p-5 bg-slate-50 rounded-[2rem] hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-slate-100">
                            <span className="font-bold text-slate-700">{cat}</span>
-                           <span className="bg-white px-4 py-1 rounded-full text-sm font-black shadow-sm">
-                             {communityItems.filter(i => i.category === cat).length} פריטים
+                           <span className="bg-white px-5 py-2 rounded-full text-xs font-black shadow-sm">
+                             {communityItems.filter(i => i.category === cat).length} פריטים פעילים
                            </span>
                         </div>
                       ))}
@@ -286,18 +329,42 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 </div>
 
                 <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
-                   <h3 className="text-xl font-black mb-6 flex items-center gap-2"><ShieldCheck className="text-emerald-500" /> סטטוס הרשמות</h3>
+                   <h3 className="text-xl font-black mb-6 flex items-center gap-2"><ShieldCheck className="text-emerald-500" /> אבטחה וניהול מעגל</h3>
                    <div className="space-y-4">
-                      <div className="flex justify-between items-center p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
-                         <span className="font-bold text-emerald-700">חברות מעגל מאושרות</span>
-                         <span className="font-black text-emerald-900">{apiUsers.filter(u => u.isMemberApproved).length}</span>
+                      <div className="flex justify-between items-center p-5 bg-emerald-50 border border-emerald-100 rounded-[2rem]">
+                         <span className="font-bold text-emerald-700 text-lg">חברות מעגל מאושרות</span>
+                         <span className="font-black text-2xl text-emerald-900">{apiUsers.filter(u => u.isMemberApproved).length}</span>
                       </div>
-                      <div className="flex justify-between items-center p-4 bg-orange-50 border border-orange-100 rounded-2xl">
-                         <span className="font-bold text-orange-700">ממתינות לאישור</span>
-                         <span className="font-black text-orange-900">{pendingData.pendingUsers.length}</span>
+                      <div className="flex justify-between items-center p-5 bg-orange-50 border border-orange-100 rounded-[2rem]">
+                         <span className="font-bold text-orange-700 text-lg">ממתינות לאישור ידני</span>
+                         <span className="font-black text-2xl text-orange-900">{pendingData.pendingUsers.length}</span>
                       </div>
                    </div>
                 </div>
+              </div>
+          </div>
+        )}
+
+        {/* טאב הודעות הנהלה */}
+        {activeTab === 'announcements' && (
+          <div className="space-y-6 animate-fade-in">
+             <button onClick={() => { setAnnForm({ _id: '', title: '', content: '' }); setIsAnnModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Bell size={20}/> הודעה חדשה</button>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {apiAnnouncements.map(ann => (
+                  <div key={ann._id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-between">
+                     <div>
+                        <div className="flex justify-between items-start mb-4">
+                           <div className="p-3 bg-blue-50 text-blue-500 rounded-xl"><Megaphone size={20}/></div>
+                           <div className="flex gap-1">
+                              <button onClick={() => { setAnnForm(ann); setIsAnnModalOpen(true); }} className="text-blue-500 p-2"><Edit size={18}/></button>
+                              <button onClick={() => handleDelete(ann._id, 'announcement', ann.title)} className="text-red-500 p-2"><Trash2 size={18}/></button>
+                           </div>
+                        </div>
+                        <h4 className="font-black text-lg mb-2">{ann.title}</h4>
+                        <p className="text-sm text-slate-500 line-clamp-4">{ann.content}</p>
+                     </div>
+                  </div>
+                ))}
              </div>
           </div>
         )}
@@ -500,10 +567,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב הגרלות */}
+        {/* טאב הגרלות משודרג */}
         {activeTab === 'lotteries' && (
           <div className="space-y-6 animate-fade-in">
-            <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה חדשה</button>
+            <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה חדשה</button>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
               {apiLotteries.map(l => (
                 <div key={l._id || l.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm animate-fade-in-up flex flex-col justify-between">
@@ -512,11 +579,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     <h4 className="font-black text-lg">{l.title}</h4>
                     <div className="space-y-1 mt-2">
                         <p className="text-[10px] text-emerald-600 font-bold">🎁 פרס 1: {l.prize}</p>
-                        {l.prize2 && <p className="text-[10px] text-slate-500">🎁 פרס 2: {l.prize2}</p>}
-                        {l.prize3 && <p className="text-[10px] text-slate-500">🎁 פרס 3: {l.prize3}</p>}
+                        {l.participationType === 'mission' && <p className="text-[10px] text-orange-600 font-black">🎯 משימה: {l.missionText}</p>}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
+                    <button onClick={() => viewParticipants(l._id || l.id)} className="w-full bg-slate-100 text-slate-600 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2">
+                        <Users size={16}/> צפייה במשתתפות
+                    </button>
                     <button onClick={() => runLiveLottery(l._id || l.id)} className="w-full bg-slate-900 text-white py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2 hover:bg-rose-600 transition-colors">
                         <PlayCircle size={16}/> הפעלת הגרלה בלייב
                     </button>
@@ -553,9 +622,38 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב אשת השבוע - ניהול משודרג */}
+        {/* טאב אשת השבוע עם אישור ראיונות */}
         {activeTab === 'personality' && (
           <div className="max-w-4xl mx-auto space-y-12 animate-fade-in text-right">
+            
+            {/* ראיונות הממתינים לאישור */}
+            {pendingInterviews.length > 0 && (
+                <div className="space-y-6">
+                    <h3 className="text-xl font-black text-orange-500 pr-4 flex items-center gap-2"><Clock/> ראיונות הממתינים לאישורך:</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                        {pendingInterviews.map(interview => (
+                            <div key={interview.id} className="bg-orange-50 border border-orange-100 p-6 rounded-[2.5rem] flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <img src={interview.image} className="w-16 h-16 rounded-2xl object-cover shadow-sm" />
+                                    <div>
+                                        <p className="font-black text-slate-800">{interview.name}</p>
+                                        <p className="text-xs text-slate-500">{interview.role}</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => { setSelectedInterview(interview); setIsPreviewModalOpen(true); }} className="bg-white p-2 rounded-xl text-blue-500 shadow-sm"><Eye size={20}/></button>
+                                    <button onClick={async () => {
+                                        await api.approvePersonality(interview.id);
+                                        alert("הראיון אושר ופורסם באתר!");
+                                        loadTabData();
+                                    }} className="bg-green-500 text-white px-4 py-2 rounded-xl font-black text-xs">אישור ופרסום</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white p-8 md:p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8">
               <div className="flex justify-between items-center border-b pb-4">
                 <h3 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3"><Sparkles className="text-rose-500"/> הגדרת אשת השבוע</h3>
@@ -592,7 +690,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               )}
             </div>
 
-            {/* ניהול כל הראיונות שפורסמו */}
             <div className="space-y-6">
                 <h4 className="font-black text-xl text-slate-700 pr-4">ארכיון נשות המעגל (כל הראיונות):</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -635,8 +732,98 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </div>
 
-      {/* מודאלים */}
-      
+      {/* מודאלים חדשים */}
+
+      {/* מודאל הודעת הנהלה */}
+      <Modal isOpen={isAnnModalOpen} onClose={() => setIsAnnModalOpen(false)} title={annForm._id ? "עריכת הודעה" : "הוספת הודעת הנהלה"}>
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          try {
+              if (annForm._id) await api.updateAnnouncement(annForm._id, annForm);
+              else await api.createAnnouncement(annForm);
+              alert("הודעה נשמרה!");
+              setIsAnnModalOpen(false); loadTabData();
+          } catch(err: any) { alert("שגיאה בשמירה"); }
+        }} className="space-y-4">
+          <input required placeholder="כותרת ההודעה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={annForm.title} onChange={e => setAnnForm({ ...annForm, title: e.target.value })} />
+          <textarea required placeholder="תוכן ההודעה..." className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right h-32" value={annForm.content} onChange={e => setAnnForm({ ...annForm, content: e.target.value })} />
+          <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמירת הודעה</button>
+        </form>
+      </Modal>
+
+      {/* מודאל משתתפות בהגרלה */}
+      <Modal isOpen={isParticipantsModalOpen} onClose={() => setIsParticipantsModalOpen(false)} title="רשימת משתתפות בהגרלה">
+        <div className="space-y-2">
+            {currentParticipants.map((p, i) => (
+                <div key={i} className="p-3 bg-slate-50 rounded-xl flex justify-between items-center">
+                    <span className="font-bold">{p.name}</span>
+                    <span className="text-xs text-slate-500">{p.phone}</span>
+                </div>
+            ))}
+            {currentParticipants.length === 0 && <p className="text-center text-slate-400">אף משתמשת עדיין לא נרשמה להגרלה זו.</p>}
+        </div>
+      </Modal>
+
+      {/* מודאל תצוגה מקדימה לראיון */}
+      <Modal isOpen={isPreviewModalOpen} onClose={() => setIsPreviewModalOpen(false)} title="תצוגה מקדימה של הראיון">
+        {selectedInterview && (
+            <div className="space-y-4 text-right">
+                <img src={selectedInterview.image} className="w-32 h-32 rounded-3xl mx-auto object-cover" />
+                <h4 className="text-2xl font-black text-center">{selectedInterview.name}</h4>
+                <p className="font-bold text-rose-500 text-center">{selectedInterview.role}</p>
+                <div className="space-y-4 mt-6">
+                    {selectedInterview.questions.map((q, i) => (
+                        <div key={i} className="bg-slate-50 p-4 rounded-2xl">
+                            <p className="font-black text-xs text-slate-400 mb-1">{q.question}</p>
+                            <p className="font-bold">{q.answer}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+      </Modal>
+
+      {/* מודאל הגרלה מעודכן */}
+      <Modal isOpen={isLotteryModalOpen} onClose={()=>setIsLotteryModalOpen(false)} title={lotteryForm._id ? "עריכת הגרלה" : "הגרלה חדשה"}>
+        <form onSubmit={async (e)=>{
+            e.preventDefault(); 
+            try {
+                const data = {...lotteryForm};
+                if(!data._id) delete data._id;
+                if(lotteryForm._id) await api.updateLottery(lotteryForm._id, data);
+                else await api.createLottery(data);
+                alert("ההגרלה נשמרה!"); setIsLotteryModalOpen(false); loadTabData();
+            } catch(err: any) { alert("שגיאה: " + err.message); }
+        }} className="space-y-4">
+            <input required placeholder="שם ההגרלה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.title} onChange={e=>setLotteryForm({...lotteryForm, title:e.target.value})} />
+            <div className="space-y-2">
+                <input required placeholder="פרס ראשון 🏆" className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-2xl font-black outline-none text-right" value={lotteryForm.prize} onChange={e=>setLotteryForm({...lotteryForm, prize:e.target.value})} />
+                <input placeholder="פרס שני" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize2} onChange={e=>setLotteryForm({...lotteryForm, prize2:e.target.value})} />
+            </div>
+            <select className="w-full p-3 bg-white rounded-xl font-bold text-xs outline-none" value={lotteryForm.participationType} onChange={e=>setLotteryForm({...lotteryForm, participationType: e.target.value})}>
+                <option value="everyone">כולן</option>
+                <option value="points">סף נקודות</option>
+                <option value="mission">משימה מיוחדת</option>
+                <option value="link_only">לינק אישי</option>
+            </select>
+            
+            {lotteryForm.participationType === 'mission' && (
+                <div className="animate-fade-in-up">
+                    <label className="text-[10px] font-black pr-2 text-orange-600">תיאור המשימה (למשל: סיום ספר תהילים)</label>
+                    <textarea required placeholder="כתבי כאן מה המשימה..." className="w-full p-4 bg-orange-50 border border-orange-100 rounded-2xl font-bold outline-none text-right" value={lotteryForm.missionText} onChange={e=>setLotteryForm({...lotteryForm, missionText:e.target.value})} />
+                </div>
+            )}
+
+            <input required type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.drawDate} onChange={e=>setLotteryForm({...lotteryForm, drawDate:e.target.value})} />
+            <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
+               <input type="file" onChange={e => handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+               {lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס / החלפת קיימת</p>}
+            </div>
+            <button className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום</button>
+        </form>
+      </Modal>
+
+      {/* מודאלים קיימים ללא שינוי */}
       <Modal isOpen={isInspirationModalOpen} onClose={() => setIsInspirationModalOpen(false)} title={inspirationForm._id ? "עריכת השראה" : "הוספת השראה יומית"}>
         <form onSubmit={async (e) => {
           e.preventDefault();
@@ -758,14 +945,14 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
              </div>
              {eventForm.sessions?.map((session, idx) => (
                 <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded-xl border border-slate-200">
-                   <span className="text-[10px] font-black text-slate-400 shrink-0">מפגש {idx + 1}</span>
-                   <input placeholder="שם המפגש" className="flex-1 p-2 text-xs bg-slate-50 rounded-lg text-right outline-none" value={session.name} onChange={e => updateEventSession(idx, 'name', e.target.value)} />
-                   <input type="date" className="w-32 p-2 text-xs bg-slate-50 rounded-lg text-right outline-none" value={session.date} onChange={e => updateEventSession(idx, 'date', e.target.value)} />
-                   <button type="button" onClick={() => {
+                    <span className="text-[10px] font-black text-slate-400 shrink-0">מפגש {idx + 1}</span>
+                    <input placeholder="שם המפגש" className="flex-1 p-2 text-xs bg-slate-50 rounded-lg text-right outline-none" value={session.name} onChange={e => updateEventSession(idx, 'name', e.target.value)} />
+                    <input type="date" className="w-32 p-2 text-xs bg-slate-50 rounded-lg text-right outline-none" value={session.date} onChange={e => updateEventSession(idx, 'date', e.target.value)} />
+                    <button type="button" onClick={() => {
                       const newSessions = [...(eventForm.sessions || [])];
                       newSessions.splice(idx, 1);
                       setEventForm({ ...eventForm, sessions: newSessions });
-                   }} className="text-red-400"><Trash2 size={16}/></button>
+                    }} className="text-red-400"><Trash2 size={16}/></button>
                 </div>
              ))}
           </div>
@@ -775,7 +962,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </form>
       </Modal>
 
-      {/* שאר המודאלים (Class, Community, Lottery) נשארים זהים ללא שינוי אות אחת */}
       <Modal isOpen={isClassModalOpen} onClose={()=>setIsClassModalOpen(false)} title={classForm._id || classForm.id ? "עריכת חוג" : "חוג חדש"}>
         <form onSubmit={async (e)=>{
             e.preventDefault(); 
@@ -826,8 +1012,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             </select>
             <input required placeholder="שם הגוף/עסק" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.title} onChange={e=>setCommunityForm({...communityForm, title:e.target.value})} />
             <div className="grid grid-cols-2 gap-2">
-               <input placeholder="שעת התחלה" type="time" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.startTime} onChange={e=>setCommunityForm({...communityForm, startTime:e.target.value})} />
-               <input placeholder="למי זה מיועד?" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.targetAudience} onChange={e=>setCommunityForm({...communityForm, targetAudience:e.target.value})} />
+                <input placeholder="שעת התחלה" type="time" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.startTime} onChange={e=>setCommunityForm({...communityForm, startTime:e.target.value})} />
+                <input placeholder="למי זה מיועד?" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.targetAudience} onChange={e=>setCommunityForm({...communityForm, targetAudience:e.target.value})} />
             </div>
             <input placeholder="טלפון" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.phone} onChange={e=>setCommunityForm({...communityForm, phone:e.target.value})} />
             <input placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.location} onChange={e=>setCommunityForm({...communityForm, location:e.target.value})} />
@@ -837,35 +1023,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             </div>
             <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום</button>
           </form>
-      </Modal>
-
-      <Modal isOpen={isLotteryModalOpen} onClose={()=>setIsLotteryModalOpen(false)} title={lotteryForm._id ? "עריכת הגרלה" : "הגרלה חדשה"}>
-        <form onSubmit={async (e)=>{
-            e.preventDefault(); 
-            try {
-                const data = {...lotteryForm};
-                if(!data._id) delete data._id;
-                if(lotteryForm._id) await api.updateLottery(lotteryForm._id, data);
-                else await api.createLottery(data);
-                alert("ההגרלה נשמרה!"); setIsLotteryModalOpen(false); loadTabData();
-            } catch(err: any) { alert("שגיאה: " + err.message); }
-        }} className="space-y-4">
-            <input required placeholder="שם ההגרלה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.title} onChange={e=>setLotteryForm({...lotteryForm, title:e.target.value})} />
-            <div className="space-y-2">
-                <input required placeholder="פרס ראשון 🏆" className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-2xl font-black outline-none text-right" value={lotteryForm.prize} onChange={e=>setLotteryForm({...lotteryForm, prize:e.target.value})} />
-                <input placeholder="פרס שני" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize2} onChange={e=>setLotteryForm({...lotteryForm, prize2:e.target.value})} />
-                <input placeholder="פרס שלי" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize3} onChange={e=>setLotteryForm({...lotteryForm, prize3:e.target.value})} />
-            </div>
-            <select className="w-full p-3 bg-white rounded-xl font-bold text-xs outline-none" value={lotteryForm.participationType} onChange={e=>setLotteryForm({...lotteryForm, participationType: e.target.value})}>
-                <option value="everyone">כולן</option><option value="points">סף נקודות</option><option value="link_only">לינק אישי</option>
-            </select>
-            <input required type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.drawDate} onChange={e=>setLotteryForm({...lotteryForm, drawDate:e.target.value})} />
-            <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
-               <input type="file" onChange={e => handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-               {lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס / החלפת קיימת</p>}
-            </div>
-            <button className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום</button>
-        </form>
       </Modal>
 
     </div>

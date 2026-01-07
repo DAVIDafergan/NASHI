@@ -212,6 +212,19 @@ export const api = {
         });
     },
 
+    async getLotteryParticipants(id: string): Promise<any[]> {
+        const res = await fetch(`${API_URL}/admin/lotteries/${id}/participants`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async completeLotteryMission(lotteryId: string) {
+        const res = await fetch(`${API_URL}/lotteries/${lotteryId}/complete-mission`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        return res.json();
+    },
+
     // ================= FORUM (פורום נשי) =================
     async getForumPosts(): Promise<ForumPost[]> {
         const res = await fetch(`${API_URL}/forum`, { headers: getHeaders() });
@@ -411,6 +424,37 @@ export const api = {
 
     async deleteAd(id: string) {
         return fetch(`${API_URL}/ads/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
+    },
+
+    // ================= ANNOUNCEMENTS (הודעות הנהלה) =================
+    async getAnnouncements(): Promise<any[]> {
+        const res = await fetch(`${API_URL}/announcements`);
+        return res.json();
+    },
+
+    async createAnnouncement(data: any) {
+        const res = await fetch(`${API_URL}/announcements`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async updateAnnouncement(id: string, data: any) {
+        const res = await fetch(`${API_URL}/announcements/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async deleteAnnouncement(id: string) {
+        return fetch(`${API_URL}/announcements/${id}`, { 
+            method: 'DELETE', 
+            headers: getHeaders() 
+        }).then(r => r.json());
     },
 
     // ================= ADMIN SETTINGS & POINTS =================

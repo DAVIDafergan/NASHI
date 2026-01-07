@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock } from 'lucide-react';
+import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList } from 'lucide-react';
 import { LotteryItem, User } from '../types';
 import { useLocation } from 'react-router-dom';
+import { api } from '../services/api'; // ייבוא ה-API
 
 interface LotteryPageProps {
     lotteries?: LotteryItem[];
@@ -62,12 +63,39 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
               ...user,
               points: newPoints
           });
-          onUpdateLottery({
+
+          // אם זו משימה, אנחנו מוסיפים לרשימת ה"מתחילות משימה"
+          const updatedLottery = {
               ...lottery,
-              participants: [...lottery.participants, (user.id || user._id)]
-          });
+              participants: lottery.participationType === 'mission' ? lottery.participants : [...lottery.participants, (user.id || user._id)],
+              missionStarted: lottery.participationType === 'mission' ? [...(lottery.missionStarted || []), (user.id || user._id)] : (lottery.missionStarted || [])
+          };
+
+          onUpdateLottery(updatedLottery);
           
-          alert('🎉 נרשמת בהצלחה להגרלה! הודעה תישלח אליך במידה ותזכי.');
+          if(lottery.participationType === 'mission') {
+              alert('🎯 המשימה התחילה! בצעי אותה ולחצי על כפתור "סיימתי" כדי להיכנס להגרלה.');
+          } else {
+              alert('🎉 נרשמת בהצלחה להגרלה! הודעה תישלח אליך במידה ותזכי.');
+          }
+      }
+  };
+
+  // פונקציה חדשה לסיום משימה
+  const handleCompleteMission = async (lottery: any) => {
+      try {
+          if (onUpdateLottery) {
+              const res = await api.completeLotteryMission(lottery._id || lottery.id);
+              if(res) {
+                onUpdateLottery({
+                    ...lottery,
+                    participants: [...lottery.participants, (user?.id || user?._id)]
+                });
+                alert('כל הכבוד! נכנסת רשמית להגרלה. בהצלחה! 🏆');
+              }
+          }
+      } catch (err) {
+          alert('שגיאה בעדכון המשימה');
       }
   };
 
@@ -149,8 +177,9 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 px-2">
         {lotteries.map((lottery: any) => {
             const isRegistered = user && lottery.participants.includes(user.id || user._id);
+            const isMissionStarted = user && lottery.missionStarted?.includes(user.id || user._id);
             const drawDatePassed = new Date(lottery.drawDate) < new Date();
-            const canParticipate = lottery.participationType === 'everyone' || (user && user.points >= (lottery.minPointsToEnter || 0));
+            const canParticipate = lottery.participationType === 'everyone' || (user && user.points >= (lottery.minPointsToEnter || 0)) || lottery.participationType === 'mission';
             
             return (
                 <div key={lottery.id || lottery._id} className={`bg-white rounded-[2.5rem] p-3 shadow-sm border border-slate-100 hover:shadow-2xl transition-all duration-500 flex flex-col group relative overflow-hidden ${!lottery.isActive ? 'opacity-80' : ''}`}>
@@ -161,8 +190,17 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                         {/* Eligibility Badge */}
                         <div className="absolute top-4 right-4 flex flex-col gap-2">
                             <div className="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-rose-600 flex items-center gap-1.5 shadow-xl border border-rose-50">
-                                <Star size={12} className="fill-rose-500 text-rose-500" />
-                                {lottery.participationType === 'everyone' ? 'פתוח לכולן' : `${lottery.minPointsToEnter} נקודות`}
+                                {lottery.participationType === 'mission' ? (
+                                    <>
+                                        <ClipboardList size={12} className="text-orange-500" />
+                                        <span className="text-orange-600">הגרלת משימה</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Star size={12} className="fill-rose-500 text-rose-500" />
+                                        {lottery.participationType === 'everyone' ? 'פתוח לכולן' : `${lottery.minPointsToEnter} נקודות`}
+                                    </>
+                                )}
                             </div>
                             {!lottery.isActive && (
                                 <div className="bg-slate-900/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-white flex items-center gap-1.5 shadow-xl">
@@ -198,11 +236,13 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                     פרס שני: {lottery.prize2}
                                 </p>
                             )}
-                            {lottery.prize3 && (
-                                <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1">
-                                    <Award size={14} className="text-slate-300" />
-                                    פרס שלישי: {lottery.prize3}
-                                </p>
+                            
+                            {/* Mission Text Integration */}
+                            {lottery.participationType === 'mission' && lottery.missionText && (
+                                <div className="mt-3 pt-3 border-t border-rose-100/50">
+                                    <p className="text-[10px] font-black text-orange-600 uppercase mb-1">המשימה שלך:</p>
+                                    <p className="text-xs font-bold text-slate-600 leading-relaxed">{lottery.missionText}</p>
+                                </div>
                             )}
                         </div>
                         
@@ -241,6 +281,14 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                     <CheckCircle2 size={18} />
                                     את בפנים! בהצלחה
                                 </div>
+                            ) : (lottery.participationType === 'mission' && isMissionStarted) ? (
+                                <button 
+                                    onClick={() => handleCompleteMission(lottery)}
+                                    className="w-full py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-xl bg-gradient-to-r from-orange-500 to-amber-600 text-white animate-pulse"
+                                >
+                                    <CheckCircle size={18} />
+                                    סיימתי את המשימה!
+                                </button>
                             ) : (
                                 <button 
                                     onClick={() => handleEnterLottery(lottery)}
@@ -251,7 +299,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                     }`}
                                 >
                                     <Ticket size={18} />
-                                    {canParticipate ? 'הירשמי להגרלה עכשיו' : `חסרות לך נקודות`}
+                                    {lottery.participationType === 'mission' ? 'התחילי משימה להגרלה' : canParticipate ? 'הירשמי להגרלה עכשיו' : `חסרות לך נקודות`}
                                 </button>
                             )}
                         </div>

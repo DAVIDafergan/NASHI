@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { User, Award, Star, Settings, QrCode, TrendingUp, Heart, Calendar, Edit2, Save, X, Camera, HeartHandshake, Lock } from 'lucide-react';
+import { User, Award, Star, Settings, QrCode, TrendingUp, Heart, Calendar, Edit2, Save, X, Camera, HeartHandshake, Lock, ClipboardList, CheckCircle2, Target, Clock } from 'lucide-react'; // נוספו אייקונים
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { UserLevel, EventItem } from '../types';
+import { UserLevel, EventItem, LotteryItem } from '../types'; // הוספת LotteryItem
 import { Link } from 'react-router-dom';
+import { api } from '../services/api'; // ייבוא ה-API לסנכרון משימות
 
 interface ProfilePageProps {
     user: User;
     events?: EventItem[];
+    lotteries?: LotteryItem[]; // הוספת הגרלות לפרופס
     onUpdateUser?: (updatedUser: User) => void;
+    onUpdateLottery?: (l: LotteryItem) => void; // הוספת פונקציית עדכון
 }
 
 const mockData = [
@@ -29,7 +32,7 @@ const predefinedAvatars = [
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie'
 ];
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUser }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries = [], onUpdateUser, onUpdateLottery }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(user);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -37,6 +40,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUs
   const nextLevelPoints = 300;
   const progress = Math.min((user.points / nextLevelPoints) * 100, 100);
   const likedEvents = events.filter(e => user.likedEventIds?.includes(e.id));
+
+  // סינון משימות פעילות - הגרלות מסוג משימה שהמשתמשת התחילה אך טרם סיימה
+  const activeMissions = lotteries.filter(l => 
+    l.participationType === 'mission' && 
+    l.missionStarted?.includes(user.id || user._id) && 
+    !l.participants.includes(user.id || user._id) &&
+    new Date(l.drawDate) > new Date()
+  );
 
   // Determine colors based on level
   const getLevelStyle = (level: UserLevel) => {
@@ -59,6 +70,25 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUs
   const handleAvatarSelect = (url: string) => {
       setEditForm({...editForm, avatar: url});
       setShowAvatarPicker(false);
+  };
+
+  // פונקציה לסיום משימה מהפרופיל
+  const handleCompleteMission = async (lotteryId: string) => {
+      try {
+          const res = await api.completeLotteryMission(lotteryId);
+          if (res && onUpdateLottery) {
+              const lottery = lotteries.find(l => (l.id === lotteryId || l._id === lotteryId));
+              if (lottery) {
+                  onUpdateLottery({
+                      ...lottery,
+                      participants: [...lottery.participants, (user.id || user._id)]
+                  });
+                  alert("אשריך! המשימה עודכנה ונכנסת להגרלה.");
+              }
+          }
+      } catch (err) {
+          alert("שגיאה בעדכון המשימה");
+      }
   };
 
   return (
@@ -183,6 +213,38 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], onUpdateUs
                 <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-white/20 transition-colors"></div>
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full blur-2xl -ml-10 -mb-10"></div>
             </div>
+
+            {/* Missions Section - חדש: המשימות הפעילות שלי */}
+            {user.isMemberApproved && activeMissions.length > 0 && (
+                <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-orange-100 animate-fade-in">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-orange-600">
+                        <Target size={20} className="animate-pulse" />
+                        משימות בביצוע ({activeMissions.length})
+                    </h3>
+                    <div className="space-y-4">
+                        {activeMissions.map(mission => (
+                            <div key={mission.id || mission._id} className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="font-black text-slate-800 text-sm">{mission.title}</h4>
+                                    <div className="flex items-center gap-1 text-[10px] text-orange-600 bg-white px-2 py-1 rounded-full shadow-sm">
+                                        <Clock size={10} />
+                                        עד: {new Date(mission.drawDate).toLocaleDateString('he-IL')}
+                                    </div>
+                                </div>
+                                <p className="text-xs text-slate-600 font-medium leading-relaxed bg-white/50 p-3 rounded-xl">
+                                    {mission.missionText}
+                                </p>
+                                <button 
+                                    onClick={() => handleCompleteMission(mission._id || mission.id)}
+                                    className="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-black shadow-md shadow-orange-200 hover:bg-orange-600 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle2 size={14} /> סיימתי את המשימה!
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
              {/* Liked Events Section */}
             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 min-h-[300px]">

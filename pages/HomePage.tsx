@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ExternalLink,
-  Users // נוסף אייקון
+  Users, Megaphone // נוסף אייקון מגפון
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -29,6 +29,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [communityItems, setCommunityItems] = useState<any[]>([]);
   const [ads, setAds] = useState<AdItem[]>([]);
   const [inspirations, setInspirations] = useState<any[]>([]); // חדש: מצב להשראות
+  const [announcements, setAnnouncements] = useState<any[]>([]); // חדש: הודעות הנהלה
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentAdIndex, setCurrentAdIndex] = useState(0); // חדש: אינדקס לפרסומות
   const [upcomingLottery, setUpcomingLottery] = useState<LotteryItem | null>(null);
@@ -42,13 +43,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     const loadAllData = async () => {
       try {
         setIsLoading(true);
-        const [evRes, lotRes, adsRes, persData, commData, inspData] = await Promise.all([
+        const [evRes, lotRes, adsRes, persData, commData, inspData, annData] = await Promise.all([
           fetch(`${API_URL}/events`).then(res => res.json()),
           fetch(`${API_URL}/lotteries`).then(res => res.json()),
           fetch(`${API_URL}/ads`).then(res => res.json()),
           api.getPersonality(),
           api.getCommunityItems(),
-          api.getInspirations() // משיכת השראות מהניהול
+          api.getInspirations(), // משיכת השראות מהניהול
+          api.getAnnouncements() // חדש: משיכת הודעות הנהלה
         ]);
 
         setEvents(evRes.map((e: any) => ({...e, id: e._id || e.id})));
@@ -57,6 +59,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         setPersonality(persData);
         setCommunityItems(commData || []);
         setInspirations(inspData || []);
+        setAnnouncements(annData || []); // עדכון הודעות הנהלה
       } catch (err) {
         console.error("Error loading home data:", err);
       } finally {
@@ -345,7 +348,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </section>
                 )}
 
-                {/* עדכונים אחרונים (השורות שהיו חסרות) */}
+                {/* עדכונים אחרונים */}
                 <div className="space-y-2 md:space-y-4 px-2">
                     <h3 className="text-[10px] md:text-lg font-black text-slate-800 flex items-center gap-2 px-1 tracking-tight"><Bell className="text-rose-400" size={14} md:size={16}/> עדכונים אחרונים</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
@@ -369,7 +372,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
 
             {/* סיידבר - אופטימיזציה לנייד */}
-            <div className="space-y-3.5 md:space-y-10 px-1 md:px-0">
+            <div className="space-y-3.5 md:space-y-6 px-1 md:px-0">
                 {/* השראה יומית דינמית מהשרת */}
                 <div className="bg-slate-900 rounded-[1.2rem] md:rounded-[3rem] p-4 md:p-8 text-white relative overflow-hidden shadow-xl text-right">
                     <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
@@ -386,6 +389,17 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                         </div>
                     </div>
                 </div>
+
+                {/* חדש: הודעות הנהלה - ממוקם מתחת להשראה */}
+                {announcements.length > 0 && announcements.map((ann) => (
+                   <div key={ann._id} className="bg-rose-50/80 backdrop-blur-md rounded-[1.2rem] md:rounded-[2.5rem] p-4 md:p-6 border border-rose-100 shadow-sm animate-fade-in-up">
+                      <div className="flex items-center gap-2 mb-2">
+                         <div className="p-1.5 bg-rose-500 rounded-lg text-white shadow-sm shadow-rose-200"><Megaphone size={14} /></div>
+                         <h4 className="font-black text-rose-900 text-[10px] md:text-sm tracking-tight">{ann.title}</h4>
+                      </div>
+                      <p className="text-[9px] md:text-xs text-rose-800/80 leading-relaxed font-bold">{ann.content}</p>
+                   </div>
+                ))}
 
                 {/* יצירת קשר / הצטרפות - כרטיס נוח */}
                 {!user ? (
