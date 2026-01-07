@@ -134,11 +134,15 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         setApiLotteries(lotteries || []);
 
         if (activeTab === 'personality') {
-            setPersonalityForm(await api.getPersonality());
+            const currentPers = await api.getPersonality();
+            if(currentPers) setPersonalityForm(currentPers);
             setPendingInterviews(await api.getPendingInterviews() || []); 
             setAllInterviews(await api.getAllPersonalities() || []);
         }
-        else if (activeTab === 'settings') setPointsSettings(await api.getSettings());
+        else if (activeTab === 'settings') {
+            const settings = await api.getSettings();
+            if(settings) setPointsSettings(settings);
+        }
         else if (activeTab === 'forum') {
             const allPosts = await api.getForumPosts(); 
             setForumPosts(allPosts || []);
@@ -338,7 +342,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                       </div>
                       <div className="flex justify-between items-center p-5 bg-orange-50 border border-orange-100 rounded-[2rem]">
                          <span className="font-bold text-orange-700 text-lg">ממתינות לאישור ידני</span>
-                         <span className="font-black text-2xl text-orange-900">{pendingData.pendingUsers.length}</span>
+                         <span className="font-black text-2xl text-orange-900">{(pendingData.pendingUsers || []).length}</span>
                       </div>
                    </div>
                 </div>
@@ -379,7 +383,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             <div className="bg-white p-6 md:p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-6 text-right">
                <h3 className="font-black text-xl flex items-center gap-2 text-right"><HeartHandshake className="text-rose-500"/> ממתינות למעגל</h3>
                <div className="space-y-4">
-                 {pendingData.pendingUsers.map(u => (
+                 {(pendingData.pendingUsers || []).map(u => (
                    <div key={u._id || u.id} className="p-4 bg-slate-50 rounded-2xl flex justify-between items-center animate-fade-in-up shadow-sm">
                      <div className="overflow-hidden text-right"><p className="font-black truncate">{u.name}</p><p className="text-[10px] text-slate-400 truncate">{u.occupation} | {u.phone}</p></div>
                      <button onClick={async () => {
@@ -389,7 +393,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                      }} className="bg-green-500 text-white p-2 rounded-xl shrink-0"><CheckCircle size={20}/></button>
                    </div>
                  ))}
-                 {pendingData.pendingUsers.length === 0 && <p className="text-center text-slate-400 italic">אין בקשות חדשות</p>}
+                 {(pendingData.pendingUsers || []).length === 0 && <p className="text-center text-slate-400 italic">אין בקשות חדשות</p>}
                </div>
             </div>
           </div>
@@ -402,7 +406,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
                    <h3 className="font-black text-xl mb-6 flex items-center gap-2"><Clock className="text-orange-500"/> פוסטים הממתינים לאישור</h3>
                    <div className="space-y-4">
-                      {pendingData.pendingPosts.map(p => (
+                      {(pendingData.pendingPosts || []).map(p => (
                         <div key={p._id} className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-3">
                            <div className="flex justify-between items-start">
                               <h4 className="font-black text-slate-800">{p.title}</h4>
@@ -414,7 +418,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                            <p className="text-sm text-slate-600 line-clamp-3">{p.content}</p>
                         </div>
                       ))}
-                      {pendingData.pendingPosts.length === 0 && <p className="text-slate-400 text-center italic py-4">אין פוסטים הממתינים לאישור</p>}
+                      {(pendingData.pendingPosts || []).length === 0 && <p className="text-slate-400 text-center italic py-4">אין פוסטים הממתינים לאישור</p>}
                    </div>
                 </div>
 
@@ -484,7 +488,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   ) : (
                     <div className="w-full h-48 bg-slate-900 rounded-2xl mb-4 flex items-center justify-center text-white flex-col gap-2">
                       <Video size={40}/>
-                      <span className="text-xs font-mono">{ad.content.substring(0,30)}...</span>
+                      <span className="text-xs font-mono">{ad.content?.substring(0,30)}...</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center">
@@ -511,7 +515,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <tr><th className="p-6 text-right">שם</th><th className="p-6 text-right">ניקוד</th><th className="p-6 text-right">סטטוס</th><th className="p-6 text-right">פעולות</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {apiUsers.filter(u => u.name.includes(searchTerm)).map(u => (
+                {apiUsers.filter(u => (u.name || '').includes(searchTerm)).map(u => (
                   <tr key={u._id || u.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-6 font-bold">{u.name}<br/><span className="text-[10px] text-slate-400">{u.email}</span></td>
                     <td className="p-6 font-black text-rose-500">{u.points}</td>
@@ -920,7 +924,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           <div className="grid grid-cols-2 gap-2 text-right">
               <div className="space-y-1">
                 <label className="text-[10px] font-bold pr-2 text-slate-400">תאריך האירוע</label>
-                <input required type="date" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.date?.split('T')[0]} onChange={e=>setEventForm({...eventForm, date:e.target.value})} />
+                <input required type="date" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={(eventForm.date || '').split('T')[0]} onChange={e=>setEventForm({...eventForm, date:e.target.value})} />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-bold pr-2 text-rose-400">סיום מכירה מוקדמת</label>
