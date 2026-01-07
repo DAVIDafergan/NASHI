@@ -60,7 +60,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [forumPosts, setForumPosts] = useState<any[]>([]); 
   const [apiInspirations, setApiInspirations] = useState<any[]>([]);
   const [apiAds, setApiAds] = useState<any[]>([]);
-  const [apiAnnouncements, setApiAnnouncements] = useState<any[]>([]); // חדש
+  const [apiAnnouncements, setApiAnnouncements] = useState<any[]>([]); 
   const [allInterviews, setAllInterviews] = useState<PersonalityProfile[]>([]); 
   
   // Form States
@@ -80,7 +80,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [isLotteryModalOpen, setIsLotteryModalOpen] = useState(false);
   const [lotteryForm, setLotteryForm] = useState<Partial<any>>({ 
     title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', 
-    minPointsToEnter: 0, participationType: 'everyone', missionText: '' // נוסף שדה משימה
+    minPointsToEnter: 0, participationType: 'everyone', missionText: '' 
   });
 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
@@ -95,7 +95,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [adForm, setAdForm] = useState({ _id: '', type: 'image', content: '', link: '', title: '' });
 
-  // פורם הודעות הנהלה
   const [isAnnModalOpen, setIsAnnModalOpen] = useState(false);
   const [annForm, setAnnForm] = useState({ _id: '', title: '', content: '' });
 
@@ -116,7 +115,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const loadTabData = async () => {
     setLoading(true);
     try {
-        const users = await fetch('https://nashi-production.up.railway.app/api/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json());
+        const users = await fetch('[https://nashi-production.up.railway.app/api/users](https://nashi-production.up.railway.app/api/users)', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json());
         setApiUsers(users || []);
         
         const approvals = await api.getAdminApprovals();
@@ -345,26 +344,29 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב הודעות הנהלה */}
+        {/* טאב הודעות הנהלה - כולל רשימת הודעות */}
         {activeTab === 'announcements' && (
           <div className="space-y-6 animate-fade-in">
              <button onClick={() => { setAnnForm({ _id: '', title: '', content: '' }); setIsAnnModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Bell size={20}/> הודעה חדשה</button>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {apiAnnouncements.map(ann => (
-                  <div key={ann._id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-between">
+                  <div key={ann._id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-between group">
                      <div>
                         <div className="flex justify-between items-start mb-4">
                            <div className="p-3 bg-blue-50 text-blue-500 rounded-xl"><Megaphone size={20}/></div>
                            <div className="flex gap-1">
-                              <button onClick={() => { setAnnForm(ann); setIsAnnModalOpen(true); }} className="text-blue-500 p-2"><Edit size={18}/></button>
-                              <button onClick={() => handleDelete(ann._id, 'announcement', ann.title)} className="text-red-500 p-2"><Trash2 size={18}/></button>
+                              <button onClick={() => { setAnnForm(ann); setIsAnnModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"><Edit size={18}/></button>
+                              <button onClick={() => handleDelete(ann._id, 'announcement', ann.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={18}/></button>
                            </div>
                         </div>
-                        <h4 className="font-black text-lg mb-2">{ann.title}</h4>
-                        <p className="text-sm text-slate-500 line-clamp-4">{ann.content}</p>
+                        <h4 className="font-black text-lg mb-2 text-slate-800">{ann.title}</h4>
+                        <p className="text-sm text-slate-500 line-clamp-4 leading-relaxed">{ann.content}</p>
                      </div>
                   </div>
                 ))}
+                {apiAnnouncements.length === 0 && (
+                  <div className="col-span-full text-center py-10 text-slate-400 font-bold italic">אין הודעות הנהלה כרגע</div>
+                )}
              </div>
           </div>
         )}
@@ -573,10 +575,15 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה חדשה</button>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
               {apiLotteries.map(l => (
-                <div key={l._id || l.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm animate-fade-in-up flex flex-col justify-between">
+                <div key={l._id || l.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm animate-fade-in-up flex flex-col justify-between group">
                   <div>
-                    <img src={l.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                    <h4 className="font-black text-lg">{l.title}</h4>
+                    <img src={l.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4 transition-transform group-hover:scale-[1.02]" />
+                    <div className="flex justify-between items-start">
+                        <h4 className="font-black text-lg">{l.title}</h4>
+                        <span className={`text-[8px] font-black px-2 py-1 rounded-full ${l.participationType === 'mission' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                            {l.participationType === 'mission' ? 'מבוסס משימה' : 'מבוסס נקודות'}
+                        </span>
+                    </div>
                     <div className="space-y-1 mt-2">
                         <p className="text-[10px] text-emerald-600 font-bold">🎁 פרס 1: {l.prize}</p>
                         {l.participationType === 'mission' && <p className="text-[10px] text-orange-600 font-black">🎯 משימה: {l.missionText}</p>}
