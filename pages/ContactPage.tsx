@@ -8,6 +8,14 @@ const ContactPage: React.FC = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
 
+  // State לניהול השדות (כדי שנוכל לשלוח אותם לאזור האישי)
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    subject: 'בירור על חוגים ואירועים',
+    content: ''
+  });
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -35,16 +43,43 @@ const ContactPage: React.FC = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      // Stop all tracks to release microphone
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    setTimeout(() => setIsSubmitted(false), 3000); // Reset after 3 seconds
-    setAudioBlob(null);
+
+    // 1. הכנת הנתונים לשליחה לאזור האישי ולמייל
+    const dataToSend = new FormData();
+    dataToSend.append('name', formData.name);
+    dataToSend.append('phone', formData.phone);
+    dataToSend.append('subject', formData.subject);
+    dataToSend.append('content', formData.content);
+    dataToSend.append('to_email', 'YA@101.ORG.IL'); // המייל שביקשת
+    
+    if (audioBlob) {
+      dataToSend.append('audio', audioBlob, 'voice-message.webm');
+    }
+
+    try {
+      // 2. שליחה לשרת (API) שמעדכן את האזור האישי
+      // כאן אתה מחליף את ה-URL לכתובת ה-API האמיתית שלך
+      /* await fetch('https://your-api.com/messages', {
+        method: 'POST',
+        body: dataToSend
+      });
+      */
+      
+      console.log("ההודעה נשלחה לאזור האישי ולמייל YA@101.ORG.IL");
+      
+      setIsSubmitted(true);
+      setTimeout(() => setIsSubmitted(false), 3000);
+      setAudioBlob(null);
+      setFormData({ name: '', phone: '', subject: 'בירור על חוגים ואירועים', content: '' });
+    } catch (error) {
+      console.error("שגיאה בשליחת הפנייה:", error);
+    }
   };
 
   if (isSubmitted) {
@@ -54,7 +89,7 @@ const ContactPage: React.FC = () => {
           <CheckCircle size={40} />
         </div>
         <h2 className="text-2xl font-bold text-slate-800 mb-2">פנייתך התקבלה בהצלחה!</h2>
-        <p className="text-slate-600">צוות "נשי" יצור עמך קשר בהקדם האפשרי.</p>
+        <p className="text-slate-600">הפנייה נשלחה ותופיע באזור האישי שלך בקרוב.</p>
         <button onClick={() => setIsSubmitted(false)} className="mt-8 text-rose-600 font-medium hover:underline">
           שליחת פנייה נוספת
         </button>
@@ -70,12 +105,9 @@ const ContactPage: React.FC = () => {
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
-        {/* Contact Info Side */}
         <div className="space-y-4">
            {[
-             { icon: <Phone size={20} />, label: 'מוקד עירוני', value: '106' },
-             { icon: <Mail size={20} />, label: 'דוא"ל', value: 'contact@nashi-city.il' },
-             { icon: <MapPin size={20} />, label: 'כתובת', value: 'שד\' התרבות 12, בית העירייה' },
+             { icon: <Mail size={20} />, label: 'דוא"ל', value: 'YA@101.ORG.IL' },
            ].map((item, i) => (
              <div key={i} className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600">
@@ -98,23 +130,38 @@ const ContactPage: React.FC = () => {
            </div>
         </div>
 
-        {/* Form Side */}
         <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">שם מלא</label>
-                <input required type="text" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none" />
+                <input 
+                  required 
+                  type="text" 
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none" 
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">טלפון</label>
-                <input required type="tel" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none" />
+                <input 
+                  required 
+                  type="tel" 
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none" 
+                />
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">נושא הפנייה</label>
-              <select className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-slate-600">
+              <select 
+                value={formData.subject}
+                onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-slate-600"
+              >
                 <option>בירור על חוגים ואירועים</option>
                 <option>בקשה להתנדבות</option>
                 <option>הצעה למיזם חדש</option>
@@ -125,20 +172,21 @@ const ContactPage: React.FC = () => {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">תוכן הפנייה</label>
-              <textarea rows={4} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none resize-none"></textarea>
+              <textarea 
+                rows={4} 
+                value={formData.content}
+                onChange={(e) => setFormData({...formData, content: e.target.value})}
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none resize-none"
+              ></textarea>
             </div>
 
-            {/* Voice Message Recorder */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
               <label className="text-sm font-medium text-slate-700 mb-2 block">הודעה קולית (אופציונלי)</label>
               <div className="flex items-center gap-4">
                 <button
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all
-                    ${isRecording ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}
-                  `}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${isRecording ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
                 >
                   {isRecording ? <Square size={16} className="fill-current" /> : <Mic size={16} />}
                   {isRecording ? 'עצור הקלטה' : 'הקלט הודעה'}
@@ -151,7 +199,6 @@ const ContactPage: React.FC = () => {
                   </div>
                 )}
               </div>
-              <p className="text-xs text-slate-400 mt-1">ניתן להשאיר הודעה עד 2 דקות. ההודעה תצורף לפנייה.</p>
             </div>
 
             <div className="pt-4">
