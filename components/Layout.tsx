@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LogOut, User as UserIcon, ShieldCheck, ChevronDown, Home, 
-  Calendar, Gift, Heart, MessageSquare, Users, Search 
+  Calendar, Gift, Heart, MessageSquare, Users, Search, X, Send // נוספו X, Send
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -18,6 +18,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, searchTerm, setSearchTerm }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false); // מצב למודל תקנון
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -209,12 +210,67 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
               <p className="mb-3 font-light text-xs text-slate-500">נשי - פלטפורמה עירונית לקידום תרבות נשים</p>
               <div className="flex justify-center gap-6 text-[11px] font-bold text-slate-400">
                  <Link to="/contact" className="hover:text-rose-500 transition-colors">צור קשר</Link>
-                 <Link to="/events" className="hover:text-rose-500 transition-colors">תנאי שימוש</Link>
+                 <button onClick={() => setShowTermsModal(true)} className="hover:text-rose-500 transition-colors">תנאי שימוש</button>
               </div>
             </div>
       </footer>
+
+      {/* מודל תקנון גלובלי - זמין לכל האתר */}
+      {showTermsModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in text-right">
+              <div className="bg-white rounded-[2rem] w-full max-w-2xl p-6 md:p-10 relative shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                  <div className="flex items-center justify-between mb-6 shrink-0">
+                      <h2 className="text-xl font-black text-slate-800 flex items-center gap-2"><ShieldCheck className="text-rose-500"/> תקנון ומדיניות שימוש</h2>
+                      <button onClick={() => setShowTermsModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20}/></button>
+                  </div>
+                  <div className="overflow-y-auto pr-2 space-y-4 text-slate-600 text-right text-xs md:text-sm leading-relaxed font-medium">
+                      <p className="font-black text-slate-800 underline">כללי</p>
+                      <p>ברוכות הבאות לאתר. השימוש באתר ובתכניו כפוף לתקנון ולמדיניות שימוש זו, ומהווה הסכמה מלאה לכל תנאיה. הנהלת האתר רשאית לעדכן את התקנון מעת לעת, לפי שיקול דעתה הבלעדי וללא הודעה מוקדמת. נוסח התקנון המעודכן הוא המחייב.</p>
+                      
+                      <p className="font-black text-slate-800 underline">מהות האתר ותכניו</p>
+                      <p>האתר מהווה מרחב קהילתי לנשים ונערות, שמטרתו שיתוף, השראה, חיבור ויצירת שיח פתוח ומכבד. התכנים המפורסמים באתר נכתבים לצורכי שיח, שיתוף דעות וניסיון אישי בלבד.
+                      ייתכנו בתכני האתר טעויות, אי־דיוקים או מידע שאינו מעודכן. אין לראות בתכנים המופיעים באתר ייעוץ מקצועי מכל סוג שהוא, לרבות אך לא רק: ייעוץ רפואי, נפשי, משפטי, פיננסי או טיפולי.</p>
+                      
+                      <p className="font-black text-slate-800 underline">אחריות ושימוש במידע</p>
+                      <p>השימוש בתכני האתר ובמידע המפורסם בו נעשה על אחריות המשתמשת בלבד. הנהלת האתר לא תישא בכל אחריות לנזק, ישיר או עקיף, שעלול להיגרם עקב הסתמכות על מידע המופיע באתר או שימוש בו.</p>
+                      
+                      <p className="font-black text-slate-800 underline">פעילות כספית והתקשרויות חיצוניות</p>
+                      <p>האתר אינו עוסק בכספים, תשלומים, תרומות, מכירת מוצרים או קניית כרטיסים, ואינו מהווה צד לכל התקשרות כספית או חוזית המתקיימת מחוץ למסגרת האתר. כל התקשרות בין משתמשות או בין משתמשת לגורם חיצוני נעשית באחריותן הבלעדיות של הצדדים המעורבים.</p>
+                      
+                      <p className="font-black text-slate-800 underline">קישורים ותכנים חיצוניים</p>
+                      <p>באתר עשויים להופיע קישורים, הפניות או אזכורים לגורמים חיצוניים. הנהלת האתר אינה אחראית לתוכן, לאמינות, לזמינות או לפעילות של אתרים, שירותים או גורמים חיצוניים אלו, והשימוש בהם הוא באחריות המשתמשת בלבד.</p>
+                      
+                      <p className="font-black text-slate-800 underline">פרטיות ושמירת מידע</p>
+                      <p>האתר מכבד את פרטיות המשתמשות. מסירת מידע אישי, פרסומו או שיתופו באתר נעשים ביוזמת המשתמשת ובאחריותה בלבד. הנהלת האתר אינה אחראית לשימוש שייעשה במידע אישי שפורסם בפומבי על ידי המשתמשת.</p>
+                      
+                      <p className="font-black text-slate-800 underline">התנהלות ושיח קהילתי</p>
+                      <p>המשתמשות מתחייבות לנהל שיח מכבד, אחראי ורגיש. הנהלת האתר שומרת לעצמה את הזכות להסיר תכנים, להגביל גישה או לחסום משתמשת, לפי שיקול דעתה, במקרה של הפרת תקנון זה או פגיעה ברוח הקהילה.</p>
+                      
+                      <p className="font-black text-slate-800 underline">סמכות שיפוט</p>
+                      <p>על תקנון זה ועל השימוש באתר יחולו דיני מדינת ישראל בלבד, וסמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים בישראל.</p>
+                  </div>
+                  <button onClick={() => setShowTermsModal(false)} className="mt-6 w-full py-4 bg-slate-900 text-white rounded-xl font-black text-xs shrink-0">סגור ואישור</button>
+              </div>
+          </div>
+      )}
     </div>
   );
 };
 
 export default Layout;
+
+
+/** * הנחיות לשילוב בטופס ההרשמה (AuthModal):
+ * --------------------------------------
+ * כדי שהשדות יהיו תואמים לגוגל ולדרישות שלך, וודאי שהאינפוטים בטופס נראים כך:
+ * * 1. שדה אימייל: <input type="email" name="email" autoComplete="email" ... />
+ * 2. שדה סיסמה: <input type="password" name="password" autoComplete="new-password" ... />
+ * 3. שדה שם מלא: <input type="text" name="name" autoComplete="name" ... />
+ * * הוספת הצ'קבוקס בטופס ההרשמה:
+ * * const [accepted, setAccepted] = useState(false);
+ * * <div className="flex items-center gap-2 mt-4">
+ * <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} id="reg-terms" />
+ * <label htmlFor="reg-terms" className="text-xs">אני מאשרת את <button type="button" onClick={() => setShowTermsModal(true)} className="underline">תקנון האתר</button></label>
+ * </div>
+ * * <button disabled={!accepted} ...>הרשמה</button>
+ */
