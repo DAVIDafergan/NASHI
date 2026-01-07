@@ -115,8 +115,10 @@ const LotterySchema = new mongoose.Schema({
   image: { type: String },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isActive: { type: Boolean, default: true },
-  // שדות חדשים לזכאות וניהול זוכה
-  participationType: { type: String, enum: ['everyone', 'points', 'link_only'], default: 'everyone' },
+  // שדות חדשים לזכאות וניהול זוכה - הוספת 'mission' ל-enum
+  participationType: { type: String, enum: ['everyone', 'points', 'link_only', 'mission'], default: 'everyone' },
+  missionText: { type: String, default: '' }, // טקסט המשימה (חדש!)
+  missionStarted: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // מי שהתחילה משימה (חדש!)
   minPointsToEnter: { type: Number, default: 0 },
   winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } // מזהה הזוכה לאחר ההגרלה
 });
@@ -167,7 +169,17 @@ const AdSchema = new mongoose.Schema({
 });
 const Ad = mongoose.model('Ad', AdSchema);
 
+// --- מודל הודעות הנהלה (חדש!) ---
+const AnnouncementSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const Announcement = mongoose.model('Announcement', AnnouncementSchema);
+
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
-  Personality, ForumPost, Community, Inspiration, Ad 
+  Personality, ForumPost, Community, Inspiration, Ad,
+  Announcement // הוספת הייצוא שגרם לשגיאה
 };
