@@ -28,10 +28,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [personality, setPersonality] = useState<any>(null);
   const [communityItems, setCommunityItems] = useState<any[]>([]);
   const [ads, setAds] = useState<AdItem[]>([]);
-  const [inspirations, setInspirations] = useState<any[]>([]); // חדש: מצב להשראות
-  const [announcements, setAnnouncements] = useState<any[]>([]); // חדש: הודעות הנהלה
+  const [inspirations, setInspirations] = useState<any[]>([]); 
+  const [announcements, setAnnouncements] = useState<any[]>([]); // הודעות הנהלה
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [currentAdIndex, setCurrentAdIndex] = useState(0); // חדש: אינדקס לפרסומות
+  const [currentAdIndex, setCurrentAdIndex] = useState(0); 
   const [upcomingLottery, setUpcomingLottery] = useState<LotteryItem | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
   const [showMembershipModal, setShowMembershipModal] = useState(false);
@@ -49,8 +49,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           fetch(`${API_URL}/ads`).then(res => res.json()),
           api.getPersonality(),
           api.getCommunityItems(),
-          api.getInspirations(), // משיכת השראות מהניהול
-          api.getAnnouncements() // חדש: משיכת הודעות הנהלה
+          api.getInspirations(),
+          api.getAnnouncements() // משיכת הודעות הנהלה
         ]);
 
         setEvents(evRes.map((e: any) => ({...e, id: e._id || e.id})));
@@ -59,7 +59,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         setPersonality(persData);
         setCommunityItems(commData || []);
         setInspirations(inspData || []);
-        setAnnouncements(annData || []); // עדכון הודעות הנהלה
+        setAnnouncements(annData || []); 
       } catch (err) {
         console.error("Error loading home data:", err);
       } finally {
@@ -70,7 +70,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     loadAllData();
   }, []);
 
-  // לוגיקת קרוסלת פרסומות אוטומטית (כל 3 שניות לתמונה)
+  // לוגיקת קרוסלת פרסומות אוטומטית
   useEffect(() => {
     if (ads.length > 1 && ads[currentAdIndex]?.type === 'image') {
       const adTimer = setInterval(() => {
@@ -178,13 +178,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     );
   }
 
-  // השראה דינמית מהשרת
   const latestInspiration = inspirations[0] || { text: "הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך.", author: "נ.ש" };
 
   return (
     <div className="min-h-screen pb-24 relative overflow-x-hidden font-sans text-right bg-[#fffcfc]" dir="rtl">
       
-      {/* רקע נשי פרימיום - עדין יותר בנייד */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(255,245,245,0.8),transparent)]"></div>
           <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-rose-100/10 rounded-full blur-[100px] -mr-48 -mb-48"></div>
@@ -193,10 +191,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       <div className="max-w-6xl mx-auto px-3 md:px-12 pt-6 md:pt-16 relative z-10 space-y-5 md:space-y-12">
         
-        {/* באנר פרסומת - גובה מופחת בנייד */}
+        {/* באנר פרסומת - חזר למקומו */}
         {renderAdBanner()}
 
-        {/* סטטוס משתמש - קומפקטי בנייד */}
+        {/* סטטוס משתמש */}
         <div className="mx-1">
           {user?.isMemberApproved ? (
              <div className="bg-white/60 backdrop-blur-md p-2.5 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-rose-100/50 flex items-center justify-between shadow-sm animate-bounce-in">
@@ -234,7 +232,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           )}
         </div>
 
-        {/* הגרלה פעילה - קטנה יותר בנייד */}
+        {/* הגרלה פעילה */}
         {upcomingLottery && user?.isMemberApproved && (
             <Link to="/lottery" className="block animate-fade-in-up mx-1">
                 <div className="bg-gradient-to-r from-rose-50/90 to-rose-100/90 backdrop-blur-sm rounded-[1.5rem] md:rounded-[2rem] p-3 md:p-7 shadow-sm border border-rose-200 flex items-center justify-between overflow-hidden relative group">
@@ -257,7 +255,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </Link>
         )}
 
-        {/* סליידר אירועים - יחס גובה מותאם לנייד */}
+        {/* סליידר אירועים ראשי - חזר למקומו */}
         <section className="relative h-[180px] md:h-[450px] w-full overflow-hidden rounded-[1.5rem] md:rounded-[3.5rem] shadow-sm border border-white mx-1 md:mx-0">
             {displayEvents.length > 0 && displayEvents.map((event, index) => (
             <div key={event.id} className={`absolute inset-0 transition-all duration-1000 ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
@@ -275,7 +273,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             ))}
         </section>
 
-        {/* קטגוריות וחוגים */}
+        {/* קטגוריות */}
         <div className="flex gap-1.5 overflow-x-auto pb-4 no-scrollbar px-2">
             <button onClick={() => navigate('/classes')} 
                     className="flex items-center gap-1.5 px-3.5 py-2 md:py-2.5 bg-slate-900 rounded-xl md:rounded-2xl text-[9px] md:text-[13px] font-black text-white shadow-md transition-all flex-shrink-0 active:scale-95">
@@ -295,7 +293,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-10">
             <div className="lg:col-span-2 space-y-5 md:space-y-10">
                 
-                {/* אשת השבוע */}
+                {/* אשת השבוע - חזר למקומו */}
                 {personality && personality.name && (
                     <section className="animate-fade-in px-1">
                         <Link to="/personality-archive" className="block bg-white/40 backdrop-blur-xl rounded-[1.5rem] md:rounded-[3rem] p-3.5 md:p-8 shadow-sm border border-white flex flex-col md:flex-row items-center gap-4 md:gap-10 relative overflow-hidden group">
@@ -310,15 +308,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                                     <h3 className="text-base md:text-3xl font-black text-slate-800 leading-tight tracking-tight">{personality.name}</h3>
                                     <p className="text-[8px] md:text-sm text-slate-400 font-bold tracking-wide">{personality.role}</p>
                                 </div>
-                                {personality.motto && (
-                                  <div className="relative py-0.5">
-                                     <p className="text-[10px] md:text-base text-rose-600/70 font-bold italic leading-relaxed line-clamp-2">
-                                       <Quote size={6} md:size={8} className="inline ml-1 opacity-50 rotate-180" />
-                                       {personality.motto}
-                                       <Quote size={6} md:size={8} className="inline mr-1 opacity-50" />
-                                     </p>
-                                  </div>
-                                )}
                                 <div className="text-[8px] md:text-[11px] font-black text-slate-400 group-hover:text-rose-500 flex items-center gap-1 transition-all mx-auto md:mr-0 pt-1.5 border-t border-rose-50/50 justify-center md:justify-start">
                                     לכל נשות המעגל והראיון המלא <ChevronLeft size={10} md:size={12} />
                                 </div>
@@ -371,9 +360,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 </div>
             </div>
 
-            {/* סיידבר - אופטימיזציה לנייד */}
+            {/* סיידבר - כולל הודעות הנהלה */}
             <div className="space-y-3.5 md:space-y-6 px-1 md:px-0">
-                {/* השראה יומית דינמית מהשרת */}
+                {/* השראה יומית */}
                 <div className="bg-slate-900 rounded-[1.2rem] md:rounded-[3rem] p-4 md:p-8 text-white relative overflow-hidden shadow-xl text-right">
                     <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
                     <div className="relative z-10 space-y-2 md:space-y-6">
@@ -390,7 +379,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </div>
                 </div>
 
-                {/* חדש: הודעות הנהלה - ממוקם מתחת להשראה */}
+                {/* הודעות הנהלה - חזר למקומו */}
                 {announcements.length > 0 && announcements.map((ann) => (
                    <div key={ann._id} className="bg-rose-50/80 backdrop-blur-md rounded-[1.2rem] md:rounded-[2.5rem] p-4 md:p-6 border border-rose-100 shadow-sm animate-fade-in-up">
                       <div className="flex items-center gap-2 mb-2">
@@ -401,20 +390,18 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                    </div>
                 ))}
 
-                {/* יצירת קשר / הצטרפות - כרטיס נוח */}
+                {/* כרטיסי קשר */}
                 {!user ? (
                    <div onClick={onOpenLogin} className="cursor-pointer bg-white rounded-[1.2rem] md:rounded-[3rem] p-4 md:p-8 text-center space-y-2 md:space-y-4 hover:translate-y-[-2px] transition-all border border-rose-100/50 shadow-sm flex flex-col items-center">
                       <div className="w-10 h-10 md:w-16 md:h-16 bg-rose-50 rounded-xl md:rounded-2xl flex items-center justify-center text-rose-500"><HeartHandshake size={20} md:size={24} /></div>
                       <h3 className="text-xs md:text-xl font-black text-slate-800 tracking-tight">הצטרפי למעגל</h3>
-                      <p className="text-[8px] md:text-[11px] text-slate-400 font-medium leading-tight max-w-[150px] md:max-w-[180px]">תהיי חלק מהשינוי בעיר ותיהני מעולם של תרבות והטבות.</p>
-                      <button className="bg-rose-500 text-white px-6 py-2 rounded-lg md:rounded-xl font-black text-[8px] md:text-xs shadow-lg hover:bg-rose-600 transition-all active:scale-95">הרשמה מהירה</button>
+                      <button className="bg-rose-500 text-white px-6 py-2 rounded-lg md:rounded-xl font-black text-[8px] md:text-xs shadow-lg hover:bg-rose-600 active:scale-95">הרשמה מהירה</button>
                    </div>
                 ) : (
                   <div className="bg-white/60 backdrop-blur-md p-4 md:p-8 rounded-[1.2rem] md:rounded-[3rem] shadow-sm border border-rose-100/50 text-center space-y-2 md:space-y-4 flex flex-col items-center">
                       <div className="w-9 h-9 md:w-14 md:h-14 bg-rose-50 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto text-rose-400"><Phone size={14} md:size={20}/></div>
                       <h3 className="text-xs md:text-lg font-black text-slate-800">צרי קשר</h3>
-                      <p className="text-[8px] md:text-[11px] text-slate-400 font-medium max-w-[140px] md:max-w-[160px]">אנחנו כאן לכל שאלה, הצעה או שיתוף פעולה.</p>
-                      <a href="tel:0500000000" className="block w-full py-2 bg-white text-slate-700 rounded-lg md:rounded-xl font-black text-[8px] md:text-xs hover:bg-rose-50 transition-all border border-rose-100 shadow-sm">חיוג מהיר</a>
+                      <a href="tel:0500000000" className="block w-full py-2 bg-white text-slate-700 rounded-lg md:rounded-xl font-black text-[8px] md:text-xs hover:bg-rose-50 border border-rose-100">חיוג מהיר</a>
                   </div>
                 )}
             </div>
@@ -426,21 +413,18 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-3 bg-rose-900/10 backdrop-blur-sm animate-fade-in text-right">
               <div className="bg-white rounded-[1.5rem] w-full max-w-md p-5 md:p-10 relative shadow-2xl border border-white mx-2 overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
-                  <button onClick={() => setShowMembershipModal(false)} className="absolute top-4 left-4 p-1.5 hover:bg-rose-50 rounded-full transition-colors text-slate-300"><X size={16}/></button>
+                  <button onClick={() => setShowMembershipModal(false)} className="absolute top-4 left-4 p-1.5 hover:bg-rose-50 rounded-full text-slate-300"><X size={16}/></button>
                   <div className="text-right space-y-4">
-                      <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400 shadow-inner"><Sparkles size={16}/></div>
-                      <div className="space-y-0.5">
-                        <h2 className="text-lg md:text-2xl font-black text-slate-800 tracking-tight leading-none">בקשת הצטרפות</h2>
-                        <p className="text-[9px] md:text-xs text-slate-400 font-bold">מלאי את הפרטים והמתיני לאישור המנהלת</p>
-                      </div>
+                      <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400"><Sparkles size={16}/></div>
+                      <h2 className="text-lg md:text-2xl font-black text-slate-800 tracking-tight">בקשת הצטרפות</h2>
                       <form onSubmit={handleMembershipSubmit} className="space-y-2.5 md:space-y-4 pt-3 border-t border-rose-50">
                           <div className="grid grid-cols-2 gap-2">
-                            <input required type="number" placeholder="גיל" className="p-3 bg-rose-50/30 rounded-lg md:rounded-xl font-bold text-[10px] md:text-sm outline-none focus:ring-1 focus:ring-rose-200 transition-all text-right" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
-                            <input required type="text" placeholder="עיסוק" className="p-3 bg-rose-50/30 rounded-lg md:rounded-xl font-bold text-[10px] md:text-sm outline-none focus:ring-1 focus:ring-rose-200 transition-all text-right" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
+                            <input required type="number" placeholder="גיל" className="p-3 bg-rose-50/30 rounded-lg font-bold text-[10px] md:text-sm text-right outline-none" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
+                            <input required type="text" placeholder="עיסוק" className="p-3 bg-rose-50/30 rounded-lg font-bold text-[10px] md:text-sm text-right outline-none" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
                           </div>
-                          <input required type="text" placeholder="כתובת מגורים" className="w-full p-3 bg-rose-50/30 rounded-lg md:rounded-xl font-bold text-[10px] md:text-sm outline-none focus:ring-1 focus:ring-rose-200 transition-all text-right" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
-                          <input required type="tel" placeholder="טלפון" className="w-full p-3 bg-rose-50/30 rounded-lg md:rounded-xl font-bold text-[10px] md:text-sm outline-none focus:ring-1 focus:ring-rose-200 transition-all text-right" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
-                          <button type="submit" className="w-full py-3 md:py-4 bg-rose-500 text-white rounded-xl font-black text-xs md:text-base shadow-lg shadow-rose-200 hover:bg-rose-600 transition-all active:scale-95 flex items-center justify-center gap-1.5 mt-1.5">
+                          <input required type="text" placeholder="כתובת מגורים" className="w-full p-3 bg-rose-50/30 rounded-lg font-bold text-[10px] md:text-sm text-right outline-none" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
+                          <input required type="tel" placeholder="טלפון" className="w-full p-3 bg-rose-50/30 rounded-lg font-bold text-[10px] md:text-sm text-right outline-none" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
+                          <button type="submit" className="w-full py-3 md:py-4 bg-rose-500 text-white rounded-xl font-black text-xs md:text-base shadow-lg active:scale-95 flex items-center justify-center gap-1.5 mt-1.5">
                              <Send size={14}/> שליחת בקשה למנהלת
                           </button>
                       </form>
