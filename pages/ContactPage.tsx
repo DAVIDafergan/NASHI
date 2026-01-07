@@ -119,15 +119,6 @@ const ContactPage: React.FC = () => {
                </div>
              </div>
            ))}
-           
-           <div className="bg-rose-50 p-6 rounded-xl border border-rose-100 mt-6">
-             <h4 className="font-bold text-rose-800 mb-2">מוקד תמיכה לנשים</h4>
-             <p className="text-sm text-rose-700 mb-4">קו סיוע ותמיכה זמין 24/7 לכל עניין.</p>
-             <button className="w-full py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors flex items-center justify-center gap-2">
-               <Phone size={16} />
-               חייגי עכשיו
-             </button>
-           </div>
         </div>
 
         <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
