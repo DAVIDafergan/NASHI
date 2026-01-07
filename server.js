@@ -28,6 +28,15 @@ app.use(express.json({ limit: '50mb' }));
 // הגדלת המגבלה לקבלת נתוני טפסים (Form Data)
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// --- הגדרת מודל הודעות הנהלה (חדש) ---
+const announcementSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const Announcement = mongoose.model('Announcement', announcementSchema);
+
 // Database Connection
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB'))
@@ -35,6 +44,44 @@ mongoose.connect(MONGO_URI)
 
 // Routes - API
 app.use('/api', apiRoutes);
+
+// --- נתיבים חדשים עבור הודעות הנהלה (חדש) ---
+app.get('/api/announcements', async (req, res) => {
+  try {
+    const anns = await Announcement.find().sort({ createdAt: -1 });
+    res.json(anns);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/announcements', async (req, res) => {
+  try {
+    const ann = new Announcement(req.body);
+    await ann.save();
+    res.status(201).json(ann);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+app.put('/api/announcements/:id', async (req, res) => {
+  try {
+    const updated = await Announcement.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+app.delete('/api/announcements/:id', async (req, res) => {
+  try {
+    await Announcement.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Announcement deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // Health Check
 app.get('/health', (req, res) => {

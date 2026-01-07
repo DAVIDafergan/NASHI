@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
+    Announcement, // הוספת המודל החדש לייבוא
     Personality, ForumPost, Community, Inspiration, Ad // הוספת המודלים החדשים לייבוא
 } from './models.js';
 
@@ -207,6 +208,28 @@ router.post('/admin/lotteries/:id/run', authenticate, isAdmin, async (req, res) 
 
 router.delete('/lotteries/:id', authenticate, isAdmin, async (req, res) => {
     try { await Lottery.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// נתיב קבלת משתתפות להגרלה (למנהלת בלבד) - חדש!
+router.get('/admin/lotteries/:id/participants', authenticate, isAdmin, async (req, res) => {
+    try {
+        const lottery = await Lottery.findById(req.params.id).populate('participants', 'name phone email');
+        if (!lottery) return res.status(404).json({ error: 'Lottery not found' });
+        res.json(lottery.participants);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// נתיב סיום משימה עבור משתמשת - חדש!
+router.post('/lotteries/:id/complete-mission', authenticate, async (req, res) => {
+    try {
+        const lottery = await Lottery.findById(req.params.id);
+        if (!lottery) return res.status(404).json({ error: 'Lottery not found' });
+        if (lottery.participants.includes(req.user.id)) return res.status(400).json({ error: 'כבר נרשמת להגרלה זו' });
+        
+        lottery.participants.push(req.user.id);
+        await lottery.save();
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ================= 6. קהילה (COMMUNITY) =================
@@ -455,6 +478,37 @@ router.put('/ads/:id', authenticate, isAdmin, async (req, res) => {
 router.delete('/ads/:id', authenticate, isAdmin, async (req, res) => {
     try { await Ad.findByIdAndDelete(req.params.id); res.json({ success: true }); } 
     catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 11. הודעות הנהלה (ANNOUNCEMENTS) - חדש! =================
+
+router.get('/announcements', async (req, res) => {
+    try {
+        const anns = await Announcement.find().sort({ createdAt: -1 });
+        res.json(anns);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/announcements', authenticate, isAdmin, async (req, res) => {
+    try {
+        const ann = new Announcement(req.body);
+        await ann.save();
+        res.json(ann);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+router.put('/announcements/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        const updated = await Announcement.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updated);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+router.delete('/announcements/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        await Announcement.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // --- שונות (פרופיל) ---
