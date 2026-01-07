@@ -115,28 +115,28 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const loadTabData = async () => {
     setLoading(true);
     try {
-        const users = await fetch('[https://nashi-production.up.railway.app/api/users](https://nashi-production.up.railway.app/api/users)', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json());
-        setApiUsers(users || []);
+        const users = await fetch('https://nashi-production.up.railway.app/api/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json());
+        setApiUsers(Array.isArray(users) ? users : []);
         
         const approvals = await api.getAdminApprovals();
-        setPendingData(approvals);
+        setPendingData(approvals || {pendingUsers: [], pendingPosts: []});
         
         const community = await api.getCommunityItems();
-        setCommunityItems(community);
+        setCommunityItems(community || []);
 
         const events = await api.getEvents();
-        setApiEvents(events);
+        setApiEvents(events || []);
 
         const classes = await api.getClasses();
-        setApiClasses(classes);
+        setApiClasses(classes || []);
 
         const lotteries = await api.getLotteries();
-        setApiLotteries(lotteries);
+        setApiLotteries(lotteries || []);
 
         if (activeTab === 'personality') {
             setPersonalityForm(await api.getPersonality());
-            setPendingInterviews(await api.getPendingInterviews()); 
-            setAllInterviews(await api.getAllPersonalities());
+            setPendingInterviews(await api.getPendingInterviews() || []); 
+            setAllInterviews(await api.getAllPersonalities() || []);
         }
         else if (activeTab === 'settings') setPointsSettings(await api.getSettings());
         else if (activeTab === 'forum') {
@@ -217,8 +217,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const addQuestion = () => setPersonalityForm(p => ({ ...p, questions: [...(p.questions || []), { question: '', answer: '' }] }));
   const updateQuestion = (i: number, f: 'question' | 'answer', v: string) => {
     const qs = [...(personalityForm.questions || [])];
-    qs[i][f] = v;
-    setPersonalityForm({ ...personalityForm, questions: qs });
+    if (qs[i]) {
+      qs[i][f] = v;
+      setPersonalityForm({ ...personalityForm, questions: qs });
+    }
   };
 
   const runLiveLottery = async (lotteryId: string) => {
@@ -351,7 +353,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {apiAnnouncements.map(ann => (
                   <div key={ann._id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-between group">
-                     <div>
+                      <div>
                         <div className="flex justify-between items-start mb-4">
                            <div className="p-3 bg-blue-50 text-blue-500 rounded-xl"><Megaphone size={20}/></div>
                            <div className="flex gap-1">
@@ -361,7 +363,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                         </div>
                         <h4 className="font-black text-lg mb-2 text-slate-800">{ann.title}</h4>
                         <p className="text-sm text-slate-500 line-clamp-4 leading-relaxed">{ann.content}</p>
-                     </div>
+                      </div>
                   </div>
                 ))}
                 {apiAnnouncements.length === 0 && (
@@ -405,8 +407,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                            <div className="flex justify-between items-start">
                               <h4 className="font-black text-slate-800">{p.title}</h4>
                               <div className="flex gap-2">
-                                 <button onClick={() => api.approvePost(p._id).then(loadTabData)} className="p-2 bg-green-500 text-white rounded-lg"><CheckCircle size={16}/></button>
-                                 <button onClick={() => handleDelete(p._id, 'post', p.title)} className="p-2 bg-red-100 text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                                  <button onClick={() => api.approvePost(p._id).then(loadTabData)} className="p-2 bg-green-500 text-white rounded-lg"><CheckCircle size={16}/></button>
+                                  <button onClick={() => handleDelete(p._id, 'post', p.title)} className="p-2 bg-red-100 text-red-500 rounded-lg"><Trash2 size={16}/></button>
                               </div>
                            </div>
                            <p className="text-sm text-slate-600 line-clamp-3">{p.content}</p>
@@ -779,7 +781,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <h4 className="text-2xl font-black text-center">{selectedInterview.name}</h4>
                 <p className="font-bold text-rose-500 text-center">{selectedInterview.role}</p>
                 <div className="space-y-4 mt-6">
-                    {selectedInterview.questions.map((q, i) => (
+                    {selectedInterview.questions?.map((q, i) => (
                         <div key={i} className="bg-slate-50 p-4 rounded-2xl">
                             <p className="font-black text-xs text-slate-400 mb-1">{q.question}</p>
                             <p className="font-bold">{q.answer}</p>
@@ -823,8 +825,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
             <input required type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.drawDate} onChange={e=>setLotteryForm({...lotteryForm, drawDate:e.target.value})} />
             <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
-               <input type="file" onChange={e => handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-               {lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס / החלפת קיימת</p>}
+                <input type="file" onChange={e => handleFileUpload(e, setLotteryForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                {lotteryForm.image ? <img src={lotteryForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונת פרס / החלפת קיימת</p>}
             </div>
             <button className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום</button>
         </form>
