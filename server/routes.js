@@ -294,7 +294,7 @@ router.post('/personality/generate-link', authenticate, isAdmin, async (req, res
             isActive: false 
         });
         await p.save();
-        res.json({ token });
+        res.json({ token, id: p._id }); // החזרת גם ID למקרה הצורך
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
