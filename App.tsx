@@ -10,12 +10,13 @@ import AdminPage from './pages/AdminPage';
 import LotteryPage from './pages/LotteryPage';
 import ForumPage from './pages/ForumPage'; 
 import CommunityPage from './pages/CommunityPage'; 
-import InterviewPage from './pages/InterviewPage'; // עדכון שם הקובץ ל-InterviewPage
-import PersonalityArchivePage from './pages/PersonalityArchivePage'; // ייבוא דף ארכיון נשות השבוע החדש
+import InterviewPage from './pages/InterviewPage';
+import PersonalityArchivePage from './pages/PersonalityArchivePage';
 import { GeminiAssistant } from './components/GeminiAssistant';
 import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, CommunicationPreference } from './types';
-import { X, AlertCircle, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react'; // X and AlertCircle removed as they are now in AuthModal
 import { api } from './services/api';
+import AuthModal from './components/AuthModal'; // ייבוא המודל החדש
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -28,20 +29,8 @@ const App: React.FC = () => {
   // מצב חיפוש גלובלי עבור כל הטאבים
   const [globalSearchTerm, setGlobalSearchTerm] = useState('');
 
-  // Auth Modal State
+  // Auth Modal State - נשלט כעת ע"י הקומפוננטה החיצונית
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-
-  // Login Form
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-
-  // Register Form
-  const [regData, setRegData] = useState({
-    name: '', phone: '', email: '', address: '', 
-    communicationPref: 'whatsapp' as CommunicationPreference, password: ''
-  });
 
   // Fetch initial data
   useEffect(() => {
@@ -56,9 +45,17 @@ const App: React.FC = () => {
         setClasses(fetchedClasses);
         setLotteries(fetchedLotteries);
         
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        // בדיקת טוקן מול השרת
+        const token = localStorage.getItem('token');
+        if (token) {
+           try {
+             const userData = await api.getMe();
+             setUser(userData);
+             localStorage.setItem('user', JSON.stringify(userData)); // סנכרון ללוקאל
+           } catch (err) {
+             localStorage.removeItem('token');
+             localStorage.removeItem('user');
+           }
         }
       } catch (error) {
         console.error("Failed to fetch data", error);
@@ -69,37 +66,11 @@ const App: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleLogin = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    setLoginError('');
-    try {
-      const { user: loggedInUser, token } = await api.login({ email: loginEmail, password: loginPassword });
-      setUser(loggedInUser);
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(loggedInUser));
-      setIsAuthModalOpen(false);
-      setLoginEmail('');
-      setLoginPassword('');
-    } catch (err) {
-      setLoginError('שם משתמש או סיסמה שגויים');
-    }
-  };
-
-  const handleRegister = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!regData.name || !regData.email || !regData.password) {
-      setLoginError('אנא מלאי את כל שדות החובה');
-      return;
-    }
-    try {
-      const { user: newUser, token } = await api.register(regData);
-      setUser(newUser);
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      setIsAuthModalOpen(false);
-    } catch (err) {
-      setLoginError('שגיאה בהרשמה. נסי שוב מאוחר יותר.');
-    }
+  // פונקציה המופעלת לאחר התחברות/הרשמה מוצלחת דרך המודל
+  const handleLoginSuccess = (loggedInUser: User) => {
+    setUser(loggedInUser);
+    localStorage.setItem('user', JSON.stringify(loggedInUser));
+    setIsAuthModalOpen(false);
   };
 
   const handleLogout = () => {
@@ -110,8 +81,6 @@ const App: React.FC = () => {
   
   const handleOpenAuth = () => {
     setIsAuthModalOpen(true);
-    setAuthMode('login');
-    setLoginError('');
   };
 
   const handleUpdateUser = async (updatedUser: User) => {
@@ -236,7 +205,7 @@ const App: React.FC = () => {
             setSearchTerm={setGlobalSearchTerm}
         >
           <Routes>
-            <Route path="/" element={<HomePage user={user} onOpenLogin={handleOpenAuth} events={events} lotteries={lotteries} onUpdateUser={handleUpdateUser} />} />
+            <Route path="/" element={<HomePage user={user} onOpenLogin={handleOpenAuth} onUpdateUser={handleUpdateUser} />} />
             
             <Route 
               path="/events" 
@@ -268,13 +237,6 @@ const App: React.FC = () => {
                 <AdminPage 
                   user={user} 
                   onLogin={(u) => {setUser(u); setIsAuthModalOpen(false);}}
-                  events={events} 
-                  classes={classes} 
-                  lotteries={lotteries} 
-                  reviews={reviews}
-                  onAddEvent={addEvent} onUpdateEvent={updateEvent} onDeleteEvent={deleteEvent}
-                  onAddClass={addClass} onUpdateClass={updateClass} onDeleteClass={deleteClass}
-                  onAddLottery={addLottery} onDeleteLottery={deleteLottery}
                 />
               } 
             />
@@ -284,54 +246,12 @@ const App: React.FC = () => {
         
         {user && !user.isAdmin && <GeminiAssistant />}
 
-        {/* Global Auth Modal */}
-        {isAuthModalOpen && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-              <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] w-full max-w-md shadow-2xl animate-fade-in-up relative overflow-hidden border border-white">
-                 <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 left-4 p-2 bg-slate-50 rounded-full hover:bg-rose-50 hover:text-rose-500 transition-colors z-10"><X size={20} /></button>
-                 
-                 <div className="p-8">
-                    <div className="text-center mb-6">
-                        <h2 className="text-3xl font-black text-slate-800 mb-2">{authMode === 'login' ? 'ברוכה הבאה!' : 'הצטרפות לקהילה'}</h2>
-                        <p className="text-slate-500 text-sm font-medium">המקום שלך לצמוח, להשפיע ולהנות.</p>
-                    </div>
-
-                    {loginError && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded-2xl text-xs font-bold mb-4 flex items-center gap-2 border border-red-100">
-                           <AlertCircle size={16} /> {loginError}
-                        </div>
-                    )}
-
-                    {authMode === 'login' ? (
-                       <form onSubmit={handleLogin} className="space-y-4">
-                          <input type="text" placeholder="אימייל" className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-2 focus:ring-rose-200 outline-none text-sm font-medium" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
-                          <input type="password" placeholder="סיסמה" className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-2 focus:ring-rose-200 outline-none text-sm font-medium" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} />
-                          <button type="submit" className="w-full bg-gradient-to-r from-rose-500 to-pink-600 text-white py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-rose-200 transition-all active:scale-95">כניסה</button>
-                       </form>
-                    ) : (
-                       <form onSubmit={handleRegister} className="space-y-3">
-                          <div className="grid grid-cols-2 gap-3">
-                             <input type="text" placeholder="שם מלא" className="w-full px-4 py-3 rounded-2xl bg-slate-50 border-none outline-none text-sm" value={regData.name} onChange={e => setRegData({...regData, name: e.target.value})} />
-                             <input type="text" placeholder="טלפון" className="w-full px-4 py-3 rounded-2xl bg-slate-50 border-none outline-none text-sm" value={regData.phone} onChange={e => setRegData({...regData, phone: e.target.value})} />
-                          </div>
-                          <input type="email" placeholder="אימייל" className="w-full px-4 py-3 rounded-2xl bg-slate-50 border-none outline-none text-sm" value={regData.email} onChange={e => setRegData({...regData, email: e.target.value})} />
-                          <input type="password" placeholder="סיסמה" className="w-full px-4 py-3 rounded-2xl bg-slate-50 border-none outline-none text-sm" value={regData.password} onChange={e => setRegData({...regData, password: e.target.value})} />
-                          <select className="w-full px-4 py-3 rounded-2xl bg-slate-50 border-none outline-none text-sm text-slate-500" value={regData.communicationPref} onChange={e => setRegData({...regData, communicationPref: e.target.value as CommunicationPreference})}>
-                             <option value="whatsapp">וואטסאפ</option><option value="email">אימייל</option><option value="sms">SMS</option>
-                          </select>
-                          <button type="submit" className="w-full bg-gradient-to-r from-rose-500 to-pink-600 text-white py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-rose-200 transition-all mt-2 active:scale-95">הרשמה</button>
-                       </form>
-                    )}
-
-                    <div className="mt-6 pt-6 border-t border-slate-100 text-center">
-                       <button onClick={() => {setAuthMode(authMode === 'login' ? 'register' : 'login'); setLoginError('');}} className="text-sm font-bold text-slate-400 hover:text-rose-500 transition-colors">
-                          {authMode === 'login' ? 'אין לך חשבון? להרשמה' : 'יש לך חשבון? להתחברות'}
-                       </button>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        )}
+        {/* השימוש ברכיב AuthModal החדש במקום הקוד הישן */}
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+          onLogin={handleLoginSuccess} 
+        />
       </div>
     </HashRouter>
   );
