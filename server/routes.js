@@ -489,11 +489,15 @@ router.get('/announcements', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// התיקון הקריטי: הסרת ה-_id הריק לפני השמירה כדי למנוע שגיאת 400
 router.post('/announcements', authenticate, isAdmin, async (req, res) => {
     try {
-        const ann = new Announcement(req.body);
+        const data = { ...req.body };
+        if (!data._id || data._id === '') delete data._id; // מחיקת ID ריק
+        
+        const ann = new Announcement(data);
         await ann.save();
-        res.json(ann);
+        res.status(201).json(ann);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
