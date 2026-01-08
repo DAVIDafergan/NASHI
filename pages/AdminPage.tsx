@@ -4,7 +4,7 @@ import {
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
-  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity
+  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -133,15 +133,9 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         const lotteries = await api.getLotteries();
         setApiLotteries(lotteries || []);
 
-        // טעינת הודעות תמיד כדי למנוע היעלמות
-        const anns = await api.getAnnouncements();
-        setApiAnnouncements(anns || []);
-
         if (activeTab === 'personality') {
-            const currentPersonality = await api.getPersonality();
-            // אם יש אשת שבוע קיימת והטופס ריק, נמלא אותו. אחרת, נשאיר את מה שהמשתמש מקליד/ערך.
-            if(currentPersonality && !personalityForm.name) setPersonalityForm(currentPersonality);
-            
+            const currentPers = await api.getPersonality();
+            if(currentPers) setPersonalityForm(currentPers);
             setPendingInterviews(await api.getPendingInterviews() || []); 
             setAllInterviews(await api.getAllPersonalities() || []);
         }
@@ -160,6 +154,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         else if (activeTab === 'ads') {
             const ads = await api.getAds();
             setApiAds(ads || []);
+        }
+        else if (activeTab === 'announcements') {
+            const anns = await api.getAnnouncements();
+            setApiAnnouncements(anns || []);
         }
     } catch (err) { console.error(err); }
     setLoading(false);
@@ -305,7 +303,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                       <p className="text-[10px] uppercase font-black opacity-60">משתמשות חדשות</p>
                       <p className="text-2xl font-black">+24</p>
                    </div>
-                   <div className="bg-rose-50 p-4 rounded-3xl shadow-lg border border-rose-400">
+                   <div className="bg-rose-500 p-4 rounded-3xl shadow-lg border border-rose-400">
                       <p className="text-[10px] uppercase font-black opacity-80">צפי השתתפות</p>
                       <p className="text-2xl font-black">88%</p>
                    </div>
@@ -324,14 +322,14 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
                    <h3 className="text-xl font-black mb-6 flex items-center gap-2"><PieChart className="text-rose-500" /> התפלגות קהילה</h3>
                    <div className="space-y-4">
-                     {['גמ"חים', 'שיעורי תורה', 'עסקים מקומיים'].map(cat => (
+                      {['גמ"חים', 'שיעורי תורה', 'עסקים מקומיים'].map(cat => (
                         <div key={cat} className="flex justify-between items-center p-5 bg-slate-50 rounded-[2rem] hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-slate-100">
                            <span className="font-bold text-slate-700">{cat}</span>
                            <span className="bg-white px-5 py-2 rounded-full text-xs font-black shadow-sm">
                              {communityItems.filter(i => i.category === cat).length} פריטים פעילים
                            </span>
                         </div>
-                     ))}
+                      ))}
                    </div>
                 </div>
 
@@ -363,8 +361,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                         <div className="flex justify-between items-start mb-4">
                            <div className="p-3 bg-blue-50 text-blue-500 rounded-xl"><Megaphone size={20}/></div>
                            <div className="flex gap-1">
-                              <button onClick={() => { setAnnForm(ann); setIsAnnModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"><Edit size={18}/></button>
-                              <button onClick={() => handleDelete(ann._id, 'announcement', ann.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={18}/></button>
+                             <button onClick={() => { setAnnForm(ann); setIsAnnModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"><Edit size={18}/></button>
+                             <button onClick={() => handleDelete(ann._id, 'announcement', ann.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={18}/></button>
                            </div>
                         </div>
                         <h4 className="font-black text-lg mb-2 text-slate-800">{ann.title}</h4>
@@ -451,10 +449,12 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               {apiInspirations.map(insp => (
                 <div key={insp._id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border-r-4 border-rose-400 flex flex-col justify-between">
                   <div>
-                    <Quote className="text-rose-200 mb-2" size={32} />
+                    <div className="flex justify-between items-start">
+                        <Quote className="text-rose-200 mb-2" size={32} />
+                        {insp.scheduledAt && <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-bold flex gap-1"><CalendarClock size={12}/> {new Date(insp.scheduledAt).toLocaleDateString()}</span>}
+                    </div>
                     <p className="font-bold text-slate-700 mb-4">"{insp.text}"</p>
                     <p className="text-sm text-slate-400 italic text-left">— {insp.author}</p>
-                    {insp.scheduledAt && <p className="text-[10px] text-blue-500 mt-2 font-bold">מתוזמן ל: {new Date(insp.scheduledAt).toLocaleString('he-IL')}</p>}
                   </div>
                   <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
                     <button onClick={() => { setInspirationForm(insp); setIsInspirationModalOpen(true); }} className="text-blue-500 p-2"><Edit size={18}/></button>
@@ -578,7 +578,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב הגרלות */}
+        {/* טאב הגרלות משודרג */}
         {activeTab === 'lotteries' && (
           <div className="space-y-6 animate-fade-in">
             <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה חדשה</button>
@@ -663,7 +663,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                                         alert("הראיון אושר ופורסם באתר!");
                                         loadTabData();
                                     }} className="bg-green-500 text-white px-4 py-2 rounded-xl font-black text-xs">אישור ופרסום</button>
-                                    <button onClick={() => handleDelete(interview.id, 'personality', interview.name)} className="bg-white p-2 rounded-xl text-red-500 shadow-sm"><Trash2 size={20}/></button>
+                                    <button onClick={() => handleDelete(interview.id, 'personality', interview.name)} className="bg-red-100 text-red-500 px-4 py-2 rounded-xl hover:bg-red-200 transition-colors"><Trash2 size={20}/></button>
                                 </div>
                             </div>
                         ))}
@@ -692,11 +692,16 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               </div>
 
               <button onClick={async () => { 
-                const res = await api.generateInterviewLink(personalityForm); 
-                const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
-                setGeneratedLink(fullLink);
+                try {
+                  // שמירת השאלות לפני יצירת הלינק כדי שיישמרו לפעם הבאה (עדכון תבנית)
+                  await api.updatePersonality(personalityForm);
+                  const res = await api.generateInterviewLink(personalityForm); 
+                  const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
+                  setGeneratedLink(fullLink);
+                  alert("השאלות נשמרו והלינק הופק בהצלחה!");
+                } catch (err: any) { alert("שגיאה: " + err.message); }
               }} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 transition-all">
-                <LinkIcon size={18}/> הפקת לינק למילוי עצמי ע"י האישה
+                <LinkIcon size={18}/> שמירת שאלות והפקת לינק למילוי עצמי
               </button>
 
               {generatedLink && (
@@ -749,6 +754,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </div>
 
+      {/* מודאלים חדשים */}
+
       {/* מודאל הודעת הנהלה */}
       <Modal isOpen={isAnnModalOpen} onClose={() => setIsAnnModalOpen(false)} title={annForm._id ? "עריכת הודעה" : "הוספת הודעת הנהלה"}>
         <form onSubmit={async (e) => {
@@ -757,7 +764,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               if (annForm._id) await api.updateAnnouncement(annForm._id, annForm);
               else await api.createAnnouncement(annForm);
               alert("הודעה נשמרה!");
-              setIsAnnModalOpen(false); loadTabData();
+              setIsAnnModalOpen(false); 
+              // עדכון רשימה מיידי
+              const anns = await api.getAnnouncements();
+              setApiAnnouncements(anns || []);
           } catch(err: any) { alert("שגיאה בשמירה"); }
         }} className="space-y-4">
           <input required placeholder="כותרת ההודעה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={annForm.title} onChange={e => setAnnForm({ ...annForm, title: e.target.value })} />
@@ -798,7 +808,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </Modal>
 
-      {/* מודאל הגרלה */}
+      {/* מודאל הגרלה מעודכן */}
       <Modal isOpen={isLotteryModalOpen} onClose={()=>setIsLotteryModalOpen(false)} title={lotteryForm._id ? "עריכת הגרלה" : "הגרלה חדשה"}>
         <form onSubmit={async (e)=>{
             e.preventDefault(); 
@@ -838,7 +848,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </form>
       </Modal>
 
-      {/* מודאל השראה - עם תאריך ושעה */}
+      {/* מודאלים קיימים ללא שינוי */}
       <Modal isOpen={isInspirationModalOpen} onClose={() => setIsInspirationModalOpen(false)} title={inspirationForm._id ? "עריכת השראה" : "הוספת השראה יומית"}>
         <form onSubmit={async (e) => {
           e.preventDefault();
@@ -853,12 +863,11 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         }} className="space-y-4">
           <textarea required placeholder="כתבי את ההשראה כאן..." className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right h-32" value={inspirationForm.text} onChange={e => setInspirationForm({ ...inspirationForm, text: e.target.value })} />
           <input required placeholder="שם המצוטט (למשל: רבי נחמן)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.author} onChange={e => setInspirationForm({ ...inspirationForm, author: e.target.value })} />
-          
           <div className="space-y-1">
-             <label className="text-xs font-bold text-slate-500 pr-2">תזמון פרסום (אופציונלי):</label>
-             <input type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.scheduledAt || ''} onChange={e => setInspirationForm({ ...inspirationForm, scheduledAt: e.target.value })} />
+             <label className="text-[10px] text-slate-400 font-black">תזמון פרסום (אופציונלי):</label>
+             <input type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.scheduledAt} onChange={e => setInspirationForm({ ...inspirationForm, scheduledAt: e.target.value })} />
+             <p className="text-[10px] text-slate-400 pr-2">השאירי ריק לפרסום מיידי</p>
           </div>
-
           <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמירת השראה</button>
         </form>
       </Modal>
@@ -1039,8 +1048,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             <input placeholder="טלפון" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.phone} onChange={e=>setCommunityForm({...communityForm, phone:e.target.value})} />
             <input placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.location} onChange={e=>setCommunityForm({...communityForm, location:e.target.value})} />
             <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
-                <input type="file" onChange={e => handleFileUpload(e, setCommunityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
-                {communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה / החלפת קיימת</p>}
+               <input type="file" onChange={e => handleFileUpload(e, setCommunityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+               {communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה / החלפת קיימת</p>}
             </div>
             <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום</button>
           </form>
