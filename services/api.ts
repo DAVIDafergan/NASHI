@@ -428,7 +428,8 @@ export const api = {
 
     // ================= ANNOUNCEMENTS (הודעות הנהלה) =================
     async getAnnouncements(): Promise<any[]> {
-        const res = await fetch(`${API_URL}/announcements`);
+        // תיקון: הוספת headers כדי שהשרת יזהה שמדובר במנהל ויחזיר את הרשימה
+        const res = await fetch(`${API_URL}/announcements`, { headers: getHeaders() });
         return res.json();
     },
 
