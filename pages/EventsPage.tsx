@@ -112,29 +112,6 @@ const EventsPage = () => {
 
   const categories = ['all', 'מוזיקה', 'העשרה', 'סדנאות', 'קהילה', 'בידור', 'אופנה'];
 
-  const handleJoin = async (event: EventItem) => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-          alert('יש להתחבר כדי להירשם ולקבל נקודות!');
-          return;
-      }
-
-      try {
-          const res = await fetch(`${API_URL}/events/${event.id}/join`, {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await res.json();
-          if (data.success) {
-              alert(`נרשמת בהצלחה ל"${event.title}"! \n🎉 ${data.message}`);
-          } else {
-              alert(data.error || 'שגיאה בהרשמה (אולי כבר נרשמת?)');
-          }
-      } catch (err) {
-          alert('תקלה בתקשורת עם השרת');
-      }
-  };
-
   const handleShare = async () => {
       const token = localStorage.getItem('token');
       const url = window.location.href;
@@ -251,7 +228,6 @@ const EventsPage = () => {
                 <div 
                     key={event.id} 
                     onClick={() => setSelectedEvent(event)}
-                    // שינוי גובה ל-h-28 בנייד כדי להיות קומפקטי יותר
                     className={`bg-white rounded-[2.2rem] p-2 md:p-3 shadow-sm border border-rose-50 hover:shadow-2xl hover:shadow-rose-100/40 transition-all duration-500 group cursor-pointer active:scale-[0.97] flex flex-row sm:flex-col h-28 sm:h-auto items-center sm:items-stretch relative overflow-hidden ${isPast ? 'grayscale-[0.5] opacity-80' : ''}`}
                 >
                     {/* Image Section */}
@@ -326,7 +302,7 @@ const EventsPage = () => {
         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-950/40 backdrop-blur-md animate-fade-in p-0 md:p-4">
             <div className="bg-white w-full md:w-[500px] md:rounded-[3rem] rounded-t-[3rem] max-h-[92vh] overflow-y-auto shadow-2xl animate-slide-up relative border border-white no-scrollbar">
                 
-                {/* Close Button - Accessible & Stylish */}
+                {/* Close Button UI */}
                 <button onClick={() => setSelectedEvent(null)} className="absolute top-5 left-5 p-3 bg-white/95 backdrop-blur-md rounded-full hover:bg-rose-500 hover:text-white z-50 text-slate-800 transition-all shadow-xl active:scale-90 border border-white/50"><X size={22} /></button>
                 
                 <div className="pb-8">
@@ -419,17 +395,10 @@ const EventsPage = () => {
                           </div>
                       </div>
 
+                      {/* כפתור השיתוף בלבד - מודגש יותר */}
                       <div className="flex gap-4 mb-10">
-                          <button 
-                            disabled={new Date(selectedEvent.date) < new Date()}
-                            onClick={() => handleJoin(selectedEvent)} 
-                            className={`flex-[3] py-5 rounded-[2rem] font-black text-sm shadow-xl transition-all flex justify-center items-center gap-3 active:scale-95 ${new Date(selectedEvent.date) < new Date() ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-900 text-white hover:bg-rose-600 hover:shadow-rose-200'}`}
-                          >
-                              <Ticket size={20} /> {new Date(selectedEvent.date) < new Date() ? 'ההרשמה הסתיימה' : 'הרשמה מהירה'}
-                          </button>
-                          
-                          <button onClick={handleShare} className="flex-1 flex items-center justify-center rounded-[2rem] border-2 border-rose-100 text-rose-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 transition-all active:scale-95 bg-white shadow-sm">
-                              <Share2 size={24} />
+                          <button onClick={handleShare} className="w-full py-5 rounded-[2rem] bg-slate-900 text-white font-black text-sm flex items-center justify-center gap-3 shadow-xl hover:bg-rose-600 transition-all active:scale-95">
+                              <Share2 size={20} /> שתפי עם חברות
                           </button>
                       </div>
 
@@ -458,7 +427,7 @@ const EventsPage = () => {
                                     onChange={e => setReviewText(e.target.value)}
                                   />
                                   <button type="submit" className={`w-full py-4 rounded-2xl font-black text-xs transition-all ${userRating > 0 ? 'bg-rose-500 text-white shadow-lg shadow-rose-100 hover:bg-rose-600' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}>
-                                      {userRating > 0 ? 'שליחה' : 'דרגי בבקשה כדי לשלוח'}
+                                      {userRating > 0 ? 'שליחת משוב' : 'דרגי בבקשה כדי לשלוח'}
                                   </button>
                               </form>
                           )}
