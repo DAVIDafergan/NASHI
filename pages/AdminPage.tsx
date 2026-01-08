@@ -4,7 +4,7 @@ import {
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
-  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity
+  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -90,7 +90,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   });
 
   const [isInspirationModalOpen, setIsInspirationModalOpen] = useState(false);
-  const [inspirationForm, setInspirationForm] = useState({ _id: '', text: '', author: '' });
+  const [inspirationForm, setInspirationForm] = useState({ _id: '', text: '', author: '', scheduledAt: '' });
 
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [adForm, setAdForm] = useState({ _id: '', type: 'image', content: '', link: '', title: '' });
@@ -361,8 +361,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                         <div className="flex justify-between items-start mb-4">
                            <div className="p-3 bg-blue-50 text-blue-500 rounded-xl"><Megaphone size={20}/></div>
                            <div className="flex gap-1">
-                              <button onClick={() => { setAnnForm(ann); setIsAnnModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"><Edit size={18}/></button>
-                              <button onClick={() => handleDelete(ann._id, 'announcement', ann.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={18}/></button>
+                             <button onClick={() => { setAnnForm(ann); setIsAnnModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors"><Edit size={18}/></button>
+                             <button onClick={() => handleDelete(ann._id, 'announcement', ann.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={18}/></button>
                            </div>
                         </div>
                         <h4 className="font-black text-lg mb-2 text-slate-800">{ann.title}</h4>
@@ -444,12 +444,15 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב השראה יומית */}
         {activeTab === 'inspirations' && (
           <div className="space-y-6 animate-fade-in">
-            <button onClick={() => { setInspirationForm({ _id: '', text: '', author: '' }); setIsInspirationModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> השראה חדשה</button>
+            <button onClick={() => { setInspirationForm({ _id: '', text: '', author: '', scheduledAt: '' }); setIsInspirationModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> השראה חדשה</button>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {apiInspirations.map(insp => (
                 <div key={insp._id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border-r-4 border-rose-400 flex flex-col justify-between">
                   <div>
-                    <Quote className="text-rose-200 mb-2" size={32} />
+                    <div className="flex justify-between items-start">
+                        <Quote className="text-rose-200 mb-2" size={32} />
+                        {insp.scheduledAt && <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-bold flex gap-1"><CalendarClock size={12}/> {new Date(insp.scheduledAt).toLocaleDateString()}</span>}
+                    </div>
                     <p className="font-bold text-slate-700 mb-4">"{insp.text}"</p>
                     <p className="text-sm text-slate-400 italic text-left">— {insp.author}</p>
                   </div>
@@ -660,6 +663,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                                         alert("הראיון אושר ופורסם באתר!");
                                         loadTabData();
                                     }} className="bg-green-500 text-white px-4 py-2 rounded-xl font-black text-xs">אישור ופרסום</button>
+                                    <button onClick={() => handleDelete(interview.id, 'personality', interview.name)} className="bg-red-100 text-red-500 px-4 py-2 rounded-xl hover:bg-red-200 transition-colors"><Trash2 size={20}/></button>
                                 </div>
                             </div>
                         ))}
@@ -688,11 +692,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               </div>
 
               <button onClick={async () => { 
+                // שמירת השאלות לפני יצירת הלינק כדי שיישמרו לפעם הבאה (עדכון תבנית)
+                await api.updatePersonality(personalityForm);
                 const res = await api.generateInterviewLink(personalityForm); 
                 const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
                 setGeneratedLink(fullLink);
               }} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 transition-all">
-                <LinkIcon size={18}/> הפקת לינק למילוי עצמי ע"י האישה
+                <LinkIcon size={18}/> שמירת שאלות והפקת לינק למילוי עצמי
               </button>
 
               {generatedLink && (
@@ -755,7 +761,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               if (annForm._id) await api.updateAnnouncement(annForm._id, annForm);
               else await api.createAnnouncement(annForm);
               alert("הודעה נשמרה!");
-              setIsAnnModalOpen(false); loadTabData();
+              setIsAnnModalOpen(false); 
+              setTimeout(() => loadTabData(), 300); // השהייה קטנה לוודא שהמסד התעדכן
           } catch(err: any) { alert("שגיאה בשמירה"); }
         }} className="space-y-4">
           <input required placeholder="כותרת ההודעה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={annForm.title} onChange={e => setAnnForm({ ...annForm, title: e.target.value })} />
@@ -851,6 +858,11 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         }} className="space-y-4">
           <textarea required placeholder="כתבי את ההשראה כאן..." className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right h-32" value={inspirationForm.text} onChange={e => setInspirationForm({ ...inspirationForm, text: e.target.value })} />
           <input required placeholder="שם המצוטט (למשל: רבי נחמן)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.author} onChange={e => setInspirationForm({ ...inspirationForm, author: e.target.value })} />
+          <div className="space-y-1">
+             <label className="text-[10px] text-slate-400 font-black">תזמון פרסום (אופציונלי):</label>
+             <input type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.scheduledAt} onChange={e => setInspirationForm({ ...inspirationForm, scheduledAt: e.target.value })} />
+             <p className="text-[10px] text-slate-400 pr-2">השאירי ריק לפרסום מיידי</p>
+          </div>
           <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמירת השראה</button>
         </form>
       </Modal>
