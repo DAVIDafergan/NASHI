@@ -251,10 +251,11 @@ const EventsPage = () => {
                 <div 
                     key={event.id} 
                     onClick={() => setSelectedEvent(event)}
-                    className={`bg-white rounded-[2.2rem] p-2 md:p-3 shadow-sm border border-rose-50 hover:shadow-2xl hover:shadow-rose-100/40 transition-all duration-500 group cursor-pointer active:scale-[0.97] flex flex-row sm:flex-col h-32 sm:h-auto items-center sm:items-stretch relative overflow-hidden ${isPast ? 'grayscale-[0.5] opacity-80' : ''}`}
+                    // שינוי גובה ל-h-28 בנייד כדי להיות קומפקטי יותר
+                    className={`bg-white rounded-[2.2rem] p-2 md:p-3 shadow-sm border border-rose-50 hover:shadow-2xl hover:shadow-rose-100/40 transition-all duration-500 group cursor-pointer active:scale-[0.97] flex flex-row sm:flex-col h-28 sm:h-auto items-center sm:items-stretch relative overflow-hidden ${isPast ? 'grayscale-[0.5] opacity-80' : ''}`}
                 >
                     {/* Image Section */}
-                    <div className="h-full w-32 sm:w-full sm:h-44 md:h-52 overflow-hidden relative rounded-[1.8rem] shrink-0 bg-slate-50">
+                    <div className="h-full w-28 sm:w-full sm:h-44 md:h-52 overflow-hidden relative rounded-[1.8rem] shrink-0 bg-slate-50">
                         <img src={event.image} alt={event.title} className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ${isPast ? 'brightness-75' : ''}`} />
                         
                         <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[9px] font-black text-rose-500 shadow-sm border border-white/50">
@@ -309,6 +310,7 @@ const EventsPage = () => {
         })}
       </div>
       
+      {/* Empty State */}
       {filteredEvents.length === 0 && (
           <div className="text-center py-24 bg-white/40 rounded-[3rem] border-2 border-dashed border-rose-100">
             <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-300 shadow-inner">
@@ -324,8 +326,8 @@ const EventsPage = () => {
         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-950/40 backdrop-blur-md animate-fade-in p-0 md:p-4">
             <div className="bg-white w-full md:w-[500px] md:rounded-[3rem] rounded-t-[3rem] max-h-[92vh] overflow-y-auto shadow-2xl animate-slide-up relative border border-white no-scrollbar">
                 
-                {/* Close Button UI Improved */}
-                <button onClick={() => setSelectedEvent(null)} className="absolute top-5 left-5 p-2.5 bg-white/90 backdrop-blur-md rounded-full hover:bg-rose-500 hover:text-white z-50 text-slate-800 transition-all shadow-xl active:scale-90 border border-white/50"><X size={20} /></button>
+                {/* Close Button - Accessible & Stylish */}
+                <button onClick={() => setSelectedEvent(null)} className="absolute top-5 left-5 p-3 bg-white/95 backdrop-blur-md rounded-full hover:bg-rose-500 hover:text-white z-50 text-slate-800 transition-all shadow-xl active:scale-90 border border-white/50"><X size={22} /></button>
                 
                 <div className="pb-8">
                   <div className="h-72 md:h-80 w-full relative overflow-hidden">
@@ -456,7 +458,7 @@ const EventsPage = () => {
                                     onChange={e => setReviewText(e.target.value)}
                                   />
                                   <button type="submit" className={`w-full py-4 rounded-2xl font-black text-xs transition-all ${userRating > 0 ? 'bg-rose-500 text-white shadow-lg shadow-rose-100 hover:bg-rose-600' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}>
-                                      {userRating > 0 ? 'שליחת משוב' : 'דרגי בבקשה כדי לשלוח'}
+                                      {userRating > 0 ? 'שליחה' : 'דרגי בבקשה כדי לשלוח'}
                                   </button>
                               </form>
                           )}
