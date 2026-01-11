@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
-  Users, Megaphone, Calendar, BookOpen, User 
+  Users, Megaphone, Calendar, BookOpen, User, Search
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -18,6 +18,7 @@ interface AdItem {
   _id: string; type: 'image' | 'video'; content: string; link: string; title: string;
 }
 
+// הגדרת הקטגוריות
 const categories = [
   { name: 'מוזיקה', icon: <Music size={12} /> },
   { name: 'אמנות', icon: <Palette size={12} /> },
@@ -50,6 +51,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [membershipForm, setMembershipForm] = useState({ age: '', occupation: '', address: '', phone: user?.phone || '' });
   const [isLoading, setIsLoading] = useState(true);
 
+  // טעינת נתונים
   useEffect(() => {
     const loadAllData = async () => {
       try {
@@ -163,8 +165,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           )}
           <div className="absolute inset-0 bg-gradient-to-l from-black/40 to-transparent flex items-center justify-end px-6 text-right text-white">
              <div>
-                <p className="text-[6px] md:text-[8px] font-bold opacity-70 uppercase tracking-widest mb-0.5 font-serif">בשיתוף פעולה</p>
-                <h4 className="text-[10px] md:text-sm font-black leading-tight font-serif">{ad.title || ''}</h4>
+                <p className="text-[6px] md:text-[8px] font-bold opacity-70 uppercase tracking-widest mb-0.5">בשיתוף פעולה</p>
+                <h4 className="text-[10px] md:text-sm font-black leading-tight">{ad.title || ''}</h4>
              </div>
           </div>
         </a>
@@ -174,22 +176,22 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fcfcfc]" dir="rtl">
+      <div className="min-h-screen flex items-center justify-center bg-[#fffcfc]" dir="rtl">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-4 border-rose-100 border-t-rose-400 rounded-full animate-spin mx-auto"></div>
-          <p className="text-rose-400 text-[10px] font-black tracking-widest animate-pulse uppercase">טוען...</p>
+          <div className="w-8 h-8 border-4 border-purple-50 border-t-purple-300 rounded-full animate-spin mx-auto"></div>
+          <p className="text-purple-300 text-[10px] font-black tracking-widest animate-pulse uppercase font-serif">טוען...</p>
         </div>
       </div>
     );
   }
 
-  const latestInspiration = inspirations[0] || { text: "הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך.", author: "נ.ש" };
+  const latestInspiration = inspirations[0] || { text: "השמחה היא לא במציאות אלא בדרך שבה אנחנו בוחרות לראות אותה.", author: "נ.ש" };
 
   return (
-    <div className="min-h-screen pb-20 relative overflow-x-hidden font-sans text-right bg-[#fcfcfc]" dir="rtl">
+    <div className="min-h-screen pb-20 relative overflow-x-hidden font-sans text-right bg-[#fcfcfc] transition-colors duration-1000" dir="rtl">
       
-      {/* Header - בנייד בלבד */}
-      <div className="md:hidden flex items-center justify-between px-6 pt-6 pb-4 bg-transparent relative z-20">
+      {/* --- MOBILE ONLY HEADER (As per image) --- */}
+      <div className="md:hidden flex items-center justify-between px-6 pt-6 pb-2">
           <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-slate-400 border border-slate-50 relative">
                   <Bell size={20} />
@@ -201,66 +203,65 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   <p className="text-slate-400 text-[10px] font-medium font-serif">שלום {user?.name || 'שרה'},</p>
                   <p className="text-slate-900 text-sm font-black font-serif">בוקר אור ומבורך</p>
               </div>
-              <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center text-rose-400">
-                  <User size={20} />
+              <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center text-rose-400 overflow-hidden shadow-sm">
+                  {user?.image ? <img src={user.image} className="w-full h-full object-cover" /> : <User size={20} />}
               </div>
           </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 pt-2 md:pt-10 relative z-10 space-y-6 md:space-y-10">
         
-        {/* סליידר ראשי בעיצוב התמונה (רק בנייד) */}
-        <section className="md:hidden relative h-[250px] w-full overflow-hidden rounded-[2.5rem] shadow-xl shadow-rose-200/20 bg-gradient-to-br from-rose-400 to-rose-500">
-            {displayEvents && displayEvents.length > 0 ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-white">
-                    <div className="bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-[10px] font-bold mb-4 uppercase tracking-widest font-serif">
-                       השראה יומית
-                    </div>
-                    <h2 className="text-lg font-black mb-6 max-w-xs leading-relaxed font-serif">
-                        "{displayEvents[currentSlide].title || latestInspiration.text}"
-                    </h2>
-                    <div className="h-[1px] w-12 bg-white/30 mb-6"></div>
-                    <p className="text-[10px] font-medium opacity-90 font-serif">
-                        {displayEvents[currentSlide].location || latestInspiration.author}
-                    </p>
+        {/* --- HERO SLIDER --- */}
+        {/* Mobile Design (Pink Card) */}
+        <section className="md:hidden relative h-[260px] w-full overflow-hidden rounded-[2.5rem] shadow-xl shadow-rose-200/20 bg-gradient-to-br from-rose-400 to-rose-500">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-white">
+                <div className="bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-[10px] font-bold mb-4 uppercase tracking-widest font-serif">
+                   השראה יומית
                 </div>
-            ) : null}
+                <h2 className="text-lg font-black mb-6 max-w-xs leading-relaxed font-serif animate-fade-in">
+                    "{displayEvents[currentSlide]?.isHero ? displayEvents[currentSlide].title : latestInspiration.text}"
+                </h2>
+                <div className="h-[1px] w-12 bg-white/30 mb-6"></div>
+                <p className="text-[10px] font-medium opacity-90 font-serif">
+                    {displayEvents[currentSlide]?.isHero ? displayEvents[currentSlide].location : (latestInspiration.author || "פרשת השבוע • חיזוק יומי")}
+                </p>
+            </div>
             <div className="absolute bottom-6 right-1/2 translate-x-1/2 flex gap-1.5 z-20">
-              {displayEvents && displayEvents.map((_, i) => (
+              {displayEvents.map((_, i) => (
                 <button key={i} onClick={() => setCurrentSlide(i)} className={`h-1 rounded-full transition-all duration-500 ${i === currentSlide ? 'w-6 bg-white' : 'w-1 bg-white/40'}`}></button>
               ))}
             </div>
         </section>
 
-        {/* סליידר ראשי המקורי (רק במחשב) */}
-        <section className="hidden md:block relative h-[450px] w-full overflow-hidden rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(168,85,247,0.25)] mx-0 border-0">
-            {displayEvents && displayEvents.length > 0 ? displayEvents.map((event, index) => (
+        {/* Desktop Design (Original) */}
+        <section className="hidden md:block relative h-[450px] w-full overflow-hidden rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(168,85,247,0.25)] border-0">
+            {displayEvents.map((event, index) => (
             <div key={event.id || index} className={`absolute inset-0 transition-all duration-1000 ease-out ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
                 <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
                 <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/80 via-slate-900/10 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 p-6 md:p-10 text-left w-full flex flex-col items-start z-20">
-                    <div className="inline-flex items-center gap-1.5 bg-purple-600/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black uppercase mb-2 shadow-lg tracking-widest border border-white/20 font-serif">
+                <div className="absolute bottom-0 left-0 p-10 text-left w-full flex flex-col items-start z-20">
+                    <div className="inline-flex items-center gap-1.5 bg-purple-600/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black uppercase mb-2 shadow-lg tracking-widest border border-white/20">
                       <Sparkles size={10} className="text-amber-300" /> אירוע נבחר
                     </div>
-                    <h2 className="text-xl md:text-4xl font-black text-white mb-2 md:mb-4 tracking-tight drop-shadow-2xl font-serif">{event.title}</h2>
-                    <div className="flex flex-wrap items-center gap-2 md:gap-4 justify-start text-white/90 font-bold mb-4 md:mb-6">
-                        <p className="flex items-center gap-1.5 text-[9px] md:text-sm bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 font-serif">
+                    <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-2xl">{event.title}</h2>
+                    <div className="flex items-center gap-4 text-white/90 font-bold mb-6">
+                        <p className="flex items-center gap-1.5 text-sm bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
                           <MapPin size={12} className="text-rose-400" /> {event.location}
                         </p>
-                        <p className="flex items-center gap-1.5 text-[9px] md:text-sm bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 font-serif">
+                        <p className="flex items-center gap-1.5 text-sm bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
                           <Calendar size={12} className="text-rose-400" /> {event.date ? new Date(event.date).toLocaleDateString('he-IL') : ''}
                         </p>
                     </div>
-                    <Link to="/events" className="inline-flex items-center gap-2 bg-white text-slate-900 px-6 md:px-10 py-2.5 md:py-4 rounded-2xl font-black text-[10px] md:text-sm hover:bg-purple-600 hover:text-white transition-all shadow-xl active:scale-95 group font-serif">
+                    <Link to="/events" className="inline-flex items-center gap-2 bg-white text-slate-900 px-10 py-4 rounded-2xl font-black text-sm hover:bg-purple-600 hover:text-white transition-all shadow-xl active:scale-95 group">
                       לפרטים והרשמה <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform"/>
                     </Link>
                 </div>
             </div>
-            )) : null}
+            ))}
         </section>
 
-        {/* עדכונים / הודעות הנהלה (בנייד בלבד) */}
-        {announcements && announcements.length > 0 && (
+        {/* --- UPDATES BAR (Mobile only) --- */}
+        {announcements.length > 0 && (
             <div className="md:hidden mx-2 bg-white rounded-2xl p-3 shadow-sm border border-slate-50 flex items-center justify-between overflow-hidden">
                 <div className="flex items-center gap-2 overflow-hidden">
                     <span className="text-rose-500 font-black text-[10px] shrink-0 font-serif">עדכונים:</span>
@@ -272,21 +273,21 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
         )}
 
-        {/* ניווט מהיר (בנייד בלבד) */}
-        <div className="md:hidden flex justify-around items-start px-2 py-2">
-            <button onClick={() => navigate('/events')} className="flex flex-col items-center gap-2 group">
+        {/* --- QUICK NAVIGATION (Mobile only Circles) --- */}
+        <div className="md:hidden flex justify-around items-start px-2 pt-2">
+            <button onClick={() => navigate('/events')} className="flex flex-col items-center gap-3 group">
                 <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-rose-500 shadow-sm border border-slate-50 group-active:scale-90 transition-all">
                     <Calendar size={22} />
                 </div>
                 <span className="text-[11px] font-black text-slate-800 font-serif">אירועים</span>
             </button>
-            <button onClick={() => navigate('/classes')} className="flex flex-col items-center gap-2 group">
+            <button onClick={() => navigate('/classes')} className="flex flex-col items-center gap-3 group">
                 <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-rose-500 shadow-sm border border-slate-50 group-active:scale-90 transition-all">
                     <BookOpen size={22} />
                 </div>
                 <span className="text-[11px] font-black text-slate-800 font-serif">שיעורים</span>
             </button>
-            <button onClick={() => navigate('/community')} className="flex flex-col items-center gap-2 group">
+            <button onClick={() => navigate('/community')} className="flex flex-col items-center gap-3 group">
                 <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-rose-500 shadow-sm border border-slate-50 group-active:scale-90 transition-all">
                     <Mic size={22} />
                 </div>
@@ -294,16 +295,16 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </button>
         </div>
 
-        {/* קטגוריות המקוריות (רק במחשב) */}
+        {/* Categories (Desktop only) */}
         <div className="hidden md:flex gap-3 overflow-x-auto pb-4 no-scrollbar px-1">
-            <button onClick={() => navigate('/classes')} className="flex items-center gap-2 px-8 py-4 bg-slate-900 rounded-2xl text-xs font-black text-white shadow-xl transition-all flex-shrink-0 active:scale-95 font-serif">
+            <button onClick={() => navigate('/classes')} className="flex items-center gap-2 px-8 py-4 bg-slate-900 rounded-2xl text-xs font-black text-white shadow-xl transition-all flex-shrink-0 active:scale-95 border-b-2 border-purple-500/50">
               <GraduationCap size={16} className="text-purple-400" /> חוגי המעגל
             </button>
-            <Link to="/personality-archive" className="flex items-center gap-2 px-8 py-4 bg-purple-500 rounded-2xl text-xs font-black text-white shadow-xl transition-all flex-shrink-0 active:scale-95 font-serif">
+            <Link to="/personality-archive" className="flex items-center gap-2 px-8 py-4 bg-purple-500 rounded-2xl text-xs font-black text-white shadow-xl transition-all flex-shrink-0 active:scale-95 border-b-2 border-white/20">
               <Users size={16} className="text-purple-100" /> נשות המעגל
             </Link>
             {categories.map((cat, idx) => (
-              <button key={idx} onClick={() => navigate('/events', { state: { category: cat.name } })} className="flex items-center gap-1.5 px-7 py-4 bg-white rounded-2xl text-xs font-bold text-slate-500 shadow-sm border border-rose-50 font-serif flex-shrink-0">
+              <button key={idx} onClick={() => navigate('/events', { state: { category: cat.name } })} className="flex items-center gap-1.5 px-7 py-4 bg-white rounded-2xl text-xs font-bold text-slate-500 shadow-sm border border-rose-50 hover:border-purple-200 transition-all flex-shrink-0 active:shadow-md">
                 <span className="text-rose-300">{cat.icon}</span>{cat.name}
               </button>
             ))}
@@ -311,99 +312,80 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         {renderAdBanner()}
 
+        {/* --- MAIN CONTENT AREA --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
-            <div className="lg:col-span-2 space-y-8 md:space-y-12">
+            <div className="lg:col-span-2 space-y-10 md:space-y-12">
                 
-                {/* אשת השבוע - מעוצב לפי התמונה (גם בנייד וגם במחשב עכשיו) */}
+                {/* WOMAN OF THE WEEK - Optimized for both Mobile and Desktop */}
                 {personality && personality.name && (
                   <section className="animate-fade-in px-1">
                       <div className="flex items-center justify-between mb-4 px-2">
                         <h3 className="text-sm md:text-lg font-black text-slate-900 tracking-tight font-serif">אשת השבוע</h3>
-                        <Link to="/personality-archive" className="text-rose-500 font-black text-[10px] font-serif">לכל הסיפורים</Link>
+                        <Link to="/personality-archive" className="text-rose-500 font-black text-[10px] md:text-xs flex items-center gap-0.5 hover:underline font-serif">לכל הסיפורים</Link>
                       </div>
-                      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-50 p-6 relative overflow-hidden">
-                        <div className="flex flex-row-reverse items-center gap-4 md:gap-10">
+                      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-50 p-6 relative overflow-hidden group">
+                        <div className="flex flex-row-reverse items-center gap-4 md:gap-10 relative z-10">
                             <div className="relative shrink-0">
-                                <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-4 border-rose-50 p-1">
-                                    <img src={personality.image} className="w-full h-full rounded-full object-cover shadow-sm" alt={personality.name} />
+                                <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-[3px] border-rose-50 p-1 relative">
+                                    <img src={personality.image} className="w-full h-full rounded-full object-cover shadow-sm transition-transform group-hover:scale-105" alt={personality.name} />
                                 </div>
                             </div>
                             <div className="text-right flex-1 space-y-1">
                                 <h3 className="text-base md:text-2xl font-black text-slate-900 font-serif">{personality.name}</h3>
-                                <p className="text-[10px] md:text-sm text-slate-400 font-bold font-serif">{personality.role}</p>
+                                <p className="text-[10px] md:text-sm text-slate-400 font-bold font-serif leading-tight">{personality.role}</p>
                                 <p className="text-[11px] md:text-base text-slate-600 font-serif italic line-clamp-2 pt-1 leading-relaxed">
-                                    "{personality.motto || 'סיפור של השראה, חיבור ועשייה...'}"
+                                    "{personality.motto || 'הסוד להצלחה הוא לשלב בין אהבת הבית לעשייה למען הכלל...'}"
                                 </p>
                             </div>
                         </div>
-                        <div className="mt-5 pt-4 border-t border-slate-50 flex items-center justify-between">
-                            <Link to={`/personality-archive`} className="bg-rose-500 text-white px-6 py-2 rounded-full text-[11px] font-black font-serif shadow-md shadow-rose-200 active:scale-95 transition-all">
+                        <div className="mt-5 pt-4 border-t border-slate-50 flex items-center justify-between relative z-10">
+                            <Link to={`/personality-archive`} className="bg-rose-500 text-white px-6 md:px-8 py-2 md:py-2.5 rounded-full text-[11px] md:text-sm font-black font-serif shadow-md shadow-rose-200 active:scale-95 transition-all">
                                 קראי עוד
                             </Link>
-                            <span className="text-[9px] text-slate-300 font-medium font-serif">פורסם השבוע</span>
+                            <span className="text-[9px] md:text-[10px] text-slate-300 font-medium font-serif">פורסם השבוע</span>
                         </div>
                       </div>
                   </section>
                 )}
 
-                {/* חוגי המעגל / שיעורים */}
+                {/* CLASSES / LESSONS - Horizontal scroll for mobile */}
                 <div className="space-y-4 px-1">
                     <div className="flex items-center justify-between px-2">
-                      <h3 className="text-sm md:text-lg font-black text-slate-900 font-serif">חוגים ושיעורים</h3>
-                      <Link to="/classes" className="text-rose-400 font-black text-[10px] font-serif">הכל</Link>
+                      <h3 className="text-sm md:text-lg font-black text-slate-900 font-serif">שיעורים וחוגים</h3>
+                      <Link to="/classes" className="text-rose-400 font-black text-[10px] md:text-xs font-serif">הכל</Link>
                     </div>
-                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar px-1">
                         {classes.slice(0, 5).map((cls, idx) => (
-                            <div key={cls._id || idx} className="bg-white rounded-[2rem] shadow-sm border border-slate-50 shrink-0 w-[160px] md:w-[220px] overflow-hidden group">
+                            <div key={cls._id || idx} className="bg-white rounded-[2rem] shadow-sm border border-slate-50 shrink-0 w-[170px] md:w-[220px] overflow-hidden group cursor-pointer active:scale-95 transition-all">
                                 <div className="h-32 md:h-44 relative">
                                     <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                    <div className="absolute top-2 right-2 bg-rose-500/90 text-white text-[8px] px-2 py-0.5 rounded-full font-bold">חדש</div>
                                 </div>
                                 <div className="p-4 text-right">
                                     <h4 className="font-black text-slate-800 text-[11px] md:text-sm truncate font-serif">{cls.title}</h4>
-                                    <p className="text-slate-400 text-[9px] font-medium font-serif mt-1">{cls.instructor} | {cls.day}</p>
+                                    <p className="text-slate-400 text-[9px] md:text-[10px] font-medium font-serif mt-1">{cls.instructor} | {cls.day}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* אירועים קרובים */}
-                <div className="space-y-4 px-1">
-                    <div className="flex items-center justify-between px-2">
-                      <h3 className="text-sm md:text-lg font-black text-slate-900 font-serif">אירועים קרובים</h3>
-                      <Link to="/events" className="text-rose-400 font-black text-[10px] font-serif font-serif">לכל האירועים</Link>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {events.filter(ev => !ev.isHero).slice(0, 2).map((ev, idx) => (
-                            <div key={ev._id || idx} className="bg-white p-3 md:p-4 rounded-[2rem] shadow-sm border border-slate-50 flex items-center gap-4">
-                                <img src={ev.image} className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover" />
-                                <div className="text-right flex-1">
-                                    <h4 className="font-black text-slate-800 text-[12px] md:text-base font-serif">{ev.title}</h4>
-                                    <p className="text-slate-400 text-[9px] md:text-xs font-serif mt-1 flex items-center gap-1"><MapPin size={10}/> {ev.location}</p>
-                                    <p className="text-rose-400 text-[9px] md:text-xs font-black font-serif mt-0.5">{ev.date ? new Date(ev.date).toLocaleDateString('he-IL') : ''}</p>
-                                </div>
-                                <div className="bg-rose-50 p-2 rounded-full"><ChevronLeft size={16} className="text-rose-400"/></div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* קהילה - עיצוב עסקים מקומיים מהתמונה */}
-                {communityItems && communityItems.length > 0 && (
+                {/* LOCAL BUSINESSES / COMMUNITY */}
+                {communityItems.length > 0 && (
                     <section className="space-y-4 px-1">
                         <div className="flex items-center justify-between px-2">
                           <h3 className="text-sm md:text-lg font-black text-slate-900 font-serif">עסקים מקומיים</h3>
-                          <Link to="/community" className="text-rose-400 font-black text-[10px] font-serif">הכל</Link>
+                          <Link to="/community" className="text-rose-400 font-black text-[10px] md:text-xs font-serif">הכל</Link>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar px-1">
                             {communityItems.slice(0, 6).map((item, idx) => (
-                                <div key={item._id || idx} className="bg-white rounded-[2rem] shadow-sm border border-slate-50 shrink-0 w-[160px] md:w-[220px] overflow-hidden group">
+                                <div key={item._id || idx} className="bg-white rounded-[2rem] shadow-sm border border-slate-50 shrink-0 w-[170px] md:w-[220px] overflow-hidden group">
                                     <div className="h-32 md:h-44 relative">
-                                        <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                        <img src={item.image} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="p-4 text-right">
                                         <h4 className="font-black text-slate-800 text-[11px] md:text-sm truncate font-serif">{item.title}</h4>
-                                        <p className="text-slate-400 text-[9px] font-medium font-serif mt-1">{item.category} • {item.location}</p>
+                                        <p className="text-slate-400 text-[9px] md:text-[10px] font-medium font-serif mt-1">{item.category} • 2 ק"מ ממך</p>
                                     </div>
                                 </div>
                             ))}
@@ -412,14 +394,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 )}
             </div>
 
-            {/* סיידבר - המקורי (רק במחשב) */}
-            <div className="hidden lg:block space-y-8 px-1 md:px-0">
-                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl text-right">
-                    <Quote className="text-rose-400 mb-4" size={32} />
+            {/* Sidebar (Desktop only) */}
+            <div className="hidden lg:block space-y-8 px-0">
+                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl text-right group">
+                    <Quote className="text-rose-400 mb-4 group-hover:rotate-12 transition-transform" size={32} />
                     <p className="text-lg font-serif italic leading-relaxed">
                         "{latestInspiration.text}"
                     </p>
-                    <div className="flex items-center gap-2 justify-end pt-4 border-t border-white/5 mt-4">
+                    <div className="flex items-center gap-2 justify-end pt-4 border-t border-white/5 mt-6">
                         <span className="text-[8px] font-black opacity-30 tracking-widest uppercase">השראה יומית</span>
                         <div className="px-3 py-1 rounded-full bg-rose-500 text-white font-black text-xs shadow-lg font-serif">
                             {latestInspiration.author}
@@ -427,34 +409,22 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </div>
                 </div>
 
-                {announcements && announcements.length > 0 && (
-                    <div className="space-y-3">
-                        <h3 className="text-xs font-black text-slate-400 flex items-center gap-1.5 px-2 uppercase tracking-widest font-serif">
-                          <Megaphone size={14} className="text-purple-500"/> הודעות הנהלה
-                        </h3>
-                        <div className="space-y-3">
-                          {announcements.slice(0, 3).map((ann, idx) => (
-                              <div key={ann._id || idx} className="bg-white p-7 rounded-[2rem] border border-purple-100 shadow-sm">
-                                 <h4 className="font-black text-purple-600 text-sm mb-1.5 flex items-center gap-1.5 font-serif">
-                                    <Bell size={12}/> {ann.title}
-                                 </h4>
-                                 <p className="text-xs text-slate-500 leading-normal font-serif">{ann.content}</p>
-                              </div>
-                          ))}
-                        </div>
-                    </div>
-                )}
+                <div className="bg-white/50 backdrop-blur-md p-8 rounded-[2rem] shadow-sm border border-rose-50 text-center space-y-4 flex flex-col items-center">
+                    <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-400 shadow-inner"><Phone size={24}/></div>
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest font-serif">אנחנו כאן בשבילך</h3>
+                    <a href="tel:0500000000" className="block w-full py-3.5 bg-white text-slate-900 rounded-2xl font-black text-xs border border-rose-100 shadow-sm hover:bg-rose-50 transition-colors font-serif">חיוג למשרד המעגל</a>
+                </div>
             </div>
         </div>
 
-        {/* פוטר וקרדיט */}
+        {/* Footer */}
         <footer className="pt-12 pb-8 border-t border-slate-100 text-center space-y-4">
-            <div className="flex justify-center gap-6 text-[10px] md:text-xs font-bold text-slate-400 font-serif">
-                <button onClick={() => setShowTermsModal(true)} className="hover:text-rose-500">תקנון האתר ומדיניות</button>
-                <Link to="/contact" className="hover:text-rose-500">צרי קשר</Link>
+            <div className="flex justify-center gap-6 text-[11px] font-bold text-slate-400 font-serif">
+                <button onClick={() => setShowTermsModal(true)} className="hover:text-rose-500 transition-colors">תקנון האתר ומדיניות</button>
+                <Link to="/contact" className="hover:text-rose-500 transition-colors">צרי קשר</Link>
             </div>
-            <p className="text-[10px] md:text-xs font-medium text-slate-300 font-serif">
-                כל הזכויות שמורות למעגל הנשי &copy; {new Date().getFullYear()} | בנייה ופיתוח ע"י 
+            <p className="text-[10px] font-medium text-slate-300 font-serif">
+                כל הזכויות שמורות למעגל הנשי &copy; {new Date().getFullYear()} | פיתוח: 
                 <a href="https://wa.me/message/WZKLTKH4KELMD1" target="_blank" rel="noopener noreferrer" className="text-rose-400 font-black mr-1 hover:underline">
                   DA פרויקטים ויזמות
                 </a>
@@ -462,12 +432,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         </footer>
       </div>
 
-      {/* מודאלים (ללא שינוי) */}
+      {/* Modals - Unchanged logic */}
       {showMembershipModal && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in text-right">
               <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] w-full max-w-lg p-8 md:p-12 relative shadow-2xl border border-white mx-3">
                   <button onClick={() => setShowMembershipModal(false)} className="absolute top-6 left-6 p-2 hover:bg-slate-50 rounded-full text-slate-300"><X size={20}/></button>
-                  <div className="text-right space-y-6 md:space-y-8">
+                  <div className="text-right space-y-6">
                       <h2 className="text-xl md:text-3xl font-black text-slate-800 font-serif">בקשת הצטרפות</h2>
                       <form onSubmit={handleMembershipSubmit} className="space-y-4 pt-4 border-t border-rose-50">
                           <div className="grid grid-cols-2 gap-4">
@@ -478,7 +448,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                           <input required type="tel" placeholder="מספר טלפון" className="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm text-right outline-none font-serif" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
                           <div className="flex items-center gap-2 py-2">
                              <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="w-4 h-4 text-rose-500 rounded" />
-                             <label className="text-xs font-bold text-slate-600 font-serif">קראתי ואני מאשרת את תקנון האתר</label>
+                             <label className="text-xs font-bold text-slate-600 font-serif">אני מאשרת את תקנון האתר</label>
                           </div>
                           <button type="submit" className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 flex items-center justify-center gap-2 font-serif">
                              <Send size={16}/> שליחת בקשה
@@ -491,14 +461,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       {showTermsModal && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-right" dir="rtl">
-            <div className="bg-white rounded-[2rem] w-full max-w-2xl p-8 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar font-serif">
+            <div className="bg-white rounded-[2rem] w-full max-w-2xl p-8 shadow-2xl max-h-[85vh] overflow-y-auto font-serif">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-black text-slate-800">תקנון ומדיניות שימוש</h3>
+                  <h3 className="text-xl font-black text-slate-800">תקנון האתר</h3>
                   <button onClick={() => setShowTermsModal(false)} className="p-2 hover:bg-slate-50 rounded-full"><X size={20}/></button>
                 </div>
                 <div className="space-y-4 text-sm leading-relaxed text-slate-600 font-medium font-serif">
-                  <p className="font-black text-slate-800 underline">כללי</p>
-                  <p>ברוכות הבאות לאתר...</p>
+                  <p>השימוש באתר מיועד לנשים ונערות בלבד. כל התכנים נועדו להשראה קהילתית...</p>
                 </div>
                 <button onClick={() => setShowTermsModal(false)} className="w-full mt-8 py-3 bg-slate-900 text-white font-black rounded-xl font-serif">סגירה וחזרה</button>
             </div>
