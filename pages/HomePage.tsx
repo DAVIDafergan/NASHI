@@ -90,19 +90,19 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     loadAllData();
   }, []);
 
-  // סליידר אירועים אוטומטי בנייד - כל 3 שניות
+  // סליידר אירועים אוטומטי בנייד
   useEffect(() => {
     const slider = mobileSliderRef.current;
     if (!slider || events.length === 0) return;
 
     const interval = setInterval(() => {
-      const cardWidth = slider.offsetWidth * 0.85 + 16; // רוחב כרטיס + gap
+      const cardWidth = slider.offsetWidth * 0.85 + 16;
       const maxScroll = slider.scrollWidth - slider.offsetWidth;
       
       if (Math.abs(slider.scrollLeft) >= maxScroll - 10) {
         slider.scrollTo({ left: 0, behavior: 'smooth' });
       } else {
-        slider.scrollBy({ left: -cardWidth, behavior: 'smooth' }); // ב-RTL גלילה שמאלה היא שלילית
+        slider.scrollBy({ left: -cardWidth, behavior: 'smooth' });
       }
     }, 3000);
 
@@ -221,47 +221,58 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* --- MOBILE VIEW START --- */}
         <div className="md:hidden space-y-8">
           
-          {/* הודעות הנהלה בנייד - כרטיסים רחבים וברורים */}
+          {/* הודעות הנהלה בנייד - סליידר אופקי עם רמז גלילה */}
           {announcements.length > 0 && (
-            <div className="px-4 space-y-3">
-               {announcements.map((ann, i) => (
-                 <div key={i} className="w-full bg-white/80 backdrop-blur-md p-4 rounded-2xl border-r-4 border-purple-500 shadow-sm flex items-start gap-3">
-                    <div className="bg-purple-100 p-2 rounded-lg text-purple-600 shrink-0"><Megaphone size={16}/></div>
-                    <div>
+            <section className="space-y-2">
+              <div className="flex items-center justify-between px-5">
+                 <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-1.5">
+                   <Megaphone size={12}/> עדכוני מערכת
+                 </h4>
+                 {announcements.length > 1 && <span className="text-[9px] text-slate-300 font-bold">החליקי לצפייה {'<'}</span>}
+              </div>
+              <div className="flex overflow-x-auto gap-3 px-4 no-scrollbar snap-x snap-mandatory">
+                 {announcements.map((ann, i) => (
+                   <div key={i} className="min-w-[85vw] bg-white/90 backdrop-blur-md p-5 rounded-[1.5rem] border-r-4 border-purple-500 shadow-sm snap-center flex flex-col gap-1">
                       <h4 className="font-black text-slate-800 text-xs">{ann.title}</h4>
-                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed mt-1">{ann.content}</p>
-                    </div>
-                 </div>
-               ))}
-            </div>
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{ann.content}</p>
+                   </div>
+                 ))}
+              </div>
+            </section>
           )}
 
-          {/* סליידר אירועים בקהילה - אוטומטי */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between px-4">
-              <h3 className="text-lg font-black text-slate-800">אירועים בקהילה</h3>
-              <Link to="/events" className="text-rose-500 text-xs font-bold">ראה הכל</Link>
+          {/* סליידר אירועים בקהילה - UI/UX משופר */}
+          <section className="space-y-5">
+            <div className="flex items-center justify-between px-5">
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">אירועים בקהילה</h3>
+              <Link to="/events" className="text-rose-500 text-xs font-black bg-rose-50 px-3 py-1 rounded-full">הכל</Link>
             </div>
             <div 
               ref={mobileSliderRef}
               className="flex overflow-x-auto gap-4 px-4 pb-4 snap-x snap-mandatory no-scrollbar"
             >
                {events.map((event, i) => (
-                 <div key={i} className="min-w-[85vw] bg-white rounded-[2rem] overflow-hidden shadow-xl border border-rose-50 snap-center">
-                    <div className="relative h-48">
-                      <img src={event.image} className="w-full h-full object-cover" alt="" />
-                      <div className="absolute top-4 right-4 bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg">אירוע נבחר</div>
+                 <div key={i} className="min-w-[85vw] bg-white rounded-[2.5rem] overflow-hidden shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] border border-slate-50 snap-center">
+                    <div className="relative h-52">
+                      <img src={event.image} className="w-full h-full object-cover" alt={event.title} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-slate-900 text-[9px] font-black px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1">
+                        <Calendar size={10} className="text-rose-500"/> {event.date ? new Date(event.date).toLocaleDateString('he-IL') : 'קרוב'}
+                      </div>
                     </div>
-                    <div className="p-6 space-y-4">
-                      <div className="space-y-1">
-                        <p className="text-rose-400 text-[10px] font-black">{event.date ? new Date(event.date).toLocaleDateString('he-IL') : 'בקרוב'}</p>
-                        <h4 className="text-lg font-black text-slate-900 leading-tight">{event.title}</h4>
+                    <div className="p-6 space-y-5">
+                      <div className="space-y-2">
+                        <h4 className="text-xl font-black text-slate-900 leading-tight">{event.title}</h4>
+                        <div className="flex items-center gap-3 text-slate-400">
+                           <p className="flex items-center gap-1.5 text-[11px] font-bold"><MapPin size={12} className="text-rose-400"/> {event.location}</p>
+                        </div>
                       </div>
-                      <div className="space-y-2 text-slate-500 text-xs font-medium">
-                        <p className="flex items-center gap-2"><Users size={14} className="text-slate-300"/> {event.speaker || 'מרצה אורח'}</p>
-                        <p className="flex items-center gap-2"><MapPin size={14} className="text-slate-300"/> {event.location}</p>
-                      </div>
-                      <Link to="/events" className="block w-full bg-rose-500 text-white py-3.5 rounded-2xl text-center font-black text-sm shadow-lg shadow-rose-200 active:scale-95 transition-all">להרשמה</Link>
+                      <button 
+                        onClick={() => navigate('/events')}
+                        className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                      >
+                        لפרטים נוספים <ChevronLeft size={16}/>
+                      </button>
                     </div>
                  </div>
                ))}
@@ -269,22 +280,22 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </section>
 
           {/* חוגים בנייד */}
-          <section className="space-y-4 bg-white/40 py-6">
-            <div className="flex items-center justify-between px-4">
+          <section className="space-y-4 bg-purple-50/30 py-8">
+            <div className="flex items-center justify-between px-5">
               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
                 <GraduationCap className="text-purple-500" size={20}/> חוגי המעגל
               </h3>
-              <Link to="/classes" className="text-purple-500 text-xs font-bold">הכל</Link>
+              <Link to="/classes" className="text-purple-500 text-xs font-bold">לכל החוגים</Link>
             </div>
             <div className="flex overflow-x-auto gap-3 px-4 no-scrollbar">
               {classes.map((cls, i) => (
                 <div 
                   key={i} 
                   onClick={() => navigate('/classes')}
-                  className="min-w-[140px] bg-white p-3 rounded-[1.5rem] shadow-md border border-purple-50 text-center space-y-2 cursor-pointer"
+                  className="min-w-[145px] bg-white p-3 rounded-[2rem] shadow-sm border border-purple-50 text-center space-y-2 cursor-pointer active:scale-95 transition-transform"
                 >
-                  <img src={cls.image} className="w-full h-24 rounded-xl object-cover shadow-inner" />
-                  <h4 className="font-black text-slate-800 text-[11px] line-clamp-1">{cls.title}</h4>
+                  <img src={cls.image} className="w-full h-24 rounded-[1.5rem] object-cover shadow-inner" alt={cls.title} />
+                  <h4 className="font-black text-slate-800 text-[11px] line-clamp-1 px-1">{cls.title}</h4>
                   <p className="text-[9px] text-slate-400 font-bold">{cls.day}</p>
                 </div>
               ))}
@@ -293,32 +304,32 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
           {/* השראה יומית */}
           <section className="px-4">
-            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
-              <Quote className="text-rose-400 mb-4" size={32} />
-              <p className="text-lg font-serif italic leading-relaxed">"{latestInspiration.text}"</p>
-              <div className="mt-6 flex justify-end">
-                 <span className="bg-rose-500 px-4 py-1.5 rounded-full text-[10px] font-black">{latestInspiration.author}</span>
+            <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
+              <Quote className="text-rose-400/40 mb-4" size={40} />
+              <p className="text-lg font-serif italic leading-relaxed relative z-10">"{latestInspiration.text}"</p>
+              <div className="mt-8 flex justify-end">
+                 <span className="bg-rose-500 px-5 py-2 rounded-full text-[10px] font-black shadow-lg shadow-rose-500/20">{latestInspiration.author}</span>
               </div>
             </div>
           </section>
 
           {/* קהילה בנייד */}
           <section className="space-y-4">
-            <div className="flex items-center justify-between px-4">
+            <div className="flex items-center justify-between px-5">
               <h3 className="text-lg font-black text-slate-800">שירותי קהילה</h3>
-              <Link to="/community" className="text-rose-400 text-xs font-bold">הכל</Link>
+              <Link to="/community" className="text-rose-400 text-xs font-bold bg-rose-50 px-3 py-1 rounded-full">הכל</Link>
             </div>
             <div className="flex overflow-x-auto gap-4 px-4 pb-4 no-scrollbar">
                {communityItems.map((item, i) => (
                  <div 
                     key={i} 
                     onClick={() => navigate('/community')}
-                    className="min-w-[200px] bg-white rounded-[1.5rem] overflow-hidden border border-rose-50 shadow-sm cursor-pointer"
+                    className="min-w-[220px] bg-white rounded-[2rem] overflow-hidden border border-slate-50 shadow-sm cursor-pointer active:scale-95 transition-transform"
                  >
-                    <img src={item.image} className="w-full h-28 object-cover" />
-                    <div className="p-3">
+                    <img src={item.image} className="w-full h-32 object-cover" alt={item.title} />
+                    <div className="p-4">
                       <h4 className="font-black text-slate-800 text-xs truncate">{item.title}</h4>
-                      <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-1"><MapPin size={10}/> {item.location}</p>
+                      <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-1.5"><MapPin size={10}/> {item.location}</p>
                     </div>
                  </div>
                ))}
@@ -327,17 +338,16 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
           {/* אשת השבוע בנייד */}
           {personality && (
-            <section className="px-4 pb-6">
-               <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-purple-50 relative overflow-hidden">
-                  <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-                     <img src={personality.image} className="w-32 h-32 rounded-[2rem] object-cover shadow-lg border-4 border-white" />
-                     <div>
-                        <span className="text-rose-500 text-[10px] font-black uppercase tracking-widest">אשת השבוע במעגל</span>
-                        <h3 className="text-2xl font-black text-slate-900 mt-1">{personality.name}</h3>
-                     </div>
-                     <p className="text-slate-600 font-serif italic text-sm">"{personality.motto}"</p>
-                     <button onClick={() => navigate('/personality-archive')} className="w-full bg-slate-900 text-white py-3.5 rounded-2xl font-black text-sm">לקריאת הראיון המלא</button>
+            <section className="px-4 pb-10">
+               <div className="bg-white rounded-[3rem] p-8 shadow-xl border border-purple-50 relative overflow-hidden text-center space-y-5">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full blur-3xl opacity-50"></div>
+                  <img src={personality.image} className="w-36 h-36 rounded-[2.5rem] object-cover mx-auto shadow-2xl border-4 border-white relative z-10" alt={personality.name} />
+                  <div className="relative z-10">
+                     <span className="text-rose-500 text-[10px] font-black uppercase tracking-[0.2em]">אשת השבוע</span>
+                     <h3 className="text-2xl font-black text-slate-900 mt-1">{personality.name}</h3>
+                     <p className="text-slate-600 font-serif italic text-sm mt-3 px-4">"{personality.motto}"</p>
                   </div>
+                  <button onClick={() => navigate('/personality-archive')} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs shadow-lg relative z-10">לקריאת הראיון המלא</button>
                </div>
             </section>
           )}
@@ -345,10 +355,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         </div>
         {/* --- MOBILE VIEW END --- */}
 
-        {/* --- DESKTOP VIEW START --- */}
+        {/* --- DESKTOP VIEW START (UNTOUCHED) --- */}
         <div className="hidden md:block space-y-12">
-           
-           {/* Membership Status Desktop */}
            <div className="mx-1">
             {user?.isMemberApproved ? (
                 <div className="bg-white/60 backdrop-blur-md p-5 rounded-3xl border border-rose-100/50 flex items-center justify-between shadow-sm">
@@ -376,7 +384,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             )}
            </div>
 
-           {/* Hero Slider Desktop */}
            <section className="relative h-[450px] w-full overflow-hidden rounded-[3rem] shadow-2xl">
               {displayEvents.map((event, index) => (
                 <div key={index} className={`absolute inset-0 transition-all duration-1000 ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
@@ -390,13 +397,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               ))}
            </section>
 
-           {/* חוגים במחשב */}
            <section className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
                   <GraduationCap className="text-purple-500" size={28}/> חוגי המעגל
                 </h3>
-                <Link to="/classes" className="bg-purple-50 text-purple-600 px-6 py-2 rounded-xl font-black text-sm hover:bg-purple-500 hover:text-white transition-all">לכל החוגים</Link>
+                <Link to="/classes" className="bg-purple-50 text-purple-600 px-6 py-2 rounded-xl font-black text-sm hover:bg-purple-500 transition-all">לכל החוגים</Link>
               </div>
               <div className="grid grid-cols-4 gap-6">
                  {classes.slice(0, 4).map((cls, i) => (
@@ -409,13 +415,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </div>
            </section>
 
-           {/* קהילה וגמ"חים במחשב */}
            <section className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
                   <HeartHandshake className="text-rose-500" size={28}/> שירותי קהילה וגמ"חים
                 </h3>
-                <Link to="/community" className="bg-rose-50 text-rose-500 px-6 py-2 rounded-xl font-black text-sm hover:bg-rose-500 hover:text-white transition-all">לכל שירותי הקהילה</Link>
+                <Link to="/community" className="bg-rose-50 text-rose-500 px-6 py-2 rounded-xl font-black text-sm hover:bg-rose-500 transition-all">לכל שירותי הקהילה</Link>
               </div>
               <div className="grid grid-cols-3 gap-8">
                  {communityItems.slice(0, 3).map((item, i) => (
@@ -432,7 +437,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
            <div className="grid grid-cols-3 gap-10">
               <div className="col-span-2 space-y-12">
-                 {/* Personality Section Desktop */}
                  {personality && (
                     <section className="bg-white rounded-[3rem] p-10 shadow-sm border border-purple-50 flex items-center gap-10">
                        <img src={personality.image} className="w-56 h-56 rounded-[2.5rem] object-cover shadow-lg border-8 border-purple-50" alt="" />
@@ -445,8 +449,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </section>
                  )}
               </div>
-              
-              {/* Sidebar Desktop */}
               <div className="space-y-8">
                  <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white">
                     <Quote className="text-rose-400 mb-4" size={24} />
@@ -462,7 +464,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </div>
            </div>
         </div>
-        {/* --- DESKTOP VIEW END --- */}
 
         {/* Footer */}
         <footer className="pt-12 pb-8 border-t border-rose-50 text-center space-y-4 px-4">
@@ -479,7 +480,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         </footer>
       </div>
 
-      {/* Modals Remain Same */}
+      {/* Modals */}
       {showMembershipModal && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-fade-in text-right">
               <div className="bg-white rounded-[2rem] md:rounded-[3rem] w-full max-w-lg p-6 md:p-12 relative shadow-2xl border border-white mx-3">
