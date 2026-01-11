@@ -13,6 +13,7 @@ interface EventItem {
   _id?: string;
   title: string;
   date: string;
+  time?: string; // הוספת שדה שעה לטיפוס
   location: string;
   category: string;
   price: number;
@@ -152,11 +153,13 @@ const EventsPage = () => {
       return (sum / ratings.length).toFixed(1);
   };
 
-  // פונקציית עזר להצגת שעה בצורה תקינה
-  const formatEventTime = (dateString: string) => {
-    const dateObj = new Date(dateString);
-    // אם השעה היא בדיוק חצות (00:00), ייתכן שזה דיפולט של המערכת ולא שעה שהוזנה. 
-    // אבל לפי בקשתך להציג מה שהמנהל הגדיר, נשתמש בפורמט מקומי:
+  // פונקציית עזר להצגת שעה בצורה תקינה - מעודכנת לתמיכה בהגדרת מנהל
+  const formatEventTime = (event: EventItem) => {
+    // אם קיימת שעה שהמנהל הגדיר ידנית, נשתמש בה קודם
+    if (event.time) return event.time;
+
+    // אחרת, נשתמש בחישוב מהתאריך כגיבוי
+    const dateObj = new Date(event.date);
     return dateObj.toLocaleTimeString('he-IL', {
       hour: '2-digit',
       minute: '2-digit',
@@ -277,7 +280,7 @@ const EventsPage = () => {
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Clock size={14} className="text-rose-300" />
-                                <span>{formatEventTime(event.date)}</span>
+                                <span>{formatEventTime(event)}</span>
                             </div>
                             {Number(avgRating) > 0 && (
                                 <div className="flex items-center gap-1 text-yellow-500 bg-yellow-50/50 px-2 py-0.5 rounded-lg border border-yellow-100/50">
@@ -349,7 +352,7 @@ const EventsPage = () => {
                           </div>
                           <div className="flex-1 bg-white p-4 rounded-3xl text-center shadow-xl border border-rose-50/50">
                               <p className="text-[10px] text-rose-300 font-black uppercase mb-1 tracking-widest">שעה</p>
-                              <p className="font-black text-slate-800 text-xs md:text-sm">{formatEventTime(selectedEvent.date)}</p>
+                              <p className="font-black text-slate-800 text-xs md:text-sm">{formatEventTime(selectedEvent)}</p>
                           </div>
                           <div className="flex-1 bg-white p-4 rounded-3xl text-center shadow-xl border border-rose-50/50">
                               <p className="text-[10px] text-rose-300 font-black uppercase mb-1 tracking-widest">מחיר</p>

@@ -62,6 +62,7 @@ const Community = mongoose.model('Community', CommunitySchema);
 const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   date: { type: Date, required: true },
+  time: { type: String }, // השדה החדש שביקשת להוסיף לשמירת השעה
   location: { type: String, required: true },
   description: { type: String },
   image: { type: String },
@@ -181,5 +182,5 @@ const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
-  Announcement // הוספת הייצוא שגרם לשגיאה
+  Announcement 
 };
