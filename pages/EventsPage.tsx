@@ -152,6 +152,18 @@ const EventsPage = () => {
       return (sum / ratings.length).toFixed(1);
   };
 
+  // פונקציית עזר להצגת שעה בצורה תקינה
+  const formatEventTime = (dateString: string) => {
+    const dateObj = new Date(dateString);
+    // אם השעה היא בדיוק חצות (00:00), ייתכן שזה דיפולט של המערכת ולא שעה שהוזנה. 
+    // אבל לפי בקשתך להציג מה שהמנהל הגדיר, נשתמש בפורמט מקומי:
+    return dateObj.toLocaleTimeString('he-IL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
   if (loading) return (
       <div className="flex items-center justify-center min-h-[50vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
@@ -168,7 +180,7 @@ const EventsPage = () => {
       </div>
 
       {/* --- Filter Bar --- */}
-      <div className="bg-white/60 backdrop-blur-xl p-3 md:p-5 rounded-[2.5rem] shadow-sm border border-rose-50 sticky top-16 md:top-20 z-40 space-y-4">
+      <div className="bg-white/60 backdrop-blur-xl p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-rose-50 sticky top-16 md:top-20 z-40 space-y-4">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative w-full md:w-80">
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-300" size={18} />
@@ -218,7 +230,7 @@ const EventsPage = () => {
       </div>
 
       {/* --- Events Grid --- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
         {filteredEvents.map(event => {
             const avgRating = getAverageRating(event.ratings);
             const { value: displayPrice, isEarly } = getDisplayPrice(event);
@@ -228,40 +240,44 @@ const EventsPage = () => {
                 <div 
                     key={event.id} 
                     onClick={() => setSelectedEvent(event)}
-                    className={`bg-white rounded-[2.2rem] p-2 md:p-3 shadow-sm border border-rose-50 hover:shadow-2xl hover:shadow-rose-100/40 transition-all duration-500 group cursor-pointer active:scale-[0.97] flex flex-row sm:flex-col h-28 sm:h-auto items-center sm:items-stretch relative overflow-hidden ${isPast ? 'grayscale-[0.5] opacity-80' : ''}`}
+                    className={`bg-white rounded-[2.5rem] p-3 shadow-md border border-rose-50/50 hover:shadow-2xl hover:shadow-rose-100/40 transition-all duration-500 group cursor-pointer active:scale-[0.98] flex flex-col relative overflow-hidden ${isPast ? 'grayscale-[0.5] opacity-80' : ''}`}
                 >
-                    {/* Image Section */}
-                    <div className="h-full w-28 sm:w-full sm:h-44 md:h-52 overflow-hidden relative rounded-[1.8rem] shrink-0 bg-slate-50">
+                    {/* Image Section - Large on mobile */}
+                    <div className="h-64 sm:h-44 md:h-52 overflow-hidden relative rounded-[2rem] shrink-0 bg-slate-50 shadow-inner">
                         <img src={event.image} alt={event.title} className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ${isPast ? 'brightness-75' : ''}`} />
                         
-                        <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[9px] font-black text-rose-500 shadow-sm border border-white/50">
+                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black text-rose-500 shadow-sm border border-white/50">
                             {event.category}
                         </div>
 
                         {isPast && (
                             <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                <span className="bg-white/20 backdrop-blur-md text-white border border-white/30 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">חוויה מהעבר</span>
+                                <span className="bg-white/20 backdrop-blur-md text-white border border-white/30 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">חוויה מהעבר</span>
                             </div>
                         )}
 
                         {isEarly && !isPast && (
-                          <div className="absolute top-3 left-3 bg-rose-500 text-white px-2.5 py-1 rounded-full text-[8px] font-black animate-pulse shadow-lg border border-white/30">מכירה מוקדמת!</div>
+                          <div className="absolute top-4 left-4 bg-rose-500 text-white px-3 py-1.5 rounded-full text-[9px] font-black animate-pulse shadow-lg border border-white/30">מכירה מוקדמת!</div>
                         )}
                     </div>
                     
                     {/* Content Section */}
-                    <div className="px-4 sm:px-2 pb-2 sm:pb-3 pt-0 sm:pt-4 flex-1 min-w-0 flex flex-col justify-center sm:justify-start h-full sm:h-auto text-right">
+                    <div className="px-3 pb-2 pt-5 flex-1 flex flex-col text-right">
                         
-                        <div className="flex justify-between items-start mb-1 md:mb-2">
-                            <h3 className="text-[13px] md:text-lg font-black text-slate-800 leading-tight line-clamp-2 group-hover:text-rose-600 transition-colors font-serif">
+                        <div className="flex justify-between items-start mb-2">
+                            <h3 className="text-xl md:text-lg font-black text-slate-800 leading-tight group-hover:text-rose-600 transition-colors font-serif">
                                 {event.title}
                             </h3>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] md:text-xs text-slate-400 mb-3 justify-start font-bold">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 mb-5 justify-start font-bold">
                             <div className="flex items-center gap-1.5">
-                                <Calendar size={12} className="text-rose-300" />
+                                <Calendar size={14} className="text-rose-300" />
                                 <span>{event.hebrewDate || new Date(event.date).toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit'})}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <Clock size={14} className="text-rose-300" />
+                                <span>{formatEventTime(event.date)}</span>
                             </div>
                             {Number(avgRating) > 0 && (
                                 <div className="flex items-center gap-1 text-yellow-500 bg-yellow-50/50 px-2 py-0.5 rounded-lg border border-yellow-100/50">
@@ -270,14 +286,14 @@ const EventsPage = () => {
                             )}
                         </div>
 
-                        <div className="flex items-center justify-between mt-auto pt-3 border-t border-rose-50/50 w-full">
-                            <div className="font-black text-xs md:text-base text-slate-700 flex items-center gap-2">
+                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-rose-50/50 w-full">
+                            <div className="font-black text-lg md:text-base text-slate-700 flex items-center gap-2">
                                 {displayPrice === 0 ? <span className="text-emerald-500">חינם</span> : `₪${displayPrice}`}
-                                {isEarly && <span className="text-[10px] md:text-xs text-slate-300 line-through font-bold">₪{event.price}</span>}
+                                {isEarly && <span className="text-xs text-slate-300 line-through font-bold">₪{event.price}</span>}
                             </div>
-                            <div className="flex items-center gap-1.5 text-rose-500 bg-rose-50 px-3 py-1.5 rounded-2xl group-hover:bg-rose-500 group-hover:text-white transition-all duration-300 shadow-sm border border-rose-100/30">
-                                <span className="text-[10px] md:text-xs font-black">{isPast ? 'סיכום' : 'פרטים'}</span>
-                                <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform"/>
+                            <div className="flex items-center gap-2 text-rose-500 bg-rose-50 px-5 py-2.5 rounded-2xl group-hover:bg-rose-500 group-hover:text-white transition-all duration-300 shadow-sm border border-rose-100/30 font-black text-xs md:text-sm">
+                                <span>{isPast ? 'לסיכום' : 'לפרטים'}</span>
+                                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform"/>
                             </div>
                         </div>
                     </div>
@@ -300,13 +316,13 @@ const EventsPage = () => {
       {/* --- Detailed Event Modal --- */}
       {selectedEvent && (
         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-950/40 backdrop-blur-md animate-fade-in p-0 md:p-4">
-            <div className="bg-white w-full md:w-[500px] md:rounded-[3rem] rounded-t-[3rem] max-h-[92vh] overflow-y-auto shadow-2xl animate-slide-up relative border border-white no-scrollbar">
+            <div className="bg-white w-full md:w-[500px] md:rounded-[3rem] rounded-t-[3rem] max-h-[95vh] overflow-y-auto shadow-2xl animate-slide-up relative border border-white no-scrollbar">
                 
                 {/* Close Button UI */}
                 <button onClick={() => setSelectedEvent(null)} className="absolute top-5 left-5 p-3 bg-white/95 backdrop-blur-md rounded-full hover:bg-rose-500 hover:text-white z-50 text-slate-800 transition-all shadow-xl active:scale-90 border border-white/50"><X size={22} /></button>
                 
                 <div className="pb-8">
-                  <div className="h-72 md:h-80 w-full relative overflow-hidden">
+                  <div className="h-80 md:h-80 w-full relative overflow-hidden">
                       <img src={selectedEvent.image} className={`w-full h-full object-cover transition-transform duration-1000 ${new Date(selectedEvent.date) < new Date() ? 'grayscale' : ''}`} />
                       
                       {selectedEvent.logo && (
@@ -333,7 +349,7 @@ const EventsPage = () => {
                           </div>
                           <div className="flex-1 bg-white p-4 rounded-3xl text-center shadow-xl border border-rose-50/50">
                               <p className="text-[10px] text-rose-300 font-black uppercase mb-1 tracking-widest">שעה</p>
-                              <p className="font-black text-slate-800 text-xs md:text-sm">{new Date(selectedEvent.date).toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</p>
+                              <p className="font-black text-slate-800 text-xs md:text-sm">{formatEventTime(selectedEvent.date)}</p>
                           </div>
                           <div className="flex-1 bg-white p-4 rounded-3xl text-center shadow-xl border border-rose-50/50">
                               <p className="text-[10px] text-rose-300 font-black uppercase mb-1 tracking-widest">מחיר</p>
@@ -395,7 +411,6 @@ const EventsPage = () => {
                           </div>
                       </div>
 
-                      {/* כפתור השיתוף בלבד - מודגש יותר */}
                       <div className="flex gap-4 mb-10">
                           <button onClick={handleShare} className="w-full py-5 rounded-[2rem] bg-slate-900 text-white font-black text-sm flex items-center justify-center gap-3 shadow-xl hover:bg-rose-600 transition-all active:scale-95">
                               <Share2 size={20} /> שתפי עם חברות
