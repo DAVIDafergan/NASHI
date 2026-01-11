@@ -65,8 +65,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   
   // Form States
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-  const [eventForm, setEventForm] = useState<Partial<EventItem & { notes?: string, targetAges?: string, hebrewDate?: string, ticketLink?: string, logo?: string }>>({ 
-    title: '', location: '', category: 'מוזיקה', image: '', date: '', isHero: false, 
+  const [eventForm, setEventForm] = useState<Partial<EventItem & { notes?: string, targetAges?: string, hebrewDate?: string, ticketLink?: string, logo?: string, time?: string }>>({ 
+    title: '', location: '', category: 'מוזיקה', image: '', date: '', time: '', isHero: false, 
     price: 0, earlyBirdPrice: 0, earlyBirdEndDate: '', sessions: [], notes: '', targetAges: '',
     hebrewDate: '', ticketLink: '', logo: ''
   });
@@ -537,7 +537,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב אירועים */}
         {activeTab === 'events' && (
           <div className="space-y-6 animate-fade-in">
-            <button onClick={() => { setEventForm({ title: '', location: '', category: 'מוזיקה', image: '', date: '', isHero: false, price: 0, earlyBirdPrice: 0, earlyBirdEndDate: '', sessions: [], notes: '', targetAges: '', hebrewDate: '', ticketLink: '', logo: '' }); setIsEventModalOpen(true); }} className="w-full md:w-auto bg-rose-600 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> אירוע חדש</button>
+            <button onClick={() => { setEventForm({ title: '', location: '', category: 'מוזיקה', image: '', date: '', time: '', isHero: false, price: 0, earlyBirdPrice: 0, earlyBirdEndDate: '', sessions: [], notes: '', targetAges: '', hebrewDate: '', ticketLink: '', logo: '' }); setIsEventModalOpen(true); }} className="w-full md:w-auto bg-rose-600 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> אירוע חדש</button>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {apiEvents.map(ev => (
                 <div key={ev._id || ev.id} className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100 animate-fade-in-up">
@@ -795,7 +795,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             <div className="space-y-4 text-right">
                 <img src={selectedInterview.image} className="w-32 h-32 rounded-3xl mx-auto object-cover" />
                 <h4 className="text-2xl font-black text-center">{selectedInterview.name}</h4>
-                <p className="font-bold text-rose-500 text-center">{selectedInterview.role}</p>
+                <p className="font-bold text-rose-50 text-center">{selectedInterview.role}</p>
                 <div className="space-y-4 mt-6">
                     {selectedInterview.questions?.map((q, i) => (
                         <div key={i} className="bg-slate-50 p-4 rounded-2xl">
@@ -944,9 +944,14 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <input required type="date" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={(eventForm.date || '').split('T')[0]} onChange={e=>setEventForm({...eventForm, date:e.target.value})} />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold pr-2 text-rose-400">סיום מכירה מוקדמת</label>
-                <input type="date" className="w-full p-4 bg-rose-50 rounded-2xl font-bold outline-none text-right border border-rose-100" value={eventForm.earlyBirdEndDate} onChange={e=>setEventForm({...eventForm, earlyBirdEndDate:e.target.value})} />
+                <label className="text-[10px] font-bold pr-2 text-blue-400">שעת האירוע</label>
+                <input type="time" className="w-full p-4 bg-blue-50/30 border border-blue-100 rounded-2xl font-bold outline-none text-right" value={eventForm.time || ''} onChange={e=>setEventForm({...eventForm, time:e.target.value})} />
               </div>
+          </div>
+
+          <div className="space-y-1">
+              <label className="text-[10px] font-bold pr-2 text-rose-400">סיום מכירה מוקדמת</label>
+              <input type="date" className="w-full p-4 bg-rose-50 rounded-2xl font-bold outline-none text-right border border-rose-100" value={eventForm.earlyBirdEndDate} onChange={e=>setEventForm({...eventForm, earlyBirdEndDate:e.target.value})} />
           </div>
 
           <input required placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-right" value={eventForm.location} onChange={e=>setEventForm({...eventForm, location:e.target.value})} />
