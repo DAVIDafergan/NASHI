@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2, ExternalLink } from 'lucide-react';
+import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2, ExternalLink, Lock } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // --- Types ---
@@ -51,25 +51,33 @@ const EventsPage = () => {
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [userRating, setUserRating] = useState(0);
 
+  // בדיקת התחברות
+  const token = localStorage.getItem('token');
+
   useEffect(() => {
-    fetch(`${API_URL}/events`)
-      .then(res => res.json())
-      .then(data => {
-        const formattedEvents = data.map((item: any) => ({
-            ...item,
-            id: item._id || item.id,
-            date: item.date || new Date().toISOString(),
-            image: item.image || 'https://via.placeholder.com/400x300',
-            ratings: item.ratings || []
-        }));
-        setEvents(formattedEvents);
+    // רק אם יש טוקן נבצע את הקריאה לשרת
+    if (token) {
+        fetch(`${API_URL}/events`)
+          .then(res => res.json())
+          .then(data => {
+            const formattedEvents = data.map((item: any) => ({
+                ...item,
+                id: item._id || item.id,
+                date: item.date || new Date().toISOString(),
+                image: item.image || 'https://via.placeholder.com/400x300',
+                ratings: item.ratings || []
+            }));
+            setEvents(formattedEvents);
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error("Error fetching events:", err);
+            setLoading(false);
+          });
+    } else {
         setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching events:", err);
-        setLoading(false);
-      });
-  }, []);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (location.state && location.state.category) {
@@ -84,6 +92,33 @@ const EventsPage = () => {
           setReviewSubmitted(false);
       }
   }, [selectedEvent]);
+
+  // הגנה על הדף - אם אין טוקן, נציג מסך התחברות מעוצב
+  if (!token) {
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[#fffcfc]" dir="rtl">
+            <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center text-rose-500 mb-6 shadow-inner border border-rose-100">
+                <Lock size={32} />
+            </div>
+            <h1 className="text-2xl font-black text-slate-800 mb-2">התוכן זמין לחברות בלבד</h1>
+            <p className="text-slate-500 mb-8 max-w-xs font-medium">כדי לצפות בלוח האירועים וליהנות מחוויות nashi, עלייך להיות מחוברת למערכת.</p>
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+                <button 
+                    onClick={() => navigate('/login')}
+                    className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg shadow-rose-100 hover:bg-rose-600 transition-all active:scale-95"
+                >
+                    התחברות למערכת
+                </button>
+                <button 
+                    onClick={() => navigate('/register')}
+                    className="w-full py-4 bg-white text-slate-400 border border-rose-100 rounded-2xl font-black hover:text-rose-500 transition-all"
+                >
+                    הרשמה מהירה
+                </button>
+            </div>
+        </div>
+    );
+  }
 
   const getDisplayPrice = (event: EventItem) => {
     if (event.earlyBirdPrice && event.earlyBirdEndDate) {
