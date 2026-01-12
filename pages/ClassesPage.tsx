@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, Clock, MapPin, Users, Heart, Phone, ArrowLeft, Info, Calendar, MessageCircle
+  Search, Clock, MapPin, Users, Heart, Phone, ArrowLeft, Info, Calendar, MessageCircle, Lock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,23 +32,58 @@ const ClassesPage = () => {
   const [filter, setFilter] = useState('');
   const [selectedDay, setSelectedDay] = useState('all');
 
+  // בדיקת התחברות
+  const token = localStorage.getItem('token');
+
   useEffect(() => {
-    fetch(`${API_URL}/classes`)
-      .then(res => res.json())
-      .then(data => {
-        const formattedClasses = data.map((item: any) => ({
-            ...item,
-            id: item._id || item.id,
-            image: item.image || 'https://via.placeholder.com/400x300',
-        }));
-        setClasses(formattedClasses);
+    // רק אם יש טוקן נבצע את הקריאה לשרת
+    if (token) {
+        fetch(`${API_URL}/classes`)
+          .then(res => res.json())
+          .then(data => {
+            const formattedClasses = data.map((item: any) => ({
+                ...item,
+                id: item._id || item.id,
+                image: item.image || 'https://via.placeholder.com/400x300',
+            }));
+            setClasses(formattedClasses);
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error("Error fetching classes:", err);
+            setLoading(false);
+          });
+    } else {
         setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching classes:", err);
-        setLoading(false);
-      });
-  }, []);
+    }
+  }, [token]);
+
+  // הגנה על הדף - אם אין טוקן, נציג מסך התחברות מעוצב
+  if (!token) {
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[#fffcfc]" dir="rtl">
+            <div className="w-20 h-20 bg-purple-50 rounded-3xl flex items-center justify-center text-purple-500 mb-6 shadow-inner border border-purple-100">
+                <Lock size={32} />
+            </div>
+            <h1 className="text-2xl font-black text-slate-800 mb-2">התוכן זמין לחברות בלבד</h1>
+            <p className="text-slate-500 mb-8 max-w-xs font-medium">כדי לצפות במערכת החוגים וליהנות מפעילויות nashi, עלייך להיות מחוברת למערכת.</p>
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+                <button 
+                    onClick={() => navigate('/login')}
+                    className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg shadow-purple-100 hover:bg-purple-700 transition-all active:scale-95"
+                >
+                    התחברות למערכת
+                </button>
+                <button 
+                    onClick={() => navigate('/register')}
+                    className="w-full py-4 bg-white text-slate-400 border border-purple-100 rounded-2xl font-black hover:text-purple-600 transition-all"
+                >
+                    הרשמה מהירה
+                </button>
+            </div>
+        </div>
+    );
+  }
 
   const filteredClasses = classes.filter(cls => {
     const matchesSearch = cls.title.includes(filter) || cls.category.includes(filter) || cls.instructor.includes(filter);
@@ -75,11 +110,11 @@ const ClassesPage = () => {
   );
 
   return (
-    <div className="space-y-6 w-full pb-24 p-4 md:p-8">
+    <div className="space-y-6 w-full pb-24 p-4 md:p-8 text-right" dir="rtl">
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div className="flex items-center gap-3 w-full">
-             <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-sm text-slate-600 hover:bg-slate-50"><ArrowLeft size={20}/></button>
+             <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-sm text-slate-600 hover:bg-slate-50 border border-slate-100"><ArrowLeft size={20}/></button>
              <div>
                 <h2 className="text-2xl md:text-3xl font-black text-slate-900">חוגים ופעילויות</h2>
                 <p className="text-slate-500 text-sm">מערכת השעות העירונית</p>
