@@ -93,7 +93,7 @@ const EventsPage = () => {
       }
   }, [selectedEvent]);
 
-  // הגנה על הדף - אם אין טוקן, נציג מסך התחברות מעוצב
+  // הגנה על הדף - אם אין טוקן, נציג מסך התחברות מעוצב שמפנה לדפים המתאימים
   if (!token) {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[#fffcfc]" dir="rtl">
@@ -103,12 +103,14 @@ const EventsPage = () => {
             <h1 className="text-2xl font-black text-slate-800 mb-2">התוכן זמין לחברות בלבד</h1>
             <p className="text-slate-500 mb-8 max-w-xs font-medium">כדי לצפות בלוח האירועים וליהנות מחוויות nashi, עלייך להיות מחוברת למערכת.</p>
             <div className="flex flex-col gap-3 w-full max-w-xs">
+                {/* לחיצה כאן תעביר לדף ההתחברות שלך */}
                 <button 
                     onClick={() => navigate('/login')}
                     className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg shadow-rose-100 hover:bg-rose-600 transition-all active:scale-95"
                 >
                     התחברות למערכת
                 </button>
+                {/* לחיצה כאן תעביר לדף ההרשמה שלך */}
                 <button 
                     onClick={() => navigate('/register')}
                     className="w-full py-4 bg-white text-slate-400 border border-rose-100 rounded-2xl font-black hover:text-rose-500 transition-all"
