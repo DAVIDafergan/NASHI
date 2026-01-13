@@ -4,7 +4,7 @@ import {
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
-  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send
+  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send, Loader2
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -112,6 +112,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
   // Broadcast State
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', content: '', image: '', logo: '' });
+  const [testEmail, setTestEmail] = useState('');
   const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
 
   useEffect(() => { if (user?.isAdmin) loadTabData(); }, [activeTab, user]);
@@ -286,6 +287,43 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     }
   };
 
+  // Test Email Logic
+  const handleSendTest = async () => {
+    if (!broadcastForm.subject || !broadcastForm.content) return alert("נא למלא נושא ותוכן להודעה");
+    if (!testEmail) return alert("נא להזין כתובת מייל למשלוח הניסיון");
+
+    setIsSendingBroadcast(true);
+    try {
+      const res = await fetch('https://nashi-production.up.railway.app/api/admin/broadcast-email', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ 
+          subject: broadcastForm.subject, 
+          content: broadcastForm.content,
+          image: broadcastForm.image,
+          logo: broadcastForm.logo,
+          isAdmin: user?.isAdmin,
+          isTest: true,
+          targetEmail: testEmail
+        })
+      });
+      
+      if (res.ok) {
+        alert("הודעת הניסיון נשלחה בהצלחה ל-" + testEmail);
+      } else {
+        const err = await res.json();
+        alert("שגיאה בשליחת הניסיון: " + (err.error || "נסי שוב"));
+      }
+    } catch (err) {
+      alert("שגיאה בתקשורת עם השרת");
+    } finally {
+      setIsSendingBroadcast(false);
+    }
+  };
+
   if (!user || !user.isAdmin) return <div className="p-20 text-center font-black text-rose-500 text-2xl animate-fade-in">גישה למנהלות בלבד.</div>;
 
   return (
@@ -439,13 +477,33 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                    </div>
                 </div>
 
+                {/* שליחת ניסיון */}
+                <div className="pt-6 border-t border-slate-100 flex flex-col md:flex-row gap-3 items-end">
+                  <div className="flex-1 space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 pr-2">מייל לבדיקה</label>
+                    <input 
+                      placeholder="מייל לניסיון..." 
+                      className="w-full p-3 bg-slate-50 rounded-xl font-bold text-right outline-none border border-transparent focus:border-rose-100 text-sm" 
+                      value={testEmail} 
+                      onChange={e => setTestEmail(e.target.value)} 
+                    />
+                  </div>
+                  <button 
+                    onClick={handleSendTest}
+                    disabled={isSendingBroadcast}
+                    className="bg-slate-100 text-slate-600 px-6 py-3 rounded-xl font-black text-sm hover:bg-slate-200 transition-colors shrink-0"
+                  >
+                    שלחי הודעת ניסיון
+                  </button>
+                </div>
+
                 <button 
                   onClick={handleSendBroadcast}
                   disabled={isSendingBroadcast}
                   className="w-full py-5 bg-rose-500 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all flex items-center justify-center gap-3 disabled:bg-slate-300"
                 >
                   {isSendingBroadcast ? (
-                    <><Loader2 className="animate-spin" /> שולח הודעות לכל המשתמשות... </>
+                    <><Loader2 className="animate-spin" /> שולח... </>
                   ) : (
                     <><Send size={24} /> שליחה מיידית לקהילת נשי</>
                   )}
