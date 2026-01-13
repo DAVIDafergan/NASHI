@@ -17,6 +17,10 @@ const UserSchema = new mongoose.Schema({
   isMemberRequested: { type: Boolean, default: false },
   isMemberApproved: { type: Boolean, default: false },
   
+  // שדות לאיפוס סיסמה (חדש)
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
+  
   likedEventIds: [{ type: String }],
   createdAt: { type: Date, default: Date.now }
 });

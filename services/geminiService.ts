@@ -1,29 +1,31 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const API_KEY = process.env.API_KEY || '';
+// משיכת המפתח מה-Variables של Railway
+const API_KEY = process.env.GEMINI_API_KEY || process.env.REACT_APP_GEMINI_API_KEY || '';
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// אתחול הספרייה של גוגל
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 export const getSmartRecommendation = async (userQuery: string): Promise<string> => {
   if (!API_KEY) {
-    return "אנא הגדירי מפתח API כדי להשתמש בעוזרת החכמה.";
+    return "אנא הגדירי מפתח API (GEMINI_API_KEY) בשרת כדי להשתמש בעוזרת החכמה.";
   }
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `
-        את עוזרת וירטואלית באפליקציה עירונית לתרבות נשים בשם "נשי".
-        המטרה שלך היא לעודד נשים להשתתף באירועי תרבות, להתנדב ולהעצים את עצמן.
-        עני בעברית בלבד בצורה נעימה, מעצימה וקצרה.
-        
-        שאלה של המשתמשת: ${userQuery}
-      `,
+    // שימוש במודל 1.5-flash המהיר והחסכוני ביותר למשימות מסוג זה
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash' 
     });
+
+    // מכיוון שאנחנו שולחים את ההקשר (Context) מה-Component, כאן אנחנו רק מעבירים אותו
+    const result = await model.generateContent(userQuery);
+    const response = await result.response;
+    const text = response.text();
     
-    return response.text || "מצטערת, לא הצלחתי לעבד את הבקשה כרגע.";
+    return text || "מצטערת, לא הצלחתי לעבד את הבקשה כרגע.";
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "חלה שגיאה בתקשורת עם העוזרת החכמה.";
+    // הודעה ידידותית למשתמשת במקרה של שגיאה
+    return "חלה שגיאה בתקשורת עם העוזרת החכמה. נסי שוב בעוד כמה רגעים.";
   }
 };

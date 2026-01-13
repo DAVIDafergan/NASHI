@@ -1,6 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto'; // תוספת עבור ייצור טוקנים מאובטחים
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
     Announcement, // הוספת המודל החדש לייבוא
@@ -104,6 +105,53 @@ router.post('/login', async (req, res) => {
         res.json({ token, user: { ...user.toObject(), id: user._id } });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// --- תוספת: שחזור ואיפוס סיסמה ---
+
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'המייל לא נמצא במערכת' });
+
+        const token = crypto.randomBytes(20).toString('hex');
+        user.resetPasswordToken = token;
+        user.resetPasswordExpires = Date.now() + 3600000; // שעה אחת
+        await user.save();
+
+        const resetUrl = `${process.env.FRONTEND_URL || req.protocol + '://' + req.get('host')}/#/reset-password/${token}`;
+
+        await req.resend.emails.send({
+            from: 'נשי <updates@nashi-co.com>',
+            to: [email],
+            subject: 'איפוס סיסמה - אתר נשי',
+            html: `<h3>שלום לך,</h3><p>לחצי על הכפתור כדי לאפס את הסיסמה שלך. הלינק בתוקף לשעה אחת.</p>
+                   <a href="${resetUrl}" style="background:#fb7185; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block;">איפוס סיסמה</a>`
+        });
+
+        res.json({ success: true, message: 'מייל איפוס נשלח' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/reset-password/:token', async (req, res) => {
+    try {
+        const user = await User.findOne({
+            resetPasswordToken: req.params.token,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) return res.status(400).json({ error: 'הלינק לא תקף או שפג תוקפו' });
+
+        user.password = await bcrypt.hash(req.body.password, 10);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.json({ success: true, message: 'הסיסמה עודכנה בהצלחה' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- סוף תוספת שחזור סיסמה ---
 
 router.put('/users/:id', authenticate, async (req, res) => {
     try {
@@ -416,6 +464,30 @@ router.post('/admin/users/:id/points', authenticate, isAdmin, async (req, res) =
         res.json({ success: true, newPoints: user.points });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// --- תוספת: שליחת תפוצה לכל המשתמשות (ADMIN) ---
+
+router.post('/admin/broadcast', authenticate, isAdmin, async (req, res) => {
+    try {
+        const { subject, content } = req.body;
+        const users = await User.find({}, 'email');
+        const emailList = users.map(u => u.email);
+
+        if (emailList.length === 0) return res.status(400).json({ error: 'אין משתמשות רשומות' });
+
+        await req.resend.emails.send({
+            from: 'נשי - עדכונים <updates@nashi-co.com>',
+            to: ['updates@nashi-co.com'],
+            bcc: emailList,
+            subject: subject,
+            html: `<div dir="rtl" style="font-family: sans-serif;">${content}</div>`
+        });
+
+        res.json({ success: true, message: `הודעה נשלחה ל-${emailList.length} משתמשות` });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- סוף תוספת שליחת תפוצה ---
 
 router.post('/admin/gifts', authenticate, isAdmin, async (req, res) => {
     try {
