@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // משיכת המפתח מה-Variables של Railway
-const API_KEY = process.env.GEMINI_API_KEY || process.env.REACT_APP_GEMINI_API_KEY || '';
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 // אתחול הספרייה של גוגל
 const genAI = new GoogleGenerativeAI(API_KEY);

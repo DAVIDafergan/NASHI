@@ -601,4 +601,49 @@ router.post('/membership/request', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// נתיב לשליחת מייל בתפוצה רחבה - רק למנהל
+router.post('/admin/broadcast-email', async (req, res) => {
+  const { subject, content, isAdmin } = req.body;
+
+  // אבטחה: וודאי שרק מנהל יכול להפעיל את הפונקציה
+  if (!isAdmin) {
+    return res.status(403).json({ error: "אין לך הרשאה לביצוע פעולה זו" });
+  }
+
+  try {
+    // 1. שליפת כל המשתמשות שנרשמו לאתר מה-MongoDB
+    const users = await User.find({}, 'email name'); 
+    const emailList = users.map(user => user.email);
+
+    if (emailList.length === 0) {
+      return res.status(400).json({ error: "לא נמצאו משתמשות ברשימת התפוצה" });
+    }
+
+    // 2. שליחה קבוצתית דרך Resend (Batch)
+    // הערה: Resend מאפשר לשלוח עד 100 מיילים בקריאה אחת ב-Batch
+    await resend.batch.send(
+      users.map(user => ({
+        from: 'נשי - תרבות נשים <updates@nashi-co.com>',
+        to: user.email,
+        subject: subject,
+        html: `
+          <div dir="rtl" style="font-family: sans-serif; border: 1px solid #eee; padding: 20px; border-radius: 15px;">
+            <h2 style="color: #f43f5e;">שלום ${user.name},</h2>
+            <div style="font-size: 16px; line-height: 1.6; color: #334155;">
+              ${content.replace(/\n/g, '<br>')}
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 12px; color: #94a3b8;">נשלח אליך כי את חברה בקהילת "נשי".</p>
+          </div>
+        `
+      }))
+    );
+
+    res.json({ message: `ההודעה נשלחה בהצלחה ל-${emailList.length} משתמשות` });
+  } catch (error) {
+    console.error("Broadcast Error:", error);
+    res.status(500).json({ error: "חלה שגיאה בשליחת התפוצה" });
+  }
+});
+
 export default router;

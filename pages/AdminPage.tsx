@@ -4,7 +4,7 @@ import {
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
-  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock
+  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -46,7 +46,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, v
 );
 
 const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> = ({ user }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast'>('summary');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -109,6 +109,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [currentParticipants, setCurrentParticipants] = useState<any[]>([]);
 
   const [pointsSettings, setPointsSettings] = useState({ pointsPerRegister: 50, pointsPerEventJoin: 10, pointsPerShare: 5 });
+
+  // Broadcast State
+  const [broadcastForm, setBroadcastForm] = useState({ subject: '', content: '', image: '', logo: '' });
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
 
   useEffect(() => { if (user?.isAdmin) loadTabData(); }, [activeTab, user]);
 
@@ -246,6 +250,42 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
       alert(`לינק הטבה נוצר: ${res.link}\nשלחי אותו למשתמשת!`);
   };
 
+  // Broadcast Email Logic
+  const handleSendBroadcast = async () => {
+    if (!broadcastForm.subject || !broadcastForm.content) return alert("נא למלא נושא ותוכן להודעה");
+    if (!window.confirm(`האם את בטוחה שברצונך לשלוח את המייל לכל ${apiUsers.length} המשתמשות הרשומות?`)) return;
+
+    setIsSendingBroadcast(true);
+    try {
+      const res = await fetch('https://nashi-production.up.railway.app/api/admin/broadcast-email', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ 
+          subject: broadcastForm.subject, 
+          content: broadcastForm.content,
+          image: broadcastForm.image,
+          logo: broadcastForm.logo,
+          isAdmin: user?.isAdmin 
+        })
+      });
+      
+      if (res.ok) {
+        alert("התפוצה נשלחה בהצלחה לכל המשתמשות!");
+        setBroadcastForm({ subject: '', content: '', image: '', logo: '' });
+      } else {
+        const err = await res.json();
+        alert("שגיאה בשליחה: " + (err.error || "נסי שוב מאוחר יותר"));
+      }
+    } catch (err) {
+      alert("שגיאה בתקשורת עם השרת");
+    } finally {
+      setIsSendingBroadcast(false);
+    }
+  };
+
   if (!user || !user.isAdmin) return <div className="p-20 text-center font-black text-rose-500 text-2xl animate-fade-in">גישה למנהלות בלבד.</div>;
 
   return (
@@ -256,6 +296,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {[
            { id: 'summary', label: 'סיכום חודשי', icon: <BarChart3 size={16} /> },
            { id: 'approvals', label: 'אישורים', icon: <CheckCircle size={16} /> },
+           { id: 'broadcast', label: 'שליחת תפוצה', icon: <Send size={16} /> },
            { id: 'announcements', label: 'הודעות הנהלה', icon: <Bell size={16} /> },
            { id: 'users', label: 'משתמשים', icon: <Users size={16} /> },
            { id: 'events', label: 'אירועים', icon: <Calendar size={16} /> },
@@ -347,6 +388,71 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                    </div>
                 </div>
               </div>
+          </div>
+        )}
+
+        {/* טאב שליחת תפוצה - חדש */}
+        {activeTab === 'broadcast' && (
+          <div className="max-w-3xl mx-auto space-y-8 animate-fade-in text-right">
+            <div className="bg-white p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8">
+              <div className="flex justify-between items-center border-b pb-4">
+                <h3 className="text-3xl font-black text-slate-900 flex items-center gap-3">
+                  <Megaphone className="text-rose-500" size={32} /> שליחת הודעה לכל הקהילה
+                </h3>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-slate-500 pr-2">נושא המייל</label>
+                  <input 
+                    placeholder="נושא מרגש שיגרום להן לפתוח את המייל..." 
+                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none focus:ring-2 focus:ring-rose-100" 
+                    value={broadcastForm.subject} 
+                    onChange={e => setBroadcastForm({...broadcastForm, subject: e.target.value})} 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-slate-500 pr-2">תוכן ההודעה</label>
+                  <textarea 
+                    placeholder="כתבי כאן את התוכן המפורט... (אפשר להשתמש בירידת שורות)" 
+                    className="w-full p-6 bg-slate-50 rounded-[2rem] font-bold text-right outline-none focus:ring-2 focus:ring-rose-100 min-h-[250px] leading-relaxed" 
+                    value={broadcastForm.content} 
+                    onChange={e => setBroadcastForm({...broadcastForm, content: e.target.value})} 
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                      <label className="text-sm font-black text-slate-500 pr-2">תמונה ראשית להודעה (אופציונלי)</label>
+                      <div className="relative border-2 border-dashed p-6 text-center rounded-2xl">
+                        <input type="file" onChange={e => handleFileUpload(e, setBroadcastForm, 'image')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                        {broadcastForm.image ? <img src={broadcastForm.image} className="h-24 mx-auto rounded-lg shadow-sm" /> : <div className="flex flex-col items-center gap-2 text-slate-400"><ImageIcon size={32}/> <span className="text-xs font-bold">לחצי להעלאת תמונה</span></div>}
+                      </div>
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-sm font-black text-slate-500 pr-2">לוגו קטן למעלה (אופציונלי)</label>
+                      <div className="relative border-2 border-dashed p-6 text-center rounded-2xl">
+                        <input type="file" onChange={e => handleFileUpload(e, setBroadcastForm, 'logo')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                        {broadcastForm.logo ? <img src={broadcastForm.logo} className="h-24 mx-auto rounded-lg shadow-sm object-contain" /> : <div className="flex flex-col items-center gap-2 text-slate-400"><Sparkles size={32}/> <span className="text-xs font-bold">לחצי להעלאת לוגו</span></div>}
+                      </div>
+                   </div>
+                </div>
+
+                <button 
+                  onClick={handleSendBroadcast}
+                  disabled={isSendingBroadcast}
+                  className="w-full py-5 bg-rose-500 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all flex items-center justify-center gap-3 disabled:bg-slate-300"
+                >
+                  {isSendingBroadcast ? (
+                    <><Loader2 className="animate-spin" /> שולח הודעות לכל המשתמשות... </>
+                  ) : (
+                    <><Send size={24} /> שליחה מיידית לקהילת נשי</>
+                  )}
+                </button>
+                <p className="text-center text-[10px] font-bold text-slate-400">המייל יישלח לכל הכתובות המופיעות בלשונית "משתמשים" דרך Resend.</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -864,9 +970,9 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           <textarea required placeholder="כתבי את ההשראה כאן..." className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right h-32" value={inspirationForm.text} onChange={e => setInspirationForm({ ...inspirationForm, text: e.target.value })} />
           <input required placeholder="שם המצוטט (למשל: רבי נחמן)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.author} onChange={e => setInspirationForm({ ...inspirationForm, author: e.target.value })} />
           <div className="space-y-1">
-             <label className="text-[10px] text-slate-400 font-black">תזמון פרסום (אופציונלי):</label>
-             <input type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.scheduledAt} onChange={e => setInspirationForm({ ...inspirationForm, scheduledAt: e.target.value })} />
-             <p className="text-[10px] text-slate-400 pr-2">השאירי ריק לפרסום מיידי</p>
+              <label className="text-[10px] text-slate-400 font-black">תזמון פרסום (אופציונלי):</label>
+              <input type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.scheduledAt} onChange={e => setInspirationForm({ ...inspirationForm, scheduledAt: e.target.value })} />
+              <p className="text-[10px] text-slate-400 pr-2">השאירי ריק לפרסום מיידי</p>
           </div>
           <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמירת השראה</button>
         </form>
