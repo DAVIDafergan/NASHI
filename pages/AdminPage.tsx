@@ -114,8 +114,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', content: '', image: '', logo: '' });
   const [testEmail, setTestEmail] = useState('');
   const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
-  const [isSendingTest, setIsSendingTest] = useState(false); // מצב טעינה נפרד לניסיון
-  const [isBroadcastPreviewOpen, setIsBroadcastPreviewOpen] = useState(false); // מודאל תצוגה מקדימה לתפוצה
 
   useEffect(() => { if (user?.isAdmin) loadTabData(); }, [activeTab, user]);
 
@@ -253,8 +251,11 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
       alert(`לינק הטבה נוצר: ${res.link}\nשלחי אותו למשתמשת!`);
   };
 
-  // Broadcast Email Logic - אישור סופי
+  // Broadcast Email Logic
   const handleSendBroadcast = async () => {
+    if (!broadcastForm.subject || !broadcastForm.content) return alert("נא למלא נושא ותוכן להודעה");
+    if (!window.confirm(`האם את בטוחה שברצונך לשלוח את המייל לכל ${apiUsers.length} המשתמשות הרשומות?`)) return;
+
     setIsSendingBroadcast(true);
     try {
       const res = await fetch('https://nashi-production.up.railway.app/api/admin/broadcast-email', {
@@ -268,15 +269,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           content: broadcastForm.content,
           image: broadcastForm.image,
           logo: broadcastForm.logo,
-          isAdmin: user?.isAdmin,
-          isTest: false
+          isAdmin: user?.isAdmin 
         })
       });
       
       if (res.ok) {
         alert("התפוצה נשלחה בהצלחה לכל המשתמשות!");
         setBroadcastForm({ subject: '', content: '', image: '', logo: '' });
-        setIsBroadcastPreviewOpen(false);
       } else {
         const err = await res.json();
         alert("שגיאה בשליחה: " + (err.error || "נסי שוב מאוחר יותר"));
@@ -293,7 +292,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     if (!broadcastForm.subject || !broadcastForm.content) return alert("נא למלא נושא ותוכן להודעה");
     if (!testEmail) return alert("נא להזין כתובת מייל למשלוח הניסיון");
 
-    setIsSendingTest(true);
+    setIsSendingBroadcast(true);
     try {
       const res = await fetch('https://nashi-production.up.railway.app/api/admin/broadcast-email', {
         method: 'POST',
@@ -321,7 +320,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     } catch (err) {
       alert("שגיאה בתקשורת עם השרת");
     } finally {
-      setIsSendingTest(false);
+      setIsSendingBroadcast(false);
     }
   };
 
@@ -394,7 +393,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="סה״כ משתמשות" value={apiUsers.length} icon={Users2} color="bg-blue-500" trend="+12%" />
                 <StatCard title="חוגים פעילים" value={apiClasses.length} icon={GraduationCap} color="bg-purple-500" />
-                <StatCard title="אירועים החודש" value={apiUsers.reduce((acc, u) => acc + (u.points || 0), 0).toLocaleString()} icon={TrendingUp} color="bg-emerald-500" trend="שיא חודשי" />
+                <StatCard title="אירועים החודש" value={apiEvents.length} icon={Calendar} color="bg-rose-500" />
+                <StatCard title="נקודות שנצברו" value={apiUsers.reduce((acc, u) => acc + (u.points || 0), 0).toLocaleString()} icon={TrendingUp} color="bg-emerald-500" trend="שיא חודשי" />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -429,7 +429,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב שליחת תפוצה */}
+        {/* טאב שליחת תפוצה - חדש */}
         {activeTab === 'broadcast' && (
           <div className="max-w-3xl mx-auto space-y-8 animate-fade-in text-right">
             <div className="bg-white p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8">
@@ -477,7 +477,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                    </div>
                 </div>
 
-                {/* שליחת ניסיון - מופרד לחלוטין */}
+                {/* שליחת ניסיון */}
                 <div className="pt-6 border-t border-slate-100 flex flex-col md:flex-row gap-3 items-end">
                   <div className="flex-1 space-y-2">
                     <label className="text-[10px] font-black text-slate-400 pr-2">מייל לבדיקה</label>
@@ -490,30 +490,31 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   </div>
                   <button 
                     onClick={handleSendTest}
-                    disabled={isSendingTest || isSendingBroadcast}
-                    className="bg-slate-100 text-slate-600 px-6 py-3 rounded-xl font-black text-sm hover:bg-slate-200 transition-colors shrink-0 flex items-center justify-center gap-2"
+                    disabled={isSendingBroadcast}
+                    className="bg-slate-100 text-slate-600 px-6 py-3 rounded-xl font-black text-sm hover:bg-slate-200 transition-colors shrink-0"
                   >
-                    {isSendingTest ? <Loader2 className="animate-spin" size={16}/> : 'שלחי הודעת ניסיון'}
+                    שלחי הודעת ניסיון
                   </button>
                 </div>
 
-                {/* כפתור פתיחת תצוגה מקדימה ואישור */}
                 <button 
-                  onClick={() => {
-                    if (!broadcastForm.subject || !broadcastForm.content) return alert("נא למלא נושא ותוכן");
-                    setIsBroadcastPreviewOpen(true);
-                  }}
-                  disabled={isSendingBroadcast || isSendingTest}
+                  onClick={handleSendBroadcast}
+                  disabled={isSendingBroadcast}
                   className="w-full py-5 bg-rose-500 text-white rounded-[2rem] font-black shadow-xl hover:bg-rose-600 transition-all flex items-center justify-center gap-3 disabled:bg-slate-300"
                 >
-                  <Eye size={24} /> תצוגה מקדימה ואישור שליחה לכולן
+                  {isSendingBroadcast ? (
+                    <><Loader2 className="animate-spin" /> שולח... </>
+                  ) : (
+                    <><Send size={24} /> שליחה מיידית לקהילת נשי</>
+                  )}
                 </button>
+                <p className="text-center text-[10px] font-bold text-slate-400">המייל יישלח לכל הכתובות המופיעות בלשונית "משתמשים" דרך Resend.</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* טאב הודעות הנהלה */}
+        {/* טאב הודעות הנהלה - כולל רשימת הודעות */}
         {activeTab === 'announcements' && (
           <div className="space-y-6 animate-fade-in">
              <button onClick={() => { setAnnForm({ _id: '', title: '', content: '' }); setIsAnnModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Bell size={20}/> הודעה חדשה</button>
@@ -731,6 +732,11 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   <h4 className="font-black text-lg">{c.title}</h4>
                   <p className="text-xs text-slate-500 font-bold">{c.instructor} | {c.gender}</p>
                   <p className="text-[10px] text-slate-400 mt-1">{c.day} ב-{c.time} | {c.location}</p>
+                  {/* השדות שהוחזרו לתצוגה */}
+                  <div className="mt-2 space-y-1">
+                    <p className="text-[10px] text-blue-500 font-black flex items-center gap-1"><Phone size={10}/> הרשמה: {c.registrationPhone}</p>
+                    <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Users size={10}/> מדריכה: {c.contactPhone}</p>
+                  </div>
                   <div className="flex gap-2 mt-4">
                     <button onClick={() => { setClassForm(c); setIsClassModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><Edit size={16}/></button>
                     <button onClick={() => handleDelete(c._id || c.id, 'class', c.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
@@ -741,7 +747,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב הגרלות */}
+        {/* טאב הגרלות משודרג */}
         {activeTab === 'lotteries' && (
           <div className="space-y-6 animate-fade-in">
             <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה חדשה</button>
@@ -753,7 +759,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     <div className="flex justify-between items-start">
                         <h4 className="font-black text-lg">{l.title}</h4>
                         <span className={`text-[8px] font-black px-2 py-1 rounded-full ${l.participationType === 'mission' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
-                            {l.participationType === 'mission' ? 'משימה מיוחדת' : 'מבוסס נקודות'}
+                            {l.participationType === 'mission' ? 'מבוסס משימה' : 'מבוסס נקודות'}
                         </span>
                     </div>
                     <div className="space-y-1 mt-2">
@@ -801,9 +807,11 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב אשת השבוע */}
+        {/* טאב אשת השבוע עם אישור ראיונות */}
         {activeTab === 'personality' && (
           <div className="max-w-4xl mx-auto space-y-12 animate-fade-in text-right">
+            
+            {/* ראיונות הממתינים לאישור */}
             {pendingInterviews.length > 0 && (
                 <div className="space-y-6">
                     <h3 className="text-xl font-black text-orange-500 pr-4 flex items-center gap-2"><Clock/> ראיונות הממתינים לאישורך:</h3>
@@ -854,6 +862,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
               <button onClick={async () => { 
                 try {
+                  // שמירת השאלות לפני יצירת הלינק כדי שיישמרו לפעם הבאה (עדכון תבנית)
                   await api.updatePersonality(personalityForm);
                   const res = await api.generateInterviewLink(personalityForm); 
                   const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
@@ -870,6 +879,27 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert("הלינק הועתק!"); }} className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"><Copy size={16}/></button>
                 </div>
               )}
+            </div>
+
+            <div className="space-y-6">
+                <h4 className="font-black text-xl text-slate-700 pr-4">ארכיון נשות המעגל (כל הראיונות):</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {allInterviews.map((interview) => (
+                    <div key={interview._id || (interview as any).id} className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100 flex justify-between items-center group">
+                       <div className="flex items-center gap-3">
+                          <img src={interview.image} className="w-12 h-12 rounded-xl object-cover shadow-sm" />
+                          <div>
+                            <p className="font-black text-slate-800 leading-none">{interview.name}</p>
+                            <p className="text-[10px] text-slate-400 mt-1">{interview.role}</p>
+                          </div>
+                       </div>
+                       <div className="flex gap-2">
+                          {interview.isActive ? <span className="bg-emerald-50 text-emerald-600 text-[8px] font-black px-2 py-1 rounded-full border border-emerald-100">פעילה באתר</span> : null}
+                          <button onClick={() => handleDelete(interview._id || (interview as any).id, 'personality', interview.name)} className="p-2 text-red-400 hover:bg-red-50 rounded-xl"><Trash2 size={18}/></button>
+                       </div>
+                    </div>
+                  ))}
+                </div>
             </div>
           </div>
         )}
@@ -893,28 +923,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </div>
 
-      {/* מודאל תצוגה מקדימה לתפוצה - חדש */}
-      <Modal isOpen={isBroadcastPreviewOpen} onClose={() => setIsBroadcastPreviewOpen(false)} title="תצוגה מקדימה של התפוצה">
-        <div className="space-y-6 text-right">
-          <div className="border border-slate-100 rounded-3xl overflow-hidden bg-white shadow-inner">
-             {broadcastForm.logo && <div className="p-4 flex justify-center border-b"><img src={broadcastForm.logo} className="h-10 object-contain" /></div>}
-             {broadcastForm.image && <img src={broadcastForm.image} className="w-full h-40 object-cover" />}
-             <div className="p-6">
-               <h4 className="text-xl font-black text-slate-800 mb-2">{broadcastForm.subject}</h4>
-               <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{broadcastForm.content}</p>
-             </div>
-             <div className="bg-slate-50 p-4 text-center text-[10px] text-slate-400 font-bold">המייל יישלח לכל {apiUsers.length} המשתמשות בקהילה.</div>
-          </div>
-          <button 
-            onClick={handleSendBroadcast} 
-            disabled={isSendingBroadcast} 
-            className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg hover:bg-rose-600 flex items-center justify-center gap-2"
-          >
-            {isSendingBroadcast ? <Loader2 className="animate-spin" size={20}/> : <><Send size={18}/> אישור ושליחה לכולן עכשיו</>}
-          </button>
-          <button onClick={() => setIsBroadcastPreviewOpen(false)} className="w-full py-2 text-slate-400 text-xs font-bold">חזרה לעריכה</button>
-        </div>
-      </Modal>
+      {/* מודאלים חדשים */}
 
       {/* מודאל הודעת הנהלה */}
       <Modal isOpen={isAnnModalOpen} onClose={() => setIsAnnModalOpen(false)} title={annForm._id ? "עריכת הודעה" : "הוספת הודעת הנהלה"}>
@@ -925,6 +934,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               else await api.createAnnouncement(annForm);
               alert("הודעה נשמרה!");
               setIsAnnModalOpen(false); 
+              // עדכון רשימה מיידי
               const anns = await api.getAnnouncements();
               setApiAnnouncements(anns || []);
           } catch(err: any) { alert("שגיאה בשמירה"); }
@@ -1070,6 +1080,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             setIsEventModalOpen(false); loadTabData();
         }} className="space-y-4">
           <input required placeholder="שם האירוע" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.title} onChange={e=>setEventForm({...eventForm, title:e.target.value})} />
+          
           <select required className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.category} onChange={e=>setEventForm({...eventForm, category:e.target.value})}>
               <option value="מוזיקה">מוזיקה</option>
               <option value="העשרה">העשרה</option>
@@ -1079,23 +1090,78 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               <option value="אופנה">אופנה</option>
               <option value="אחר">אחר</option>
           </select>
+
           <div className="grid grid-cols-2 gap-2">
               <input placeholder="תאריך עברי (אופציונלי)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.hebrewDate} onChange={e=>setEventForm({...eventForm, hebrewDate:e.target.value})} />
               <input placeholder="לינק לרכישת כרטיסים" className="w-full p-4 bg-blue-50 border border-blue-100 text-blue-700 rounded-2xl font-bold outline-none text-left" dir="ltr" value={eventForm.ticketLink} onChange={e=>setEventForm({...eventForm, ticketLink:e.target.value})} />
           </div>
+
           <div className="grid grid-cols-2 gap-2 text-right">
-              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-slate-400">מחיר קבוע</label><input required type="number" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.price} onChange={e=>setEventForm({...eventForm, price:Number(e.target.value)})} /></div>
-              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-rose-400">מחיר מכירה מוקדמת</label><input type="number" className="w-full p-4 bg-rose-50 rounded-2xl font-bold outline-none text-right border border-rose-100" value={eventForm.earlyBirdPrice} onChange={e=>setEventForm({...eventForm, earlyBirdPrice:Number(e.target.value)})} /></div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-slate-400">מחיר קבוע</label>
+                <input required placeholder="מחיר" type="number" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={eventForm.price} onChange={e=>setEventForm({...eventForm, price:Number(e.target.value)})} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-rose-400">מחיר מכירה מוקדמת</label>
+                <input placeholder="מכירה מוקדמת" type="number" className="w-full p-4 bg-rose-50 rounded-2xl font-bold outline-none text-right border border-rose-100" value={eventForm.earlyBirdPrice} onChange={e=>setEventForm({...eventForm, earlyBirdPrice:Number(e.target.value)})} />
+              </div>
           </div>
+
           <div className="grid grid-cols-2 gap-2 text-right">
-              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-slate-400">תאריך</label><input required type="date" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={(eventForm.date || '').split('T')[0]} onChange={e=>setEventForm({...eventForm, date:e.target.value})} /></div>
-              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-blue-400">שעה</label><input type="time" className="w-full p-4 bg-blue-50/30 border border-blue-100 rounded-2xl font-bold outline-none text-right" value={eventForm.time || ''} onChange={e=>setEventForm({...eventForm, time:e.target.value})} /></div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-slate-400">תאריך האירוע</label>
+                <input required type="date" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={(eventForm.date || '').split('T')[0]} onChange={e=>setEventForm({...eventForm, date:e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold pr-2 text-blue-400">שעת האירוע</label>
+                <input type="time" className="w-full p-4 bg-blue-50/30 border border-blue-100 rounded-2xl font-bold outline-none text-right" value={eventForm.time || ''} onChange={e=>setEventForm({...eventForm, time:e.target.value})} />
+              </div>
           </div>
+
+          <div className="space-y-1">
+              <label className="text-[10px] font-bold pr-2 text-rose-400">סיום מכירה מוקדמת</label>
+              <input type="date" className="w-full p-4 bg-rose-50 rounded-2xl font-bold outline-none text-right border border-rose-100" value={eventForm.earlyBirdEndDate} onChange={e=>setEventForm({...eventForm, earlyBirdEndDate:e.target.value})} />
+          </div>
+
           <input required placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-right" value={eventForm.location} onChange={e=>setEventForm({...eventForm, location:e.target.value})} />
+          
           <div className="grid grid-cols-2 gap-2 bg-slate-50 p-4 rounded-2xl">
-             <div className="space-y-1"><p className="text-[10px] font-black text-slate-400 mb-1">תמונה ראשית:</p><div className="relative h-16 border-2 border-dashed rounded-xl flex items-center justify-center"><input type="file" onChange={e => handleFileUpload(e, setEventForm, 'image')} className="absolute inset-0 opacity-0 cursor-pointer" />{eventForm.image ? <img src={eventForm.image} className="h-full object-cover rounded-lg" /> : <ImageIcon size={20} className="text-slate-300"/>}</div></div>
-             <div className="space-y-1"><p className="text-[10px] font-black text-slate-400 mb-1">לוגו:</p><div className="relative h-16 border-2 border-dashed rounded-xl flex items-center justify-center"><input type="file" onChange={e => handleFileUpload(e, setEventForm, 'logo')} className="absolute inset-0 opacity-0 cursor-pointer" />{eventForm.logo ? <img src={eventForm.logo} className="h-full object-contain rounded-lg" /> : <Sparkles size={20} className="text-slate-300"/>}</div></div>
+             <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 mb-1">תמונת אירוע ראשית:</p>
+                <div className="relative h-16 border-2 border-dashed rounded-xl flex items-center justify-center">
+                    <input type="file" onChange={e => handleFileUpload(e, setEventForm, 'image')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                    {eventForm.image ? <img src={eventForm.image} className="h-full object-cover rounded-lg" /> : <ImageIcon size={20} className="text-slate-300"/>}
+                </div>
+             </div>
+             <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 mb-1">לוגו קטן (אופציונלי):</p>
+                <div className="relative h-16 border-2 border-dashed rounded-xl flex items-center justify-center">
+                    <input type="file" onChange={e => handleFileUpload(e, setEventForm, 'logo')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                    {eventForm.logo ? <img src={eventForm.logo} className="h-full object-contain rounded-lg" /> : <Sparkles size={20} className="text-slate-300"/>}
+                </div>
+             </div>
           </div>
+
+          <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+             <div className="flex justify-between items-center">
+                <h4 className="font-black text-sm text-slate-700">מפגשים נוספים באירוע</h4>
+                <button type="button" onClick={addEventSession} className="text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg flex items-center gap-1"><Plus size={14}/> הוספת מפגש</button>
+             </div>
+             {eventForm.sessions?.map((session, idx) => (
+                <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded-xl border border-slate-200">
+                    <span className="text-[10px] font-black text-slate-400 shrink-0">מפגש {idx + 1}</span>
+                    <input placeholder="שם המפגש" className="flex-1 p-2 text-xs bg-slate-50 rounded-lg text-right outline-none" value={session.name} onChange={e => updateEventSession(idx, 'name', e.target.value)} />
+                    <input type="date" className="w-32 p-2 text-xs bg-slate-50 rounded-lg text-right outline-none" value={session.date} onChange={e => updateEventSession(idx, 'date', e.target.value)} />
+                    <button type="button" onClick={() => {
+                      const newSessions = [...(eventForm.sessions || [])];
+                      newSessions.splice(idx, 1);
+                      setEventForm({ ...eventForm, sessions: newSessions });
+                    }} className="text-red-400"><Trash2 size={16}/></button>
+                </div>
+             ))}
+          </div>
+
+          <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-2xl text-right"><input type="checkbox" className="w-4 h-4" checked={eventForm.isHero} onChange={e=>setEventForm({...eventForm, isHero:e.target.checked})}/><label className="text-sm font-bold">הצגה בסליידר הראשי</label></div>
           <button className="w-full py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg">שמירה</button>
         </form>
       </Modal>
@@ -1110,15 +1176,28 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         }} className="space-y-4 text-right">
           <input placeholder="שם החוג" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.title} onChange={e=>setClassForm({...classForm, title:e.target.value})} />
           <div className="grid grid-cols-2 gap-2 text-right">
-              <select className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.gender} onChange={e=>setClassForm({...classForm, gender:e.target.value as any})}><option value="נשים">נשים</option><option value="בנות">בנות</option><option value="בנים">בנים</option></select>
+              <select className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.gender} onChange={e=>setClassForm({...classForm, gender:e.target.value as any})}>
+                <option value="נשים">נשים</option><option value="בנות">בנות</option><option value="בנים">בנים</option>
+              </select>
               <input placeholder="גילאים" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.ageGroup} onChange={e=>setClassForm({...classForm, ageGroup:e.target.value})} />
           </div>
           <div className="grid grid-cols-2 gap-2 text-right">
-              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-slate-400">מחיר</label><input type="number" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.price} onChange={e=>setClassForm({...classForm, price:Number(e.target.value)})} /></div>
-              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-slate-400">מדריך/ה</label><input placeholder="שם המדריך/ה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.instructor} onChange={e=>setClassForm({...classForm, instructor:e.target.value})} /></div>
+              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-slate-400">מחיר</label><input placeholder="מחיר" type="number" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={classForm.price} onChange={e=>setClassForm({...classForm, price:Number(e.target.value)})} /></div>
+              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-slate-400">שם המדריך/ה</label><input placeholder="שם המדריך/ה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.instructor} onChange={e=>setClassForm({...classForm, instructor:e.target.value})} /></div>
           </div>
-          <input placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.location} onChange={e=>setClassForm({...classForm, location:e.target.value})} />
-          <div className="relative border-2 border-dashed p-6 text-center rounded-2xl"><input type="file" onChange={e => handleFileUpload(e, setClassForm)} className="absolute inset-0 opacity-0 cursor-pointer" />{classForm.image ? <img src={classForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה</p>}</div>
+          <div className="grid grid-cols-2 gap-2 text-right">
+              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-slate-400">טלפון מדריך/ה</label><input placeholder="טלפון מדריך" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.contactPhone} onChange={e=>setClassForm({...classForm, contactPhone:e.target.value})} /></div>
+              <div className="space-y-1"><label className="text-[10px] font-bold pr-2 text-blue-400">טלפון להרשמה</label><input placeholder="טלפון להרשמה" className="w-full p-4 bg-blue-50/50 border border-blue-100 rounded-2xl font-bold text-right outline-none" value={classForm.registrationPhone} onChange={e=>setClassForm({...classForm, registrationPhone:e.target.value})} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-right">
+              <input placeholder="יום בשבוע" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.day} onChange={e=>setClassForm({...classForm, day:e.target.value})} />
+              <input type="time" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.time} onChange={e=>setClassForm({...classForm, time:e.target.value})} />
+          </div>
+          <input placeholder="מיקום החוג" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={classForm.location} onChange={e=>setClassForm({...classForm, location:e.target.value})} />
+          <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
+              <input type="file" onChange={e => handleFileUpload(e, setClassForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+              {classForm.image ? <img src={classForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה / החלפת קיימת</p>}
+          </div>
           <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמירה</button>
         </form>
       </Modal>
@@ -1132,10 +1211,20 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               setIsCommunityModalOpen(false); loadTabData();
             } catch(err) { alert("שגיאה בשמירה."); }
           }} className="space-y-4 text-right">
-            <select className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={communityForm.category} onChange={e=>setCommunityForm({...communityForm, category:e.target.value as any})}><option value='גמ"חים'>גמ"חים</option><option value="שיעורי תורה">שיעורי תורה</option><option value="עסק מקומי">עסקים מקומיים</option></select>
+            <select className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={communityForm.category} onChange={e=>setCommunityForm({...communityForm, category:e.target.value as any})}>
+              <option value='גמ"חים'>גמ"חים</option><option value="שיעורי תורה">שיעורי תורה</option><option value="עסק מקומי">עסקים מקומיים</option>
+            </select>
             <input required placeholder="שם הגוף/עסק" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.title} onChange={e=>setCommunityForm({...communityForm, title:e.target.value})} />
+            <div className="grid grid-cols-2 gap-2">
+                <input placeholder="שעת התחלה" type="time" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.startTime} onChange={e=>setCommunityForm({...communityForm, startTime:e.target.value})} />
+                <input placeholder="למי זה מיועד?" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.targetAudience} onChange={e=>setCommunityForm({...communityForm, targetAudience:e.target.value})} />
+            </div>
             <input placeholder="טלפון" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.phone} onChange={e=>setCommunityForm({...communityForm, phone:e.target.value})} />
-            <div className="relative border-2 border-dashed p-6 text-center rounded-2xl"><input type="file" onChange={e => handleFileUpload(e, setCommunityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />{communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה</p>}</div>
+            <input placeholder="מיקום" className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none" value={communityForm.location} onChange={e=>setCommunityForm({...communityForm, location:e.target.value})} />
+            <div className="relative border-2 border-dashed p-6 text-center rounded-2xl text-right">
+               <input type="file" onChange={e => handleFileUpload(e, setCommunityForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
+               {communityForm.image ? <img src={communityForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה / החלפת קיימת</p>}
+            </div>
             <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-lg">שמירה ופרסום</button>
           </form>
       </Modal>
