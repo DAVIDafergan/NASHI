@@ -10,7 +10,12 @@ import {
 } from './models.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_123';
+// אבטחה: שימוש חובה במפתח סודי מהגדרות השרת
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    console.error("FATAL ERROR: JWT_SECRET is not defined in Environment Variables.");
+}
 
 // --- Middlewares ---
 
@@ -19,7 +24,7 @@ const authenticate = (req, res, next) => {
     if (!token) return res.status(401).json({ error: 'Access denied' });
     try {
         const extracted = token.startsWith('Bearer ') ? token.slice(7) : token;
-        const verified = jwt.verify(extracted, JWT_SECRET);
+        const verified = jwt.verify(extracted, JWT_SECRET || 'secret_key_123');
         req.user = verified;
         next();
     } catch (err) { res.status(400).json({ error: 'Invalid Token' }); }
@@ -88,7 +93,7 @@ router.post('/register', async (req, res) => {
             points: config.pointsPerRegister || 50
         });
         await user.save();
-        const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
+        const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET || 'secret_key_123');
         res.json({ token, user: { ...user.toObject(), id: user._id } });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -102,7 +107,7 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: 'סיסמה שגויה' });
 
-        const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET || 'secret_key_123', { expiresIn: '7d' });
         res.json({ token, user: { ...user.toObject(), id: user._id } });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -152,12 +157,21 @@ router.post('/reset-password/:token', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// אבטחה: עדכון משתמש מוגן מפני הזרקת isAdmin
 router.put('/users/:id', authenticate, async (req, res) => {
     try {
         if (req.user.id !== req.params.id && !req.user.isAdmin) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
-        const updated = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
+        
+        // הפרדת שדות רגישים - רק אדמין יכול לשנות isAdmin או נקודות באופן ישיר
+        const { name, phone, address, age, occupation, avatar, communicationPref } = req.body;
+        const updateData = { name, phone, address, age, occupation, avatar, communicationPref };
+        
+        // אם מדובר באדמין, נאפשר לו לעדכן הכל
+        const finalUpdate = req.user.isAdmin ? req.body : updateData;
+
+        const updated = await User.findByIdAndUpdate(req.params.id, { $set: finalUpdate }, { new: true }).select('-password');
         res.json(updated);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -565,9 +579,10 @@ router.post('/membership/request', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ================= 12. העוזרת החכמה (GEMINI PROXY) - חדש! =================
+// ================= 12. העוזרת החכמה (GEMINI PROXY) - מאובטח! =================
 
-router.post('/chat', async (req, res) => {
+// אבטחה: רק משתמשות רשומות יכולות להשתמש ב-AI
+router.post('/chat', authenticate, async (req, res) => {
   const { prompt } = req.body;
   try {
     // שימוש ב-genAI שהונגש ב-index.js

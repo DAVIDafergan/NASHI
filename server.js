@@ -2,6 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet'; // שכבת הגנה לכותרות HTTP
+import rateLimit from 'express-rate-limit'; // הגנה מפני התקפות מניעת שירות (DoS)
 // שינוי הנתיב ל-routes.js כדי להתאים למבנה שלך
 import apiRoutes from './server/routes.js'; 
 import path from 'path';
@@ -18,6 +20,21 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// --- אבטחת שרת מוגברת ---
+
+// הגנה על כותרות השרת (מונע התקפות כמו Clickjacking ו-XSS)
+app.use(helmet({
+  contentSecurityPolicy: false, // מאפשר הרצה תקינה של ה-Frontend המשולב
+}));
+
+// הגבלת קצב בקשות (Rate Limiting) למניעת הצפת השרת והתקפות Brute Force
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // חלון זמן של 15 דקות
+  max: 100, // הגבלה ל-100 בקשות לכל כתובת IP
+  message: 'יותר מדי בקשות מכתובת זו, אנא נסי שוב מאוחר יותר.'
+});
+app.use('/api/', limiter); // החלת ההגבלה רק על נתיבי ה-API
+
 // אתחול Resend - המפתח יימשך אוטומטית מה-Variables ב-Railway
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -28,7 +45,12 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/nashi_db';
 
 // --- Middleware מעודכן ---
-app.use(cors());
+
+// הגדרת CORS מאובטחת - מאפשרת גישה רק לדומיין של האתר שלך בייצור
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*', // מומלץ להגדיר את ה-URL המדויק ב-Railway
+  credentials: true
+}));
 
 // הגדלת המגבלה ל-50mb עבור שליחת תמונות Base64 כבדות ובאנרים של פרסומות
 app.use(express.json({ limit: '50mb' }));
