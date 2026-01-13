@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   MessageSquare, Plus, ThumbsUp, Send, Search, 
-  Image as ImageIcon, X, Clock, User as UserIcon, MessageCircle, CheckCircle
+  Image as ImageIcon, X, Clock, User as UserIcon, MessageCircle, CheckCircle,
+  Share2 // הוספת אייקון שיתוף
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -87,6 +88,27 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
       }
     } catch (err) {
       console.error("Failed to add comment", err);
+    }
+  };
+
+  // פונקציית שיתוף חדשה
+  const handleShare = async (post: any) => {
+    const shareData = {
+      title: post.title,
+      text: `בואי להצטרף לדיון בפורום הנשי: "${post.title}"`,
+      url: window.location.href, // ניתן להחליף בקישור ישיר לפוסט אם קיים
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback למקרה שהדפדפן לא תומך ב-Web Share API
+        navigator.clipboard.writeText(window.location.href);
+        alert("הקישור לפורום הועתק ללוח!");
+      }
+    } catch (err) {
+      console.error("Error sharing", err);
     }
   };
 
@@ -179,6 +201,13 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                       </button>
                       <button className="flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors">
                         <MessageCircle size={20}/> <span className="text-xs font-black">{post.comments?.length || 0} תגובות</span>
+                      </button>
+                      {/* כפתור שיתוף חדש */}
+                      <button 
+                        onClick={() => handleShare(post)}
+                        className="flex items-center gap-2 text-slate-400 hover:text-blue-500 transition-colors mr-auto"
+                      >
+                        <Share2 size={20}/> <span className="text-xs font-black">שיתוף</span>
                       </button>
                     </div>
 
