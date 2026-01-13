@@ -7,6 +7,7 @@ import apiRoutes from './server/routes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Resend } from 'resend'; // תוספת: ייבוא ספריית המיילים
+import { GoogleGenerativeAI } from "@google/generative-ai"; // תוספת: ייבוא ספריית גמיני
 
 // הגדרת משתנים גלובליים דומים ל-CommonJS
 const __filename = fileURLToPath(import.meta.url);
@@ -20,6 +21,9 @@ const PORT = process.env.PORT || 5000;
 // אתחול Resend - המפתח יימשך אוטומטית מה-Variables ב-Railway
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// אתחול Gemini AI - המפתח יימשך מה-Variables ב-Railway
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 // תיקון: שימוש במשתנה הסביבה הנכון של Railway
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/nashi_db';
 
@@ -32,16 +36,17 @@ app.use(express.json({ limit: '50mb' }));
 // הגדלת המגבלה לקבלת נתוני טפסים (Form Data)
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// תוספת: הנגשת resend לכל הראוטים ב-apiRoutes
+// תוספת: הנגשת resend ו-genAI לכל הראוטים ב-apiRoutes
 app.use((req, res, next) => {
   req.resend = resend;
+  req.genAI = genAI; // הנגשת גמיני לשרת
   next();
 });
 
 // Database Connection
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB'))
-  .catch((err) => console.error('❌ MongoDB Connection Error:', err));
+  .catch((err) => console.log('❌ MongoDB Connection Error:', err));
 
 // Routes - API
 // כל הראוטים כולל הודעות הנהלה, הגרלות ומשתמשים מנוהלים בתוך apiRoutes

@@ -1,31 +1,31 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// src/services/geminiService.ts
 
-// משיכת המפתח מה-Variables של Railway
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-
-// אתחול הספרייה של גוגל
-const genAI = new GoogleGenerativeAI(API_KEY);
-
+/**
+ * פונקציה לקבלת המלצה חכמה מהעוזרת
+ * התיקון: הקריאה מתבצעת כעת לשרת ה-Backend שלנו ב-Railway 
+ * כדי למנוע שגיאות CORS וחשיפה של מפתח ה-API בדפדפן.
+ */
 export const getSmartRecommendation = async (userQuery: string): Promise<string> => {
-  if (!API_KEY) {
-    return "אנא הגדירי מפתח API (GEMINI_API_KEY) בשרת כדי להשתמש בעוזרת החכמה.";
-  }
-
   try {
-    // שימוש במודל 1.5-flash המהיר והחסכוני ביותר למשימות מסוג זה
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash' 
+    const response = await fetch('https://nashi-production.up.railway.app/api/chat', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({ prompt: userQuery })
     });
 
-    // מכיוון שאנחנו שולחים את ההקשר (Context) מה-Component, כאן אנחנו רק מעבירים אותו
-    const result = await model.generateContent(userQuery);
-    const response = await result.response;
-    const text = response.text();
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const data = await response.json();
     
-    return text || "מצטערת, לא הצלחתי לעבד את הבקשה כרגע.";
+    // החזרת הטקסט שהתקבל מגמיני דרך השרת
+    return data.text || "מצטערת, לא הצלחתי לעבד את הבקשה כרגע.";
   } catch (error) {
     console.error("Gemini Error:", error);
-    // הודעה ידידותית למשתמשת במקרה של שגיאה
+    // הודעה ידידותית למשתמשת במקרה של שגיאה (נשמר מהקוד המקורי)
     return "חלה שגיאה בתקשורת עם העוזרת החכמה. נסי שוב בעוד כמה רגעים.";
   }
 };

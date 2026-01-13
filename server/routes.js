@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto'; // תוספת עבור ייצור טוקנים מאובטחים
+import mongoose from 'mongoose';
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
     Announcement, // הוספת המודל החדש לייבוא
@@ -106,7 +107,7 @@ router.post('/login', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- תוספת: שחזור ואיפוס סיסמה ---
+// --- שחזור ואיפוס סיסמה ---
 
 router.post('/forgot-password', async (req, res) => {
     try {
@@ -150,8 +151,6 @@ router.post('/reset-password/:token', async (req, res) => {
         res.json({ success: true, message: 'הסיסמה עודכנה בהצלחה' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
-
-// --- סוף תוספת שחזור סיסמה ---
 
 router.put('/users/:id', authenticate, async (req, res) => {
     try {
@@ -232,18 +231,15 @@ router.post('/lotteries', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב עדכון הגרלה (חדש!)
 router.put('/lotteries/:id', authenticate, isAdmin, async (req, res) => {
     try { res.json(await Lottery.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב הפעלת הגרלה בשידור חי (Live Draw)
 router.post('/admin/lotteries/:id/run', authenticate, isAdmin, async (req, res) => {
     try {
         const lottery = await Lottery.findById(req.params.id);
         if (!lottery) return res.status(404).json({ error: 'Lottery not found' });
         
-        // בחירת זוכה רנדומלית מתוך המשתתפות
         if (lottery.participants.length > 0) {
             const randomIndex = Math.floor(Math.random() * lottery.participants.length);
             lottery.winnerId = lottery.participants[randomIndex];
@@ -258,7 +254,6 @@ router.delete('/lotteries/:id', authenticate, isAdmin, async (req, res) => {
     try { await Lottery.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב קבלת משתתפות להגרלה (למנהלת בלבד) - חדש!
 router.get('/admin/lotteries/:id/participants', authenticate, isAdmin, async (req, res) => {
     try {
         const lottery = await Lottery.findById(req.params.id).populate('participants', 'name phone email');
@@ -267,7 +262,6 @@ router.get('/admin/lotteries/:id/participants', authenticate, isAdmin, async (re
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב סיום משימה עבור משתמשת - חדש!
 router.post('/lotteries/:id/complete-mission', authenticate, async (req, res) => {
     try {
         const lottery = await Lottery.findById(req.params.id);
@@ -304,7 +298,6 @@ router.delete('/community/:id', authenticate, isAdmin, async (req, res) => {
 
 // ================= 7. אשת השבוע (PERSONALITY) =================
 
-// קבלת אשת השבוע הפעילה באתר
 router.get('/personality', async (req, res) => {
     try { 
         const p = await Personality.findOne({ isActive: true }).sort({ updatedAt: -1 }); 
@@ -312,7 +305,6 @@ router.get('/personality', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// קבלת כל הראיונות (ארכיון) - חדש!
 router.get('/personality/archive', async (req, res) => {
     try {
         const all = await Personality.find().sort({ updatedAt: -1 });
@@ -320,7 +312,6 @@ router.get('/personality/archive', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// עדכון הגדרות כלליות (מנהלת)
 router.post('/personality', authenticate, isAdmin, async (req, res) => {
     try {
         let p = await Personality.findOne({ isActive: true });
@@ -342,7 +333,7 @@ router.post('/personality/generate-link', authenticate, isAdmin, async (req, res
             isActive: false 
         });
         await p.save();
-        res.json({ token, id: p._id }); // החזרת גם ID למקרה הצורך
+        res.json({ token, id: p._id });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -385,7 +376,6 @@ router.post('/admin/personality/approve/:id', authenticate, isAdmin, async (req,
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// מחיקת ראיון מהארכיון (חדש!)
 router.delete('/personality/:id', authenticate, isAdmin, async (req, res) => {
     try {
         await Personality.findByIdAndDelete(req.params.id);
@@ -435,7 +425,6 @@ router.post('/forum/:id/comment', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// מחיקת פוסט מהפורום (חדש!)
 router.delete('/forum/:id', authenticate, isAdmin, async (req, res) => {
     try {
         await ForumPost.findByIdAndDelete(req.params.id);
@@ -465,30 +454,6 @@ router.post('/admin/users/:id/points', authenticate, isAdmin, async (req, res) =
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- תוספת: שליחת תפוצה לכל המשתמשות (ADMIN) ---
-
-router.post('/admin/broadcast', authenticate, isAdmin, async (req, res) => {
-    try {
-        const { subject, content } = req.body;
-        const users = await User.find({}, 'email');
-        const emailList = users.map(u => u.email);
-
-        if (emailList.length === 0) return res.status(400).json({ error: 'אין משתמשות רשומות' });
-
-        await req.resend.emails.send({
-            from: 'נשי - עדכונים <updates@nashi-co.com>',
-            to: ['updates@nashi-co.com'],
-            bcc: emailList,
-            subject: subject,
-            html: `<div dir="rtl" style="font-family: sans-serif;">${content}</div>`
-        });
-
-        res.json({ success: true, message: `הודעה נשלחה ל-${emailList.length} משתמשות` });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// --- סוף תוספת שליחת תפוצה ---
-
 router.post('/admin/gifts', authenticate, isAdmin, async (req, res) => {
     try {
         const { points, maxUses } = req.body;
@@ -510,7 +475,7 @@ router.get('/inspirations', async (req, res) => {
 router.post('/inspirations', authenticate, isAdmin, async (req, res) => {
     try {
         const data = { ...req.body };
-        if (data._id === '') delete data._id; // מניעת שגיאת ID ריק
+        if (data._id === '') delete data._id;
         const resObj = await new Inspiration(data).save();
         res.json(resObj);
     } 
@@ -535,7 +500,7 @@ router.get('/ads', async (req, res) => {
 router.post('/ads', authenticate, isAdmin, async (req, res) => {
     try {
         const data = { ...req.body };
-        if (data._id === '') delete data._id; // מניעת שגיאת ID ריק
+        if (data._id === '') delete data._id;
         const resObj = await new Ad(data).save();
         res.json(resObj);
     } 
@@ -552,7 +517,7 @@ router.delete('/ads/:id', authenticate, isAdmin, async (req, res) => {
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ================= 11. הודעות הנהלה (ANNOUNCEMENTS) - חדש! =================
+// ================= 11. הודעות הנהלה (ANNOUNCEMENTS) =================
 
 router.get('/announcements', async (req, res) => {
     try {
@@ -561,11 +526,10 @@ router.get('/announcements', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// התיקון הקריטי: הסרת ה-_id הריק לפני השמירה כדי למנוע שגיאת 400
 router.post('/announcements', authenticate, isAdmin, async (req, res) => {
     try {
         const data = { ...req.body };
-        if (!data._id || data._id === '') delete data._id; // מחיקת ID ריק
+        if (!data._id || data._id === '') delete data._id;
         
         const ann = new Announcement(data);
         await ann.save();
@@ -601,45 +565,75 @@ router.post('/membership/request', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב לשליחת מייל בתפוצה רחבה - רק למנהל
-router.post('/admin/broadcast-email', async (req, res) => {
-  const { subject, content, isAdmin } = req.body;
+// ================= 12. העוזרת החכמה (GEMINI PROXY) - חדש! =================
 
-  // אבטחה: וודאי שרק מנהל יכול להפעיל את הפונקציה
-  if (!isAdmin) {
-    return res.status(403).json({ error: "אין לך הרשאה לביצוע פעולה זו" });
+router.post('/chat', async (req, res) => {
+  const { prompt } = req.body;
+  try {
+    // שימוש ב-genAI שהונגש ב-index.js
+    const model = req.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    res.json({ text: response.text() });
+  } catch (error) {
+    console.error("Gemini Server Error:", error);
+    res.status(500).json({ error: "שגיאה בתקשורת עם ה-AI" });
   }
+});
+
+// ================= 13. שליחת תפוצה (BROADCAST & TEST) - מתוקן! =================
+
+router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) => {
+  const { subject, content, image, logo, isTest, targetEmail } = req.body;
 
   try {
-    // 1. שליפת כל המשתמשות שנרשמו לאתר מה-MongoDB
-    const users = await User.find({}, 'email name'); 
-    const emailList = users.map(user => user.email);
-
-    if (emailList.length === 0) {
-      return res.status(400).json({ error: "לא נמצאו משתמשות ברשימת התפוצה" });
+    let recipients = [];
+    if (isTest) {
+      // שליחת ניסיון למייל בודד
+      recipients = [{ email: targetEmail, name: 'מנהלת (בדיקה)' }];
+    } else {
+      // שליחת אמת לכל המשתמשות הרשומות
+      recipients = await User.find({}, 'email name');
     }
 
-    // 2. שליחה קבוצתית דרך Resend (Batch)
-    // הערה: Resend מאפשר לשלוח עד 100 מיילים בקריאה אחת ב-Batch
-    await resend.batch.send(
-      users.map(user => ({
-        from: 'נשי - תרבות נשים <updates@nashi-co.com>',
-        to: user.email,
-        subject: subject,
-        html: `
-          <div dir="rtl" style="font-family: sans-serif; border: 1px solid #eee; padding: 20px; border-radius: 15px;">
-            <h2 style="color: #f43f5e;">שלום ${user.name},</h2>
-            <div style="font-size: 16px; line-height: 1.6; color: #334155;">
-              ${content.replace(/\n/g, '<br>')}
-            </div>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="font-size: 12px; color: #94a3b8;">נשלח אליך כי את חברה בקהילת "נשי".</p>
-          </div>
-        `
-      }))
-    );
+    if (recipients.length === 0) {
+      return res.status(400).json({ error: "לא נמצאו נמענים לשליחה" });
+    }
 
-    res.json({ message: `ההודעה נשלחה בהצלחה ל-${emailList.length} משתמשות` });
+    // בניית גוף המייל המעוצב ב-HTML
+    const emailHtml = `
+      <div dir="rtl" style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 20px; overflow: hidden; text-align: right; background: #ffffff;">
+        ${logo ? `<div style="padding: 20px; text-align: center; background: #fdf6ff;"><img src="${logo}" style="max-height: 50px;"></div>` : ''}
+        ${image ? `<img src="${image}" style="width: 100%; max-height: 300px; object-fit: cover; display: block;">` : ''}
+        <div style="padding: 30px;">
+          <h1 style="color: #f43f5e; font-size: 22px; margin-bottom: 20px;">${subject}</h1>
+          <div style="font-size: 16px; line-height: 1.8; color: #334155; white-space: pre-wrap;">${content}</div>
+        </div>
+        <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #eee;">
+          נשלח באהבה מקהילת "נשי - תרבות נשים עירונית"
+        </div>
+      </div>
+    `;
+
+    // פיצול הנמענים לקבוצות (Batch) של עד 100 נמענים כל אחת (מגבלת Resend)
+    const batches = [];
+    for (let i = 0; i < recipients.length; i += 100) {
+      batches.push(recipients.slice(i, i + 100));
+    }
+
+    // שליחה לכל הבאצ'ים
+    for (const batch of batches) {
+      await req.resend.batch.send(
+        batch.map(u => ({
+          from: 'נשי <updates@nashi-co.com>',
+          to: u.email,
+          subject: subject,
+          html: emailHtml
+        }))
+      );
+    }
+
+    res.json({ success: true, message: `נשלח בהצלחה ל-${recipients.length} נמענים` });
   } catch (error) {
     console.error("Broadcast Error:", error);
     res.status(500).json({ error: "חלה שגיאה בשליחת התפוצה" });
