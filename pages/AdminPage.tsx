@@ -4,7 +4,7 @@ import {
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
-  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send, Loader2
+  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send, Loader2, Download
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -91,6 +91,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     winnerFamily: ''
   });
 
+  const [shabbatParticipants, setShabbatParticipants] = useState<any[]>([]); // משתתפות שולחן שבת
+
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [communityForm, setCommunityForm] = useState<Partial<any>>({ 
     category: 'גמ"חים', title: '', phone: '', location: '', image: '', description: '',
@@ -146,10 +148,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         const lotteries = await api.getLotteries();
         setApiLotteries(lotteries || []);
 
-        // טעינת הגדרות שולחן שבת כשהטאב פעיל
+        // טעינת הגדרות ומשתתפות שולחן שבת כשהטאב פעיל
         if (activeTab === 'lotteries') {
             const shabbatSettings = await api.getShabbatLotterySettings();
             if(shabbatSettings) setShabbatLotteryForm(shabbatSettings);
+            
+            const entries = await api.getShabbatEntries();
+            if(entries) setShabbatParticipants(entries);
         }
 
         if (activeTab === 'personality') {
@@ -263,6 +268,26 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const sendPersonalBenefit = async (email: string) => {
       const res = await api.createGiftCode({ points: 100, maxUses: 1 });
       alert(`לינק הטבה נוצר: ${res.link}\nשלחי אותו למשתמשת!`);
+  };
+
+  const exportShabbatToExcel = () => {
+      const headers = ["שם משפחה", "טלפון", "תאריך הרשמה"];
+      const rows = shabbatParticipants.map(p => [
+          p.familyName,
+          p.phone,
+          new Date(p.createdAt).toLocaleDateString('he-IL')
+      ]);
+      
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // תמיכה בעברית
+      csvContent += headers.join(",") + "\n";
+      rows.forEach(row => { csvContent += row.join(",") + "\n"; });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "shabbat_participants.csv");
+      document.body.appendChild(link);
+      link.click();
   };
 
   // Broadcast Email Logic
@@ -831,6 +856,49 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                         </button>
                     </div>
                 </div>
+
+                {/* רשימת משתתפות שולחן שבת עם ייצוא */}
+                <div className="mt-8 bg-white p-6 rounded-[2.5rem] border border-indigo-100 shadow-sm overflow-hidden">
+                    <div className="flex justify-between items-center mb-6">
+                        <h4 className="font-black text-xl text-indigo-900">משתתפות שולחן שבת השבוע ({shabbatParticipants.length})</h4>
+                        <button 
+                            onClick={exportShabbatToExcel}
+                            className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2 rounded-xl font-black text-sm hover:bg-emerald-600 transition-all shadow-md"
+                        >
+                            <Download size={16} /> ייצוא לאקסל
+                        </button>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-right min-w-[400px]">
+                            <thead className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase">
+                                <tr>
+                                    <th className="p-4">שם משפחה</th>
+                                    <th className="p-4">מספר טלפון</th>
+                                    <th className="p-4">תאריך העלאה</th>
+                                    <th className="p-4 text-center">תמונה</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {shabbatParticipants.map((p, i) => (
+                                    <tr key={i} className="text-sm hover:bg-slate-50 transition-colors">
+                                        <td className="p-4 font-bold text-slate-700">משפחת {p.familyName}</td>
+                                        <td className="p-4 font-black text-indigo-600" dir="ltr">{p.phone}</td>
+                                        <td className="p-4 text-xs text-slate-400">{new Date(p.createdAt).toLocaleDateString('he-IL')}</td>
+                                        <td className="p-4 flex justify-center">
+                                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100">
+                                                <img src={p.image} className="w-full h-full object-cover" alt="table" />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {shabbatParticipants.length === 0 && (
+                                    <tr><td colSpan={4} className="p-10 text-center text-slate-400 italic">אין עדיין משתתפות להשבוע</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             {/* המשך הגרלות רגילות */}
@@ -1103,7 +1171,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </form>
       </Modal>
 
-      {/* מודאלים קיימים ללא שינוי */}
       <Modal isOpen={isInspirationModalOpen} onClose={() => setIsInspirationModalOpen(false)} title={inspirationForm._id ? "עריכת השראה" : "הוספת השראה יומית"}>
         <form onSubmit={async (e) => {
           e.preventDefault();

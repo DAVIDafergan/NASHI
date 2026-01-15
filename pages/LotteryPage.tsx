@@ -21,13 +21,15 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   // --- מצבים חדשים עבור שולחן השבת ---
   const [activeTab, setActiveTab] = useState<'regular' | 'shabbat'>('regular');
   const [familyName, setFamilyName] = useState('');
+  const [phone, setPhone] = useState(''); // שדה טלפון חדש
   const [shabbatImage, setShabbatImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [shabbatEntries, setShabbatEntries] = useState<any[]>([]); // מצב חדש לגלריית שולחנות
+  const [shabbatEntries, setShabbatEntries] = useState<any[]>([]); 
   const [shabbatSettings, setShabbatSettings] = useState({
       prize: 'סט פמוטים יוקרתי',
       notes: 'העלי תמונה של שולחן השבת המעוצב שלך ואולי תזכי!',
       isActive: true,
+      drawDate: '', // תאריך לניהול סבבים
       winnerFamily: ''
   });
 
@@ -40,24 +42,21 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           }
       }
       
-      // בדיקה אם הגיעו דרך לינק שיתוף לשולחן שבת
       const params = new URLSearchParams(location.search);
       if (params.get('tab') === 'shabbat') {
           setActiveTab('shabbat');
       }
 
-      // טעינת הגדרות שבת מהשרת
-      const fetchShabbatSettings = async () => {
+      const fetchShabbatData = async () => {
           try {
               const settings = await api.getShabbatLotterySettings();
               if (settings) setShabbatSettings(settings);
               
-              // טעינת כל השולחנות שהועלו
               const entries = await api.getShabbatEntries();
               if (entries) setShabbatEntries(entries);
-          } catch (e) { console.error("Failed to fetch shabbat settings", e); }
+          } catch (e) { console.error("Failed to fetch shabbat data", e); }
       };
-      fetchShabbatSettings();
+      fetchShabbatData();
   }, [location.state, lotteries, location.search]);
   
   const handleEnterLottery = (lottery: any) => {
@@ -66,13 +65,11 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           return;
       }
 
-      // בדיקת חסימה - האם כבר רשומה
       if (lottery.participants.includes(user.id || user._id)) {
           alert('את כבר רשומה להגרלה זו!');
           return;
       }
 
-      // בדיקת זכאות לפי הגדרות מנהל
       if (lottery.participationType === 'points') {
           if (user.points < (lottery.minPointsToEnter || 0)) {
               alert(`אופס! להגרלה זו נדרשות לפחות ${lottery.minPointsToEnter} נקודות. חסרות לך ${(lottery.minPointsToEnter || 0) - user.points} נקודות.`);
@@ -85,10 +82,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           return;
       }
       
-      // Automatic Registration (No Confirm Dialog)
       if (onUpdateUser && onUpdateLottery) {
-          // הורדת נקודות אם הוגדר (אופציונלי - תלוי אם המנהל רוצה "תשלום" בנקודות או רק סף כניסה)
-          // נכון לעכשיו זה רק בודק סף, אם תרצה להוריד נקודות בפועל - השורה למטה מבצעת זאת:
           const newPoints = lottery.participationType === 'points' ? user.points : user.points; 
 
           onUpdateUser({
@@ -96,7 +90,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
               points: newPoints
           });
 
-          // אם זו משימה, אנחנו מוסיפים לרשימת ה"מתחילות משימה"
           const updatedLottery = {
               ...lottery,
               participants: lottery.participationType === 'mission' ? lottery.participants : [...lottery.participants, (user.id || user._id)],
@@ -113,7 +106,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
   };
 
-  // פונקציה חדשה לסיום משימה
   const handleCompleteMission = async (lottery: any) => {
       try {
           if (onUpdateLottery) {
@@ -152,8 +144,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
   };
 
-  // --- פונקציות שולחן שבת ---
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
@@ -165,19 +155,20 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
   const handleShabbatSubmit = async () => {
       if (!user) return alert('נא להתחבר למערכת');
-      if (!familyName || !shabbatImage) return alert('נא להזין שם משפחה ולהעלות תמונה');
+      if (!familyName || !shabbatImage || !phone) return alert('נא למלא את כל הפרטים כולל טלפון');
       
       setIsSubmitting(true);
       try {
-          await api.enterShabbatLottery({ familyName, image: shabbatImage });
+          await api.enterShabbatLottery({ familyName, image: shabbatImage, phone });
           alert('איזה יופי! התמונה הועלתה וצברת כרטיס להגרלה. שבת שלום! 🕯️');
           setShabbatImage(null);
           setFamilyName('');
-          // רענון הגלריה
+          setPhone('');
+          // רענון הגלריה מהשרת בלבד כדי למנוע כפילות
           const entries = await api.getShabbatEntries();
           if (entries) setShabbatEntries(entries);
       } catch (err: any) {
-          alert(err.response?.data?.error || 'שגיאה בשליחת התמונה');
+          alert(err.message || 'שגיאה בשליחת התמונה');
       } finally {
           setIsSubmitting(false);
       }
@@ -199,7 +190,10 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   const handleAdminUpdateShabbat = async () => {
       try {
           await api.updateShabbatLotterySettings(shabbatSettings);
-          alert('הגדרות הגרלת השבת עודכנו בהצלחה!');
+          alert('הגדרות הגרלת השבת עודכנו! אם שינית תאריך, הגלריה נוקתה.');
+          // רענון הגלריה למקרה שנמחקה
+          const entries = await api.getShabbatEntries();
+          setShabbatEntries(entries || []);
       } catch (e) { alert('שגיאה בעדכון'); }
   };
 
@@ -217,7 +211,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       setIsDrawing(true);
       setShowWinner(false);
 
-      // Countdown effect
       let count = 3;
       setCountdown(3);
       const interval = setInterval(() => {
@@ -232,7 +225,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           setIsDrawing(false);
           setShowWinner(true);
           
-          // Pick winner from participants list
           const winnerId = selectedLottery.participants.length > 0 
                 ? selectedLottery.participants[Math.floor(Math.random() * selectedLottery.participants.length)]
                 : 'No Participants';
@@ -243,10 +235,9 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
               winnerId: winnerId
           });
 
-      }, 3500); // Wait for countdown (3s) + a little buffer
+      }, 3500); 
   };
 
-  // סינון הגרלות רגילות (שלא כוללות את "שולחן השבת")
   const filteredLotteries = lotteries.filter(l => !l.title.includes("שולחן השבת") && !l.title.includes("שולחן שבת"));
 
   return (
@@ -295,11 +286,8 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                 
                 return (
                     <div key={lottery.id || lottery._id} className={`bg-white rounded-[2.5rem] p-3 shadow-sm border border-slate-100 hover:shadow-2xl transition-all duration-500 flex flex-col group relative overflow-hidden ${!lottery.isActive ? 'opacity-80' : ''}`}>
-                        {/* Header Image */}
                         <div className="h-56 relative overflow-hidden rounded-[2rem] mb-5 shrink-0 shadow-inner bg-slate-50">
                             <img src={lottery.image} alt={lottery.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                            
-                            {/* Eligibility Badge */}
                             <div className="absolute top-4 right-4 flex flex-col gap-2">
                                 <div className="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-rose-600 flex items-center gap-1.5 shadow-xl border border-rose-50">
                                     {lottery.participationType === 'mission' ? (
@@ -329,14 +317,12 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                             </button>
                         </div>
                         
-                        {/* Content Section */}
                         <div className="px-4 pb-4 flex-1 flex flex-col text-right">
                             <div className="flex justify-between items-start mb-2">
                                 <h3 className="text-xl font-black text-slate-800 leading-tight group-hover:text-rose-600 transition-colors">{lottery.title}</h3>
                                 {lottery.isActive && <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>}
                             </div>
 
-                            {/* Prizes List */}
                             <div className="space-y-2 mb-6 bg-rose-50/30 p-4 rounded-2xl border border-rose-100/50">
                                 <p className="text-rose-600 font-black text-sm flex items-center gap-2">
                                     <Trophy size={16} className="text-amber-500" />
@@ -348,7 +334,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                         פרס שני: {lottery.prize2}
                                     </p>
                                 )}
-                                
                                 {lottery.participationType === 'mission' && lottery.missionText && (
                                     <div className="mt-3 pt-3 border-t border-rose-100/50">
                                         <p className="text-[10px] font-black text-orange-600 uppercase mb-1">המשימה שלך:</p>
@@ -357,7 +342,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                 )}
                             </div>
                             
-                            {/* Stats Row */}
                             <div className="grid grid-cols-2 gap-3 mb-6">
                                 <div className="flex flex-col items-center justify-center gap-1 text-[10px] text-slate-500 bg-slate-50 p-3 rounded-2xl border border-slate-100/50">
                                     <Calendar size={16} className="text-rose-300" />
@@ -422,7 +406,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
         /* --- ממשק שולחן השבת שלי --- */
         <div className="max-w-6xl mx-auto px-2 animate-scale-in space-y-12">
             <div className="bg-white rounded-[3.5rem] overflow-hidden border border-indigo-100 shadow-2xl relative">
-                {/* Banner */}
                 <div className="h-48 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 relative flex items-center justify-center overflow-hidden">
                     <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                     <div className="relative text-center space-y-2">
@@ -447,7 +430,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
                     {user ? (
                         <div className="grid md:grid-cols-2 gap-10">
-                            {/* Form Side */}
                             <div className="space-y-6">
                                 <div className="space-y-3">
                                     <label className="text-sm font-black text-slate-600 mr-2">שם משפחה</label>
@@ -456,6 +438,17 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                         value={familyName}
                                         onChange={(e) => setFamilyName(e.target.value)}
                                         placeholder="למשל: משפחת לוי"
+                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all font-bold text-lg"
+                                    />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="text-sm font-black text-slate-600 mr-2">מספר טלפון (ליצירת קשר)</label>
+                                    <input 
+                                        type="tel" 
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        placeholder="למשל: 050-1234567"
                                         className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all font-bold text-lg"
                                     />
                                 </div>
@@ -498,7 +491,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                 </button>
                             </div>
 
-                            {/* Info Side */}
                             <div className="bg-slate-50 rounded-[2.5rem] p-8 space-y-6 flex flex-col justify-center border border-slate-100">
                                 <div className="space-y-4">
                                     <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
@@ -508,7 +500,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                     <ul className="space-y-4">
                                         {[
                                             'מצלמים את שולחן השבת הערוך והיפה שלכן.',
-                                            'מעלים את התמונה בצירוף שם המשפחה.',
+                                            'מעלים את התמונה בצירוף שם המשפחה וטלפון.',
                                             'כל תמונה מקנה כרטיס להגרלה השבועית.',
                                             'הזוכה תוכרז במוצאי שבת כאן באתר.'
                                         ].map((text, i) => (
@@ -540,7 +532,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                         </div>
                     )}
 
-                    {/* Admin Shabbat Management */}
                     {user?.isAdmin && (
                         <div className="mt-16 pt-12 border-t border-slate-100">
                             <div className="flex items-center gap-2 mb-8">
@@ -555,16 +546,16 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                         type="text" 
                                         value={shabbatSettings.notes} 
                                         onChange={(e) => setShabbatSettings({...shabbatSettings, notes: e.target.value})}
-                                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none" 
+                                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-inner" 
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-400 mr-2">שינוי פרס</label>
+                                    <label className="text-[10px] font-black text-rose-500 mr-2">תאריך הגרלה (שינוי ינקה גלריה!)</label>
                                     <input 
-                                        type="text" 
-                                        value={shabbatSettings.prize} 
-                                        onChange={(e) => setShabbatSettings({...shabbatSettings, prize: e.target.value})}
-                                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none" 
+                                        type="date" 
+                                        value={shabbatSettings.drawDate} 
+                                        onChange={(e) => setShabbatSettings({...shabbatSettings, drawDate: e.target.value})}
+                                        className="w-full p-4 bg-rose-50 rounded-2xl font-bold border-none shadow-inner text-rose-600" 
                                     />
                                 </div>
                                 <div className="flex gap-2">
@@ -573,12 +564,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                         className="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-black hover:bg-indigo-600 transition-all"
                                     >
                                         שמירה
-                                    </button>
-                                    <button 
-                                        onClick={() => setShabbatSettings({...shabbatSettings, isActive: !shabbatSettings.isActive})}
-                                        className={`p-4 rounded-2xl font-black transition-all ${shabbatSettings.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}
-                                    >
-                                        {shabbatSettings.isActive ? 'פעיל' : 'כבוי'}
                                     </button>
                                 </div>
                             </div>
@@ -595,7 +580,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                 </div>
             </div>
 
-            {/* גלריית שולחנות השבת של השבוע - חדש! */}
             <div className="space-y-6">
                 <div className="flex items-center gap-3">
                     <ImageIcon className="text-indigo-500" size={28} />
@@ -626,27 +610,22 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
         </div>
       )}
 
-      {/* Premium Live Draw Modal (רולטה יוקרתית) */}
       {selectedLottery && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-2xl animate-fade-in">
               <div className="w-full max-w-xl relative">
                   <button onClick={() => setSelectedLottery(null)} className="absolute -top-16 right-0 md:-right-16 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white transition-all"><X size={24} /></button>
                   
                   <div className="bg-gradient-to-b from-indigo-950 via-purple-900 to-slate-950 rounded-[3.5rem] overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(139,92,246,0.3)] relative">
-                      {/* Background Particles Decoration */}
                       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 animate-pulse"></div>
                       <div className="absolute -top-24 -left-24 w-64 h-64 bg-rose-500/20 rounded-full blur-[80px]"></div>
                       <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px]"></div>
                       
                       <div className="p-10 md:p-14 text-center relative z-10 min-h-[500px] flex flex-col items-center justify-center">
-                          
-                          {/* Title */}
                           <div className="mb-10">
                               <span className="text-rose-400 text-[10px] font-black tracking-[0.3em] uppercase mb-3 block">Live Drawing Event</span>
                               <h3 className="text-3xl md:text-4xl font-black text-white leading-tight tracking-tight">{selectedLottery.title}</h3>
                           </div>
 
-                          {/* STATE 1: Ready to Draw */}
                           {!showWinner && !isDrawing && !selectedLottery.winnerId && (
                               <div className="space-y-10 w-full animate-fade-in">
                                   <div className="w-32 h-32 bg-white/5 rounded-[2.5rem] flex items-center justify-center mx-auto border border-white/10 shadow-inner">
@@ -669,7 +648,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                               </div>
                           )}
 
-                          {/* STATE 2: Drawing Animation (The Roulette Effect) */}
                           {isDrawing && (
                               <div className="space-y-10 animate-fade-in">
                                   <div className="relative">
@@ -687,7 +665,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                               </div>
                           )}
 
-                          {/* STATE 3: Winner Reveal */}
                           {(showWinner || selectedLottery.winnerId) && (
                               <div className="space-y-8 animate-scale-in w-full">
                                   <div className="relative">
@@ -700,7 +677,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                       <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-[2.5rem] shadow-2xl overflow-hidden relative group">
                                           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-yellow-400/10 to-transparent"></div>
                                           <h2 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tighter">
-                                              {/* כאן בקוד האמיתי תהיה פונקציה ששולפת את שם המשתמשת לפי ה-ID */}
                                               {selectedLottery.winnerId === 'No Participants' ? 'אין משתתפות' : 'חברת המעגל'}
                                           </h2>
                                           <div className="flex items-center justify-center gap-2 text-yellow-400 bg-yellow-400/10 py-2 px-4 rounded-full w-fit mx-auto border border-yellow-400/20">
@@ -727,7 +703,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                       </div>
                   </div>
                   
-                  {/* Decorative Confetti Elements */}
                   {(showWinner || selectedLottery.winnerId) && (
                       <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[3.5rem]">
                           <div className="absolute top-1/4 left-10 w-4 h-4 bg-yellow-400 rounded-full animate-ping shadow-[0_0_15px_yellow]"></div>

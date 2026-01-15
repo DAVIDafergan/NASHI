@@ -502,7 +502,7 @@ export const api = {
         return res.json();
     },
 
-    async enterShabbatLottery(entryData: { familyName: string; image: string }) {
+    async enterShabbatLottery(entryData: { familyName: string; image: string; phone: string }) {
         validateImageSize(entryData);
         const res = await fetch(`${API_URL}/shabbat-lottery/enter`, {
             method: 'POST',

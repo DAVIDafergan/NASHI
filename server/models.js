@@ -197,6 +197,7 @@ const ShabbatLottery = mongoose.model('ShabbatLottery', ShabbatLotterySchema);
 const ShabbatEntrySchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   familyName: { type: String, required: true },
+  phone: { type: String, required: true }, // השדה שהתווסף כחובה
   image: { type: String, required: true }, // Base64 תמונה
   createdAt: { type: Date, default: Date.now }
 });

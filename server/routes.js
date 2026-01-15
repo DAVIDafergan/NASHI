@@ -668,7 +668,9 @@ router.post('/admin/shabbat-lottery/settings', authenticate, isAdmin, async (req
 // הגשת מועמדות להגרלת שבת (משתמשת)
 router.post('/shabbat-lottery/enter', authenticate, async (req, res) => {
     try {
-        const { familyName, image } = req.body;
+        const { familyName, image, phone } = req.body;
+        if (!phone) return res.status(400).json({ error: 'מספר טלפון הוא שדה חובה' });
+        
         // בדיקה אם המשתמשת כבר שלחה השבוע (לפי userId)
         const existing = await ShabbatEntry.findOne({ userId: req.user.id });
         if (existing) return res.status(400).json({ error: 'כבר שלחת תמונה להגרלה זו השבוע' });
@@ -676,6 +678,7 @@ router.post('/shabbat-lottery/enter', authenticate, async (req, res) => {
         const entry = new ShabbatEntry({
             userId: req.user.id,
             familyName,
+            phone,
             image
         });
         await entry.save();
