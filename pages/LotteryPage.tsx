@@ -23,6 +23,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   const [familyName, setFamilyName] = useState('');
   const [shabbatImage, setShabbatImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [shabbatEntries, setShabbatEntries] = useState<any[]>([]); // מצב חדש לגלריית שולחנות
   const [shabbatSettings, setShabbatSettings] = useState({
       prize: 'סט פמוטים יוקרתי',
       notes: 'העלי תמונה של שולחן השבת המעוצב שלך ואולי תזכי!',
@@ -50,6 +51,10 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           try {
               const settings = await api.getShabbatLotterySettings();
               if (settings) setShabbatSettings(settings);
+              
+              // טעינת כל השולחנות שהועלו
+              const entries = await api.getShabbatEntries();
+              if (entries) setShabbatEntries(entries);
           } catch (e) { console.error("Failed to fetch shabbat settings", e); }
       };
       fetchShabbatSettings();
@@ -168,6 +173,9 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           alert('איזה יופי! התמונה הועלתה וצברת כרטיס להגרלה. שבת שלום! 🕯️');
           setShabbatImage(null);
           setFamilyName('');
+          // רענון הגלריה
+          const entries = await api.getShabbatEntries();
+          if (entries) setShabbatEntries(entries);
       } catch (err: any) {
           alert(err.response?.data?.error || 'שגיאה בשליחת התמונה');
       } finally {
@@ -238,6 +246,9 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }, 3500); // Wait for countdown (3s) + a little buffer
   };
 
+  // סינון הגרלות רגילות (שלא כוללות את "שולחן השבת")
+  const filteredLotteries = lotteries.filter(l => !l.title.includes("שולחן השבת") && !l.title.includes("שולחן שבת"));
+
   return (
     <div className="space-y-8 pb-10 text-right" dir="rtl">
       {/* Header Section */}
@@ -277,7 +288,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
       {activeTab === 'regular' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 px-2 animate-fade-in">
-            {lotteries.map((lottery: any) => {
+            {filteredLotteries.map((lottery: any) => {
                 const isRegistered = user && lottery.participants.includes(user.id || user._id);
                 const isMissionStarted = user && lottery.missionStarted?.includes(user.id || user._id);
                 const canParticipate = lottery.participationType === 'everyone' || (user && user.points >= (lottery.minPointsToEnter || 0)) || lottery.participationType === 'mission';
@@ -409,7 +420,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
         </div>
       ) : (
         /* --- ממשק שולחן השבת שלי --- */
-        <div className="max-w-4xl mx-auto px-2 animate-scale-in">
+        <div className="max-w-6xl mx-auto px-2 animate-scale-in space-y-12">
             <div className="bg-white rounded-[3.5rem] overflow-hidden border border-indigo-100 shadow-2xl relative">
                 {/* Banner */}
                 <div className="h-48 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 relative flex items-center justify-center overflow-hidden">
@@ -583,6 +594,35 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                     )}
                 </div>
             </div>
+
+            {/* גלריית שולחנות השבת של השבוע - חדש! */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                    <ImageIcon className="text-indigo-500" size={28} />
+                    <h3 className="text-2xl font-black text-slate-800">השולחנות של השבוע ✨</h3>
+                </div>
+                
+                {shabbatEntries.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {shabbatEntries.map((entry, idx) => (
+                            <div key={idx} className="group relative bg-white rounded-3xl overflow-hidden shadow-md border border-slate-100 aspect-square">
+                                <img src={entry.image} alt={entry.familyName} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                    <p className="text-white font-black text-sm">משפחת {entry.familyName}</p>
+                                </div>
+                                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-indigo-600 shadow-sm">
+                                    #{idx + 1}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-20 bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
+                        <ImageIcon size={40} className="text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-400 font-bold">עדיין לא הועלו שולחנות השבוע. תהיי הראשונה!</p>
+                    </div>
+                )}
+            </div>
         </div>
       )}
 
@@ -699,10 +739,10 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           </div>
       )}
 
-      {(activeTab === 'regular' && lotteries.length === 0) && (
+      {(activeTab === 'regular' && filteredLotteries.length === 0) && (
           <div className="text-center py-32 bg-white/50 rounded-[3rem] border border-dashed border-rose-200">
             <Gift size={48} className="text-rose-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-bold">אין הגרלות פעילות כרגע. חזרי לבדוק בקרוב!</p>
+            <p className="text-slate-400 font-bold">אין הגרלות כלליות פעילות כרגע. חזרי לבדוק בקרוב!</p>
             <button onClick={() => window.location.hash = '/'} className="mt-4 text-rose-500 text-xs font-black hover:underline">חזרה לדף הבית</button>
           </div>
       )}
