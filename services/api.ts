@@ -485,5 +485,51 @@ export const api = {
             headers: getHeaders(),
             body: JSON.stringify(giftData)
         }).then(r => r.json());
+    },
+
+    // ================= SHABBAT LOTTERY (שולחן שבת) =================
+    async getShabbatLotterySettings() {
+        const res = await fetch(`${API_URL}/shabbat-lottery/settings`);
+        return res.json();
+    },
+
+    async updateShabbatLotterySettings(settings: any) {
+        const res = await fetch(`${API_URL}/admin/shabbat-lottery/settings`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(settings)
+        });
+        return res.json();
+    },
+
+    async enterShabbatLottery(entryData: { familyName: string; image: string }) {
+        validateImageSize(entryData);
+        const res = await fetch(`${API_URL}/shabbat-lottery/enter`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(entryData)
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Failed to enter lottery');
+        }
+        return res.json();
+    },
+
+    async getShabbatEntries() {
+        const res = await fetch(`${API_URL}/admin/shabbat-lottery/entries`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async runShabbatLottery() {
+        const res = await fetch(`${API_URL}/admin/shabbat-lottery/run`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Failed to run lottery');
+        }
+        return res.json();
     }
 };

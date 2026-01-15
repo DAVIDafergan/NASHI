@@ -183,8 +183,27 @@ const AnnouncementSchema = new mongoose.Schema({
 });
 const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 
+// --- מודל הגרלת שולחן שבת (חדש!) ---
+const ShabbatLotterySchema = new mongoose.Schema({
+  prize: { type: String, default: 'פרס יוקרתי' },
+  notes: { type: String, default: '' },
+  isActive: { type: Boolean, default: true },
+  winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  winnerFamily: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+const ShabbatLottery = mongoose.model('ShabbatLottery', ShabbatLotterySchema);
+
+const ShabbatEntrySchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  familyName: { type: String, required: true },
+  image: { type: String, required: true }, // Base64 תמונה
+  createdAt: { type: Date, default: Date.now }
+});
+const ShabbatEntry = mongoose.model('ShabbatEntry', ShabbatEntrySchema);
+
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
-  Announcement 
+  Announcement, ShabbatLottery, ShabbatEntry
 };
