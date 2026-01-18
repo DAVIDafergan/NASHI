@@ -86,22 +86,26 @@ export interface NewsItem {
   important: boolean;
 }
 
-export type LotteryEligibilityType = 'all' | 'points' | 'level' | 'specific_user';
+export type LotteryEligibilityType = 'all' | 'points' | 'level' | 'specific_user' | 'everyone' | 'mission' | 'link_only';
 
 export interface LotteryItem {
   id: string;
   _id?: string;
   title: string;
-  prize: string;
+  prize: string;         // שדה קיים - לטובת תאימות לאחור
+  prizes: string[];      // שדה חדש - תמיכה בעד 7 פרסים
   drawDate: string;
   image: string;
   participants: string[]; 
   isActive: boolean;
   winnerId?: string;
+  winnerFamily?: string; // נוסף לטובת הגרלת שבת
   eligibilityType: LotteryEligibilityType;
+  participationType?: string; // תואם לשימוש ב-AdminPage
   minPointsToEnter?: number;
   minLevel?: UserLevel;
   specificUserId?: string;
+  missionText?: string;  // נוסף לטובת הגרלות משימה
 }
 
 // --- אשת השבוע (Personality) ---
@@ -120,6 +124,7 @@ export interface PersonalityProfile {
   questions: PersonalityQuestion[];
   isActive: boolean;
   externalToken?: string; // טוקן למילוי שאלון חיצוני
+  isTemplate?: boolean;   // שדה חדש - האם זו תבנית השאלות הקבועה של המנהלת
 }
 
 // --- פורום נשי (חדש!) ---
@@ -148,11 +153,13 @@ export interface ForumPost {
 
 export interface CommunityItem {
   _id: string;
-  category: 'שיעורי תורה' | 'גמ"חים' | 'עסקים מקומיים';
+  category: 'שיעורי תורה' | 'גמ"חים' | 'עסקים מקומיים' | 'עסק מקומי';
   title: string;
   image?: string;
   location?: string;
   phone?: string;
   description?: string;
+  startTime?: string;      // נוסף לתיאום עם ה-AdminPage
+  targetAudience?: string; // נוסף לתיאום עם ה-AdminPage
   createdAt?: string;
 }

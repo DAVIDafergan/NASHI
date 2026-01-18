@@ -328,12 +328,13 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                     <Trophy size={16} className="text-amber-500" />
                                     פרס ראשון: {lottery.prize}
                                 </p>
-                                {lottery.prize2 && (
-                                    <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1">
-                                        <Award size={14} className="text-slate-400" />
-                                        פרס שני: {lottery.prize2}
-                                    </p>
-                                )}
+                                {lottery.prize2 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס שני: {lottery.prize2}</p>}
+                                {lottery.prize3 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס שלישי: {lottery.prize3}</p>}
+                                {lottery.prize4 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס רביעי: {lottery.prize4}</p>}
+                                {lottery.prize5 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס חמישי: {lottery.prize5}</p>}
+                                {lottery.prize6 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס שישי: {lottery.prize6}</p>}
+                                {lottery.prize7 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס שביעי: {lottery.prize7}</p>}
+                                
                                 {lottery.participationType === 'mission' && lottery.missionText && (
                                     <div className="mt-3 pt-3 border-t border-rose-100/50">
                                         <p className="text-[10px] font-black text-orange-600 uppercase mb-1">המשימה שלך:</p>
@@ -687,7 +688,15 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                   </div>
 
                                   <div className="pt-6">
-                                      <p className="text-white/60 text-sm font-medium mb-4">הפרס: <span className="text-white font-black">{selectedLottery.prize}</span></p>
+                                      <p className="text-white/60 text-sm font-medium mb-4">הפרסים שחולקו: <br/> 
+                                        <span className="text-white font-black block mt-2">1. {selectedLottery.prize}</span>
+                                        {selectedLottery.prize2 && <span className="text-white/90 font-bold block text-xs">2. {selectedLottery.prize2}</span>}
+                                        {selectedLottery.prize3 && <span className="text-white/90 font-bold block text-xs">3. {selectedLottery.prize3}</span>}
+                                        {selectedLottery.prize4 && <span className="text-white/90 font-bold block text-xs">4. {selectedLottery.prize4}</span>}
+                                        {selectedLottery.prize5 && <span className="text-white/90 font-bold block text-xs">5. {selectedLottery.prize5}</span>}
+                                        {selectedLottery.prize6 && <span className="text-white/90 font-bold block text-xs">6. {selectedLottery.prize6}</span>}
+                                        {selectedLottery.prize7 && <span className="text-white/90 font-bold block text-xs">7. {selectedLottery.prize7}</span>}
+                                      </p>
                                       <button onClick={() => setSelectedLottery(null)} className="bg-white text-slate-950 px-10 py-4 rounded-2xl font-black text-sm hover:bg-rose-500 hover:text-white transition-all shadow-xl">
                                           סגירה וחזרה להגרלות
                                       </button>
