@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ShieldCheck, Plus, Users, Calendar, Gift, Search, Trash2, Edit, Save, 
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
-  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send, Loader2, Download
+  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send, Loader2, Download, ChevronRight
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -50,6 +50,9 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // תאריך לצורך סיכום חודשי
+  const [viewDate, setViewDate] = useState(new Date());
+
   // Data States
   const [apiUsers, setApiUsers] = useState<User[]>([]);
   const [apiEvents, setApiEvents] = useState<EventItem[]>([]);
@@ -79,7 +82,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
   const [isLotteryModalOpen, setIsLotteryModalOpen] = useState(false);
   const [lotteryForm, setLotteryForm] = useState<Partial<any>>({ 
-    title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', 
+    title: '', prize: '', prize2: '', prize3: '', prize4: '', prize5: '', prize6: '', prize7: '', drawDate: '', image: '', 
     minPointsToEnter: 0, participationType: 'everyone', missionText: '' 
   });
 
@@ -124,6 +127,32 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', content: '', image: '', logo: '' });
   const [testEmail, setTestEmail] = useState('');
   const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+
+  // חישוב נתונים אמיתיים לסיכום חודשי
+  const monthlyStats = useMemo(() => {
+    const month = viewDate.getMonth();
+    const year = viewDate.getFullYear();
+
+    const filteredUsers = apiUsers.filter(u => {
+        const d = new Date(u.createdAt || Date.now());
+        return d.getMonth() === month && d.getFullYear() === year;
+    });
+
+    const filteredEvents = apiEvents.filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === month && d.getFullYear() === year;
+    });
+
+    const totalPoints = apiUsers.reduce((acc, u) => acc + (u.points || 0), 0);
+
+    return {
+        usersCount: filteredUsers.length,
+        eventsCount: filteredEvents.length,
+        points: totalPoints,
+        monthName: viewDate.toLocaleString('he-IL', { month: 'long' }),
+        year: year
+    };
+  }, [apiUsers, apiEvents, viewDate]);
 
   useEffect(() => { if (user?.isAdmin) loadTabData(); }, [activeTab, user]);
 
@@ -408,32 +437,36 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
       <div className="max-w-7xl mx-auto">
         
-        {/* טאב סיכום חודשי משודרג */}
+        {/* טאב סיכום חודשי משודרג עם ניווט */}
         {activeTab === 'summary' && (
           <div className="space-y-10 animate-fade-in">
-              <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-gradient-to-l from-slate-900 to-slate-800 p-10 rounded-[3.5rem] text-white shadow-2xl relative overflow-hidden">
-                <div className="relative z-10">
-                  <h2 className="text-4xl font-black mb-2">סקירת המעגל הנשי 💫</h2>
-                  <p className="opacity-70 font-bold">הנתונים המעודכנים של הפעילות שלך נכון להיום.</p>
+              <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-gradient-to-l from-slate-900 to-slate-800 p-10 rounded-[3.5rem] text-white shadow-2xl relative overflow-hidden">
+                <div className="relative z-10 text-center md:text-right">
+                  <div className="flex items-center gap-4 mb-4 justify-center md:justify-start">
+                    <button onClick={() => setViewDate(new Date(viewDate.setMonth(viewDate.getMonth() - 1)))} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ChevronRight size={30}/></button>
+                    <h2 className="text-4xl font-black">{monthlyStats.monthName} {monthlyStats.year} 💫</h2>
+                    <button onClick={() => setViewDate(new Date(viewDate.setMonth(viewDate.getMonth() + 1)))} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ChevronLeft size={30}/></button>
+                  </div>
+                  <p className="opacity-70 font-bold">הנתונים המוצגים מחושבים לפי החודש הנבחר.</p>
                 </div>
                 <div className="flex gap-4 relative z-10">
                    <div className="bg-white/10 backdrop-blur-md p-4 rounded-3xl border border-white/20">
                       <p className="text-[10px] uppercase font-black opacity-60">משתמשות חדשות</p>
-                      <p className="text-2xl font-black">+24</p>
+                      <p className="text-2xl font-black">+{monthlyStats.usersCount}</p>
                    </div>
                    <div className="bg-rose-500 p-4 rounded-3xl shadow-lg border border-rose-400">
-                      <p className="text-[10px] uppercase font-black opacity-80">צפי השתתפות</p>
-                      <p className="text-2xl font-black">88%</p>
+                      <p className="text-[10px] uppercase font-black opacity-80">אירועי החודש</p>
+                      <p className="text-2xl font-black">{monthlyStats.eventsCount}</p>
                    </div>
                 </div>
                 <Activity className="absolute left-[-20px] bottom-[-20px] text-white/5 w-64 h-64" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="סה״כ משתמשות" value={apiUsers.length} icon={Users2} color="bg-blue-500" trend="+12%" />
+                <StatCard title="סה״כ משתמשות רשומות" value={apiUsers.length} icon={Users2} color="bg-blue-500" trend={`${monthlyStats.usersCount > 0 ? '+' : ''}${monthlyStats.usersCount} החודש`} />
                 <StatCard title="חוגים פעילים" value={apiClasses.length} icon={GraduationCap} color="bg-purple-500" />
-                <StatCard title="אירועים החודש" value={apiEvents.length} icon={Calendar} color="bg-rose-500" />
-                <StatCard title="נקודות שנצברו" value={apiUsers.reduce((acc, u) => acc + (u.points || 0), 0).toLocaleString()} icon={TrendingUp} color="bg-emerald-500" trend="שיא חודשי" />
+                <StatCard title="אירועים בחודש זה" value={monthlyStats.eventsCount} icon={Calendar} color="bg-rose-500" />
+                <StatCard title="סה״כ נקודות בקהילה" value={monthlyStats.points.toLocaleString()} icon={TrendingUp} color="bg-emerald-500" trend="צבירה כוללת" />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -903,7 +936,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
             {/* המשך הגרלות רגילות */}
             <div className="space-y-6">
-                <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה רגילה חדשה</button>
+                <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', prize4: '', prize5: '', prize6: '', prize7: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה רגילה חדשה</button>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
                   {apiLotteries.map(l => (
                     <div key={l._id || l.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm animate-fade-in-up flex flex-col justify-between group">
@@ -917,6 +950,12 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                         </div>
                         <div className="space-y-1 mt-2">
                             <p className="text-[10px] text-emerald-600 font-bold">🎁 פרס 1: {l.prize}</p>
+                            {l.prize2 && <p className="text-[10px] text-slate-600 font-bold">🎁 פרס 2: {l.prize2}</p>}
+                            {l.prize3 && <p className="text-[10px] text-slate-600 font-bold">🎁 פרס 3: {l.prize3}</p>}
+                            {l.prize4 && <p className="text-[10px] text-slate-600 font-bold">🎁 פרס 4: {l.prize4}</p>}
+                            {l.prize5 && <p className="text-[10px] text-slate-600 font-bold">🎁 פרס 5: {l.prize5}</p>}
+                            {l.prize6 && <p className="text-[10px] text-slate-600 font-bold">🎁 פרס 6: {l.prize6}</p>}
+                            {l.prize7 && <p className="text-[10px] text-slate-600 font-bold">🎁 פרס 7: {l.prize7}</p>}
                             {l.participationType === 'mission' && <p className="text-[10px] text-orange-600 font-black">🎯 משימה: {l.missionText}</p>}
                         </div>
                       </div>
@@ -999,6 +1038,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <h3 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3"><Sparkles className="text-rose-500"/> הגדרת אשת השבוע</h3>
               </div>
               
+              <div className="p-4 bg-blue-50 border-r-4 border-blue-500 rounded-xl mb-6">
+                <p className="text-sm font-bold text-blue-900">שימי לב: השאלות שתגדירי כאן יישמרו כתבנית קבועה תמיד. גם אחרי שליחת לינק, השאלות לא ימחקו עד שתבחרי לשנותן.</p>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input placeholder="שם מלא של האישה" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none focus:ring-2 focus:ring-rose-100" value={personalityForm.name} onChange={e=>setPersonalityForm({...personalityForm, name:e.target.value})} />
                 <input placeholder="תפקיד / תיאור קצר" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none focus:ring-2 focus:ring-rose-100" value={personalityForm.role} onChange={e=>setPersonalityForm({...personalityForm, role:e.target.value})} />
@@ -1016,12 +1059,12 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
               <button onClick={async () => { 
                 try {
-                  // שמירת השאלות לפני יצירת הלינק כדי שיישמרו לפעם הבאה (עדכון תבנית)
+                  // שמירת השאלות כתבנית לפני יצירת הלינק
                   await api.updatePersonality(personalityForm);
                   const res = await api.generateInterviewLink(personalityForm); 
                   const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
                   setGeneratedLink(fullLink);
-                  alert("השאלות נשמרו והלינק הופק בהצלחה!");
+                  alert("השאלות נשמרו כתבנית והלינק הופק בהצלחה!");
                 } catch (err: any) { alert("שגיאה: " + err.message); }
               }} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 transition-all">
                 <LinkIcon size={18}/> שמירת שאלות והפקת לינק למילוי עצמי
@@ -1147,6 +1190,11 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             <div className="space-y-2">
                 <input required placeholder="פרס ראשון 🏆" className="w-full p-4 bg-emerald-50 border border-emerald-100 rounded-2xl font-black outline-none text-right" value={lotteryForm.prize} onChange={e=>setLotteryForm({...lotteryForm, prize:e.target.value})} />
                 <input placeholder="פרס שני" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize2} onChange={e=>setLotteryForm({...lotteryForm, prize2:e.target.value})} />
+                <input placeholder="פרס שלישי" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize3} onChange={e=>setLotteryForm({...lotteryForm, prize3:e.target.value})} />
+                <input placeholder="פרס רביעי" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize4} onChange={e=>setLotteryForm({...lotteryForm, prize4:e.target.value})} />
+                <input placeholder="פרס חמישי" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize5} onChange={e=>setLotteryForm({...lotteryForm, prize5:e.target.value})} />
+                <input placeholder="פרס שישי" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize6} onChange={e=>setLotteryForm({...lotteryForm, prize6:e.target.value})} />
+                <input placeholder="פרס שביעי" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={lotteryForm.prize7} onChange={e=>setLotteryForm({...lotteryForm, prize7:e.target.value})} />
             </div>
             <select className="w-full p-3 bg-white rounded-xl font-bold text-xs outline-none" value={lotteryForm.participationType} onChange={e=>setLotteryForm({...lotteryForm, participationType: e.target.value})}>
                 <option value="everyone">כולן</option>
