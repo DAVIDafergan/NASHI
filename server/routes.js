@@ -228,14 +228,14 @@ router.post('/lotteries', authenticate, isAdmin, async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
-        // הקוד כאן שומר את כל ה-body, כולל prize2-7
+        // הקוד כאן שומר את כל ה-body, כולל prizes (המערך) ו-prize2-7
         res.json(await new Lottery(data).save());
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.put('/lotteries/:id', authenticate, isAdmin, async (req, res) => {
     try { 
-        // הקוד כאן מעדכן את כל ה-body, כולל prize2-7
+        // הקוד כאן מעדכן את כל ה-body, כולל prizes (המערך) ו-prize2-7
         res.json(await Lottery.findByIdAndUpdate(req.params.id, req.body, { new: true })); 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -303,23 +303,45 @@ router.delete('/community/:id', authenticate, isAdmin, async (req, res) => {
 
 // ================= 7. אשת השבוע (PERSONALITY) =================
 
+// נתיב חדש לקבלת השאלות הקבועות (התבנית)
+router.get('/personality/template', async (req, res) => {
+    try {
+        const template = await Personality.findOne({ isTemplate: true });
+        res.json(template || { questions: [] });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// נתיב חדש לעדכון השאלות הקבועות (התבנית)
+router.post('/personality/template', authenticate, isAdmin, async (req, res) => {
+    try {
+        let template = await Personality.findOne({ isTemplate: true });
+        if (!template) {
+            template = new Personality({ ...req.body, isTemplate: true, isActive: false });
+        } else {
+            Object.assign(template, req.body);
+        }
+        await template.save();
+        res.json(template);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/personality', async (req, res) => {
     try { 
-        const p = await Personality.findOne({ isActive: true }).sort({ updatedAt: -1 }); 
+        const p = await Personality.findOne({ isActive: true, isTemplate: false }).sort({ updatedAt: -1 }); 
         res.json(p || {}); 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.get('/personality/archive', async (req, res) => {
     try {
-        const all = await Personality.find().sort({ updatedAt: -1 });
+        const all = await Personality.find({ isTemplate: false }).sort({ updatedAt: -1 });
         res.json(all);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/personality', authenticate, isAdmin, async (req, res) => {
     try {
-        let p = await Personality.findOne({ isActive: true });
+        let p = await Personality.findOne({ isActive: true, isTemplate: false });
         if (!p) p = new Personality(req.body);
         else Object.assign(p, req.body, { updatedAt: Date.now() });
         await p.save();
@@ -335,7 +357,8 @@ router.post('/personality/generate-link', authenticate, isAdmin, async (req, res
             role: '',
             questions: req.body.questions || [],
             externalToken: token, 
-            isActive: false 
+            isActive: false,
+            isTemplate: false
         });
         await p.save();
         res.json({ token, id: p._id });
@@ -368,14 +391,14 @@ router.post('/personality/fill/:token', async (req, res) => {
 
 router.get('/admin/personality/pending', authenticate, isAdmin, async (req, res) => {
     try {
-        const pending = await Personality.find({ isActive: false, externalToken: null });
+        const pending = await Personality.find({ isActive: false, isTemplate: false, externalToken: null });
         res.json(pending);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/admin/personality/approve/:id', authenticate, isAdmin, async (req, res) => {
     try {
-        await Personality.updateMany({}, { isActive: false });
+        await Personality.updateMany({ isTemplate: false }, { isActive: false });
         await Personality.findByIdAndUpdate(req.params.id, { isActive: true });
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -575,7 +598,6 @@ router.post('/membership/request', authenticate, async (req, res) => {
 router.post('/chat', async (req, res) => {
   const { prompt } = req.body;
   try {
-    // שימוש ב-genAI שהונגש ב-index.js
     const model = req.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -594,10 +616,8 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
   try {
     let recipients = [];
     if (isTest) {
-      // שליחת ניסיון למייל בודד
       recipients = [{ email: targetEmail, name: 'מנהלת (בדיקה)' }];
     } else {
-      // שליחת אמת לכל המשתמשות הרשומות
       recipients = await User.find({}, 'email name');
     }
 
@@ -605,7 +625,6 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
       return res.status(400).json({ error: "לא נמצאו נמענים לשליחה" });
     }
 
-    // בניית גוף המייל המעוצב ב-HTML
     const emailHtml = `
       <div dir="rtl" style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 20px; overflow: hidden; text-align: right; background: #ffffff;">
         ${logo ? `<div style="padding: 20px; text-align: center; background: #fdf6ff;"><img src="${logo}" style="max-height: 50px;"></div>` : ''}
@@ -620,13 +639,11 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
       </div>
     `;
 
-    // פיצול הנמענים לקבוצות (Batch) של עד 100 נמענים כל אחת (מגבלת Resend)
     const batches = [];
     for (let i = 0; i < recipients.length; i += 100) {
       batches.push(recipients.slice(i, i + 100));
     }
 
-    // שליחה לכל הבאצ'ים
     for (const batch of batches) {
       await req.resend.batch.send(
         batch.map(u => ({
@@ -647,7 +664,6 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
 
 // ================= 14. שולחן השבת שלי (SHABBAT LOTTERY) =================
 
-// קבלת הגדרות הגרלת שבת הנוכחית
 router.get('/shabbat-lottery/settings', async (req, res) => {
     try {
         const settings = await ShabbatLottery.findOne().sort({ createdAt: -1 });
@@ -655,7 +671,6 @@ router.get('/shabbat-lottery/settings', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// עדכון הגדרות הגרלת שבת (מנהלת)
 router.post('/admin/shabbat-lottery/settings', authenticate, isAdmin, async (req, res) => {
     try {
         let settings = await ShabbatLottery.findOne().sort({ createdAt: -1 });
@@ -669,13 +684,11 @@ router.post('/admin/shabbat-lottery/settings', authenticate, isAdmin, async (req
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// הגשת מועמדות להגרלת שבת (משתמשת)
 router.post('/shabbat-lottery/enter', authenticate, async (req, res) => {
     try {
         const { familyName, image, phone } = req.body;
         if (!phone) return res.status(400).json({ error: 'מספר טלפון הוא שדה חובה' });
         
-        // בדיקה אם המשתמשת כבר שלחה השבוע (לפי userId)
         const existing = await ShabbatEntry.findOne({ userId: req.user.id });
         if (existing) return res.status(400).json({ error: 'כבר שלחת תמונה להגרלה זו השבוע' });
 
@@ -690,7 +703,6 @@ router.post('/shabbat-lottery/enter', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// קבלת רשימת המשתתפות להגרלה (מנהלת)
 router.get('/admin/shabbat-lottery/entries', authenticate, isAdmin, async (req, res) => {
     try {
         const entries = await ShabbatEntry.find().sort({ createdAt: -1 });
@@ -698,7 +710,6 @@ router.get('/admin/shabbat-lottery/entries', authenticate, isAdmin, async (req, 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// הפעלת הגרלת שבת (מנהלת)
 router.post('/admin/shabbat-lottery/run', authenticate, isAdmin, async (req, res) => {
     try {
         const entries = await ShabbatEntry.find();
@@ -714,9 +725,6 @@ router.post('/admin/shabbat-lottery/run', authenticate, isAdmin, async (req, res
             lottery.isActive = false;
             await lottery.save();
         }
-
-        // אופציונלי: מחיקת המשתתפות לקראת השבוע הבא
-        // await ShabbatEntry.deleteMany({});
 
         res.json({ success: true, winnerFamily: winner.familyName });
     } catch (err) { res.status(500).json({ error: err.message }); }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft } from 'lucide-react';
+import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft, Medal } from 'lucide-react';
 import { LotteryItem, User } from '../types';
 import { useLocation } from 'react-router-dom';
 import { api } from '../services/api'; // ייבוא ה-API
@@ -240,8 +240,41 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
   const filteredLotteries = lotteries.filter(l => !l.title.includes("שולחן השבת") && !l.title.includes("שולחן שבת"));
 
+  // פונקציית עזר להצגת רשימת פרסים מעוצבת
+  const renderPrizeList = (lottery: any, isDark: boolean = false) => {
+    // איסוף כל הפרסים הקיימים (גם מהמערך וגם מהשדות הבודדים)
+    const allPrizes = [
+        lottery.prize,
+        lottery.prize2,
+        lottery.prize3,
+        lottery.prize4,
+        lottery.prize5,
+        lottery.prize6,
+        lottery.prize7
+    ].filter(Boolean);
+
+    // אם יש מערך prizes מובנה, נשתמש בו
+    const finalPrizes = (lottery.prizes && lottery.prizes.length > 0) ? lottery.prizes : allPrizes;
+
+    return (
+        <div className="space-y-2">
+            {finalPrizes.map((p: string, idx: number) => (
+                <div key={idx} className={`flex items-center gap-2 p-2 rounded-xl transition-all ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white/60 border border-rose-100/50 shadow-sm'}`}>
+                    <div className={`${idx === 0 ? 'text-amber-500' : 'text-slate-400'} shrink-0`}>
+                        {idx === 0 ? <Trophy size={16} /> : <Medal size={14} />}
+                    </div>
+                    <span className={`text-xs font-black ${isDark ? 'text-white' : 'text-slate-700'}`}>
+                        {idx === 0 ? 'פרס ראשון: ' : `פרס ${idx + 1}: `}
+                        <span className={idx === 0 ? 'text-rose-500' : ''}>{p}</span>
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+  };
+
   return (
-    <div className="space-y-8 pb-10 text-right" dir="rtl">
+    <div className="min-h-screen space-y-8 pb-10 text-right" dir="rtl">
       {/* Header Section */}
       <div className="text-center space-y-3 py-10 relative overflow-hidden rounded-[3rem] bg-white border border-rose-100 shadow-sm">
         <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full blur-3xl -mr-16 -mt-16"></div>
@@ -318,22 +351,15 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                         </div>
                         
                         <div className="px-4 pb-4 flex-1 flex flex-col text-right">
-                            <div className="flex justify-between items-start mb-2">
+                            <div className="flex justify-between items-start mb-4">
                                 <h3 className="text-xl font-black text-slate-800 leading-tight group-hover:text-rose-600 transition-colors">{lottery.title}</h3>
                                 {lottery.isActive && <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>}
                             </div>
 
-                            <div className="space-y-2 mb-6 bg-rose-50/30 p-4 rounded-2xl border border-rose-100/50">
-                                <p className="text-rose-600 font-black text-sm flex items-center gap-2">
-                                    <Trophy size={16} className="text-amber-500" />
-                                    פרס ראשון: {lottery.prize}
-                                </p>
-                                {lottery.prize2 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס שני: {lottery.prize2}</p>}
-                                {lottery.prize3 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס שלישי: {lottery.prize3}</p>}
-                                {lottery.prize4 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס רביעי: {lottery.prize4}</p>}
-                                {lottery.prize5 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס חמישי: {lottery.prize5}</p>}
-                                {lottery.prize6 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס שישי: {lottery.prize6}</p>}
-                                {lottery.prize7 && <p className="text-slate-600 font-bold text-xs flex items-center gap-2 pr-1"><Award size={14} className="text-slate-400" />פרס שביעי: {lottery.prize7}</p>}
+                            {/* תצוגת פרסים מסודרת וברורה */}
+                            <div className="space-y-3 mb-6 bg-rose-50/30 p-4 rounded-[2rem] border border-rose-100/50">
+                                <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">פירוט הפרסים:</p>
+                                {renderPrizeList(lottery)}
                                 
                                 {lottery.participationType === 'mission' && lottery.missionText && (
                                     <div className="mt-3 pt-3 border-t border-rose-100/50">
@@ -678,7 +704,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                       <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-[2.5rem] shadow-2xl overflow-hidden relative group">
                                           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-yellow-400/10 to-transparent"></div>
                                           <h2 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tighter">
-                                              {selectedLottery.winnerId === 'No Participants' ? 'אין משתתפות' : 'חברת המעגל'}
+                                              {selectedLottery.winnerId === 'No Participants' ? 'אין משתתפות' : 'חברת המעגל המאושרת'}
                                           </h2>
                                           <div className="flex items-center justify-center gap-2 text-yellow-400 bg-yellow-400/10 py-2 px-4 rounded-full w-fit mx-auto border border-yellow-400/20">
                                               <Sparkles size={16} fill="currentColor" />
@@ -688,16 +714,11 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                   </div>
 
                                   <div className="pt-6">
-                                      <p className="text-white/60 text-sm font-medium mb-4">הפרסים שחולקו: <br/> 
-                                        <span className="text-white font-black block mt-2">1. {selectedLottery.prize}</span>
-                                        {selectedLottery.prize2 && <span className="text-white/90 font-bold block text-xs">2. {selectedLottery.prize2}</span>}
-                                        {selectedLottery.prize3 && <span className="text-white/90 font-bold block text-xs">3. {selectedLottery.prize3}</span>}
-                                        {selectedLottery.prize4 && <span className="text-white/90 font-bold block text-xs">4. {selectedLottery.prize4}</span>}
-                                        {selectedLottery.prize5 && <span className="text-white/90 font-bold block text-xs">5. {selectedLottery.prize5}</span>}
-                                        {selectedLottery.prize6 && <span className="text-white/90 font-bold block text-xs">6. {selectedLottery.prize6}</span>}
-                                        {selectedLottery.prize7 && <span className="text-white/90 font-bold block text-xs">7. {selectedLottery.prize7}</span>}
-                                      </p>
-                                      <button onClick={() => setSelectedLottery(null)} className="bg-white text-slate-950 px-10 py-4 rounded-2xl font-black text-sm hover:bg-rose-500 hover:text-white transition-all shadow-xl">
+                                      <p className="text-white/60 text-xs font-black uppercase tracking-widest mb-4">פירוט הפרסים שחולקו:</p>
+                                      <div className="max-w-xs mx-auto">
+                                          {renderPrizeList(selectedLottery, true)}
+                                      </div>
+                                      <button onClick={() => setSelectedLottery(null)} className="mt-10 bg-white text-slate-950 px-10 py-4 rounded-2xl font-black text-sm hover:bg-rose-500 hover:text-white transition-all shadow-xl">
                                           סגירה וחזרה להגרלות
                                       </button>
                                   </div>
