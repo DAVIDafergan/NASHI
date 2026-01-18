@@ -33,7 +33,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, v
         <Icon size={24} />
       </div>
       {trend && (
-        <span className="flex items-center gap-1 text-emerald-500 text-xs font-black bg-emerald-50 px-3 py-1 rounded-full">
+        <span className="flex items-center gap-1 text-emerald-50 text-xs font-black bg-emerald-50 px-3 py-1 rounded-full">
           {trend} <ArrowUpRight size={14} />
         </span>
       )}
@@ -86,7 +86,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     minPointsToEnter: 0, participationType: 'everyone', missionText: '' 
   });
 
-  // Shabbat Lottery Form State (חדש לניהול הגרלת שולחן שבת)
+  // Shabbat Lottery Form State
   const [shabbatLotteryForm, setShabbatLotteryForm] = useState({
     prize: '',
     notes: '',
@@ -187,8 +187,9 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         }
 
         if (activeTab === 'personality') {
-            const currentPers = await api.getPersonality();
-            if(currentPers) setPersonalityForm(currentPers);
+            // תיקון: טעינת תבנית השאלות הקבועה במקום הראיון האחרון
+            const template = await api.getPersonalityTemplate();
+            if(template) setPersonalityForm(template);
             setPendingInterviews(await api.getPendingInterviews() || []); 
             setAllInterviews(await api.getAllPersonalities() || []);
         }
@@ -443,20 +444,20 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-gradient-to-l from-slate-900 to-slate-800 p-10 rounded-[3.5rem] text-white shadow-2xl relative overflow-hidden">
                 <div className="relative z-10 text-center md:text-right">
                   <div className="flex items-center gap-4 mb-4 justify-center md:justify-start">
-                    <button onClick={() => setViewDate(new Date(viewDate.setMonth(viewDate.getMonth() - 1)))} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ChevronRight size={30}/></button>
+                    <button onClick={() => setViewDate(prev => { const d = new Date(prev); d.setMonth(d.getMonth() - 1); return d; })} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ChevronRight size={30}/></button>
                     <h2 className="text-4xl font-black">{monthlyStats.monthName} {monthlyStats.year} 💫</h2>
-                    <button onClick={() => setViewDate(new Date(viewDate.setMonth(viewDate.getMonth() + 1)))} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ChevronLeft size={30}/></button>
+                    <button onClick={() => setViewDate(prev => { const d = new Date(prev); d.setMonth(d.getMonth() + 1); return d; })} className="p-2 hover:bg-white/10 rounded-full transition-colors"><ChevronLeft size={30}/></button>
                   </div>
                   <p className="opacity-70 font-bold">הנתונים המוצגים מחושבים לפי החודש הנבחר.</p>
                 </div>
                 <div className="flex gap-4 relative z-10">
                    <div className="bg-white/10 backdrop-blur-md p-4 rounded-3xl border border-white/20">
-                      <p className="text-[10px] uppercase font-black opacity-60">משתמשות חדשות</p>
-                      <p className="text-2xl font-black">+{monthlyStats.usersCount}</p>
+                     <p className="text-[10px] uppercase font-black opacity-60">משתמשות חדשות</p>
+                     <p className="text-2xl font-black">+{monthlyStats.usersCount}</p>
                    </div>
                    <div className="bg-rose-500 p-4 rounded-3xl shadow-lg border border-rose-400">
-                      <p className="text-[10px] uppercase font-black opacity-80">אירועי החודש</p>
-                      <p className="text-2xl font-black">{monthlyStats.eventsCount}</p>
+                     <p className="text-[10px] uppercase font-black opacity-80">אירועי החודש</p>
+                     <p className="text-2xl font-black">{monthlyStats.eventsCount}</p>
                    </div>
                 </div>
                 <Activity className="absolute left-[-20px] bottom-[-20px] text-white/5 w-64 h-64" />
@@ -501,7 +502,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב שליחת תפוצה - חדש */}
+        {/* טאב שליחת תפוצה */}
         {activeTab === 'broadcast' && (
           <div className="max-w-3xl mx-auto space-y-8 animate-fade-in text-right">
             <div className="bg-white p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8">
@@ -586,7 +587,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב הודעות הנהלה - כולל רשימת הודעות */}
+        {/* טאב הודעות הנהלה */}
         {activeTab === 'announcements' && (
           <div className="space-y-6 animate-fade-in">
              <button onClick={() => { setAnnForm({ _id: '', title: '', content: '' }); setIsAnnModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Bell size={20}/> הודעה חדשה</button>
@@ -804,7 +805,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   <h4 className="font-black text-lg">{c.title}</h4>
                   <p className="text-xs text-slate-500 font-bold">{c.instructor} | {c.gender}</p>
                   <p className="text-[10px] text-slate-400 mt-1">{c.day} ב-{c.time} | {c.location}</p>
-                  {/* השדות שהוחזרו לתצוגה */}
                   <div className="mt-2 space-y-1">
                     <p className="text-[10px] text-blue-500 font-black flex items-center gap-1"><Phone size={10}/> הרשמה: {c.registrationPhone}</p>
                     <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Users size={10}/> מדריכה: {c.contactPhone}</p>
@@ -822,7 +822,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב הגרלות משודרג */}
         {activeTab === 'lotteries' && (
           <div className="space-y-12 animate-fade-in">
-            {/* ניהול הגרלת שולחן שבת - חדש! */}
             <div className="bg-indigo-50/50 p-8 rounded-[3.5rem] border border-indigo-100 space-y-6">
                 <div className="flex items-center gap-3 border-b border-indigo-100 pb-4">
                     <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><CalendarClock size={24}/></div>
@@ -890,7 +889,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     </div>
                 </div>
 
-                {/* רשימת משתתפות שולחן שבת עם ייצוא */}
                 <div className="mt-8 bg-white p-6 rounded-[2.5rem] border border-indigo-100 shadow-sm overflow-hidden">
                     <div className="flex justify-between items-center mb-6">
                         <h4 className="font-black text-xl text-indigo-900">משתתפות שולחן שבת השבוע ({shabbatParticipants.length})</h4>
@@ -934,7 +932,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 </div>
             </div>
 
-            {/* המשך הגרלות רגילות */}
             <div className="space-y-6">
                 <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', prize4: '', prize5: '', prize6: '', prize7: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה רגילה חדשה</button>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
@@ -1000,7 +997,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב אשת השבוע עם אישור ראיונות */}
+        {/* טאב אשת השבוע */}
         {activeTab === 'personality' && (
           <div className="max-w-4xl mx-auto space-y-12 animate-fade-in text-right">
             
@@ -1059,8 +1056,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
               <button onClick={async () => { 
                 try {
-                  // שמירת השאלות כתבנית לפני יצירת הלינק
-                  await api.updatePersonality(personalityForm);
+                  // שמירה ספציפית של התבנית
+                  await api.updatePersonalityTemplate(personalityForm);
                   const res = await api.generateInterviewLink(personalityForm); 
                   const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
                   setGeneratedLink(fullLink);
@@ -1120,9 +1117,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </div>
 
-      {/* מודאלים חדשים */}
+      {/* מודאלים */}
 
-      {/* מודאל הודעת הנהלה */}
       <Modal isOpen={isAnnModalOpen} onClose={() => setIsAnnModalOpen(false)} title={annForm._id ? "עריכת הודעה" : "הוספת הודעת הנהלה"}>
         <form onSubmit={async (e) => {
           e.preventDefault();
@@ -1131,7 +1127,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               else await api.createAnnouncement(annForm);
               alert("הודעה נשמרה!");
               setIsAnnModalOpen(false); 
-              // עדכון רשימה מיידי
               const anns = await api.getAnnouncements();
               setApiAnnouncements(anns || []);
           } catch(err: any) { alert("שגיאה בשמירה"); }
@@ -1142,7 +1137,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </form>
       </Modal>
 
-      {/* מודאל משתתפות בהגרלה */}
       <Modal isOpen={isParticipantsModalOpen} onClose={() => setIsParticipantsModalOpen(false)} title="רשימת משתתפות בהגרלה">
         <div className="space-y-2">
             {currentParticipants.map((p, i) => (
@@ -1155,7 +1149,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </div>
       </Modal>
 
-      {/* מודאל תצוגה מקדימה לראיון */}
       <Modal isOpen={isPreviewModalOpen} onClose={() => setIsPreviewModalOpen(false)} title="תצוגה מקדימה של הראיון">
         {selectedInterview && (
             <div className="space-y-4 text-right">
@@ -1174,7 +1167,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
       </Modal>
 
-      {/* מודאל הגרלה מעודכן */}
       <Modal isOpen={isLotteryModalOpen} onClose={()=>setIsLotteryModalOpen(false)} title={lotteryForm._id ? "עריכת הגרלה" : "הגרלה חדשה"}>
         <form onSubmit={async (e)=>{
             e.preventDefault(); 
