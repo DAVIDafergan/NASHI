@@ -112,8 +112,11 @@ const Class = mongoose.model('Class', ClassSchema);
 
 const LotterySchema = new mongoose.Schema({
   title: { type: String, required: true },
-  prize: { type: String, required: true },
-  // שדות חדשים לפרסים נוספים
+  // תיקון שגיאה 500: prize כבר לא חובה (Required) כדי לאפשר גמישות בפרסים
+  prize: { type: String }, 
+  // שדה חדש למערך פרסים גמיש (עד 7)
+  prizes: { type: [String], default: [] },
+  // שדות קיימים לפרסים נוספים
   prize2: { type: String },
   prize3: { type: String },
   prize4: { type: String },
@@ -155,6 +158,8 @@ const PersonalitySchema = new mongoose.Schema({
   motto: { type: String }, // הוספת מוטו לסכמה
   questions: [{ question: String, answer: String }],
   isActive: { type: Boolean, default: false },
+  // שדה חדש לסימון תבנית השאלות הקבועה של המנהלת
+  isTemplate: { type: Boolean, default: false }, 
   externalToken: { type: String },
   updatedAt: { type: Date, default: Date.now }
 });
