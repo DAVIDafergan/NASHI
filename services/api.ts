@@ -306,7 +306,9 @@ export const api = {
     // ================= PERSONALITY (אשת השבוע) =================
     async getPersonality() {
         const res = await fetch(`${API_URL}/personality`);
-        return res.json();
+        const data = await res.json();
+        // תיקון: הגנה כדי לוודא שתמיד חוזר מבנה תקין של שאלות
+        return (data && data.questions) ? data : { ...data, questions: [] };
     },
 
     async getAllPersonalities(): Promise<PersonalityProfile[]> {
@@ -428,7 +430,6 @@ export const api = {
 
     // ================= ANNOUNCEMENTS (הודעות הנהלה) =================
     async getAnnouncements(): Promise<any[]> {
-        // תיקון: הוספת headers כדי שהשרת יזהה שמדובר במנהל ויחזיר את הרשימה
         const res = await fetch(`${API_URL}/announcements`, { headers: getHeaders() });
         return res.json();
     },
