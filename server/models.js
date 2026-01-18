@@ -116,6 +116,10 @@ const LotterySchema = new mongoose.Schema({
   // שדות חדשים לפרסים נוספים
   prize2: { type: String },
   prize3: { type: String },
+  prize4: { type: String },
+  prize5: { type: String },
+  prize6: { type: String },
+  prize7: { type: String },
   drawDate: { type: Date, required: true },
   image: { type: String },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

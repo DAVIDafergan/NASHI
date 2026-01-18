@@ -228,12 +228,16 @@ router.post('/lotteries', authenticate, isAdmin, async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
+        // הקוד כאן שומר את כל ה-body, כולל prize2-7
         res.json(await new Lottery(data).save());
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.put('/lotteries/:id', authenticate, isAdmin, async (req, res) => {
-    try { res.json(await Lottery.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
+    try { 
+        // הקוד כאן מעדכן את כל ה-body, כולל prize2-7
+        res.json(await Lottery.findByIdAndUpdate(req.params.id, req.body, { new: true })); 
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/admin/lotteries/:id/run', authenticate, isAdmin, async (req, res) => {
