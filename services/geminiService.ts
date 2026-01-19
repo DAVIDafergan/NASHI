@@ -1,10 +1,5 @@
 // src/services/geminiService.ts
 
-/**
- * פונקציה לקבלת המלצה חכמה מהעוזרת
- * התיקון: הקריאה מתבצעת כעת לשרת ה-Backend שלנו ב-Railway 
- * כדי למנוע שגיאות CORS וחשיפה של מפתח ה-API בדפדפן.
- */
 export const getSmartRecommendation = async (userQuery: string): Promise<string> => {
   try {
     const response = await fetch('https://nashi-production.up.railway.app/api/chat', {
@@ -15,17 +10,20 @@ export const getSmartRecommendation = async (userQuery: string): Promise<string>
       body: JSON.stringify({ prompt: userQuery })
     });
 
+    // בדיקה אם התגובה חזרה בצורה תקינה מהשרת
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      console.warn(`Server responded with status: ${response.status}`);
+      return "מצטערת, שירות ה-AI זמין כרגע רק חלקית. נסי שוב מאוחר יותר.";
     }
 
     const data = await response.json();
     
-    // החזרת הטקסט שהתקבל מגמיני דרך השרת
-    return data.text || "מצטערת, לא הצלחתי לעבד את הבקשה כרגע.";
+    // החזרת הטקסט או הודעת ברירת מחדל אם השדה ריק
+    return data.text || "לא הצלחתי לגבש המלצה כרגע, האם תרצי לשאול משהו אחר?";
+
   } catch (error) {
-    console.error("Gemini Error:", error);
-    // הודעה ידידותית למשתמשת במקרה של שגיאה (נשמר מהקוד המקורי)
-    return "חלה שגיאה בתקשורת עם העוזרת החכמה. נסי שוב בעוד כמה רגעים.";
+    // השכבה הזו מבטיחה שהפונקציה תמיד תחזיר מחרוזת ולא תזרוק שגיאה שתפיל את האתר
+    console.error("Gemini Service Error:", error);
+    return "חלה שגיאה בתקשורת עם העוזרת החכמה. שאר האתר עובד כרגיל!";
   }
 };

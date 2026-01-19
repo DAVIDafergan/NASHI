@@ -19,6 +19,7 @@ import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, Co
 import { Loader2 } from 'lucide-react'; // X and AlertCircle removed as they are now in AuthModal
 import { api } from './services/api';
 import AuthModal from './components/AuthModal'; // ייבוא המודל החדש
+import ErrorBoundary from './components/ErrorBoundary'; // ייבוא מגן השגיאות
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -250,7 +251,11 @@ const App: React.FC = () => {
           </Routes>
         </Layout>
         
-        {user && !user.isAdmin && <GeminiAssistant />}
+        {user && !user.isAdmin && (
+          <ErrorBoundary>
+            <GeminiAssistant />
+          </ErrorBoundary>
+        )}
 
         {/* השימוש ברכיב AuthModal החדש במקום הקוד הישן */}
         <AuthModal 
