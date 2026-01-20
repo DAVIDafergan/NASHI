@@ -326,14 +326,22 @@ export const api = {
         return res.json();
     },
 
-    // פונקציה חדשה שנוספה לתיקון השגיאה
+    // פונקציה לקבלת תבנית השאלות הקבועה
+    async getPersonalityTemplate() {
+        const res = await fetch(`${API_URL}/personality/template`, { headers: getHeaders() });
+        if (!res.ok) throw new Error('Failed to fetch template');
+        return res.json();
+    },
+
+    // פונקציה לעדכון תבנית השאלות הקבועה
     async updatePersonalityTemplate(data: any) {
         validateImageSize(data);
-        const res = await fetch(`${API_URL}/admin/personality/template`, {
+        const res = await fetch(`${API_URL}/personality/template`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
         });
+        if (!res.ok) throw new Error('Failed to update template');
         return res.json();
     },
 
