@@ -312,14 +312,20 @@ router.get('/personality/template', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב חדש לעדכון השאלות הקבועות (התבנית)
+// נתיב חדש לעדכון השאלות הקבועות (התבנית) - מתוקן למחיקת שאלות
 router.post('/personality/template', authenticate, isAdmin, async (req, res) => {
     try {
         let template = await Personality.findOne({ isTemplate: true });
         if (!template) {
             template = new Personality({ ...req.body, isTemplate: true, isActive: false });
         } else {
-            Object.assign(template, req.body);
+            // עדכון מפורט של השדות כדי להבטיח מחיקת איברים מהמערך
+            template.name = req.body.name;
+            template.role = req.body.role;
+            template.image = req.body.image;
+            template.questions = req.body.questions;
+            // הודעה מפורשת למונגוס שהמערך השתנה
+            template.markModified('questions');
         }
         await template.save();
         res.json(template);
