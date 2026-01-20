@@ -326,6 +326,17 @@ export const api = {
         return res.json();
     },
 
+    // פונקציה חדשה שנוספה לתיקון השגיאה
+    async updatePersonalityTemplate(data: any) {
+        validateImageSize(data);
+        const res = await fetch(`${API_URL}/admin/personality/template`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
     async generateInterviewLink(data: any) {
         const res = await fetch(`${API_URL}/personality/generate-link`, {
             method: 'POST',
