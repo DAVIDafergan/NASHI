@@ -4,7 +4,8 @@ import {
   X, Image as ImageIcon, BookOpen, Settings, Award, Sparkles, MessageSquare, 
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
-  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send, Loader2, Download, ChevronRight
+  Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send, Loader2, Download, ChevronRight,
+  Mail // נוסף אייקון להודעות
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -46,7 +47,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, v
 );
 
 const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> = ({ user }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast' | 'messages'>('summary');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -65,6 +66,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [apiAds, setApiAds] = useState<any[]>([]);
   const [apiAnnouncements, setApiAnnouncements] = useState<any[]>([]); 
   const [allInterviews, setAllInterviews] = useState<PersonalityProfile[]>([]); 
+  const [contactMessages, setContactMessages] = useState<any[]>([]); // מדינת הודעות חדשה
   
   // Form States
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -77,7 +79,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [classForm, setClassForm] = useState<Partial<ClassItem>>({ 
     title: '', instructor: '', contactPhone: '', registrationPhone: '', day: 'ראשון', 
-    time: '', location: '', price: 0, ageGroup: '', gender: 'נשים', image: '' 
+    time: '', location: '', price: 0, ageGroup: '', gender: 'נשים', image: ''  
   });
 
   const [isLotteryModalOpen, setIsLotteryModalOpen] = useState(false);
@@ -99,7 +101,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [communityForm, setCommunityForm] = useState<Partial<any>>({ 
     category: 'גמ"חים', title: '', phone: '', location: '', image: '', description: '',
-    startTime: '', targetAudience: '', isPaid: false, price: 0 
+    startTime: '', targetAudience: '', isPaid: false, price: 0  
   });
 
   const [isInspirationModalOpen, setIsInspirationModalOpen] = useState(false);
@@ -213,6 +215,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             const anns = await api.getAnnouncements();
             setApiAnnouncements(anns || []);
         }
+        else if (activeTab === 'messages') { // טעינת פניות משתתפות
+            const msgs = await api.getContactMessages();
+            setContactMessages(msgs || []);
+        }
     } catch (err) { console.error(err); }
     setLoading(false);
   };
@@ -240,7 +246,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     }
   };
 
-  const handleDelete = async (id: string, type: 'user' | 'event' | 'class' | 'lottery' | 'community' | 'post' | 'inspiration' | 'ad' | 'personality' | 'announcement', name: string) => {
+  const handleDelete = async (id: string, type: 'user' | 'event' | 'class' | 'lottery' | 'community' | 'post' | 'inspiration' | 'ad' | 'personality' | 'announcement' | 'message', name: string) => {
     if (!id) return alert('שגיאה: מזהה חסר');
     if (window.confirm(`למחוק את ${name} לצמיתות?`)) {
       try {
@@ -254,6 +260,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         else if (type === 'ad') await api.deleteAd(id);
         else if (type === 'personality') await api.deletePersonality(id);
         else if (type === 'announcement') await api.deleteAnnouncement(id);
+        else if (type === 'message') await api.deleteContactMessage(id); // מחיקת פנייה
         loadTabData();
       } catch (err) { alert('שגיאה במחיקה'); }
     }
@@ -401,24 +408,25 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
       {/* תפריט טאבים רספונסיבי - משופר */}
       <div className="max-w-7xl mx-auto flex overflow-x-auto md:flex-wrap no-scrollbar gap-2 bg-white p-2 rounded-[2.5rem] shadow-sm border border-slate-100 justify-start md:justify-center">
         {[
-           { id: 'summary', label: 'סיכום חודשי', icon: <BarChart3 size={16} /> },
-           { id: 'approvals', label: 'אישורים', icon: <CheckCircle size={16} /> },
-           { id: 'broadcast', label: 'שליחת תפוצה', icon: <Send size={16} /> },
-           { id: 'announcements', label: 'הודעות הנהלה', icon: <Bell size={16} /> },
-           { id: 'users', label: 'משתמשים', icon: <Users size={16} /> },
-           { id: 'events', label: 'אירועים', icon: <Calendar size={16} /> },
-           { id: 'classes', label: 'חוגים', icon: <GraduationCap size={16} /> },
-           { id: 'lotteries', label: 'הגרלות', icon: <Gift size={16} /> },
-           { id: 'community', label: 'קהילה', icon: <HeartHandshake size={16} /> },
-           { id: 'forum', label: 'פורום נשי', icon: <MessageSquare size={16} /> },
-           { id: 'inspirations', label: 'השראה יומית', icon: <Quote size={16} /> },
-           { id: 'ads', label: 'פרסומים', icon: <Megaphone size={16} /> },
-           { id: 'personality', label: 'אשת השבוע', icon: <Sparkles size={16} /> },
-           { id: 'settings', label: 'הגדרות', icon: <Settings size={16} /> },
+            { id: 'summary', label: 'סיכום חודשי', icon: <BarChart3 size={16} /> },
+            { id: 'approvals', label: 'אישורים', icon: <CheckCircle size={16} /> },
+            { id: 'messages', label: 'הודעות משתמשות', icon: <Mail size={16} /> }, // טאב חדש
+            { id: 'broadcast', label: 'שליחת תפוצה', icon: <Send size={16} /> },
+            { id: 'announcements', label: 'הודעות הנהלה', icon: <Bell size={16} /> },
+            { id: 'users', label: 'משתמשים', icon: <Users size={16} /> },
+            { id: 'events', label: 'אירועים', icon: <Calendar size={16} /> },
+            { id: 'classes', label: 'חוגים', icon: <GraduationCap size={16} /> },
+            { id: 'lotteries', label: 'הגרלות', icon: <Gift size={16} /> },
+            { id: 'community', label: 'קהילה', icon: <HeartHandshake size={16} /> },
+            { id: 'forum', label: 'פורום נשי', icon: <MessageSquare size={16} /> },
+            { id: 'inspirations', label: 'השראה יומית', icon: <Quote size={16} /> },
+            { id: 'ads', label: 'פרסומים', icon: <Megaphone size={16} /> },
+            { id: 'personality', label: 'אשת השבוע', icon: <Sparkles size={16} /> },
+            { id: 'settings', label: 'הגדרות', icon: <Settings size={16} /> },
         ].map(tab => (
-           <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-lg scale-105' : 'hover:bg-slate-50 text-slate-500'}`}>
-             {tab.icon} {tab.label}
-           </button>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-lg scale-105' : 'hover:bg-slate-50 text-slate-500'}`}>
+              {tab.icon} {tab.label}
+            </button>
         ))}
       </div>
 
@@ -498,6 +506,71 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                       </div>
                    </div>
                 </div>
+              </div>
+          </div>
+        )}
+
+        {/* טאב הודעות משתמשות (חדש) */}
+        {activeTab === 'messages' && (
+          <div className="space-y-6 animate-fade-in text-right">
+              <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                  <h3 className="text-xl font-black flex items-center gap-2"><Mail className="text-rose-500" /> פניות שהתקבלו מהאתר</h3>
+                  <span className="bg-slate-100 px-4 py-1 rounded-full text-xs font-bold text-slate-500">{contactMessages.length} פניות סה"כ</span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                  {contactMessages.map((msg) => (
+                      <div key={msg._id} className={`bg-white p-6 rounded-[2.5rem] shadow-sm border transition-all hover:shadow-md ${msg.isRead ? 'border-slate-100' : 'border-rose-200'}`}>
+                          <div className="flex flex-col md:flex-row justify-between gap-4">
+                              <div className="space-y-2 flex-1">
+                                  <div className="flex items-center gap-3">
+                                      <h4 className="font-black text-lg text-slate-800">{msg.name}</h4>
+                                      <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md font-bold">{msg.subject}</span>
+                                      {!msg.isRead && <span className="text-[10px] bg-rose-500 text-white px-2 py-1 rounded-md font-bold">חדש!</span>}
+                                  </div>
+                                  <div className="flex items-center gap-4 text-xs text-slate-400 font-bold">
+                                      <span className="flex items-center gap-1"><Phone size={12}/> {msg.phone}</span>
+                                      <span className="flex items-center gap-1"><Clock size={12}/> {new Date(msg.createdAt).toLocaleString('he-IL')}</span>
+                                  </div>
+                                  <div className="bg-slate-50 p-4 rounded-2xl text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+                                      {msg.content || <span className="italic opacity-50">ללא תוכן טקסטואלי</span>}
+                                  </div>
+                              </div>
+
+                              <div className="flex flex-col justify-between items-end gap-4 min-w-[200px]">
+                                  {msg.audio && (
+                                      <div className="w-full space-y-2">
+                                          <p className="text-[10px] font-black text-slate-400">הודעה קולית:</p>
+                                          <audio controls className="h-8 w-full">
+                                              <source src={msg.audio} type="audio/webm" />
+                                          </audio>
+                                      </div>
+                                  )}
+                                  <div className="flex gap-2">
+                                      {!msg.isRead && (
+                                          <button 
+                                              onClick={async () => { await api.markMessageAsRead(msg._id); loadTabData(); }}
+                                              className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1"
+                                          >
+                                              <CheckCircle size={14}/> סמני כנקרא
+                                          </button>
+                                      )}
+                                      <button 
+                                          onClick={() => handleDelete(msg._id, 'message', `הפנייה של ${msg.name}`)}
+                                          className="bg-red-50 text-red-500 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1"
+                                      >
+                                          <Trash2 size={14}/> מחקי
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  ))}
+                  {contactMessages.length === 0 && (
+                      <div className="text-center py-20 bg-white rounded-[3rem] border border-dashed border-slate-200 text-slate-400 font-bold">
+                          טרם התקבלו פניות מהאתר
+                      </div>
+                  )}
               </div>
           </div>
         )}

@@ -7,7 +7,8 @@ import {
     User, Event, Class, Lottery, Settings, GiftCode, 
     Announcement, // הוספת המודל החדש לייבוא
     Personality, ForumPost, Community, Inspiration, Ad,
-    ShabbatLottery, ShabbatEntry // הוספת המודלים של שולחן השבת לייבוא
+    ShabbatLottery, ShabbatEntry, // הוספת המודלים של שולחן השבת לייבוא
+    ContactMessage // הוספת מודל פניות הציבור לייבוא
 } from './models.js';
 
 const router = express.Router();
@@ -727,6 +728,45 @@ router.post('/admin/shabbat-lottery/run', authenticate, isAdmin, async (req, res
         }
 
         res.json({ success: true, winnerFamily: winner.familyName });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 15. פניות הציבור (CONTACT MESSAGES) =================
+
+// קבלת פנייה חדשה (פתוח לכולן, עם שמירת userId אם מחוברת)
+router.post('/contact', async (req, res) => {
+    try {
+        const message = new ContactMessage({
+            ...req.body,
+            // ננסה לחלץ את המשתמש אם קיים טוקן, אך לא נכשיל את הבקשה אם אין
+            userId: req.headers['authorization'] ? jwt.decode(req.headers['authorization'].split(' ')[1])?.id : null
+        });
+        await message.save();
+        res.status(201).json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// קבלת כל ההודעות (מנהלות בלבד)
+router.get('/admin/messages', authenticate, isAdmin, async (req, res) => {
+    try {
+        const messages = await ContactMessage.find().sort({ createdAt: -1 });
+        res.json(messages);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// מחיקת הודעה (מנהלות בלבד)
+router.delete('/admin/messages/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        await ContactMessage.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// סימון הודעה כנקראה (מנהלות בלבד)
+router.put('/admin/messages/:id/read', authenticate, isAdmin, async (req, res) => {
+    try {
+        await ContactMessage.findByIdAndUpdate(req.params.id, { isRead: true });
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

@@ -10,14 +10,13 @@ const getHeaders = () => {
     };
 };
 
-// פונקציית עזר לבדיקת נפח תמונה לפני שליחה לשרת (מעודכן ל-5MB כדי לאפשר באנרים ופרסומים)
 const validateImageSize = (data: any) => {
-    if (data && (data.image || data.content) && typeof (data.image || data.content) === 'string' && (data.image || data.content).startsWith('data:image')) {
-        const imgStr = data.image || data.content;
+    if (data && (data.image || data.content || data.audio) && typeof (data.image || data.content || data.audio) === 'string' && (data.image || data.content || data.audio).startsWith('data:')) {
+        const imgStr = data.image || data.content || data.audio;
         const stringLength = imgStr.length - imgStr.indexOf(',') - 1;
         const sizeInBytes = (stringLength * 3) / 4;
-        if (sizeInBytes > 5000 * 1024) { // הגדלנו מ-50 ל-5000 כדי שהמערכת תעבוד
-            throw new Error('התמונה גדולה מדי! המקסימום המותר הוא 5MB.');
+        if (sizeInBytes > 5000 * 1024) { 
+            throw new Error('הקובץ גדול מדי! המקסימום המותר הוא 5MB.');
         }
     }
 };
@@ -70,7 +69,7 @@ export const api = {
         });
     },
 
-    // ================= MEMBERSHIP (מעגל נשי) & APPROVALS =================
+    // ================= MEMBERSHIP & APPROVALS =================
     async requestMembership(data: { age: number, occupation: string, address: string, phone: string }) {
         const res = await fetch(`${API_URL}/membership/request`, {
             method: 'POST',
@@ -93,7 +92,7 @@ export const api = {
         return res.json();
     },
 
-    // ================= EVENTS (אירועים) =================
+    // ================= EVENTS =================
     async getEvents(): Promise<EventItem[]> {
         const res = await fetch(`${API_URL}/events`);
         return res.json();
@@ -138,7 +137,7 @@ export const api = {
         }).then(r => r.json());
     },
 
-    // ================= CLASSES (חוגים) =================
+    // ================= CLASSES =================
     async getClasses(): Promise<ClassItem[]> {
         const res = await fetch(`${API_URL}/classes`);
         return res.json();
@@ -171,7 +170,7 @@ export const api = {
         });
     },
 
-    // ================= LOTTERIES (הגרלות) =================
+    // ================= LOTTERIES =================
     async getLotteries(): Promise<LotteryItem[]> {
         const res = await fetch(`${API_URL}/lotteries`);
         return res.json();
@@ -225,7 +224,7 @@ export const api = {
         return res.json();
     },
 
-    // ================= FORUM (פורום נשי) =================
+    // ================= FORUM =================
     async getForumPosts(): Promise<ForumPost[]> {
         const res = await fetch(`${API_URL}/forum`, { headers: getHeaders() });
         return res.json();
@@ -273,7 +272,7 @@ export const api = {
         return res.json();
     },
 
-    // ================= COMMUNITY (קהילה) =================
+    // ================= COMMUNITY =================
     async getCommunityItems(): Promise<CommunityItem[]> {
         const res = await fetch(`${API_URL}/community`);
         return res.json();
@@ -303,11 +302,10 @@ export const api = {
         return fetch(`${API_URL}/community/${id}`, { method: 'DELETE', headers: getHeaders() });
     },
 
-    // ================= PERSONALITY (אשת השבוע) =================
+    // ================= PERSONALITY =================
     async getPersonality() {
         const res = await fetch(`${API_URL}/personality`);
         const data = await res.json();
-        // תיקון: הגנה כדי לוודא שתמיד חוזר מבנה תקין של שאלות
         return (data && data.questions) ? data : { ...data, questions: [] };
     },
 
@@ -326,14 +324,12 @@ export const api = {
         return res.json();
     },
 
-    // פונקציה לקבלת תבנית השאלות הקבועה
     async getPersonalityTemplate() {
         const res = await fetch(`${API_URL}/personality/template`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Failed to fetch template');
         return res.json();
     },
 
-    // פונקציה לעדכון תבנית השאלות הקבועה
     async updatePersonalityTemplate(data: any) {
         validateImageSize(data);
         const res = await fetch(`${API_URL}/personality/template`, {
@@ -389,7 +385,7 @@ export const api = {
         }).then(res => res.json());
     },
 
-    // ================= INSPIRATIONS (השראה יומית) =================
+    // ================= INSPIRATIONS & ADS =================
     async getInspirations() {
         const res = await fetch(`${API_URL}/inspirations`);
         return res.json();
@@ -417,7 +413,6 @@ export const api = {
         return fetch(`${API_URL}/inspirations/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
     },
 
-    // ================= ADS (פרסומים) =================
     async getAds() {
         const res = await fetch(`${API_URL}/ads`);
         return res.json();
@@ -447,7 +442,7 @@ export const api = {
         return fetch(`${API_URL}/ads/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
     },
 
-    // ================= ANNOUNCEMENTS (הודעות הנהלה) =================
+    // ================= ANNOUNCEMENTS =================
     async getAnnouncements(): Promise<any[]> {
         const res = await fetch(`${API_URL}/announcements`, { headers: getHeaders() });
         return res.json();
@@ -507,7 +502,7 @@ export const api = {
         }).then(r => r.json());
     },
 
-    // ================= SHABBAT LOTTERY (שולחן שבת) =================
+    // ================= SHABBAT LOTTERY =================
     async getShabbatLotterySettings() {
         const res = await fetch(`${API_URL}/shabbat-lottery/settings`);
         return res.json();
@@ -551,5 +546,35 @@ export const api = {
             throw new Error(err.error || 'Failed to run lottery');
         }
         return res.json();
+    },
+
+    // ================= CONTACT MESSAGES (חדש!) =================
+    async submitContactMessage(data: any) {
+        validateImageSize(data);
+        const res = await fetch(`${API_URL}/contact`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async getContactMessages() {
+        const res = await fetch(`${API_URL}/admin/messages`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async deleteContactMessage(id: string) {
+        return fetch(`${API_URL}/admin/messages/${id}`, { 
+            method: 'DELETE', 
+            headers: getHeaders() 
+        }).then(r => r.json());
+    },
+
+    async markMessageAsRead(id: string) {
+        return fetch(`${API_URL}/admin/messages/${id}/read`, { 
+            method: 'PUT', 
+            headers: getHeaders() 
+        }).then(r => r.json());
     }
 };

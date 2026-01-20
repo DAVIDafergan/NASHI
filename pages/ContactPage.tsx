@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Mic, Square, Send, Phone, Mail, MapPin, CheckCircle } from 'lucide-react';
+import { api } from '../services/api';
 
 const ContactPage: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -8,7 +9,6 @@ const ContactPage: React.FC = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
 
-  // State לניהול השדות (כדי שנוכל לשלוח אותם לאזור האישי)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -47,36 +47,39 @@ const ContactPage: React.FC = () => {
     }
   };
 
+  // פונקציית עזר להפוך Blob ל-Base64
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. הכנת הנתונים לשליחה לאזור האישי ולמייל
-    const dataToSend = new FormData();
-    dataToSend.append('name', formData.name);
-    dataToSend.append('phone', formData.phone);
-    dataToSend.append('subject', formData.subject);
-    dataToSend.append('content', formData.content);
-    dataToSend.append('to_email', 'YA@101.ORG.IL'); // המייל שביקשת
-    
+    let audioBase64 = '';
     if (audioBlob) {
-      dataToSend.append('audio', audioBlob, 'voice-message.webm');
+      audioBase64 = await blobToBase64(audioBlob);
     }
 
+    const payload = {
+      ...formData,
+      audio: audioBase64
+    };
+
     try {
-      // 2. שליחה לשרת (API) שמעדכן את האזור האישי
-      // כאן אתה מחליף את ה-URL לכתובת ה-API האמיתית שלך
-      /* await fetch('https://your-api.com/messages', {
-        method: 'POST',
-        body: dataToSend
-      });
-      */
+      const result = await api.submitContactMessage(payload);
       
-      console.log("ההודעה נשלחה לאזור האישי ולמייל YA@101.ORG.IL");
-      
-      setIsSubmitted(true);
-      setTimeout(() => setIsSubmitted(false), 3000);
-      setAudioBlob(null);
-      setFormData({ name: '', phone: '', subject: 'בירור על חוגים ואירועים', content: '' });
+      if (result.success) {
+        setIsSubmitted(true);
+        setTimeout(() => setIsSubmitted(false), 3000);
+        setAudioBlob(null);
+        setFormData({ name: '', phone: '', subject: 'בירור על חוגים ואירועים', content: '' });
+      } else {
+        alert("שגיאה בשליחת הפנייה, נסי שוב.");
+      }
     } catch (error) {
       console.error("שגיאה בשליחת הפנייה:", error);
     }
@@ -104,7 +107,7 @@ const ContactPage: React.FC = () => {
         <p className="text-slate-500">אנחנו כאן לכל שאלה, הצעה או רעיון.</p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid md:grid-cols-3 gap-8 text-right" dir="rtl">
         <div className="space-y-4">
            {[
              { icon: <Mail size={20} />, label: 'דוא"ל', value: 'YA@101.ORG.IL' },
@@ -131,7 +134,7 @@ const ContactPage: React.FC = () => {
                   type="text" 
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none" 
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-right" 
                 />
               </div>
               <div className="space-y-2">
@@ -141,7 +144,7 @@ const ContactPage: React.FC = () => {
                   type="tel" 
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none" 
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-right" 
                 />
               </div>
             </div>
@@ -151,7 +154,7 @@ const ContactPage: React.FC = () => {
               <select 
                 value={formData.subject}
                 onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-slate-600"
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-slate-600 text-right"
               >
                 <option>בירור על חוגים ואירועים</option>
                 <option>בקשה להתנדבות</option>
@@ -167,13 +170,19 @@ const ContactPage: React.FC = () => {
                 rows={4} 
                 value={formData.content}
                 onChange={(e) => setFormData({...formData, content: e.target.value})}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none resize-none"
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none resize-none text-right"
               ></textarea>
             </div>
 
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="text-sm font-medium text-slate-700 mb-2 block">הודעה קולית (אופציונלי)</label>
-              <div className="flex items-center gap-4">
+              <label className="text-sm font-medium text-slate-700 mb-2 block text-right">הודעה קולית (אופציונלי)</label>
+              <div className="flex items-center justify-end gap-4">
+                {audioBlob && (
+                  <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                    <CheckCircle size={14} />
+                    ההודעה הוקלטה
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
@@ -182,17 +191,10 @@ const ContactPage: React.FC = () => {
                   {isRecording ? <Square size={16} className="fill-current" /> : <Mic size={16} />}
                   {isRecording ? 'עצור הקלטה' : 'הקלט הודעה'}
                 </button>
-                
-                {audioBlob && (
-                  <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                    <CheckCircle size={14} />
-                    ההודעה הוקלטה
-                  </div>
-                )}
               </div>
             </div>
 
-            <div className="pt-4">
+            <div className="pt-4 flex justify-end">
               <button type="submit" className="w-full md:w-auto px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
                 <Send size={18} />
                 שליחת פנייה

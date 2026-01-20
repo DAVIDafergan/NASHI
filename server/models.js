@@ -212,8 +212,21 @@ const ShabbatEntrySchema = new mongoose.Schema({
 });
 const ShabbatEntry = mongoose.model('ShabbatEntry', ShabbatEntrySchema);
 
+// --- סכמת הודעות צור קשר (חדש!) ---
+const ContactMessageSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  phone: { type: String, required: true },
+  subject: { type: String },
+  content: { type: String },
+  audio: { type: String }, // Base64 של ההקלטה
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  isRead: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+const ContactMessage = mongoose.model('ContactMessage', ContactMessageSchema);
+
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
-  Announcement, ShabbatLottery, ShabbatEntry
+  Announcement, ShabbatLottery, ShabbatEntry, ContactMessage
 };
