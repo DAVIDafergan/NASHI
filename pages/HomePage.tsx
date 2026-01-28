@@ -96,8 +96,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     if (!slider || events.length === 0) return;
 
     const interval = setInterval(() => {
-      // Logic adjusted for full bleed cards
-      const cardWidth = slider.offsetWidth; // Full width scroll
+      const cardWidth = slider.offsetWidth; 
       const maxScroll = slider.scrollWidth - slider.offsetWidth;
       
       if (Math.abs(slider.scrollLeft) >= maxScroll - 10) {
@@ -105,7 +104,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       } else {
         slider.scrollBy({ left: -cardWidth, behavior: 'smooth' });
       }
-    }, 4000); // Slower for better UX
+    }, 4000); 
 
     return () => clearInterval(interval);
   }, [events]);
@@ -175,7 +174,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
     return (
       <div className="md:mx-0 animate-fade-in transition-all duration-700 w-full">
-        {/* Mobile: Full width, Desktop: Rounded */}
         <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden md:rounded-2xl shadow-sm border-b md:border border-rose-50">
           {ad.type === 'image' ? (
             <img src={ad.content} alt={ad.title || 'Ad'} className="w-full h-20 md:h-24 object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -230,7 +228,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* --- MOBILE VIEW START (Redesigned) --- */}
         <div className="md:hidden space-y-10 pb-6">
           
-          {/* 1. Announcements - Notification Style */}
+          {/* 1. Announcements - Notification Style (FIXED: Full Text) */}
           {announcements.length > 0 && (
             <section className="px-5">
                <div className="flex items-center gap-2 mb-3 opacity-80">
@@ -241,16 +239,16 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   <h4 className="text-xs font-black text-slate-500 tracking-wide uppercase">עדכונים חמים</h4>
                </div>
                
-               {/* Horizontal Scroll with Snap - Edge to Edge effect */}
                <div className="-mx-5 px-5 flex overflow-x-auto gap-3 pb-2 snap-x snap-mandatory no-scrollbar">
                   {announcements.map((ann, i) => (
                     <div key={i} className="min-w-[88vw] bg-white p-5 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.08)] border border-slate-100 snap-center flex items-start gap-4">
                        <div className="p-2.5 bg-rose-50 text-rose-500 rounded-full shrink-0">
                           <Megaphone size={16} />
                        </div>
-                       <div>
+                       <div className="w-full">
                           <h4 className="font-bold text-slate-800 text-sm mb-1">{ann.title}</h4>
-                          <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{ann.content}</p>
+                          {/* FIX: Removed line-clamp to show full text */}
+                          <p className="text-xs text-slate-600 leading-relaxed font-medium">{ann.content}</p>
                        </div>
                     </div>
                   ))}
@@ -258,7 +256,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </section>
           )}
 
-          {/* 2. Events Slider - Magazine Full Bleed Style */}
+          {/* 2. Events Slider - Magazine Full Bleed Style (FIXED: Clear Date) */}
           <section className="space-y-4">
             <div className="flex items-center justify-between px-5">
               <h3 className="text-2xl font-black text-slate-800 tracking-tight">הכי קרוב אלייך</h3>
@@ -278,11 +276,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                       {/* Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent opacity-90"></div>
                       
-                      {/* Date Badge */}
-                      <div className="absolute top-5 right-5 bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-4 py-2 rounded-2xl flex flex-col items-center leading-tight shadow-lg">
-                         <span className="text-[10px] opacity-80 uppercase">תאריך</span>
-                         <span className="font-black text-sm">{event.date ? new Date(event.date).getDate() : '?'}</span>
-                         <span className="text-[10px]">{event.date ? new Date(event.date).toLocaleString('he-IL', { month: 'short' }) : ''}</span>
+                      {/* FIXED: Clearer Date Badge */}
+                      <div className="absolute top-5 right-5 bg-white text-slate-900 px-5 py-3 rounded-2xl flex flex-col items-center leading-none shadow-xl border border-slate-100 z-10">
+                         <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-1">תאריך</span>
+                         <span className="font-black text-2xl">{event.date ? new Date(event.date).getDate() : '?'}</span>
+                         <span className="text-xs font-bold text-slate-400 mt-0.5">{event.date ? new Date(event.date).toLocaleString('he-IL', { month: 'short' }) : ''}</span>
                       </div>
 
                       {/* Content Bottom */}
@@ -301,7 +299,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
           </section>
 
-          {/* 3. Classes - Pill Cards Scroll */}
+          {/* 3. Classes - Grid Layout (FIXED: 2 Rows/Columns) */}
           <section className="bg-gradient-to-b from-purple-50/50 to-transparent py-10 -mx-0">
             <div className="px-5 mb-5 flex items-center justify-between">
                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
@@ -310,12 +308,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                <Link to="/classes" className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-400"><ChevronLeft size={18}/></Link>
             </div>
             
-            <div className="flex overflow-x-auto gap-4 px-5 no-scrollbar snap-x">
+            {/* FIX: Changed from flex overflow to Grid */}
+            <div className="grid grid-cols-2 gap-3 px-5">
               {classes.map((cls, i) => (
                 <div 
                   key={i} 
                   onClick={() => navigate('/classes')}
-                  className="min-w-[180px] bg-white p-3 rounded-[1.8rem] shadow-sm border border-slate-100/50 snap-center active:scale-95 transition-transform"
+                  className="bg-white p-3 rounded-[1.8rem] shadow-sm border border-slate-100/50 active:scale-95 transition-transform"
                 >
                   <div className="relative h-28 mb-3">
                      <img src={cls.image} className="w-full h-full rounded-[1.2rem] object-cover" alt={cls.title} />
@@ -344,20 +343,21 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
           </section>
 
-          {/* 5. Community Services - Horizontal Large Cards */}
+          {/* 5. Community Services - Grid Layout (FIXED: 2 Rows/Columns) */}
           <section className="space-y-4 pt-4">
             <div className="flex items-center justify-between px-5">
               <h3 className="text-xl font-black text-slate-800">קהילה וחסד</h3>
             </div>
-            <div className="-mx-0 px-5 flex overflow-x-auto gap-4 pb-4 no-scrollbar">
+            {/* FIX: Changed from flex overflow to Grid */}
+            <div className="grid grid-cols-2 gap-3 px-5 pb-4">
                {communityItems.map((item, i) => (
                  <div 
                     key={i} 
                     onClick={() => navigate('/community')}
-                    className="min-w-[260px] bg-white rounded-[2rem] p-3 shadow-sm border border-slate-50 flex items-center gap-4 active:bg-slate-50 transition-colors"
+                    className="bg-white rounded-[2rem] p-3 shadow-sm border border-slate-50 flex flex-col gap-3 active:bg-slate-50 transition-colors"
                  >
-                    <img src={item.image} className="w-20 h-20 rounded-2xl object-cover shrink-0 bg-slate-100" alt={item.title} />
-                    <div className="flex flex-col justify-center overflow-hidden">
+                    <img src={item.image} className="w-full h-24 rounded-2xl object-cover bg-slate-100" alt={item.title} />
+                    <div className="flex flex-col justify-center overflow-hidden px-1">
                        <h4 className="font-black text-slate-800 text-sm truncate w-full">{item.title}</h4>
                        <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{item.description || 'לחצי לפרטים נוספים ודרכי יצירת קשר'}</p>
                     </div>
