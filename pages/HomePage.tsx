@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
-  Users, Megaphone, Calendar, BookOpen 
+  Users, Megaphone, Calendar, BookOpen, ArrowLeft
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -32,7 +32,7 @@ const API_URL = 'https://nashi-production.up.railway.app/api';
 const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin: () => void, onUpdateUser?: (u: any) => void }) => {
   const navigate = useNavigate();
   const mobileSliderRef = useRef<HTMLDivElement>(null);
-  
+   
   const [events, setEvents] = useState<EventItem[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [lotteries, setLotteries] = useState<LotteryItem[]>([]);
@@ -96,7 +96,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     if (!slider || events.length === 0) return;
 
     const interval = setInterval(() => {
-      const cardWidth = slider.offsetWidth * 0.85 + 16;
+      // Logic adjusted for full bleed cards
+      const cardWidth = slider.offsetWidth; // Full width scroll
       const maxScroll = slider.scrollWidth - slider.offsetWidth;
       
       if (Math.abs(slider.scrollLeft) >= maxScroll - 10) {
@@ -104,7 +105,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       } else {
         slider.scrollBy({ left: -cardWidth, behavior: 'smooth' });
       }
-    }, 3000);
+    }, 4000); // Slower for better UX
 
     return () => clearInterval(interval);
   }, [events]);
@@ -173,19 +174,20 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     if (!ad) return null;
 
     return (
-      <div className="mx-2 md:mx-0 animate-fade-in transition-all duration-700">
-        <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden rounded-xl md:rounded-2xl shadow-sm border border-rose-50">
+      <div className="md:mx-0 animate-fade-in transition-all duration-700 w-full">
+        {/* Mobile: Full width, Desktop: Rounded */}
+        <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden md:rounded-2xl shadow-sm border-b md:border border-rose-50">
           {ad.type === 'image' ? (
-            <img src={ad.content} alt={ad.title || 'Ad'} className="w-full h-16 md:h-24 object-cover transition-transform duration-700 group-hover:scale-105" />
+            <img src={ad.content} alt={ad.title || 'Ad'} className="w-full h-20 md:h-24 object-cover transition-transform duration-700 group-hover:scale-105" />
           ) : (
-            <div className="w-full h-16 md:h-24 bg-slate-900 flex items-center justify-center overflow-hidden">
+            <div className="w-full h-20 md:h-24 bg-slate-900 flex items-center justify-center overflow-hidden">
                 <video src={ad.content} autoPlay muted playsInline onEnded={() => setCurrentAdIndex((prev) => (prev + 1) % ads.length)} className="w-full h-full object-cover" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-l from-black/40 to-transparent flex items-center justify-end px-6 text-right text-white">
+          <div className="absolute inset-0 bg-gradient-to-l from-black/60 to-transparent flex items-center justify-end px-6 text-right text-white">
              <div>
-                <p className="text-[6px] md:text-[8px] font-bold opacity-70 uppercase tracking-widest mb-0.5">בשיתוף פעולה</p>
-                <h4 className="text-[10px] md:text-sm font-black leading-tight">{ad.title || ''}</h4>
+                <p className="text-[9px] font-bold opacity-80 uppercase tracking-widest mb-0.5 text-rose-200">בשיתוף</p>
+                <h4 className="text-sm md:text-sm font-black leading-tight tracking-wide">{ad.title || ''}</h4>
              </div>
           </div>
         </a>
@@ -196,9 +198,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#fffcfc]" dir="rtl">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-4 border-purple-50 border-t-purple-300 rounded-full animate-spin mx-auto"></div>
-          <p className="text-purple-300 text-[10px] font-black tracking-widest animate-pulse uppercase font-serif">טוען חוויות נשיות...</p>
+        <div className="text-center space-y-4">
+          <div className="relative w-12 h-12 mx-auto">
+             <div className="absolute inset-0 border-4 border-purple-100 rounded-full"></div>
+             <div className="absolute inset-0 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-purple-400 text-xs font-bold tracking-widest animate-pulse uppercase font-serif">טוען נתונים...</p>
         </div>
       </div>
     );
@@ -207,147 +212,183 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const latestInspiration = inspirations[0] || { text: "הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך.", author: "נ.ש" };
 
   return (
-    <div className="min-h-screen pb-20 relative overflow-x-hidden font-sans text-right bg-gradient-to-br from-[#fffcfc] via-[#fdf6ff] to-[#fffcfc]" dir="rtl">
+    <div className="min-h-screen pb-24 relative overflow-x-hidden font-sans text-right bg-[#fffcfc]" dir="rtl">
       
+      {/* Background Ambience */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(255,240,245,0.4),transparent)]"></div>
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-rose-100/30 rounded-full blur-[100px] animate-blob"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(255,245,247,0.8),transparent_70%)]"></div>
+          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-rose-100/40 rounded-full blur-[120px] opacity-60"></div>
+          <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-purple-100/30 rounded-full blur-[80px]"></div>
       </div>
 
-      <div className="max-w-5xl mx-auto md:px-8 pt-4 md:pt-10 relative z-10 space-y-6 md:space-y-10">
+      {/* Main Content Container */}
+      <div className="max-w-5xl mx-auto md:px-8 pt-0 md:pt-10 relative z-10 space-y-8 md:space-y-10">
         
-        <div className="px-4 md:px-0">{renderAdBanner()}</div>
+        {/* Banner Area */}
+        <div className="w-full">{renderAdBanner()}</div>
 
-        {/* --- MOBILE VIEW START --- */}
-        <div className="md:hidden space-y-8">
+        {/* --- MOBILE VIEW START (Redesigned) --- */}
+        <div className="md:hidden space-y-10 pb-6">
           
-          {/* הודעות הנהלה בנייד - סליידר אופקי עם רמז גלילה */}
+          {/* 1. Announcements - Notification Style */}
           {announcements.length > 0 && (
-            <section className="space-y-2">
-              <div className="flex items-center justify-between px-5">
-                 <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-1.5">
-                   <Megaphone size={12}/> עדכוני מערכת
-                 </h4>
-                 {announcements.length > 1 && <span className="text-[9px] text-slate-300 font-bold">החליקי לצפייה {'<'}</span>}
-              </div>
-              <div className="flex overflow-x-auto gap-3 px-4 no-scrollbar snap-x snap-mandatory">
-                 {announcements.map((ann, i) => (
-                   <div key={i} className="min-w-[85vw] bg-white/90 backdrop-blur-md p-5 rounded-[1.5rem] border-r-4 border-purple-500 shadow-sm snap-center flex flex-col gap-1">
-                      <h4 className="font-black text-slate-800 text-xs">{ann.title}</h4>
-                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{ann.content}</p>
-                   </div>
-                 ))}
-              </div>
+            <section className="px-5">
+               <div className="flex items-center gap-2 mb-3 opacity-80">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
+                  <h4 className="text-xs font-black text-slate-500 tracking-wide uppercase">עדכונים חמים</h4>
+               </div>
+               
+               {/* Horizontal Scroll with Snap - Edge to Edge effect */}
+               <div className="-mx-5 px-5 flex overflow-x-auto gap-3 pb-2 snap-x snap-mandatory no-scrollbar">
+                  {announcements.map((ann, i) => (
+                    <div key={i} className="min-w-[88vw] bg-white p-5 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.08)] border border-slate-100 snap-center flex items-start gap-4">
+                       <div className="p-2.5 bg-rose-50 text-rose-500 rounded-full shrink-0">
+                          <Megaphone size={16} />
+                       </div>
+                       <div>
+                          <h4 className="font-bold text-slate-800 text-sm mb-1">{ann.title}</h4>
+                          <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{ann.content}</p>
+                       </div>
+                    </div>
+                  ))}
+               </div>
             </section>
           )}
 
-          {/* סליידר אירועים בקהילה - UI/UX משופר */}
-          <section className="space-y-5">
+          {/* 2. Events Slider - Magazine Full Bleed Style */}
+          <section className="space-y-4">
             <div className="flex items-center justify-between px-5">
-              <h3 className="text-xl font-black text-slate-800 tracking-tight">אירועים בקהילה</h3>
-              <Link to="/events" className="text-rose-500 text-xs font-black bg-rose-50 px-3 py-1 rounded-full">הכל</Link>
+              <h3 className="text-2xl font-black text-slate-800 tracking-tight">הכי קרוב אלייך</h3>
+              <Link to="/events" className="text-rose-500 text-xs font-bold bg-rose-50/80 px-4 py-1.5 rounded-full backdrop-blur-sm">ללוח המלא</Link>
             </div>
+            
             <div 
               ref={mobileSliderRef}
-              className="flex overflow-x-auto gap-4 px-4 pb-4 snap-x snap-mandatory no-scrollbar"
+              className="-mx-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar pb-6"
             >
                {events.map((event, i) => (
-                 <div key={i} className="min-w-[85vw] bg-white rounded-[2.5rem] overflow-hidden shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] border border-slate-50 snap-center">
-                    <div className="relative h-52">
-                      <img src={event.image} className="w-full h-full object-cover" alt={event.title} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-slate-900 text-[9px] font-black px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1">
-                        <Calendar size={10} className="text-rose-500"/> {event.date ? new Date(event.date).toLocaleDateString('he-IL') : 'קרוב'}
+                 <div key={i} className="min-w-[100vw] px-5 snap-center">
+                    <div className="relative w-full h-[380px] rounded-[2.5rem] overflow-hidden shadow-[0_15px_40px_-10px_rgba(0,0,0,0.2)] group" onClick={() => navigate('/events')}>
+                      {/* Full Image */}
+                      <img src={event.image} className="w-full h-full object-cover transform transition-transform duration-700 group-active:scale-105" alt={event.title} />
+                      
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent opacity-90"></div>
+                      
+                      {/* Date Badge */}
+                      <div className="absolute top-5 right-5 bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold px-4 py-2 rounded-2xl flex flex-col items-center leading-tight shadow-lg">
+                         <span className="text-[10px] opacity-80 uppercase">תאריך</span>
+                         <span className="font-black text-sm">{event.date ? new Date(event.date).getDate() : '?'}</span>
+                         <span className="text-[10px]">{event.date ? new Date(event.date).toLocaleString('he-IL', { month: 'short' }) : ''}</span>
                       </div>
-                    </div>
-                    <div className="p-6 space-y-5">
-                      <div className="space-y-2">
-                        <h4 className="text-xl font-black text-slate-900 leading-tight">{event.title}</h4>
-                        <div className="flex items-center gap-3 text-slate-400">
-                           <p className="flex items-center gap-1.5 text-[11px] font-bold"><MapPin size={12} className="text-rose-400"/> {event.location}</p>
-                        </div>
+
+                      {/* Content Bottom */}
+                      <div className="absolute bottom-0 left-0 w-full p-6 text-white space-y-3">
+                         <div className="flex items-center gap-2 text-rose-300 text-xs font-bold uppercase tracking-widest">
+                            <MapPin size={12} /> {event.location}
+                         </div>
+                         <h2 className="text-3xl font-black leading-tight drop-shadow-md">{event.title}</h2>
+                         <button className="mt-2 w-full bg-white/10 backdrop-blur-md hover:bg-white text-white hover:text-slate-900 border border-white/40 transition-all py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                            שרייני מקום <ArrowLeft size={16} />
+                         </button>
                       </div>
-                      <button 
-                        onClick={() => navigate('/events')}
-                        className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                      >
-                        لפרטים נוספים <ChevronLeft size={16}/>
-                      </button>
                     </div>
                  </div>
                ))}
             </div>
           </section>
 
-          {/* חוגים בנייד */}
-          <section className="space-y-4 bg-purple-50/30 py-8">
-            <div className="flex items-center justify-between px-5">
-              <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-                <GraduationCap className="text-purple-500" size={20}/> חוגי המעגל
-              </h3>
-              <Link to="/classes" className="text-purple-500 text-xs font-bold">לכל החוגים</Link>
+          {/* 3. Classes - Pill Cards Scroll */}
+          <section className="bg-gradient-to-b from-purple-50/50 to-transparent py-10 -mx-0">
+            <div className="px-5 mb-5 flex items-center justify-between">
+               <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                 <GraduationCap className="text-purple-500" size={22}/> חוגים וסדנאות
+               </h3>
+               <Link to="/classes" className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-400"><ChevronLeft size={18}/></Link>
             </div>
-            <div className="flex overflow-x-auto gap-3 px-4 no-scrollbar">
+            
+            <div className="flex overflow-x-auto gap-4 px-5 no-scrollbar snap-x">
               {classes.map((cls, i) => (
                 <div 
                   key={i} 
                   onClick={() => navigate('/classes')}
-                  className="min-w-[145px] bg-white p-3 rounded-[2rem] shadow-sm border border-purple-50 text-center space-y-2 cursor-pointer active:scale-95 transition-transform"
+                  className="min-w-[180px] bg-white p-3 rounded-[1.8rem] shadow-sm border border-slate-100/50 snap-center active:scale-95 transition-transform"
                 >
-                  <img src={cls.image} className="w-full h-24 rounded-[1.5rem] object-cover shadow-inner" alt={cls.title} />
-                  <h4 className="font-black text-slate-800 text-[11px] line-clamp-1 px-1">{cls.title}</h4>
-                  <p className="text-[9px] text-slate-400 font-bold">{cls.day}</p>
+                  <div className="relative h-28 mb-3">
+                     <img src={cls.image} className="w-full h-full rounded-[1.2rem] object-cover" alt={cls.title} />
+                     <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-slate-800 shadow-sm">{cls.day}</div>
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-sm px-1 leading-snug">{cls.title}</h4>
+                  <p className="text-xs text-slate-400 px-1 mt-1 truncate">{cls.instructor}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* השראה יומית */}
-          <section className="px-4">
-            <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
-              <Quote className="text-rose-400/40 mb-4" size={40} />
-              <p className="text-lg font-serif italic leading-relaxed relative z-10">"{latestInspiration.text}"</p>
-              <div className="mt-8 flex justify-end">
-                 <span className="bg-rose-500 px-5 py-2 rounded-full text-[10px] font-black shadow-lg shadow-rose-500/20">{latestInspiration.author}</span>
-              </div>
+          {/* 4. Daily Inspiration - Clean Card */}
+          <section className="px-5">
+            <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-xl shadow-slate-200">
+               {/* Decorative */}
+               <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
+               <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl -ml-6 -mb-6"></div>
+               
+               <Quote className="text-rose-400 mb-4 opacity-80" size={32} />
+               <p className="text-xl font-serif leading-relaxed relative z-10 text-slate-100">"{latestInspiration.text}"</p>
+               <div className="mt-6 pt-6 border-t border-white/10 flex justify-between items-center">
+                  <span className="text-xs text-slate-400 font-medium">השראה יומית</span>
+                  <span className="text-sm font-black text-rose-400 tracking-wide">{latestInspiration.author}</span>
+               </div>
             </div>
           </section>
 
-          {/* קהילה בנייד */}
-          <section className="space-y-4">
+          {/* 5. Community Services - Horizontal Large Cards */}
+          <section className="space-y-4 pt-4">
             <div className="flex items-center justify-between px-5">
-              <h3 className="text-lg font-black text-slate-800">שירותי קהילה</h3>
-              <Link to="/community" className="text-rose-400 text-xs font-bold bg-rose-50 px-3 py-1 rounded-full">הכל</Link>
+              <h3 className="text-xl font-black text-slate-800">קהילה וחסד</h3>
             </div>
-            <div className="flex overflow-x-auto gap-4 px-4 pb-4 no-scrollbar">
+            <div className="-mx-0 px-5 flex overflow-x-auto gap-4 pb-4 no-scrollbar">
                {communityItems.map((item, i) => (
                  <div 
                     key={i} 
                     onClick={() => navigate('/community')}
-                    className="min-w-[220px] bg-white rounded-[2rem] overflow-hidden border border-slate-50 shadow-sm cursor-pointer active:scale-95 transition-transform"
+                    className="min-w-[260px] bg-white rounded-[2rem] p-3 shadow-sm border border-slate-50 flex items-center gap-4 active:bg-slate-50 transition-colors"
                  >
-                    <img src={item.image} className="w-full h-32 object-cover" alt={item.title} />
-                    <div className="p-4">
-                      <h4 className="font-black text-slate-800 text-xs truncate">{item.title}</h4>
-                      <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-1.5"><MapPin size={10}/> {item.location}</p>
+                    <img src={item.image} className="w-20 h-20 rounded-2xl object-cover shrink-0 bg-slate-100" alt={item.title} />
+                    <div className="flex flex-col justify-center overflow-hidden">
+                       <h4 className="font-black text-slate-800 text-sm truncate w-full">{item.title}</h4>
+                       <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{item.description || 'לחצי לפרטים נוספים ודרכי יצירת קשר'}</p>
                     </div>
                  </div>
                ))}
             </div>
           </section>
 
-          {/* אשת השבוע בנייד */}
+          {/* 6. Personality of the Week - Full Width Hero */}
           {personality && (
-            <section className="px-4 pb-10">
-               <div className="bg-white rounded-[3rem] p-8 shadow-xl border border-purple-50 relative overflow-hidden text-center space-y-5">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full blur-3xl opacity-50"></div>
-                  <img src={personality.image} className="w-36 h-36 rounded-[2.5rem] object-cover mx-auto shadow-2xl border-4 border-white relative z-10" alt={personality.name} />
-                  <div className="relative z-10">
-                     <span className="text-rose-500 text-[10px] font-black uppercase tracking-[0.2em]">אשת השבוע</span>
-                     <h3 className="text-2xl font-black text-slate-900 mt-1">{personality.name}</h3>
-                     <p className="text-slate-600 font-serif italic text-sm mt-3 px-4">"{personality.motto}"</p>
-                  </div>
-                  <button onClick={() => navigate('/personality-archive')} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs shadow-lg relative z-10">לקריאת הראיון המלא</button>
+            <section className="px-5 pb-8">
+               <div 
+                 onClick={() => navigate('/personality-archive')}
+                 className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-xl shadow-purple-100 border border-purple-50"
+               >
+                 <div className="h-48 w-full relative">
+                    <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
+                 </div>
+                 <div className="px-8 pb-8 relative -mt-12 text-center">
+                    <div className="inline-block bg-white p-1.5 rounded-full shadow-lg mb-3">
+                       <div className="bg-rose-50 text-rose-500 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100">
+                          אשת השבוע
+                       </div>
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 mb-2">{personality.name}</h3>
+                    <p className="text-slate-500 font-serif italic text-sm leading-relaxed mb-6">"{personality.motto}"</p>
+                    <button className="w-full py-3.5 rounded-xl bg-slate-900 text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2">
+                       לראיון המלא <BookOpen size={16} className="text-rose-400"/>
+                    </button>
+                 </div>
                </div>
             </section>
           )}
@@ -491,14 +532,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                       <h2 className="text-xl md:text-3xl font-black text-slate-800 font-serif">בקשת הצטרפות</h2>
                       <form onSubmit={handleMembershipSubmit} className="space-y-4 pt-4 border-t border-rose-50">
                           <div className="grid grid-cols-2 gap-3">
-                            <input required type="number" placeholder="גיל" className="p-3 bg-rose-50/30 rounded-xl font-bold text-xs text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
-                            <input required type="text" placeholder="עיסוק" className="p-3 bg-rose-50/30 rounded-xl font-bold text-xs text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
+                            <input required type="number" placeholder="גיל" className="p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
+                            <input required type="text" placeholder="עיסוק" className="p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
                           </div>
-                          <input required type="text" placeholder="כתובת מגורים" className="w-full p-3 bg-rose-50/30 rounded-xl font-bold text-xs text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
-                          <input required type="tel" placeholder="מספר טלפון" className="w-full p-3 bg-rose-50/30 rounded-xl font-bold text-xs text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
-                          <div className="flex items-center gap-2">
-                             <input id="terms" type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="w-4 h-4 text-purple-600 rounded" />
-                             <label htmlFor="terms" className="text-[10px] font-bold text-slate-600">אני מאשרת את התקנון</label>
+                          <input required type="text" placeholder="כתובת מגורים" className="w-full p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
+                          <input required type="tel" placeholder="מספר טלפון" className="w-full p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
+                          <div className="flex items-center gap-3">
+                             <input id="terms" type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="w-5 h-5 text-purple-600 rounded" />
+                             <label htmlFor="terms" className="text-xs font-bold text-slate-600">אני מאשרת את התקנון</label>
                           </div>
                           <button type="submit" className="w-full py-4 bg-rose-500 text-white rounded-xl font-black text-sm shadow-xl active:scale-95">שליחת בקשה</button>
                       </form>
