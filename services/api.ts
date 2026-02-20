@@ -576,5 +576,37 @@ export const api = {
             method: 'PUT', 
             headers: getHeaders() 
         }).then(r => r.json());
+    },
+
+    // ================= TICKETS & QR CODES (חדש!) =================
+    async getTickets() {
+        return fetch(`${API_URL}/admin/tickets`, { headers: getHeaders() }).then(r => r.json());
+    },
+
+    async createTicket(ticketData: { eventId: string, code: string, image: string }) {
+        validateImageSize(ticketData);
+        const res = await fetch(`${API_URL}/admin/tickets`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(ticketData)
+        });
+        return res.json();
+    },
+
+    async deleteTicket(id: string) {
+        return fetch(`${API_URL}/admin/tickets/${id}`, { 
+            method: 'DELETE', 
+            headers: getHeaders() 
+        }).then(r => r.json());
+    },
+
+    async verifyTicket(code: string) {
+        const res = await fetch(`${API_URL}/admin/tickets/verify/${code}`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'שגיאה באימות כרטיס');
+        return data;
     }
 };

@@ -5,7 +5,7 @@ import {
   Link as LinkIcon, CheckCircle, Clock, Phone, MapPin, HeartHandshake, ChevronLeft, 
   GraduationCap, Copy, Eye, ListPlus, BarChart3, PieChart, TrendingUp, Users2,
   Quote, Megaphone, Video, PlayCircle, Trophy, Hash, Bell, ClipboardList, Target, ArrowUpRight, Activity, CalendarClock, Send, Loader2, Download, ChevronRight,
-  Mail // נוסף אייקון להודעות
+  Mail, Ticket as TicketIcon, Scan // נוספו אייקונים לכרטיסים וסורק
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
@@ -47,7 +47,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, v
 );
 
 const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> = ({ user }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast' | 'messages'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast' | 'messages' | 'tickets'>('summary');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -67,6 +67,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [apiAnnouncements, setApiAnnouncements] = useState<any[]>([]); 
   const [allInterviews, setAllInterviews] = useState<PersonalityProfile[]>([]); 
   const [contactMessages, setContactMessages] = useState<any[]>([]); // מדינת הודעות חדשה
+  const [apiTickets, setApiTickets] = useState<any[]>([]); // כרטיסים שנוצרו
   
   // Form States
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -129,6 +130,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', content: '', image: '', logo: '' });
   const [testEmail, setTestEmail] = useState('');
   const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+
+  // Ticket Generator State
+  const [ticketForm, setTicketForm] = useState({ eventId: '', backgroundImage: '' });
+  const [isGeneratingTicket, setIsGeneratingTicket] = useState(false);
 
   // חישוב נתונים אמיתיים לסיכום חודשי
   const monthlyStats = useMemo(() => {
@@ -219,6 +224,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             const msgs = await api.getContactMessages();
             setContactMessages(msgs || []);
         }
+        else if (activeTab === 'tickets') { // טעינת כרטיסים
+            const tkts = await api.getTickets();
+            setApiTickets(tkts || []);
+        }
     } catch (err) { console.error(err); }
     setLoading(false);
   };
@@ -246,7 +255,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
     }
   };
 
-  const handleDelete = async (id: string, type: 'user' | 'event' | 'class' | 'lottery' | 'community' | 'post' | 'inspiration' | 'ad' | 'personality' | 'announcement' | 'message', name: string) => {
+  const handleDelete = async (id: string, type: 'user' | 'event' | 'class' | 'lottery' | 'community' | 'post' | 'inspiration' | 'ad' | 'personality' | 'announcement' | 'message' | 'ticket', name: string) => {
     if (!id) return alert('שגיאה: מזהה חסר');
     if (window.confirm(`למחוק את ${name} לצמיתות?`)) {
       try {
@@ -261,8 +270,69 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         else if (type === 'personality') await api.deletePersonality(id);
         else if (type === 'announcement') await api.deleteAnnouncement(id);
         else if (type === 'message') await api.deleteContactMessage(id); // מחיקת פנייה
+        else if (type === 'ticket') await api.deleteTicket(id); // מחיקת כרטיס
         loadTabData();
       } catch (err) { alert('שגיאה במחיקה'); }
+    }
+  };
+
+  const handleGenerateTicket = async () => {
+    if (!ticketForm.eventId || !ticketForm.backgroundImage) {
+        return alert("נא לבחור אירוע ולהעלות תמונת רקע לכרטיס.");
+    }
+    
+    setIsGeneratingTicket(true);
+    try {
+        const code = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const verifyUrl = `${window.location.origin}/#/verify/${code}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verifyUrl)}&margin=0`;
+
+        const bgImg = new Image();
+        bgImg.crossOrigin = "anonymous";
+        bgImg.src = ticketForm.backgroundImage;
+        await new Promise((resolve) => { bgImg.onload = resolve; });
+
+        const qrImg = new Image();
+        qrImg.crossOrigin = "anonymous";
+        qrImg.src = qrUrl;
+        await new Promise((resolve) => { qrImg.onload = resolve; });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = bgImg.width;
+        canvas.height = bgImg.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) throw new Error("Canvas context is not supported");
+
+        // 1. צייר את הרקע
+        ctx.drawImage(bgImg, 0, 0);
+        
+        // 2. צייר את ה-QR למטה בצד שמאל
+        const qrSize = Math.floor(canvas.width * 0.20); 
+        const padding = 30;
+        
+        // רקע לבן קטן מאחורי הברקוד
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.roundRect(padding - 10, canvas.height - qrSize - padding - 10, qrSize + 20, qrSize + 20, 15);
+        ctx.fill();
+
+        // הדבקת הברקוד
+        ctx.drawImage(qrImg, padding, canvas.height - qrSize - padding, qrSize, qrSize);
+
+        const finalImageBase64 = canvas.toDataURL('image/jpeg', 0.9);
+
+        // שמירה במסד הנתונים
+        await api.createTicket({ eventId: ticketForm.eventId, code, image: finalImageBase64 });
+        alert("הכרטיס נוצר בהצלחה! אפשר להוריד ולשלוח אותו ללקוחה.");
+        setTicketForm({ eventId: '', backgroundImage: '' });
+        loadTabData();
+        
+    } catch (error) {
+        console.error(error);
+        alert("הייתה שגיאה ביצירת הכרטיס. נסה שוב.");
+    } finally {
+        setIsGeneratingTicket(false);
     }
   };
 
@@ -410,6 +480,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {[
             { id: 'summary', label: 'סיכום חודשי', icon: <BarChart3 size={16} /> },
             { id: 'approvals', label: 'אישורים', icon: <CheckCircle size={16} /> },
+            { id: 'tickets', label: 'כרטיסים חכמים', icon: <TicketIcon size={16} /> }, // טאב הכרטיסים!
             { id: 'messages', label: 'הודעות משתמשות', icon: <Mail size={16} /> }, // טאב חדש
             { id: 'broadcast', label: 'שליחת תפוצה', icon: <Send size={16} /> },
             { id: 'announcements', label: 'הודעות הנהלה', icon: <Bell size={16} /> },
@@ -446,6 +517,103 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
       <div className="max-w-7xl mx-auto">
         
+        {/* טאב מחולל כרטיסים חכמים */}
+        {activeTab === 'tickets' && (
+          <div className="space-y-8 animate-fade-in text-right">
+              <div className="bg-white p-8 md:p-12 rounded-[3.5rem] shadow-xl border border-indigo-50">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-6 mb-6">
+                      <h3 className="text-3xl font-black text-slate-800 flex items-center gap-3">
+                         <Scan className="text-indigo-500" size={32} /> מחולל כרטיסים חכמים
+                      </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                     <div className="space-y-6">
+                        <div className="space-y-2">
+                           <label className="text-sm font-black text-slate-500 pr-2">לאיזה אירוע הכרטיס שייך?</label>
+                           <select 
+                             className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100"
+                             value={ticketForm.eventId}
+                             onChange={e => setTicketForm({...ticketForm, eventId: e.target.value})}
+                           >
+                              <option value="">בחרי אירוע מהרשימה...</option>
+                              {apiEvents.map(ev => (
+                                 <option key={ev._id || ev.id} value={ev._id || ev.id}>{ev.title}</option>
+                              ))}
+                           </select>
+                        </div>
+
+                        <div className="space-y-2">
+                           <label className="text-sm font-black text-slate-500 pr-2">העלאת עיצוב / רקע לכרטיס (ה-QR יודבק אוטומטית)</label>
+                           <div className="relative border-2 border-dashed border-indigo-200 bg-indigo-50/30 p-8 text-center rounded-[2rem] hover:bg-indigo-50 transition-colors">
+                              <input type="file" onChange={e => handleFileUpload(e, setTicketForm, 'backgroundImage')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                              {ticketForm.backgroundImage ? (
+                                 <img src={ticketForm.backgroundImage} className="max-h-32 mx-auto rounded-xl shadow-sm" alt="Ticket Background" />
+                              ) : (
+                                 <div className="flex flex-col items-center gap-2 text-indigo-400">
+                                    <ImageIcon size={32}/> 
+                                    <span className="text-xs font-bold">לחצי כאן כדי להעלות תמונה (מומלץ בפורמט מלבני)</span>
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+
+                        <button 
+                           onClick={handleGenerateTicket}
+                           disabled={isGeneratingTicket}
+                           className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black shadow-lg hover:bg-indigo-700 transition-all flex justify-center items-center gap-2 disabled:bg-slate-300"
+                        >
+                           {isGeneratingTicket ? <><Loader2 className="animate-spin" size={20} /> מייצר כרטיס וברקוד...</> : <><TicketIcon size={20} /> צרי כרטיס עכשיו</>}
+                        </button>
+                     </div>
+
+                     <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                        <h4 className="font-black text-lg text-slate-700 mb-4 flex items-center gap-2"><ShieldCheck className="text-emerald-500" /> איך זה עובד?</h4>
+                        <ol className="list-decimal list-inside space-y-3 text-sm text-slate-600 font-medium leading-relaxed">
+                           <li>את מעצבת כרטיס יפה (ללא ברקוד) ומעלה לכאן.</li>
+                           <li>המערכת שלנו מייצרת קוד מאובטח ייחודי שאי אפשר לנחש.</li>
+                           <li>היא יוצרת מהקוד תמונת QR Code ומדביקה אותה על העיצוב שלך!</li>
+                           <li>את שומרת את התמונה ושולחת למי שרכשה או קיבלה.</li>
+                           <li>ביום האירוע, הסדרנית סורקת את הברקוד. המסך יראה ירוק ויאשר כניסה.</li>
+                           <li>אם מישהי תנסה לשכפל ולהיכנס שוב - המסך יהיה אדום!</li>
+                        </ol>
+                     </div>
+                  </div>
+              </div>
+
+              <div className="space-y-4">
+                 <h3 className="font-black text-xl text-slate-800">כרטיסים שהופקו לאחרונה</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {apiTickets.map((ticket) => (
+                       <div key={ticket._id} className="bg-white p-4 rounded-[2.5rem] border border-slate-100 shadow-sm relative group overflow-hidden">
+                          <img src={ticket.image} className="w-full h-auto rounded-[1.5rem] object-contain bg-slate-50" alt="Generated Ticket" />
+                          <div className="absolute top-6 right-6 flex gap-2">
+                             <span className={`px-3 py-1 rounded-full text-[10px] font-black shadow-sm ${ticket.isUsed ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                                {ticket.isUsed ? 'נוצל' : 'בתוקף'}
+                             </span>
+                          </div>
+                          <div className="mt-4 px-2">
+                             <p className="text-xs text-slate-400 font-bold mb-1">שייך לאירוע: {ticket.eventId?.title || 'אירוע נמחק'}</p>
+                             <div className="flex items-center justify-between">
+                                <a href={ticket.image} download={`ticket-${ticket.code}.jpg`} className="text-indigo-500 bg-indigo-50 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1">
+                                   <Download size={14}/> הורדת כרטיס
+                                </a>
+                                <button onClick={() => handleDelete(ticket._id, 'ticket', 'הכרטיס הזה')} className="p-2 text-red-400 hover:bg-red-50 rounded-xl">
+                                   <Trash2 size={16}/>
+                                </button>
+                             </div>
+                             {ticket.isUsed && ticket.usedAt && (
+                                <p className="text-[10px] text-red-500 mt-3 font-bold">נוצל בתאריך: {new Date(ticket.usedAt).toLocaleString('he-IL')}</p>
+                             )}
+                          </div>
+                       </div>
+                    ))}
+                    {apiTickets.length === 0 && <p className="text-slate-400 font-medium md:col-span-3">עדיין לא יצרת כרטיסים.</p>}
+                 </div>
+              </div>
+          </div>
+        )}
+
         {/* טאב סיכום חודשי משודרג עם ניווט */}
         {activeTab === 'summary' && (
           <div className="space-y-10 animate-fade-in">

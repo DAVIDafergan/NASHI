@@ -14,6 +14,7 @@ import InterviewPage from './pages/InterviewPage';
 import PersonalityArchivePage from './pages/PersonalityArchivePage';
 import ForgotPassword from './pages/ForgotPassword'; // ייבוא דף שכחתי סיסמה
 import ResetPassword from './pages/ResetPassword'; // ייבוא דף איפוס סיסמה
+import VerifyPage from './pages/VerifyPage'; // ייבוא דף אימות כרטיסים (חדש!)
 import { GeminiAssistant } from './components/GeminiAssistant';
 import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, CommunicationPreference } from './types';
 import { Loader2 } from 'lucide-react'; // X and AlertCircle removed as they are now in AuthModal
@@ -234,6 +235,9 @@ const App: React.FC = () => {
             {/* נתיבי שחזור ואיפוס סיסמה */}
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+            {/* נתיב סריקת ואימות כרטיסים (חדש!) */}
+            <Route path="/verify/:code" element={<VerifyPage user={user} />} />
 
             <Route path="/profile" element={user ? <ProfilePage user={user} events={events} onUpdateUser={handleUpdateUser} /> : <Navigate to="/" replace />} />
             <Route path="/contact" element={<ContactPage />} />

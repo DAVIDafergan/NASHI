@@ -53,7 +53,6 @@ const CommunitySchema = new mongoose.Schema({
   location: { type: String },
   phone: { type: String },
   description: { type: String },
-  // שדות חדשים שהתווספו לבקשתך
   startTime: { type: String },
   targetAudience: { type: String }, // למי זה מיועד
   isPaid: { type: Boolean, default: false },
@@ -66,24 +65,20 @@ const Community = mongoose.model('Community', CommunitySchema);
 const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   date: { type: Date, required: true },
-  time: { type: String }, // השדה החדש שביקשת להוסיף לשמירת השעה
+  time: { type: String }, 
   location: { type: String, required: true },
   description: { type: String },
   image: { type: String },
   category: { type: String },
   price: { type: Number, default: 0 },
-  // שדות חדשים למחיר מוקדם ומפגשים
   earlyBirdPrice: { type: Number },
   earlyBirdEndDate: { type: Date },
   sessions: [{ name: String, date: Date }],
-  // שדות חדשים נוספים (גילאים והערות)
   targetAges: { type: String },
   notes: { type: String },
-  // שדות חדשים שנוספו כעת
-  hebrewDate: { type: String }, // תאריך עברי
-  ticketLink: { type: String }, // לינק לרכישת כרטיסים חיצונית
-  logo: { type: String }, // לוגו קטן לאירוע
-  // המשך שדות קיימים
+  hebrewDate: { type: String },
+  ticketLink: { type: String }, 
+  logo: { type: String }, 
   isHero: { type: Boolean, default: false },
   registrationLink: { type: String },
   attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
@@ -92,12 +87,10 @@ const EventSchema = new mongoose.Schema({
 const Event = mongoose.model('Event', EventSchema);
 
 const ClassSchema = new mongoose.Schema({
-  title: { type: String, required: true }, // הכותרת נשארה חובה למניעת שגיאות אינדוקס
+  title: { type: String, required: true },
   instructor: { type: String },
   contactPhone: { type: String },
-  // שדה חדש לטלפון הרשמה
   registrationPhone: { type: String },
-  // המשך שדות קיימים
   day: { type: String },
   time: { type: String },
   location: { type: String },
@@ -112,11 +105,8 @@ const Class = mongoose.model('Class', ClassSchema);
 
 const LotterySchema = new mongoose.Schema({
   title: { type: String, required: true },
-  // שינוי: prize כבר לא חובה (required) כדי שלא יכשיל את השמירה כשיש מערך
   prize: { type: String }, 
-  // שדה חדש: מערך של עד 7 פרסים (הכי בטוח לשמירה)
   prizes: { type: [String], default: [] },
-  // שדות תאימות לאחור
   prize2: { type: String },
   prize3: { type: String },
   prize4: { type: String },
@@ -127,12 +117,11 @@ const LotterySchema = new mongoose.Schema({
   image: { type: String },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isActive: { type: Boolean, default: true },
-  // שדות חדשים לזכאות וניהול זוכה - הוספת 'mission' ל-enum
   participationType: { type: String, enum: ['everyone', 'points', 'link_only', 'mission'], default: 'everyone' },
-  missionText: { type: String, default: '' }, // טקסט המשימה (חדש!)
-  missionStarted: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // מי שהתחילה משימה (חדש!)
+  missionText: { type: String, default: '' },
+  missionStarted: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   minPointsToEnter: { type: Number, default: 0 },
-  winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } // מזהה הזוכה לאחר ההגרלה
+  winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 const Lottery = mongoose.model('Lottery', LotterySchema);
 
@@ -155,17 +144,14 @@ const PersonalitySchema = new mongoose.Schema({
   name: { type: String },
   role: { type: String },
   image: { type: String },
-  motto: { type: String }, // הוספת מוטו לסכמה
+  motto: { type: String }, 
   questions: [{ question: String, answer: String }],
   isActive: { type: Boolean, default: false },
-  // שדה חדש: האם זו תבנית השאלות הקבועה
   isTemplate: { type: Boolean, default: false },
   externalToken: { type: String },
   updatedAt: { type: Date, default: Date.now }
 });
 const Personality = mongoose.model('Personality', PersonalitySchema);
-
-// --- מודלים חדשים: השראה יומית ופרסומות ---
 
 const InspirationSchema = new mongoose.Schema({
   text: { type: String, required: true },
@@ -177,13 +163,12 @@ const Inspiration = mongoose.model('Inspiration', InspirationSchema);
 const AdSchema = new mongoose.Schema({
   title: { type: String },
   type: { type: String, enum: ['image', 'video'], default: 'image' },
-  content: { type: String, required: true }, // ה-DataURL או הלינק
-  link: { type: String }, // לינק חיצוני ללחיצה
+  content: { type: String, required: true }, 
+  link: { type: String }, 
   createdAt: { type: Date, default: Date.now }
 });
 const Ad = mongoose.model('Ad', AdSchema);
 
-// --- מודל הודעות הנהלה (חדש!) ---
 const AnnouncementSchema = new mongoose.Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
@@ -192,7 +177,6 @@ const AnnouncementSchema = new mongoose.Schema({
 });
 const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 
-// --- מודל הגרלת שולחן שבת (חדש!) ---
 const ShabbatLotterySchema = new mongoose.Schema({
   prize: { type: String, default: 'פרס יוקרתי' },
   notes: { type: String, default: '' },
@@ -206,27 +190,38 @@ const ShabbatLottery = mongoose.model('ShabbatLottery', ShabbatLotterySchema);
 const ShabbatEntrySchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   familyName: { type: String, required: true },
-  phone: { type: String, required: true }, // השדה שהתווסף כחובה
-  image: { type: String, required: true }, // Base64 תמונה
+  phone: { type: String, required: true }, 
+  image: { type: String, required: true }, 
   createdAt: { type: Date, default: Date.now }
 });
 const ShabbatEntry = mongoose.model('ShabbatEntry', ShabbatEntrySchema);
 
-// --- סכמת הודעות צור קשר (חדש!) ---
 const ContactMessageSchema = new mongoose.Schema({
   name: { type: String, required: true },
   phone: { type: String, required: true },
   subject: { type: String },
   content: { type: String },
-  audio: { type: String }, // Base64 של ההקלטה
+  audio: { type: String }, 
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 const ContactMessage = mongoose.model('ContactMessage', ContactMessageSchema);
 
+// --- מודל כרטיסים חדש (למערכת הברקודים) ---
+const TicketSchema = new mongoose.Schema({
+  eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  code: { type: String, required: true, unique: true },
+  image: { type: String, required: true }, // תמונת הכרטיס עם הברקוד שנוצרה
+  isUsed: { type: Boolean, default: false },
+  usedAt: { type: Date },
+  createdAt: { type: Date, default: Date.now }
+});
+const Ticket = mongoose.model('Ticket', TicketSchema);
+
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
-  Announcement, ShabbatLottery, ShabbatEntry, ContactMessage
+  Announcement, ShabbatLottery, ShabbatEntry, ContactMessage,
+  Ticket // נוסף לייצוא
 };

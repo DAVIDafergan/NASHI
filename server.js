@@ -61,7 +61,18 @@ app.get('/health', (req, res) => {
 
 // שלב 1: הגדרת התיקייה הסטטית (Vite יוצר תיקיית dist)
 const distPath = path.join(__dirname, 'dist');
-app.use(express.static(distPath));
+
+// תיקון קאש מוחלט לספארי וכרום! (מונע מהדפדפן לשמור שגיאות ישנות או מסך לבן)
+app.use(express.static(distPath, {
+  setHeaders: (res, path) => {
+    // מניעת קאש מוחלטת לקבצי HTML
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // שלב 2: Fallback - כל נתיב שלא נמצא ב-API, יחזיר את האתר (React)
 app.get('*', (req, res) => {

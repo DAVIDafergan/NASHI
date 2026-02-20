@@ -8,7 +8,8 @@ import {
     Announcement, // הוספת המודל החדש לייבוא
     Personality, ForumPost, Community, Inspiration, Ad,
     ShabbatLottery, ShabbatEntry, // הוספת המודלים של שולחן השבת לייבוא
-    ContactMessage // הוספת מודל פניות הציבור לייבוא
+    ContactMessage, // הוספת מודל פניות הציבור לייבוא
+    Ticket // התווסף מודל הכרטיסים!
 } from './models.js';
 
 const router = express.Router();
@@ -774,6 +775,53 @@ router.put('/admin/messages/:id/read', authenticate, isAdmin, async (req, res) =
     try {
         await ContactMessage.findByIdAndUpdate(req.params.id, { isRead: true });
         res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 16. כרטיסים וברקודים (TICKETS) - חדש! =================
+
+router.get('/admin/tickets', authenticate, isAdmin, async (req, res) => {
+    try {
+        const tickets = await Ticket.find().populate('eventId', 'title date location').sort({ createdAt: -1 });
+        res.json(tickets);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/tickets', authenticate, isAdmin, async (req, res) => {
+    try {
+        const ticket = new Ticket(req.body);
+        await ticket.save();
+        res.status(201).json(ticket);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/admin/tickets/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        await Ticket.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// סריקת הברקוד (Scanner endpoint)
+router.post('/admin/tickets/verify/:code', authenticate, isAdmin, async (req, res) => {
+    try {
+        const ticket = await Ticket.findOne({ code: req.params.code }).populate('eventId', 'title');
+        if (!ticket) return res.status(404).json({ error: 'כרטיס מזויף או לא קיים במערכת!' });
+
+        if (ticket.isUsed) {
+            return res.status(400).json({ 
+                error: 'כרטיס זה כבר נוצל!', 
+                usedAt: ticket.usedAt,
+                eventTitle: ticket.eventId?.title
+            });
+        }
+
+        // סימון כרטיס כנוצל
+        ticket.isUsed = true;
+        ticket.usedAt = new Date();
+        await ticket.save();
+
+        res.json({ success: true, message: 'כניסה אושרה בהצלחה!', eventTitle: ticket.eventId?.title });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
