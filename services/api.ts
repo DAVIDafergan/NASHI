@@ -43,11 +43,17 @@ export const api = {
         return res.json();
     },
 
-    async getMe(): Promise<User> {
+   async getMe(): Promise<User> {
         const res = await fetch(`${API_URL}/me`, { headers: getHeaders() });
+        
+        // התוספת שלנו - אם השרת מחזיר שגיאה (כמו 400 Bad Request),
+        // הפונקציה תעצור כאן ולא תנסה לקרוא את השגיאה כאילו היא משתמש אמיתי.
+        if (!res.ok) {
+            throw new Error('Token is invalid');
+        }
+        
         return res.json();
     },
-
     async getUsers(): Promise<User[]> {
         const res = await fetch(`${API_URL}/users`, { headers: getHeaders() });
         return res.json();
