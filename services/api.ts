@@ -10,6 +10,14 @@ const getHeaders = () => {
     };
 };
 
+const safeFetch = async (input: RequestInfo, init?: RequestInit): Promise<Response> => {
+    try {
+        return await fetch(input, init);
+    } catch (err) {
+        throw new Error('אין חיבור לשרת. בדוק את החיבור לאינטרנט ונסה שוב.');
+    }
+};
+
 const validateImageSize = (data: any) => {
     if (data && (data.image || data.content || data.audio) && typeof (data.image || data.content || data.audio) === 'string' && (data.image || data.content || data.audio).startsWith('data:')) {
         const imgStr = data.image || data.content || data.audio;
@@ -24,7 +32,7 @@ const validateImageSize = (data: any) => {
 export const api = {
     // ================= AUTH & USER =================
     async register(userData: any): Promise<{user: User, token: string}> {
-        const res = await fetch(`${API_URL}/register`, {
+        const res = await safeFetch(`${API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData)
@@ -34,7 +42,7 @@ export const api = {
     },
 
     async login(credentials: any): Promise<{user: User, token: string}> {
-        const res = await fetch(`${API_URL}/login`, {
+        const res = await safeFetch(`${API_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credentials)
@@ -44,7 +52,7 @@ export const api = {
     },
 
    async getMe(): Promise<User> {
-        const res = await fetch(`${API_URL}/me`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/me`, { headers: getHeaders() });
         
         // התוספת שלנו - אם השרת מחזיר שגיאה (כמו 400 Bad Request),
         // הפונקציה תעצור כאן ולא תנסה לקרוא את השגיאה כאילו היא משתמש אמיתי.
@@ -55,12 +63,12 @@ export const api = {
         return res.json();
     },
     async getUsers(): Promise<User[]> {
-        const res = await fetch(`${API_URL}/users`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/users`, { headers: getHeaders() });
         return res.json();
     },
 
     async updateUser(user: User): Promise<User> {
-        const res = await fetch(`${API_URL}/users/${user.id || user._id}`, {
+        const res = await safeFetch(`${API_URL}/users/${user.id || user._id}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(user)
@@ -69,7 +77,7 @@ export const api = {
     },
 
     async deleteUser(userId: string): Promise<void> {
-        await fetch(`${API_URL}/users/${userId}`, {
+        await safeFetch(`${API_URL}/users/${userId}`, {
             method: 'DELETE',
             headers: getHeaders()
         });
@@ -77,7 +85,7 @@ export const api = {
 
     // ================= MEMBERSHIP & APPROVALS =================
     async requestMembership(data: { age: number, occupation: string, address: string, phone: string }) {
-        const res = await fetch(`${API_URL}/membership/request`, {
+        const res = await safeFetch(`${API_URL}/membership/request`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -86,7 +94,7 @@ export const api = {
     },
 
     async approveMember(userId: string) {
-        const res = await fetch(`${API_URL}/admin/approve-member/${userId}`, {
+        const res = await safeFetch(`${API_URL}/admin/approve-member/${userId}`, {
             method: 'PUT',
             headers: getHeaders()
         });
@@ -94,19 +102,19 @@ export const api = {
     },
 
     async getAdminApprovals() {
-        const res = await fetch(`${API_URL}/admin/approvals`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/admin/approvals`, { headers: getHeaders() });
         return res.json();
     },
 
     // ================= EVENTS =================
     async getEvents(): Promise<EventItem[]> {
-        const res = await fetch(`${API_URL}/events`);
+        const res = await safeFetch(`${API_URL}/events`);
         return res.json();
     },
     
     async createEvent(event: Partial<EventItem>): Promise<EventItem> {
         validateImageSize(event);
-        const res = await fetch(`${API_URL}/events`, {
+        const res = await safeFetch(`${API_URL}/events`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(event)
@@ -116,7 +124,7 @@ export const api = {
 
     async updateEvent(id: string, event: Partial<EventItem>): Promise<EventItem> {
         validateImageSize(event);
-        const res = await fetch(`${API_URL}/events/${id}`, {
+        const res = await safeFetch(`${API_URL}/events/${id}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(event)
@@ -125,11 +133,11 @@ export const api = {
     },
 
     async deleteEvent(id: string): Promise<void> {
-        await fetch(`${API_URL}/events/${id}`, { method: 'DELETE', headers: getHeaders() });
+        await safeFetch(`${API_URL}/events/${id}`, { method: 'DELETE', headers: getHeaders() });
     },
 
     async joinEvent(eventId: string) {
-        const res = await fetch(`${API_URL}/events/${eventId}/join`, {
+        const res = await safeFetch(`${API_URL}/events/${eventId}/join`, {
             method: 'POST',
             headers: getHeaders()
         });
@@ -137,7 +145,7 @@ export const api = {
     },
 
     async shareEvent(eventId: string) {
-        return fetch(`${API_URL}/events/${eventId}/share`, {
+        return safeFetch(`${API_URL}/events/${eventId}/share`, {
             method: 'POST',
             headers: getHeaders()
         }).then(r => r.json());
@@ -145,13 +153,13 @@ export const api = {
 
     // ================= CLASSES =================
     async getClasses(): Promise<ClassItem[]> {
-        const res = await fetch(`${API_URL}/classes`);
+        const res = await safeFetch(`${API_URL}/classes`);
         return res.json();
     },
 
     async createClass(cls: Partial<ClassItem>): Promise<ClassItem> {
         validateImageSize(cls);
-        const res = await fetch(`${API_URL}/classes`, {
+        const res = await safeFetch(`${API_URL}/classes`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(cls)
@@ -161,7 +169,7 @@ export const api = {
     
     async updateClass(id: string, cls: Partial<ClassItem>): Promise<ClassItem> {
         validateImageSize(cls);
-        const res = await fetch(`${API_URL}/classes/${id}`, { 
+        const res = await safeFetch(`${API_URL}/classes/${id}`, { 
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(cls)
@@ -170,7 +178,7 @@ export const api = {
     },
 
     async deleteClass(id: string): Promise<void> {
-        await fetch(`${API_URL}/classes/${id}`, { 
+        await safeFetch(`${API_URL}/classes/${id}`, { 
             method: 'DELETE', 
             headers: getHeaders() 
         });
@@ -178,13 +186,13 @@ export const api = {
 
     // ================= LOTTERIES =================
     async getLotteries(): Promise<LotteryItem[]> {
-        const res = await fetch(`${API_URL}/lotteries`);
+        const res = await safeFetch(`${API_URL}/lotteries`);
         return res.json();
     },
 
     async createLottery(lottery: Partial<LotteryItem>): Promise<LotteryItem> {
          validateImageSize(lottery);
-         const res = await fetch(`${API_URL}/lotteries`, {
+         const res = await safeFetch(`${API_URL}/lotteries`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(lottery)
@@ -194,7 +202,7 @@ export const api = {
 
     async updateLottery(id: string, lottery: Partial<LotteryItem>): Promise<LotteryItem> {
          validateImageSize(lottery);
-         const res = await fetch(`${API_URL}/lotteries/${id}`, {
+         const res = await safeFetch(`${API_URL}/lotteries/${id}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(lottery)
@@ -203,7 +211,7 @@ export const api = {
     },
 
     async runLotteryLive(id: string) {
-        const res = await fetch(`${API_URL}/admin/lotteries/${id}/run`, {
+        const res = await safeFetch(`${API_URL}/admin/lotteries/${id}/run`, {
             method: 'POST',
             headers: getHeaders()
         });
@@ -211,19 +219,19 @@ export const api = {
     },
 
     async deleteLottery(id: string): Promise<void> {
-         await fetch(`${API_URL}/lotteries/${id}`, {
+         await safeFetch(`${API_URL}/lotteries/${id}`, {
             method: 'DELETE',
             headers: getHeaders()
         });
     },
 
     async getLotteryParticipants(id: string): Promise<any[]> {
-        const res = await fetch(`${API_URL}/admin/lotteries/${id}/participants`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/admin/lotteries/${id}/participants`, { headers: getHeaders() });
         return res.json();
     },
 
     async completeLotteryMission(lotteryId: string) {
-        const res = await fetch(`${API_URL}/lotteries/${lotteryId}/complete-mission`, {
+        const res = await safeFetch(`${API_URL}/lotteries/${lotteryId}/complete-mission`, {
             method: 'POST',
             headers: getHeaders()
         });
@@ -232,13 +240,13 @@ export const api = {
 
     // ================= FORUM =================
     async getForumPosts(): Promise<ForumPost[]> {
-        const res = await fetch(`${API_URL}/forum`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/forum`, { headers: getHeaders() });
         return res.json();
     },
 
     async createForumPost(post: { title: string, content: string, image?: string }) {
         validateImageSize(post);
-        const res = await fetch(`${API_URL}/forum`, {
+        const res = await safeFetch(`${API_URL}/forum`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(post)
@@ -247,7 +255,7 @@ export const api = {
     },
 
     async approvePost(postId: string) {
-        const res = await fetch(`${API_URL}/admin/approve-post/${postId}`, {
+        const res = await safeFetch(`${API_URL}/admin/approve-post/${postId}`, {
             method: 'PUT',
             headers: getHeaders()
         });
@@ -255,14 +263,14 @@ export const api = {
     },
 
     async deletePost(postId: string): Promise<void> {
-        await fetch(`${API_URL}/forum/${postId}`, {
+        await safeFetch(`${API_URL}/forum/${postId}`, {
             method: 'DELETE',
             headers: getHeaders()
         });
     },
 
     async likePost(postId: string) {
-        const res = await fetch(`${API_URL}/forum/${postId}/like`, {
+        const res = await safeFetch(`${API_URL}/forum/${postId}/like`, {
             method: 'POST',
             headers: getHeaders()
         });
@@ -270,7 +278,7 @@ export const api = {
     },
 
     async addComment(postId: string, text: string) {
-        const res = await fetch(`${API_URL}/forum/${postId}/comment`, {
+        const res = await safeFetch(`${API_URL}/forum/${postId}/comment`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({ text })
@@ -280,13 +288,13 @@ export const api = {
 
     // ================= COMMUNITY =================
     async getCommunityItems(): Promise<CommunityItem[]> {
-        const res = await fetch(`${API_URL}/community`);
+        const res = await safeFetch(`${API_URL}/community`);
         return res.json();
     },
 
     async createCommunityItem(item: Partial<CommunityItem>) {
         validateImageSize(item);
-        const res = await fetch(`${API_URL}/community`, {
+        const res = await safeFetch(`${API_URL}/community`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(item)
@@ -296,7 +304,7 @@ export const api = {
 
     async updateCommunityItem(id: string, item: Partial<CommunityItem>) {
         validateImageSize(item);
-        const res = await fetch(`${API_URL}/community/${id}`, {
+        const res = await safeFetch(`${API_URL}/community/${id}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(item)
@@ -305,24 +313,24 @@ export const api = {
     },
 
     async deleteCommunityItem(id: string) {
-        return fetch(`${API_URL}/community/${id}`, { method: 'DELETE', headers: getHeaders() });
+        return safeFetch(`${API_URL}/community/${id}`, { method: 'DELETE', headers: getHeaders() });
     },
 
     // ================= PERSONALITY =================
     async getPersonality() {
-        const res = await fetch(`${API_URL}/personality`);
+        const res = await safeFetch(`${API_URL}/personality`);
         const data = await res.json();
         return (data && data.questions) ? data : { ...data, questions: [] };
     },
 
     async getAllPersonalities(): Promise<PersonalityProfile[]> {
-        const res = await fetch(`${API_URL}/personality/archive`);
+        const res = await safeFetch(`${API_URL}/personality/archive`);
         return res.json();
     },
 
     async updatePersonality(data: Partial<PersonalityProfile>) {
         validateImageSize(data);
-        const res = await fetch(`${API_URL}/personality`, {
+        const res = await safeFetch(`${API_URL}/personality`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -331,14 +339,14 @@ export const api = {
     },
 
     async getPersonalityTemplate() {
-        const res = await fetch(`${API_URL}/personality/template`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/personality/template`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Failed to fetch template');
         return res.json();
     },
 
     async updatePersonalityTemplate(data: any) {
         validateImageSize(data);
-        const res = await fetch(`${API_URL}/personality/template`, {
+        const res = await safeFetch(`${API_URL}/personality/template`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -348,7 +356,7 @@ export const api = {
     },
 
     async generateInterviewLink(data: any) {
-        const res = await fetch(`${API_URL}/personality/generate-link`, {
+        const res = await safeFetch(`${API_URL}/personality/generate-link`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -357,13 +365,13 @@ export const api = {
     },
 
     async getInterviewByToken(token: string) {
-        const res = await fetch(`${API_URL}/personality/fill/${token}`);
+        const res = await safeFetch(`${API_URL}/personality/fill/${token}`);
         return res.json();
     },
 
     async submitInterview(token: string, data: Partial<PersonalityProfile>) {
         validateImageSize(data);
-        const res = await fetch(`${API_URL}/personality/fill/${token}`, {
+        const res = await safeFetch(`${API_URL}/personality/fill/${token}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -372,12 +380,12 @@ export const api = {
     },
 
     async getPendingInterviews(): Promise<PersonalityProfile[]> {
-        const res = await fetch(`${API_URL}/admin/personality/pending`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/admin/personality/pending`, { headers: getHeaders() });
         return res.json();
     },
 
     async approvePersonality(interviewId: string) {
-        const res = await fetch(`${API_URL}/admin/personality/approve/${interviewId}`, {
+        const res = await safeFetch(`${API_URL}/admin/personality/approve/${interviewId}`, {
             method: 'POST',
             headers: getHeaders()
         });
@@ -385,7 +393,7 @@ export const api = {
     },
 
     async deletePersonality(id: string) {
-        return fetch(`${API_URL}/personality/${id}`, { 
+        return safeFetch(`${API_URL}/personality/${id}`, { 
             method: 'DELETE', 
             headers: getHeaders() 
         }).then(res => res.json());
@@ -393,12 +401,12 @@ export const api = {
 
     // ================= INSPIRATIONS & ADS =================
     async getInspirations() {
-        const res = await fetch(`${API_URL}/inspirations`);
+        const res = await safeFetch(`${API_URL}/inspirations`);
         return res.json();
     },
 
     async createInspiration(data: any) {
-        const res = await fetch(`${API_URL}/inspirations`, {
+        const res = await safeFetch(`${API_URL}/inspirations`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -407,7 +415,7 @@ export const api = {
     },
 
     async updateInspiration(id: string, data: any) {
-        const res = await fetch(`${API_URL}/inspirations/${id}`, {
+        const res = await safeFetch(`${API_URL}/inspirations/${id}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -416,17 +424,17 @@ export const api = {
     },
 
     async deleteInspiration(id: string) {
-        return fetch(`${API_URL}/inspirations/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
+        return safeFetch(`${API_URL}/inspirations/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
     },
 
     async getAds() {
-        const res = await fetch(`${API_URL}/ads`);
+        const res = await safeFetch(`${API_URL}/ads`);
         return res.json();
     },
 
     async createAd(data: any) {
         validateImageSize(data);
-        const res = await fetch(`${API_URL}/ads`, {
+        const res = await safeFetch(`${API_URL}/ads`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -436,7 +444,7 @@ export const api = {
 
     async updateAd(id: string, data: any) {
         validateImageSize(data);
-        const res = await fetch(`${API_URL}/ads/${id}`, {
+        const res = await safeFetch(`${API_URL}/ads/${id}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -445,17 +453,17 @@ export const api = {
     },
 
     async deleteAd(id: string) {
-        return fetch(`${API_URL}/ads/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
+        return safeFetch(`${API_URL}/ads/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
     },
 
     // ================= ANNOUNCEMENTS =================
     async getAnnouncements(): Promise<any[]> {
-        const res = await fetch(`${API_URL}/announcements`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/announcements`, { headers: getHeaders() });
         return res.json();
     },
 
     async createAnnouncement(data: any) {
-        const res = await fetch(`${API_URL}/announcements`, {
+        const res = await safeFetch(`${API_URL}/announcements`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -464,7 +472,7 @@ export const api = {
     },
 
     async updateAnnouncement(id: string, data: any) {
-        const res = await fetch(`${API_URL}/announcements/${id}`, {
+        const res = await safeFetch(`${API_URL}/announcements/${id}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -473,7 +481,7 @@ export const api = {
     },
 
     async deleteAnnouncement(id: string) {
-        return fetch(`${API_URL}/announcements/${id}`, { 
+        return safeFetch(`${API_URL}/announcements/${id}`, { 
             method: 'DELETE', 
             headers: getHeaders() 
         }).then(r => r.json());
@@ -481,11 +489,11 @@ export const api = {
 
     // ================= ADMIN SETTINGS & POINTS =================
     async getSettings() {
-        return fetch(`${API_URL}/admin/settings`, { headers: getHeaders() }).then(r => r.json());
+        return safeFetch(`${API_URL}/admin/settings`, { headers: getHeaders() }).then(r => r.json());
     },
 
     async updateSettings(settings: any) {
-        return fetch(`${API_URL}/admin/settings`, {
+        return safeFetch(`${API_URL}/admin/settings`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(settings)
@@ -493,7 +501,7 @@ export const api = {
     },
 
     async sendPointsToUser(userId: string, points: number) {
-        return fetch(`${API_URL}/admin/users/${userId}/points`, {
+        return safeFetch(`${API_URL}/admin/users/${userId}/points`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({ points })
@@ -501,7 +509,7 @@ export const api = {
     },
 
     async createGiftCode(giftData: any) {
-        return fetch(`${API_URL}/admin/gifts`, {
+        return safeFetch(`${API_URL}/admin/gifts`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(giftData)
@@ -510,12 +518,12 @@ export const api = {
 
     // ================= SHABBAT LOTTERY =================
     async getShabbatLotterySettings() {
-        const res = await fetch(`${API_URL}/shabbat-lottery/settings`);
+        const res = await safeFetch(`${API_URL}/shabbat-lottery/settings`);
         return res.json();
     },
 
     async updateShabbatLotterySettings(settings: any) {
-        const res = await fetch(`${API_URL}/admin/shabbat-lottery/settings`, {
+        const res = await safeFetch(`${API_URL}/admin/shabbat-lottery/settings`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(settings)
@@ -525,7 +533,7 @@ export const api = {
 
     async enterShabbatLottery(entryData: { familyName: string; image: string; phone: string }) {
         validateImageSize(entryData);
-        const res = await fetch(`${API_URL}/shabbat-lottery/enter`, {
+        const res = await safeFetch(`${API_URL}/shabbat-lottery/enter`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(entryData)
@@ -538,12 +546,12 @@ export const api = {
     },
 
     async getShabbatEntries() {
-        const res = await fetch(`${API_URL}/admin/shabbat-lottery/entries`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/admin/shabbat-lottery/entries`, { headers: getHeaders() });
         return res.json();
     },
 
     async runShabbatLottery() {
-        const res = await fetch(`${API_URL}/admin/shabbat-lottery/run`, {
+        const res = await safeFetch(`${API_URL}/admin/shabbat-lottery/run`, {
             method: 'POST',
             headers: getHeaders()
         });
@@ -557,7 +565,7 @@ export const api = {
     // ================= CONTACT MESSAGES (חדש!) =================
     async submitContactMessage(data: any) {
         validateImageSize(data);
-        const res = await fetch(`${API_URL}/contact`, {
+        const res = await safeFetch(`${API_URL}/contact`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
@@ -566,19 +574,19 @@ export const api = {
     },
 
     async getContactMessages() {
-        const res = await fetch(`${API_URL}/admin/messages`, { headers: getHeaders() });
+        const res = await safeFetch(`${API_URL}/admin/messages`, { headers: getHeaders() });
         return res.json();
     },
 
     async deleteContactMessage(id: string) {
-        return fetch(`${API_URL}/admin/messages/${id}`, { 
+        return safeFetch(`${API_URL}/admin/messages/${id}`, { 
             method: 'DELETE', 
             headers: getHeaders() 
         }).then(r => r.json());
     },
 
     async markMessageAsRead(id: string) {
-        return fetch(`${API_URL}/admin/messages/${id}/read`, { 
+        return safeFetch(`${API_URL}/admin/messages/${id}/read`, { 
             method: 'PUT', 
             headers: getHeaders() 
         }).then(r => r.json());
@@ -586,12 +594,12 @@ export const api = {
 
     // ================= TICKETS & QR CODES (חדש!) =================
     async getTickets() {
-        return fetch(`${API_URL}/admin/tickets`, { headers: getHeaders() }).then(r => r.json());
+        return safeFetch(`${API_URL}/admin/tickets`, { headers: getHeaders() }).then(r => r.json());
     },
 
     async createTicket(ticketData: { eventId: string, code: string, image: string }) {
         validateImageSize(ticketData);
-        const res = await fetch(`${API_URL}/admin/tickets`, {
+        const res = await safeFetch(`${API_URL}/admin/tickets`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(ticketData)
@@ -600,14 +608,14 @@ export const api = {
     },
 
     async deleteTicket(id: string) {
-        return fetch(`${API_URL}/admin/tickets/${id}`, { 
+        return safeFetch(`${API_URL}/admin/tickets/${id}`, { 
             method: 'DELETE', 
             headers: getHeaders() 
         }).then(r => r.json());
     },
 
     async verifyTicket(code: string) {
-        const res = await fetch(`${API_URL}/admin/tickets/verify/${code}`, {
+        const res = await safeFetch(`${API_URL}/admin/tickets/verify/${code}`, {
             method: 'POST',
             headers: getHeaders()
         });
