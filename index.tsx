@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './theme.css'; // <--- השורה הזו היא המפתח לעיצוב!
 import App from './App';
 
 const rootElement = document.getElementById('root');
