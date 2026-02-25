@@ -47,7 +47,8 @@ const ForumPost = mongoose.model('ForumPost', ForumPostSchema);
 
 // --- סכמת קהילה מעודכנת ---
 const CommunitySchema = new mongoose.Schema({
-  category: { type: String, enum: ['שיעורי תורה', 'גמ"חים', 'עסקים מקומיים', 'עסק מקומי'], required: true },
+  // הוספתי את "עסקים" לרשימה כדי לכסות את כל האפשרויות
+  category: { type: String, enum: ['שיעורי תורה', 'גמ"חים', 'עסקים מקומיים', 'עסק מקומי', 'עסקים'], required: true },
   title: { type: String, required: true },
   image: { type: String },
   location: { type: String },
