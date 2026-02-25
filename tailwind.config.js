@@ -2,9 +2,11 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./App.tsx",                // קובץ האפליקציה בתיקייה הראשית
+    "./index.tsx",              // קובץ הכניסה בתיקייה הראשית
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
+    "./services/**/*.{js,ts,jsx,tsx}", // הוספתי למקרה שיש שם מחלקות עיצוב
   ],
   theme: {
     extend: {
