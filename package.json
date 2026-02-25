@@ -1,1 +1,19 @@
-{\n  \"name\": \"your-project-name\",\n  \"version\": \"1.0.0\",\n  \"scripts\": {\n    \"build\": \"tsc && vite build\",\n    \"dev\": \"vite\"\n  },\n  \"dependencies\": {\n    \"tailwindcss\": \"^3.0.0\",\n    \"autoprefixer\": \"^10.0.0\",\n    \"postcss\": \"^8.0.0\"\n  },\n  \"devDependencies\": {\n    \"typescript\": \"^4.0.0\"\n  }\n}
+{
+  "name": "your-project-name",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server.js",
+    "build:start": "vite build && node server.js"
+  },
+  "dependencies": {
+    "tailwindcss": "^3.0.0",
+    "autoprefixer": "^10.0.0",
+    "postcss": "^8.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.0"
+  }
+}
