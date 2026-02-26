@@ -3,19 +3,38 @@ import {
   Search, Phone, MapPin, BookOpen, Heart, Store, 
   ArrowLeft, Info, ExternalLink, MessageCircle
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 
 const CommunityPage = () => {
   const navigate = useNavigate();
+  const location = useLocation(); // תופס את המידע שהגיע מדף הבית
+  
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'שיעורי תורה' | 'גמ"חים' | 'עסקים מקומיים'>('שיעורי תורה');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // טעינת הנתונים הראשונית
   useEffect(() => {
     loadCommunityData();
   }, []);
+
+  // האזנה לשינויים בניתוב ועדכון הטאב הפעיל בהתאם
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      const incomingCategory = location.state.activeTab;
+      
+      // מתרגמים את הקטגוריה שמגיעה מהשרת לשם המדויק של הטאב
+      if (incomingCategory.includes('עסק') || incomingCategory === 'עסקים מקומיים') {
+        setActiveTab('עסקים מקומיים');
+      } else if (incomingCategory.includes('גמ"ח') || incomingCategory === 'גמ"חים') {
+        setActiveTab('גמ"חים');
+      } else if (incomingCategory.includes('שיעור') || incomingCategory.includes('תורה')) {
+        setActiveTab('שיעורי תורה');
+      }
+    }
+  }, [location.state]);
 
   const loadCommunityData = async () => {
     setLoading(true);

@@ -56,7 +56,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     const loadAllData = async () => {
       try {
         setIsLoading(true);
-        const [evRes, lotRes, adsRes, persData, commData, inspData, annData, classRes] = await Promise.all([
+        const [evRes, lotRes, adsRes, persDataRaw, commData, inspData, annData, classRes] = await Promise.all([
           fetch(`${API_URL}/events`).then(res => res.json()).catch(() => []),
           fetch(`${API_URL}/lotteries`).then(res => res.json()).catch(() => []),
           fetch(`${API_URL}/ads`).then(res => res.json()).catch(() => []),
@@ -70,7 +70,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         setEvents(Array.isArray(evRes) ? evRes.map((e: any) => ({...e, id: e._id || e.id})) : []);
         setLotteries(Array.isArray(lotRes) ? lotRes.map((l: any) => ({...l, id: l._id || l.id})) : []);
         setAds(Array.isArray(adsRes) ? adsRes : []);
+        
+        // בחירת אשת השבוע העדכנית ביותר במקרה שחוזר מערך מהשרת
+        const persData = Array.isArray(persDataRaw) ? persDataRaw[0] : persDataRaw;
         setPersonality(persData);
+        
         setCommunityItems(Array.isArray(commData) ? commData : []);
         
         const now = new Date();
@@ -351,7 +355,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                {communityItems.slice(0, 4).map((item, i) => (
                  <div 
                     key={i} 
-                    onClick={() => navigate('/community')}
+                    onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })}
                     className="bg-white rounded-[2rem] p-3 shadow-sm border border-slate-50 flex flex-col gap-3 active:bg-slate-50 transition-colors"
                  >
                     <img src={item.image} className="w-full h-24 rounded-2xl object-cover bg-slate-100" alt={item.title} />
@@ -371,7 +375,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           {personality && (
             <section className="px-5 pb-0">
                <div 
-                 onClick={() => navigate('/personality-archive')}
+                 onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}
                  className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-xl shadow-purple-100 border border-purple-50"
                >
                  <div className="h-48 w-full relative">
@@ -384,7 +388,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                           אשת השבוע
                        </div>
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900 mb-2">{personality.name}</h3>
+                    <h3 className="text-2xl font-black text-slate-900 mb-1">{personality.name}</h3>
+                    {personality.profession && <p className="text-rose-500 font-bold text-sm mb-2">{personality.profession}</p>}
                     <p className="text-slate-500 font-serif italic text-sm leading-relaxed mb-6">"{personality.motto}"</p>
                     <button className="w-full py-3.5 rounded-xl bg-slate-900 text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2">
                        לראיון המלא <BookOpen size={16} className="text-rose-400"/>
@@ -466,7 +471,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </div>
               <div className="grid grid-cols-3 gap-8">
                  {communityItems.slice(0, 3).map((item, i) => (
-                   <div key={i} onClick={() => navigate('/community')} className="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all cursor-pointer border border-rose-50">
+                   <div key={i} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all cursor-pointer border border-rose-50">
                       <img src={item.image} className="w-full h-40 object-cover" />
                       <div className="p-6">
                         <h4 className="font-black text-slate-800 text-lg">{item.title}</h4>
@@ -485,8 +490,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                        <div className="text-right space-y-4">
                           <span className="text-purple-500 font-black text-xs uppercase tracking-widest">אשת השבוע במעגל</span>
                           <h3 className="text-4xl font-black text-slate-900">{personality.name}</h3>
+                          {personality.profession && <p className="text-rose-500 font-bold text-lg">{personality.profession}</p>}
                           <p className="text-xl text-slate-600 font-serif italic leading-relaxed">"{personality.motto}"</p>
-                          <button onClick={() => navigate('/personality-archive')} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black text-sm flex items-center gap-2">לקריאת הראיון המלא <ChevronLeft size={18}/></button>
+                          <button onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black text-sm flex items-center gap-2">לקריאת הראיון המלא <ChevronLeft size={18}/></button>
                        </div>
                     </section>
                  )}

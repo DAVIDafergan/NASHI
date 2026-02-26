@@ -2,17 +2,15 @@
 export default {
   content: [
     "./index.html",
-    "./App.tsx",                // קובץ האפליקציה בתיקייה הראשית
-    "./index.tsx",              // קובץ הכניסה בתיקייה הראשית
+    "./App.tsx",
+    "./index.tsx",
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
-    "./services/**/*.{js,ts,jsx,tsx}", // הוספתי למקרה שיש שם מחלקות עיצוב
+    "./services/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
-      animation: {
-        blob: "blob 7s infinite",
-      },
+      animation: { blob: "blob 7s infinite" },
       keyframes: {
         blob: {
           "0%": { transform: "translate(0px, 0px) scale(1)" },
@@ -23,12 +21,5 @@ export default {
       },
     },
   },
-  plugins: [
-    function ({ addUtilities }) {
-      addUtilities({
-        '.animation-delay-2000': { 'animation-delay': '2s' },
-        '.animation-delay-4000': { 'animation-delay': '4s' },
-      })
-    }
-  ],
+  plugins: [],
 }
