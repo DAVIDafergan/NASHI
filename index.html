@@ -5,9 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NASHI</title>
     <meta name="description" content="NASHI - Community App">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+
+    <style>
+        .ios-install-prompt {
+            display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px; background-color: #ffffff; color: #333;
+            padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 9999; text-align: center; font-family: sans-serif; direction: rtl; border: 1px solid #e0e0e0;
+        }
+        .ios-install-prompt p { margin: 0 0 10px 0; font-size: 15px; line-height: 1.4; }
+        .close-prompt { background: #000; color: #fff; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+
+    <div id="iosPrompt" class="ios-install-prompt">
+        <p>
+            <strong>רוצה חוויה של אפליקציה?</strong><br>
+            להתקנת NASHI, לחץ על סמל ה<strong>שיתוף</strong> בתחתית המסך, ואז <strong>"הוסף למסך הבית"</strong>.
+        </p>
+        <button class="close-prompt" onclick="closeIosPrompt()">הבנתי, תודה</button>
+    </div>
+
+    <script>
+        // 1. הפעלת מנוע ה-PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+        // 2. ניהול חלונית האייפון
+        function showIosPrompt() {
+            const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            
+            if (isIos() && !isStandalone && !localStorage.getItem('iosPromptDismissed')) {
+                document.getElementById('iosPrompt').style.display = 'block';
+            }
+        }
+
+        function closeIosPrompt() {
+            document.getElementById('iosPrompt').style.display = 'none';
+            localStorage.setItem('iosPromptDismissed', 'true');
+        }
+
+        // מפעיל את הבדיקה 3 שניות אחרי שהאתר עולה
+        setTimeout(showIosPrompt, 3000);
+
+        // 3. תפיסת רגע ההתקנה באנדרואיד
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('האפליקציה הותקנה בהצלחה!');
+        });
+    </script>
 </body>
 </html>
