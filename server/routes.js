@@ -9,7 +9,8 @@ import {
     Personality, ForumPost, Community, Inspiration, Ad,
     ShabbatLottery, ShabbatEntry, // הוספת המודלים של שולחן השבת לייבוא
     ContactMessage, // הוספת מודל פניות הציבור לייבוא
-    Ticket // התווסף מודל הכרטיסים!
+    Ticket, // התווסף מודל הכרטיסים!
+    Story // <--- תוספת: מודל הסטוריז
 } from './models.js';
 
 const router = express.Router();
@@ -822,6 +823,64 @@ router.post('/admin/tickets/verify/:code', authenticate, isAdmin, async (req, re
         await ticket.save();
 
         res.json({ success: true, message: 'כניסה אושרה בהצלחה!', eventTitle: ticket.eventId?.title });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 17. סטוריז (STORIES) - חדש! =================
+
+// שליפת סטוריז מאושרים (עבור דף הבית)
+router.get('/stories', async (req, res) => {
+    try {
+        // שולפים רק סטוריז במצב "approved". (ה-TTL במונגו כבר דואג למחוק את מה שעבר 24 שעות)
+        const stories = await Story.find({ status: 'approved' })
+            .populate('user', 'name avatar') // מביאים את שם ותמונת המשתמשת
+            .sort({ approvedAt: -1 }); // הכי חדשים בהתחלה
+        res.json(stories);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// העלאת סטורי חדש על ידי משתמשת (מחייב חיבור)
+router.post('/stories', authenticate, async (req, res) => {
+    try {
+        const story = new Story({
+            user: req.user.id,
+            type: req.body.type || 'text',
+            content: req.body.content
+            // status יהיה 'pending' אוטומטית לפי המודל
+        });
+        await story.save();
+        res.status(201).json({ success: true, message: 'הסטורי נשלח לאישור מנהלת' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// שליפת הסטוריז הממתינים לאישור (מנהלות בלבד)
+router.get('/admin/stories', authenticate, isAdmin, async (req, res) => {
+    try {
+        const stories = await Story.find({ status: 'pending' })
+            .populate('user', 'name avatar')
+            .sort({ createdAt: -1 });
+        res.json(stories);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// אישור סטורי על ידי המנהלת
+router.put('/admin/stories/:id/approve', authenticate, isAdmin, async (req, res) => {
+    try {
+        // חשוב: מעדכנים את שדה approvedAt לעכשיו, מה שמתחיל את שעון העצר של ה-24 שעות!
+        const story = await Story.findByIdAndUpdate(
+            req.params.id, 
+            { status: 'approved', approvedAt: Date.now() }, 
+            { new: true }
+        );
+        res.json({ success: true, story });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// מחיקת סטורי (על ידי מנהלת - אם סירבה לאשר או רצתה להסיר)
+router.delete('/admin/stories/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        await Story.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

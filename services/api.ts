@@ -562,7 +562,7 @@ export const api = {
         return res.json();
     },
 
-    // ================= CONTACT MESSAGES (חדש!) =================
+    // ================= CONTACT MESSAGES =================
     async submitContactMessage(data: any) {
         validateImageSize(data);
         const res = await safeFetch(`${API_URL}/contact`, {
@@ -592,7 +592,7 @@ export const api = {
         }).then(r => r.json());
     },
 
-    // ================= TICKETS & QR CODES (חדש!) =================
+    // ================= TICKETS & QR CODES =================
     async getTickets() {
         return safeFetch(`${API_URL}/admin/tickets`, { headers: getHeaders() }).then(r => r.json());
     },
@@ -622,5 +622,42 @@ export const api = {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'שגיאה באימות כרטיס');
         return data;
+    },
+
+    // ================= STORIES (חדש!) =================
+    async getStories(): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/stories`);
+        return res.json();
+    },
+
+    async uploadStory(data: { type: string, content: string }): Promise<any> {
+        validateImageSize(data);
+        const res = await safeFetch(`${API_URL}/stories`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async getPendingStories(): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/admin/stories`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async approveStory(id: string): Promise<any> {
+        const res = await safeFetch(`${API_URL}/admin/stories/${id}/approve`, {
+            method: 'PUT',
+            headers: getHeaders()
+        });
+        return res.json();
+    },
+
+    async deleteStory(id: string): Promise<any> {
+        const res = await safeFetch(`${API_URL}/admin/stories/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        return res.json();
     }
 };

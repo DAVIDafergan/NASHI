@@ -220,9 +220,27 @@ const TicketSchema = new mongoose.Schema({
 });
 const Ticket = mongoose.model('Ticket', TicketSchema);
 
+// ==========================================
+// --- מודל סטוריז חדש (תוספת) ---
+// ==========================================
+const StorySchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // הפניה למשתמשת שהעלתה
+  type: { type: String, enum: ['image', 'text'], default: 'text' }, // סוג הסטורי: תמונה או טקסט בלבד
+  content: { type: String, required: true }, // התוכן עצמו (טקסט או תמונה כ-Base64)
+  status: { type: String, enum: ['pending', 'approved'], default: 'pending' }, // סטטוס לאישור מנהלת
+  createdAt: { type: Date, default: Date.now },
+  approvedAt: { type: Date } // שדה שיתעדכן ברגע שהמנהלת מאשרת
+});
+
+// אינדקס TTL (Time-To-Live): ימחק את המסמך אוטומטית 24 שעות (86400 שניות) לאחר תאריך האישור
+StorySchema.index({ approvedAt: 1 }, { expireAfterSeconds: 86400 });
+
+const Story = mongoose.model('Story', StorySchema);
+
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
   Announcement, ShabbatLottery, ShabbatEntry, ContactMessage,
-  Ticket // נוסף לייצוא
+  Ticket,
+  Story // הוספת הסטורי לייצוא
 };
