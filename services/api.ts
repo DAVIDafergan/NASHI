@@ -667,5 +667,19 @@ export const api = {
             headers: getHeaders()
         });
         return res.json();
+    },
+
+    // --- אלו שתי הפונקציות שהוספנו עכשיו ---
+    async getActiveStoriesAdmin(): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/admin/stories/active`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async viewStory(id: string): Promise<any> {
+        const res = await safeFetch(`${API_URL}/stories/${id}/view`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        return res.json();
     }
 };
