@@ -88,8 +88,8 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({
             name, email, password: hashedPassword, phone,
-            // כאן שינינו את יצירת האוואטר למודל של בנות (lorelei) עם צבעי רקע מותאמים
-            avatar: `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(name)}&backgroundColor=ffd5dc,ffdfbf,c0aede,d1d4f9`,
+            // אוואטרים חמודים לנשים - מודל lorelei עם פילטרים לחיוך, הבעות מתוקות וצבעי רקע נעימים
+            avatar: `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(name)}&backgroundColor=ffd5dc,ffdfbf,c0aede,d1d4f9,ffc0cb&mouth=smile,happy,cute&eyes=happy,open,wink`,
             points: config.pointsPerRegister || 50
         });
         await user.save();
@@ -928,7 +928,33 @@ router.post('/stories/:id/view', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- ראוט מיוחד לשיתוף בוואצפ (OG Tags) ---
+// --- יצירת תמונה אמיתית מתוך ה-Base64 עבור וואטסאפ ---
+router.get('/stories/image/:id', async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id);
+        if (!story || story.type !== 'image' || !story.content) {
+            return res.status(404).send('Image not found');
+        }
+        
+        // חילוץ הנתונים מהטקסט (Base64)
+        const matches = story.content.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) {
+            return res.status(400).send('Invalid image format');
+        }
+        
+        const imgType = matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        
+        // החזרת הנתונים כקובץ תמונה לכל דבר!
+        res.writeHead(200, {
+            'Content-Type': imgType,
+            'Content-Length': buffer.length
+        });
+        res.end(buffer);
+    } catch (err) { res.status(500).send(err.message); }
+});
+
+// --- ראוט מיוחד לשיתוף בוואצפ (OG Tags) מתוקן ---
 router.get('/stories/share/:id', async (req, res) => {
     try {
         const story = await Story.findById(req.params.id).populate('user', 'name');
@@ -936,11 +962,18 @@ router.get('/stories/share/:id', async (req, res) => {
 
         const title = `סטורי חדש מאת ${story.user.name} | קהילת נשי`;
         const description = story.type === 'text' ? story.content : (story.caption || 'בואי לראות מה העליתי הרגע לקהילה!');
-        // אם זה טקסט, נשים לוגו דיפולטיבי. אם זו תמונה, נשים את התמונה עצמה.
-        const imageUrl = story.type === 'image' ? story.content : 'https://i.imgur.com/your-default-logo.png'; 
         
-        // הכתובת אליה המשתמשת תועבר כשתלחץ על הלינק (לדף הבית עם מזהה הסטורי)
-        const redirectUrl = `${process.env.FRONTEND_URL || 'https://yourdomain.com'}/#/?storyId=${story._id}`;
+        // כתובת השרת שלנו
+        const serverUrl = req.protocol + '://' + req.get('host');
+        
+        // כאן הקסם: אם זו תמונה, אנחנו מפנים את וואטסאפ לראוט החדש שמייצר תמונה. אם זה טקסט, נשים תמונת אווירה יפה.
+        const imageUrl = story.type === 'image' 
+            ? `${serverUrl}/api/stories/image/${story._id}` 
+            : 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'; 
+        
+        // הכתובת אליה המשתמשת תועבר כשתלחץ על הלינק (לדף הבית של האתר שלך)
+        const frontendUrl = process.env.FRONTEND_URL || 'https://nashi-production.up.railway.app';
+        const redirectUrl = `${frontendUrl}/#/?storyId=${story._id}`;
 
         const html = `
         <!DOCTYPE html>
@@ -954,7 +987,7 @@ router.get('/stories/share/:id', async (req, res) => {
             <meta property="og:type" content="website" />
             <title>${title}</title>
             <script>
-                // הפניה אוטומטית לאפליקציה מיד אחרי שוואצפ שואב את הנתונים
+                // הפניה אוטומטית לאתר מיד אחרי שוואצפ שואב את הנתונים
                 window.location.href = "${redirectUrl}";
             </script>
         </head>
