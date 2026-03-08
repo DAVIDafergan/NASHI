@@ -4,7 +4,7 @@ import {
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
   Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2 // נוספו Trash2 ו-Share2
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 
 // --- Interfaces ---
@@ -70,6 +70,7 @@ const StoryRing = ({ count }: { count: number }) => {
 
 const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin: () => void, onUpdateUser?: (u: any) => void }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const mobileSliderRef = useRef<HTMLDivElement>(null);
    
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -155,6 +156,34 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     };
     loadAllData();
   }, []);
+
+  // 1. פתיחה אוטומטית של סטורי אם הגענו מלינק משותף
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const storyId = params.get('storyId');
+    
+    if (storyId && groupedStories.length > 0) {
+      // מחפשים באיזה קבוצה נמצא הסטורי הזה
+      for (let gIndex = 0; gIndex < groupedStories.length; gIndex++) {
+        const sIndex = groupedStories[gIndex].stories.findIndex(s => s._id === storyId || s.id === storyId);
+        if (sIndex !== -1) {
+          setActiveGroupIndex(gIndex);
+          setActiveInnerIndex(sIndex);
+          setStoryProgress(0);
+          break;
+        }
+      }
+    }
+  }, [location.search, groupedStories]);
+
+  // 2. ספירת צפיות ברגע שהסטורי מוצג
+  useEffect(() => {
+    const currentStory = activeGroupIndex !== null ? groupedStories[activeGroupIndex]?.stories[activeInnerIndex] : null;
+    if (currentStory && user) {
+       // משדרים לשרת שצפינו בסטורי
+       api.viewStory(currentStory._id || currentStory.id!).catch(console.error);
+    }
+  }, [activeGroupIndex, activeInnerIndex, user]);
 
   // סליידר אירועים אוטומטי בנייד
   useEffect(() => {
@@ -275,7 +304,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               await navigator.share({
                   title: 'סטורי מקהילת נשי',
                   text: story.type === 'text' ? story.content : (story.caption || 'צפי בסטורי הזה בקהילת נשי!'),
-                  url: window.location.href // שולח לינק לאתר הכללי (כי סטורי הוא זמני)
+                  url: `${API_URL}/stories/share/${story._id || story.id}` // הלינק הייעודי שעובר דרך השרת לוואצפ
               });
           } catch (error) {
               console.log('Error sharing', error);

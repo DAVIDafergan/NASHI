@@ -88,7 +88,8 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({
             name, email, password: hashedPassword, phone,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+            // כאן שינינו את יצירת האוואטר למודל של בנות (lorelei) עם צבעי רקע מותאמים
+            avatar: `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(name)}&backgroundColor=ffd5dc,ffdfbf,c0aede,d1d4f9`,
             points: config.pointsPerRegister || 50
         });
         await user.save();
@@ -898,6 +899,71 @@ router.delete('/stories/:id', authenticate, async (req, res) => {
         
         await Story.findByIdAndDelete(req.params.id);
         res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- שליפת סטוריז פעילים למנהלת (כולל צפיות) ---
+router.get('/admin/stories/active', authenticate, isAdmin, async (req, res) => {
+    try {
+        const stories = await Story.find({ status: 'approved' })
+            .populate('user', 'name avatar')
+            .sort({ approvedAt: -1 });
+        res.json(stories);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- עדכון ספירת צפיות בסטורי ---
+router.post('/stories/:id/view', authenticate, async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id);
+        if (!story) return res.status(404).json({ error: 'Story not found' });
+        
+        // אם המשתמשת עוד לא צפתה בסטורי, נוסיף אותה ונעלה את המונה
+        if (!story.viewedBy.includes(req.user.id)) {
+            story.viewedBy.push(req.user.id);
+            story.views += 1;
+            await story.save();
+        }
+        res.json({ success: true, views: story.views });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- ראוט מיוחד לשיתוף בוואצפ (OG Tags) ---
+router.get('/stories/share/:id', async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id).populate('user', 'name');
+        if (!story) return res.status(404).send('הסטורי לא נמצא או שנמחק');
+
+        const title = `סטורי חדש מאת ${story.user.name} | קהילת נשי`;
+        const description = story.type === 'text' ? story.content : (story.caption || 'בואי לראות מה העליתי הרגע לקהילה!');
+        // אם זה טקסט, נשים לוגו דיפולטיבי. אם זו תמונה, נשים את התמונה עצמה.
+        const imageUrl = story.type === 'image' ? story.content : 'https://i.imgur.com/your-default-logo.png'; 
+        
+        // הכתובת אליה המשתמשת תועבר כשתלחץ על הלינק (לדף הבית עם מזהה הסטורי)
+        const redirectUrl = `${process.env.FRONTEND_URL || 'https://yourdomain.com'}/#/?storyId=${story._id}`;
+
+        const html = `
+        <!DOCTYPE html>
+        <html lang="he" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <meta property="og:title" content="${title}" />
+            <meta property="og:description" content="${description}" />
+            <meta property="og:image" content="${imageUrl}" />
+            <meta property="og:url" content="${redirectUrl}" />
+            <meta property="og:type" content="website" />
+            <title>${title}</title>
+            <script>
+                // הפניה אוטומטית לאפליקציה מיד אחרי שוואצפ שואב את הנתונים
+                window.location.href = "${redirectUrl}";
+            </script>
+        </head>
+        <body style="background:#fffcfc; text-align:center; padding-top:50px; font-family:sans-serif;">
+            <h2>מעביר אותך לסטורי...</h2>
+        </body>
+        </html>
+        `;
+        res.send(html);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

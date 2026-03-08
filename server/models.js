@@ -230,7 +230,10 @@ const StorySchema = new mongoose.Schema({
   caption: { type: String, default: '' }, // טקסט שיופיע מתחת לתמונה
   status: { type: String, enum: ['pending', 'approved'], default: 'pending' }, // סטטוס לאישור מנהלת
   createdAt: { type: Date, default: Date.now },
-  approvedAt: { type: Date } // שדה שיתעדכן ברגע שהמנהלת מאשרת
+  approvedAt: { type: Date }, // שדה שיתעדכן ברגע שהמנהלת מאשרת
+  // --- תוספות חדשות: ספירת צפיות ---
+  views: { type: Number, default: 0 },
+  viewedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // כדי לא לספור את אותה משתמשת פעמיים
 });
 
 // אינדקס TTL (Time-To-Live): ימחק את המסמך אוטומטית 24 שעות (86400 שניות) לאחר תאריך האישור

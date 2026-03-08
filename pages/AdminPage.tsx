@@ -71,6 +71,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   
   // --- מדינות הסטוריז החדשים ---
   const [pendingStories, setPendingStories] = useState<any[]>([]);
+  const [activeStories, setActiveStories] = useState<any[]>([]); // הוספנו סטייט לסטוריז פעילים
 
   // Form States
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -142,7 +143,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [ticketForm, setTicketForm] = useState({ eventId: '', backgroundImage: '' });
   const [isGeneratingTicket, setIsGeneratingTicket] = useState(false);
 
-  // חישוב נתונים אמיתיים לסיכום חודשי
+  // חישוב נתונים אמיתיים לסיכום חודשי - מעודכן לכלול את הסטוריז
   const monthlyStats = useMemo(() => {
     const month = viewDate.getMonth();
     const year = viewDate.getFullYear();
@@ -157,16 +158,25 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         return d.getMonth() === month && d.getFullYear() === year;
     });
 
+    // סינון הסטוריז הפעילים לפי חודש (לרוב כולם מהיום האחרון, אבל שומר על לוגיקה זהה)
+    const filteredStories = activeStories.filter(s => {
+        const d = new Date(s.createdAt || Date.now());
+        return d.getMonth() === month && d.getFullYear() === year;
+    });
+
     const totalPoints = apiUsers.reduce((acc, u) => acc + (u.points || 0), 0);
+    const storiesViews = filteredStories.reduce((acc, s) => acc + (s.views || 0), 0);
 
     return {
         usersCount: filteredUsers.length,
         eventsCount: filteredEvents.length,
         points: totalPoints,
         monthName: viewDate.toLocaleString('he-IL', { month: 'long' }),
-        year: year
+        year: year,
+        storiesCount: filteredStories.length,
+        storiesViews: storiesViews
     };
-  }, [apiUsers, apiEvents, viewDate]);
+  }, [apiUsers, apiEvents, activeStories, viewDate]);
 
   useEffect(() => { if (user?.isAdmin) loadTabData(); }, [activeTab, user]);
 
@@ -190,6 +200,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
         const lotteries = await api.getLotteries();
         setApiLotteries(lotteries || []);
+
+        // שאיבת הסטוריז הפעילים באופן גלובלי כדי שיופיעו בסיכום החודשי תמיד
+        const activeSt = await api.getActiveStoriesAdmin().catch(() => []);
+        setActiveStories(activeSt || []);
 
         // טעינת הגדרות ומשתתפות שולחן שבת כשהטאב פעיל
         if (activeTab === 'lotteries') {
@@ -531,49 +545,101 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         
         {/* טאב ניהול סטוריז - חדש! */}
         {activeTab === 'stories' && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-               <h3 className="text-xl font-black flex items-center gap-2"><PlayCircle className="text-rose-500" /> סטוריז הממתינים לאישור</h3>
-               <span className="bg-slate-100 px-4 py-1 rounded-full text-xs font-bold text-slate-500">{pendingStories.length} סטוריז ממתינים</span>
+          <div className="space-y-12 animate-fade-in">
+            {/* אזור סטוריז ממתינים */}
+            <div>
+                <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 mb-6">
+                   <h3 className="text-xl font-black flex items-center gap-2"><PlayCircle className="text-rose-500" /> סטוריז הממתינים לאישור</h3>
+                   <span className="bg-slate-100 px-4 py-1 rounded-full text-xs font-bold text-slate-500">{pendingStories.length} סטוריז ממתינים</span>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {pendingStories.map(story => (
+                     <div key={story._id} className="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                           <img src={story.user?.avatar} className="w-10 h-10 rounded-full border border-slate-100 object-cover" />
+                           <div className="flex-1 overflow-hidden">
+                              <p className="text-sm font-bold text-slate-800 truncate">{story.user?.name}</p>
+                              <p className="text-[10px] text-slate-400">{new Date(story.createdAt).toLocaleString('he-IL')}</p>
+                           </div>
+                        </div>
+                        
+                        <div className="h-56 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center relative shadow-inner">
+                           {story.type === 'image' ? (
+                              <img src={story.content} className="w-full h-full object-cover hover:object-contain transition-all" />
+                           ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700 p-4 flex items-center justify-center text-center">
+                                 <p className="text-white font-black text-sm drop-shadow-md">{story.content}</p>
+                              </div>
+                           )}
+                        </div>
+                        
+                        <div className="flex gap-2 mt-auto">
+                           <button onClick={async () => { await api.approveStory(story._id); loadTabData(); }} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-xs font-black flex justify-center items-center gap-1 hover:bg-emerald-600 transition-colors">
+                              <CheckCircle size={16}/> פרסום
+                           </button>
+                           <button onClick={async () => { await api.deleteStory(story._id); loadTabData(); }} className="flex-1 bg-red-100 text-red-500 py-3 rounded-xl text-xs font-black flex justify-center items-center gap-1 hover:bg-red-200 transition-colors">
+                              <Trash2 size={16}/> מחיקה
+                           </button>
+                        </div>
+                     </div>
+                  ))}
+                  
+                  {pendingStories.length === 0 && (
+                     <div className="col-span-full text-center py-20 bg-white rounded-[3rem] border border-dashed border-slate-200 text-slate-400 font-bold">
+                        אין סטוריז הממתינים לאישור כרגע. בנות יעלו וזה יופיע כאן!
+                     </div>
+                  )}
+                </div>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {pendingStories.map(story => (
-                 <div key={story._id} className="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                       <img src={story.user?.avatar} className="w-10 h-10 rounded-full border border-slate-100 object-cover" />
-                       <div className="flex-1 overflow-hidden">
-                          <p className="text-sm font-bold text-slate-800 truncate">{story.user?.name}</p>
-                          <p className="text-[10px] text-slate-400">{new Date(story.createdAt).toLocaleString('he-IL')}</p>
-                       </div>
-                    </div>
-                    
-                    <div className="h-56 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center relative shadow-inner">
-                       {story.type === 'image' ? (
-                          <img src={story.content} className="w-full h-full object-cover hover:object-contain transition-all" />
-                       ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700 p-4 flex items-center justify-center text-center">
-                             <p className="text-white font-black text-sm drop-shadow-md">{story.content}</p>
+
+            {/* אזור סטוריז פעילים באוויר למנהלת */}
+            <div className="pt-6 border-t border-slate-200">
+               <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 mb-6">
+                  <h3 className="text-xl font-black flex items-center gap-2"><Eye className="text-emerald-500" /> סטוריז פעילים כרגע באוויר</h3>
+                  <span className="bg-slate-100 px-4 py-1 rounded-full text-xs font-bold text-slate-500">{activeStories.length} סטוריז</span>
+               </div>
+               
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                 {activeStories.map(story => (
+                    <div key={story._id} className="bg-white p-4 rounded-[2rem] shadow-sm border border-emerald-100 flex flex-col gap-4 relative hover:shadow-md transition-shadow">
+                       <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                             <img src={story.user?.avatar} className="w-8 h-8 rounded-full border border-slate-100 object-cover shrink-0" />
+                             <p className="text-xs font-bold text-slate-800 truncate max-w-[80px]">{story.user?.name}</p>
                           </div>
-                       )}
-                    </div>
-                    
-                    <div className="flex gap-2 mt-auto">
-                       <button onClick={async () => { await api.approveStory(story._id); loadTabData(); }} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-xs font-black flex justify-center items-center gap-1 hover:bg-emerald-600 transition-colors">
-                          <CheckCircle size={16}/> פרסום
+                          {/* תצוגת הצפיות! */}
+                          <div className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg flex items-center gap-1 text-[10px] font-black shadow-sm shrink-0">
+                              <Eye size={12}/> {story.views || 0}
+                          </div>
+                       </div>
+                       
+                       <div className="h-40 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center relative shadow-inner">
+                          {story.type === 'image' ? (
+                             <img src={story.content} className="w-full h-full object-cover hover:object-contain transition-all" />
+                          ) : (
+                             <div className="w-full h-full bg-gradient-to-br from-rose-500 to-indigo-700 p-2 flex items-center justify-center text-center">
+                                <p className="text-white font-black text-xs drop-shadow-md">{story.content}</p>
+                             </div>
+                          )}
+                       </div>
+                       
+                       <button onClick={async () => { 
+                           if(window.confirm('למחוק את הסטורי הזה מהאוויר?')) {
+                               await api.deleteStory(story._id); 
+                               loadTabData(); 
+                           }
+                       }} className="w-full bg-red-50 text-red-500 py-2 rounded-xl text-xs font-black flex justify-center items-center gap-1 hover:bg-red-100 transition-colors mt-auto">
+                          <Trash2 size={14}/> הסרה מהאוויר
                        </button>
-                       <button onClick={async () => { await api.deleteStory(story._id); loadTabData(); }} className="flex-1 bg-red-100 text-red-500 py-3 rounded-xl text-xs font-black flex justify-center items-center gap-1 hover:bg-red-200 transition-colors">
-                          <Trash2 size={16}/> מחיקה
-                       </button>
                     </div>
-                 </div>
-              ))}
-              
-              {pendingStories.length === 0 && (
-                 <div className="col-span-full text-center py-20 bg-white rounded-[3rem] border border-dashed border-slate-200 text-slate-400 font-bold">
-                    אין סטוריז הממתינים לאישור כרגע. בנות יעלו וזה יופיע כאן!
-                 </div>
-              )}
+                 ))}
+                 {activeStories.length === 0 && (
+                     <div className="col-span-full text-center py-10 bg-white rounded-[2rem] border border-dashed border-slate-200 text-slate-400 font-bold">
+                        אין סטוריז פעילים כרגע.
+                     </div>
+                 )}
+               </div>
             </div>
           </div>
         )}
@@ -700,11 +766,14 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <Activity className="absolute left-[-20px] bottom-[-20px] text-white/5 w-64 h-64" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard title="סה״כ משתמשות רשומות" value={apiUsers.length} icon={Users2} color="bg-blue-500" trend={`${monthlyStats.usersCount > 0 ? '+' : ''}${monthlyStats.usersCount} החודש`} />
                 <StatCard title="חוגים פעילים" value={apiClasses.length} icon={GraduationCap} color="bg-purple-500" />
                 <StatCard title="אירועים בחודש זה" value={monthlyStats.eventsCount} icon={Calendar} color="bg-rose-500" />
                 <StatCard title="סה״כ נקודות בקהילה" value={monthlyStats.points.toLocaleString()} icon={TrendingUp} color="bg-emerald-500" trend="צבירה כוללת" />
+                {/* התוספות החדשות של הסטוריז */}
+                <StatCard title="סטוריז באוויר (בחודש זה)" value={monthlyStats.storiesCount} icon={PlayCircle} color="bg-pink-500" trend="בזמן אמת" />
+                <StatCard title="צפיות בסטוריז" value={monthlyStats.storiesViews.toLocaleString()} icon={Eye} color="bg-orange-500" trend="מעורבות גולשות" />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
