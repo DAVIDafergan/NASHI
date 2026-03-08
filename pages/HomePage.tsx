@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
-  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2 // נוספו Trash2 ו-Share2
+  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2, Target // נוספו Trash2 ו-Share2 וכן Target
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
@@ -504,6 +504,31 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* --- MOBILE VIEW START (Redesigned) --- */}
         <div className="md:hidden space-y-8 mt-2">
           
+          {/* --- כפתור חדש: אתגרי החוסן והגרלות (נוסף לפי בקשתך) --- */}
+          <section className="px-5">
+            <Link 
+                to="/lottery"
+                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-rose-500 via-purple-600 to-indigo-600 p-4 rounded-3xl shadow-[0_10px_20px_-10px_rgba(225,29,72,0.5)] active:scale-95 transition-all overflow-hidden"
+            >
+                {/* אפקט תנועה עדין לרקע */}
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 group-hover:scale-110 transition-transform duration-700"></div>
+                
+                <div className="relative z-10 flex items-center gap-4">
+                    <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl text-white shadow-inner animate-pulse">
+                        <Target size={24} />
+                    </div>
+                    <div className="text-right text-white">
+                        <h3 className="font-black text-lg leading-tight tracking-wide drop-shadow-md">אתגרי החוסן והגרלות</h3>
+                        <p className="text-rose-100 text-xs font-bold mt-0.5 opacity-90">היכנסי, שתפי וזכי בפרסים! 🎁</p>
+                    </div>
+                </div>
+                
+                <div className="relative z-10 bg-white text-purple-600 p-2.5 rounded-full shadow-lg animate-bounce" style={{ animationDuration: '2.5s' }}>
+                    <ChevronLeft size={20} className="mr-0.5" />
+                </div>
+            </Link>
+          </section>
+
           {/* 1. Announcements */}
           {announcements.length > 0 && (
             <section className="px-5">
@@ -810,7 +835,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                {activeGroup.stories.map((_, idx) => (
                   <div key={idx} className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden backdrop-blur-sm">
                      <div className="h-full bg-white transition-all duration-75 ease-linear"
-                          style={{ width: idx === activeInnerIndex ? `${storyProgress}%` : idx < activeInnerIndex ? '100%' : '0%' }}>
+                         style={{ width: idx === activeInnerIndex ? `${storyProgress}%` : idx < activeInnerIndex ? '100%' : '0%' }}>
                      </div>
                   </div>
                ))}
