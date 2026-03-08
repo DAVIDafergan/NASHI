@@ -954,22 +954,26 @@ router.get('/stories/image/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- ראוט מיוחד לשיתוף בוואצפ (OG Tags) מתוקן ---
+// --- ראוט מיוחד לשיתוף בוואצפ (OG Tags) מתוקן ועשיר ---
 router.get('/stories/share/:id', async (req, res) => {
     try {
         const story = await Story.findById(req.params.id).populate('user', 'name');
         if (!story) return res.status(404).send('הסטורי לא נמצא או שנמחק');
 
-        const title = `סטורי חדש מאת ${story.user.name} | קהילת נשי`;
-        const description = story.type === 'text' ? story.content : (story.caption || 'בואי לראות מה העליתי הרגע לקהילה!');
+        const isText = story.type === 'text';
+        const title = `סטורי חדש מאת ${story.user?.name || 'חברה בקהילה'} | קהילת נשי`;
         
-        // כתובת השרת שלנו
+        // אם הסטורי הוא טקסט - נציג את הטקסט שלו כתיאור. אם תמונה - נציג את הכיתוב שהיא הוסיפה.
+        const description = isText ? story.content : (story.caption || 'היכנסי לראות את הסטורי שהעליתי הרגע לקהילה!');
+        
+        // כתובת השרת שלנו (כדי לחלץ את התמונה)
         const serverUrl = req.protocol + '://' + req.get('host');
         
-        // כאן הקסם: אם זו תמונה, אנחנו מפנים את וואטסאפ לראוט החדש שמייצר תמונה. אם זה טקסט, נשים תמונת אווירה יפה.
-        const imageUrl = story.type === 'image' 
-            ? `${serverUrl}/api/stories/image/${story._id}` 
-            : 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'; 
+        // תמונת ברירת מחדל (אפשר להחליף את הלינק של Unsplash בלינק ללוגו של קהילת נשי!)
+        const defaultImageUrl = 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'; 
+        
+        // בסטורי טקסט אין לנו תמונה במסד, אז ניתן את תמונת הדיפולט.
+        const imageUrl = isText ? defaultImageUrl : `${serverUrl}/api/stories/image/${story._id}`; 
         
         // הכתובת אליה המשתמשת תועבר כשתלחץ על הלינק (לדף הבית של האתר שלך)
         const frontendUrl = process.env.FRONTEND_URL || 'https://nashi-production.up.railway.app';
@@ -980,14 +984,22 @@ router.get('/stories/share/:id', async (req, res) => {
         <html lang="he" dir="rtl">
         <head>
             <meta charset="UTF-8">
+            <title>${title}</title>
+            
             <meta property="og:title" content="${title}" />
             <meta property="og:description" content="${description}" />
             <meta property="og:image" content="${imageUrl}" />
             <meta property="og:url" content="${redirectUrl}" />
             <meta property="og:type" content="website" />
-            <title>${title}</title>
+            <meta property="og:site_name" content="קהילת נשי" />
+
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" content="${title}" />
+            <meta name="twitter:description" content="${description}" />
+            <meta name="twitter:image" content="${imageUrl}" />
+            
             <script>
-                // הפניה אוטומטית לאתר מיד אחרי שוואצפ שואב את הנתונים
+                // הפניה אוטומטית לאתר מיד אחרי שוואצפ שואב את הנתונים המקדימים
                 window.location.href = "${redirectUrl}";
             </script>
         </head>
