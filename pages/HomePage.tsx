@@ -46,6 +46,32 @@ const categories = [
 
 const API_URL = 'https://nashi-production.up.railway.app/api';
 
+// --- פונקציית עזר חכמה לזיהוי לינקים והצגתם נכון ---
+const renderTextWithLinks = (text: string) => {
+  if (!text) return null;
+  // מזהה כתובות URL (כולל www ו-http/https)
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+  return text.split(urlRegex).map((part, i) => {
+    if (part.match(urlRegex)) {
+      const href = part.startsWith('http') ? part : `https://${part}`;
+      return (
+        <a 
+          key={i} 
+          href={href} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-white font-black underline decoration-2 decoration-rose-400 hover:text-rose-200 hover:decoration-rose-200 transition-colors pointer-events-auto relative z-[70] drop-shadow-md mx-1 inline-block break-all"
+          onClick={(e) => e.stopPropagation()} // מונע מעבר לסטורי הבא בלחיצה על לינק
+          dir="ltr"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={i} className="pointer-events-none relative z-[60]">{part}</span>;
+  });
+};
+
 // --- קומפוננטה עזר: מציירת את הפסים הצבעוניים סביב האוואטר לפי מספר הסטוריז ---
 const StoryRing = ({ count }: { count: number }) => {
   if (count <= 1) {
@@ -436,17 +462,32 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         {/* --- אזור הסטוריז המקובץ --- */}
         <div className="w-full px-5 pb-2 pt-1 overflow-x-auto no-scrollbar flex gap-4 snap-x">
-           
-           {/* כפתור הוספת סטורי */}
-           <div className="flex flex-col items-center gap-1 shrink-0 snap-center" onClick={() => user ? setShowAddStoryModal(true) : onOpenLogin()}>
-              <div className="relative w-[68px] h-[68px] rounded-full border-2 border-dashed border-rose-300 p-1 flex items-center justify-center bg-rose-50 cursor-pointer hover:bg-rose-100 transition-colors">
+            
+           {/* כפתור הוספת סטורי מונפש ויוקרתי */}
+           <div className="flex flex-col items-center gap-1 shrink-0 snap-center group" onClick={() => user ? setShowAddStoryModal(true) : onOpenLogin()}>
+              <div className="relative w-[68px] h-[68px] rounded-full border-2 border-dashed border-rose-300 p-1 flex items-center justify-center bg-rose-50 cursor-pointer hover:bg-rose-100 hover:border-rose-400 transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_15px_rgba(244,63,94,0.15)]">
                  {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" /> : <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${user?.name || 'new'}`} className="w-full h-full rounded-full object-cover" />}
-                 <div className="absolute bottom-0 right-0 bg-rose-500 text-white rounded-full p-[3px] border-2 border-white shadow-sm"><Plus size={12} strokeWidth={4}/></div>
+                 
+                 {/* כפתור הפלוס עם נקודה פועמת עדינה */}
+                 <div className="absolute bottom-0 right-0 bg-gradient-to-tr from-rose-500 to-purple-600 text-white rounded-full p-[3px] border-2 border-white shadow-md">
+                    <Plus size={12} strokeWidth={4}/>
+                 </div>
+                 <div className="absolute -top-0 -left-0 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-purple-500 border border-white"></span>
+                 </div>
               </div>
-              <span className="text-[10px] text-slate-500 font-bold">הוספי סטורי</span>
+              
+              {/* אנימציית טקסט מושכת */}
+              <div className="flex flex-col items-center mt-1">
+                 <span className="text-[11px] font-black text-slate-800 tracking-wide drop-shadow-sm">הוספי סטורי</span>
+                 <span className="text-[9px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-purple-600 animate-pulse mt-[1px] flex items-center gap-0.5">
+                    שתפי רגע <Sparkles size={8} className="text-purple-500" />
+                 </span>
+              </div>
            </div>
 
-           {/* רשימת המשתמשות שהעלו סטורי (כל משתמשת מופיעה פעם אחת עם טבעת מחולקת) */}
+           {/* רשימת המשתמשות שהעלו סטורי */}
            {groupedStories.map((group, idx) => (
               <div key={group.userId} className="flex flex-col items-center gap-1 shrink-0 snap-center cursor-pointer group-hover" onClick={() => { setActiveGroupIndex(idx); setActiveInnerIndex(0); setStoryProgress(0); }}>
                  <div className="relative w-[68px] h-[68px] p-1 flex items-center justify-center transform active:scale-95 transition-transform">
@@ -454,7 +495,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     <StoryRing count={group.stories.length} />
                     <img src={group.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${group.user?.name || 'user'}`} className="w-full h-full rounded-full object-cover border-2 border-white bg-white relative z-10" />
                  </div>
-                 <span className="text-[10px] text-slate-700 font-bold w-[68px] truncate text-center">{group.user?.name || 'משתמשת'}</span>
+                 <span className="text-[10px] text-slate-700 font-bold w-[68px] truncate text-center mt-1">{group.user?.name || 'משתמשת'}</span>
               </div>
            ))}
         </div>
@@ -797,23 +838,25 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                </div>
             </div>
             
-            {/* אזור התוכן */}
+            {/* אזור התוכן - כאן שולב זיהוי הלינקים */}
             <div className="flex-1 relative flex items-center justify-center overflow-hidden">
                {currentStory.type === 'image' ? (
                    <>
                      <img src={currentStory.content} className="w-full h-full object-contain" alt="Story" />
                      {/* הצגת טקסט על התמונה אם קיים */}
                      {currentStory.caption && (
-                        <div className="absolute bottom-16 left-0 right-0 px-4 text-center z-50 animate-fade-in-up">
-                           <p className="inline-block bg-black/60 text-white px-5 py-3 rounded-2xl text-sm font-bold backdrop-blur-md shadow-2xl border border-white/10 leading-relaxed max-w-[90%]">
-                              {currentStory.caption}
-                           </p>
+                        <div className="absolute bottom-16 left-0 right-0 px-4 text-center z-[60] animate-fade-in-up flex justify-center">
+                           <div className="inline-block bg-black/60 text-white px-5 py-3 rounded-2xl text-sm font-bold backdrop-blur-md shadow-2xl border border-white/10 leading-relaxed max-w-[90%] pointer-events-none">
+                              {renderTextWithLinks(currentStory.caption)}
+                           </div>
                         </div>
                      )}
                    </>
                ) : (
-                   <div className="w-full h-full bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700 flex items-center justify-center p-8 text-center">
-                      <p className="text-white text-3xl md:text-5xl font-black leading-snug drop-shadow-xl font-serif max-w-2xl">{currentStory.content}</p>
+                   <div className="w-full h-full bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700 flex items-center justify-center p-8 text-center pointer-events-none">
+                      <p className="text-white text-3xl md:text-5xl font-black leading-snug drop-shadow-xl font-serif max-w-2xl relative z-[60]">
+                         {renderTextWithLinks(currentStory.content)}
+                      </p>
                    </div>
                )}
             </div>
@@ -849,7 +892,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  {newStory.type === 'text' ? (
                      <textarea 
                         className="w-full h-32 bg-slate-50 border-none rounded-2xl p-4 resize-none outline-none focus:ring-2 focus:ring-rose-200 text-slate-700 font-medium"
-                        placeholder="מה יושב לך על הלב היום?..."
+                        placeholder="מה יושב לך על הלב היום?... (ניתן להדביק גם לינק)"
                         value={newStory.content}
                         onChange={e => setNewStory({...newStory, content: e.target.value})}
                      ></textarea>
@@ -871,7 +914,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                        {newStory.content && (
                           <input 
                              type="text" 
-                             placeholder="הוסיפי כיתוב לתמונה (אופציונלי)..." 
+                             placeholder="הוסיפי כיתוב לתמונה (ניתן גם לצרף לינק)..." 
                              className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-rose-200 text-slate-700 font-medium text-sm"
                              value={newStory.caption || ''}
                              onChange={e => setNewStory({...newStory, caption: e.target.value})}
