@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft, Medal, Target, Plus, Trash2 } from 'lucide-react';
+import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft, Medal, Target, Plus, Trash2, Minus } from 'lucide-react';
 import { LotteryItem, User } from '../types';
 import { useLocation } from 'react-router-dom';
 import { api } from '../services/api'; // ייבוא ה-API
@@ -23,6 +23,9 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   const [challenges, setChallenges] = useState<any[]>([]);
   const [challengeEntries, setChallengeEntries] = useState<any[]>([]);
   
+  // תצוגת UX חדשה - אתגר פעיל בטאבים
+  const [viewingChallengeId, setViewingChallengeId] = useState<string | null>(null);
+  
   // מצבי טופס למשתמש
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
   const [familyName, setFamilyName] = useState('');
@@ -30,11 +33,12 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   const [entryImage, setEntryImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // מצבי טופס למנהל (ליצירת אתגר חדש)
+  // מצבי טופס למנהל (ליצירת אתגר חדש - שודרג עם מערך פרסים ותמונה)
   const [newChallenge, setNewChallenge] = useState({
       title: '',
-      prize: '',
+      prizes: [''], // שינינו מ-prize בודד למערך של פרסים
       notes: '',
+      image: '', // תמונה לאתגר עצמו
       drawDate: ''
   });
 
@@ -54,9 +58,11 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
       const fetchChallengesData = async () => {
           try {
-              // קריאות API חדשות למערכת האתגרים - יש לעדכן את ה-backend בהתאם
               const fetchedChallenges = await api.getChallenges();
-              if (fetchedChallenges) setChallenges(fetchedChallenges);
+              if (fetchedChallenges) {
+                  setChallenges(fetchedChallenges);
+                  if (fetchedChallenges.length > 0) setViewingChallengeId(fetchedChallenges[0]._id || fetchedChallenges[0].id);
+              }
               
               const fetchedEntries = await api.getChallengeEntries();
               if (fetchedEntries) setChallengeEntries(fetchedEntries);
@@ -151,11 +157,17 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   };
 
   // --- פונקציות ניהול והשתתפות באתגרים ---
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isChallengeAdminImage = false) => {
       const file = e.target.files?.[0];
       if (file) {
           const reader = new FileReader();
-          reader.onloadend = () => setEntryImage(reader.result as string);
+          reader.onloadend = () => {
+              if (isChallengeAdminImage) {
+                  setNewChallenge({...newChallenge, image: reader.result as string});
+              } else {
+                  setEntryImage(reader.result as string);
+              }
+          };
           reader.readAsDataURL(file);
       }
   };
@@ -183,15 +195,31 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
   };
 
+  // פונקציות לניהול מערך הפרסים
+  const handlePrizeChange = (index: number, value: string) => {
+      const updatedPrizes = [...newChallenge.prizes];
+      updatedPrizes[index] = value;
+      setNewChallenge({...newChallenge, prizes: updatedPrizes});
+  };
+  const addPrizeField = () => setNewChallenge({...newChallenge, prizes: [...newChallenge.prizes, '']});
+  const removePrizeField = (index: number) => {
+      if (newChallenge.prizes.length === 1) return;
+      const updatedPrizes = newChallenge.prizes.filter((_, i) => i !== index);
+      setNewChallenge({...newChallenge, prizes: updatedPrizes});
+  };
+
   const handleAdminCreateChallenge = async () => {
-      if (!newChallenge.title || !newChallenge.prize) return alert('חובה להזין כותרת ופרס לאתגר');
+      if (!newChallenge.title || newChallenge.prizes[0] === '') return alert('חובה להזין כותרת ופרס אחד לפחות לאתגר');
       try {
           await api.createChallenge(newChallenge);
           alert('האתגר נוצר בהצלחה!');
-          setNewChallenge({ title: '', prize: '', notes: '', drawDate: '' });
+          setNewChallenge({ title: '', prizes: [''], notes: '', image: '', drawDate: '' });
           
           const fetchedChallenges = await api.getChallenges();
-          if (fetchedChallenges) setChallenges(fetchedChallenges);
+          if (fetchedChallenges) {
+              setChallenges(fetchedChallenges);
+              if (!viewingChallengeId && fetchedChallenges.length > 0) setViewingChallengeId(fetchedChallenges[0]._id || fetchedChallenges[0].id);
+          }
       } catch (e) { alert('שגיאה ביצירת האתגר'); }
   };
 
@@ -201,7 +229,12 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           await api.deleteChallenge(challengeId);
           alert('האתגר נמחק בהצלחה');
           const fetchedChallenges = await api.getChallenges();
-          if (fetchedChallenges) setChallenges(fetchedChallenges);
+          if (fetchedChallenges) {
+              setChallenges(fetchedChallenges);
+              if (viewingChallengeId === challengeId) {
+                  setViewingChallengeId(fetchedChallenges.length > 0 ? (fetchedChallenges[0]._id || fetchedChallenges[0].id) : null);
+              }
+          }
           const fetchedEntries = await api.getChallengeEntries();
           if (fetchedEntries) setChallengeEntries(fetchedEntries);
       } catch (e) { alert('שגיאה במחיקת האתגר'); }
@@ -281,6 +314,23 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
     );
   };
 
+  // פונקציית עזר לרינדור פרסים באתגרים
+  const renderChallengePrizes = (prizes: string[]) => {
+      if (!prizes || prizes.length === 0) return null;
+      return (
+          <div className="flex flex-col gap-2 mt-3 w-full md:w-auto">
+              {prizes.map((p, idx) => (
+                  <div key={idx} className="inline-flex items-center gap-2 text-indigo-900 font-bold bg-white/90 backdrop-blur-sm px-4 py-2 rounded-2xl shadow-lg border border-white/50 w-fit">
+                      {idx === 0 ? <Trophy size={16} className="text-yellow-500" /> : <Medal size={14} className="text-slate-400" />}
+                      <span className="text-sm">
+                          {idx === 0 ? 'פרס ראשון:' : `פרס ${idx + 1}:`} {p}
+                      </span>
+                  </div>
+              ))}
+          </div>
+      );
+  };
+
   return (
     <div className="min-h-screen space-y-8 pb-10 text-right" dir="rtl">
       {/* Header Section */}
@@ -314,7 +364,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
             onClick={() => setActiveTab('challenges')}
             className={`px-8 py-3 rounded-full font-black text-sm transition-all flex items-center gap-2 ${activeTab === 'challenges' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
           >
-            אתגרים נושאי פרסים 🎯
+            אתגרי החוסן 💪
           </button>
       </div>
 
@@ -438,20 +488,20 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
         </div>
       ) : (
         /* --- ממשק אתגרים חדש --- */
-        <div className="max-w-6xl mx-auto px-2 animate-scale-in space-y-12">
+        <div className="max-w-6xl mx-auto px-2 animate-scale-in space-y-8">
             
             {/* ניהול למנהלת (הוספת אתגר) */}
             {user?.isAdmin && (
-                <div className="bg-white p-8 rounded-[3rem] border border-indigo-100 shadow-xl relative overflow-hidden">
+                <div className="bg-white p-8 rounded-[3rem] border border-indigo-100 shadow-xl relative overflow-hidden mb-8">
                     <div className="absolute top-0 right-0 w-2 h-full bg-indigo-500"></div>
                     <div className="flex items-center gap-2 mb-6 text-indigo-700">
                         <Settings size={24} />
-                        <h4 className="text-2xl font-black">ניהול אתגרים - יצירת אתגר חדש</h4>
+                        <h4 className="text-2xl font-black">ניהול חוסן - יצירת אתגר חדש</h4>
                     </div>
                     
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 mr-2">כותרת האתגר (למשל: שולחן השבת שלי)</label>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 items-start">
+                        <div className="space-y-2 lg:col-span-1">
+                            <label className="text-xs font-black text-slate-400 mr-2">כותרת האתגר</label>
                             <input 
                                 type="text" 
                                 value={newChallenge.title} 
@@ -460,88 +510,154 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                 placeholder="שם האתגר..."
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 mr-2">פרס לזוכים</label>
-                            <input 
-                                type="text" 
-                                value={newChallenge.prize} 
-                                onChange={(e) => setNewChallenge({...newChallenge, prize: e.target.value})}
-                                className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-inner" 
-                                placeholder="למשל: סט פמוטים"
-                            />
+                        
+                        {/* ריבוי פרסים */}
+                        <div className="space-y-2 lg:col-span-2">
+                            <label className="text-xs font-black text-slate-400 mr-2">רשימת פרסים לזוכים</label>
+                            <div className="space-y-2">
+                                {newChallenge.prizes.map((prize, idx) => (
+                                    <div key={idx} className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            value={prize} 
+                                            onChange={(e) => handlePrizeChange(idx, e.target.value)}
+                                            className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-inner" 
+                                            placeholder={`פרס ${idx + 1}`}
+                                        />
+                                        <button onClick={() => removePrizeField(idx)} className="bg-red-50 text-red-500 p-4 rounded-2xl hover:bg-red-100 transition-colors shrink-0">
+                                            <Minus size={20} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <button onClick={addPrizeField} className="text-xs font-black text-indigo-600 flex items-center gap-1 mt-2 hover:underline">
+                                <Plus size={14} /> הוספי פרס נוסף
+                            </button>
                         </div>
-                        <div className="space-y-2">
+
+                        <div className="space-y-2 lg:col-span-1">
                             <label className="text-xs font-black text-slate-400 mr-2">הסבר / משימה</label>
-                            <input 
-                                type="text" 
+                            <textarea 
                                 value={newChallenge.notes} 
                                 onChange={(e) => setNewChallenge({...newChallenge, notes: e.target.value})}
-                                className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-inner" 
+                                className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-inner h-[60px] resize-none" 
                                 placeholder="הנחיות למשתתפות..."
                             />
                         </div>
-                        <button 
-                            onClick={handleAdminCreateChallenge}
-                            className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-black hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 h-[56px]"
-                        >
-                            <Plus size={20} /> צרי אתגר
-                        </button>
+
+                        {/* תמונה לאתגר */}
+                        <div className="space-y-2 lg:col-span-1 flex flex-col h-full justify-between">
+                            <div 
+                                onClick={() => document.getElementById('admin-challenge-image')?.click()}
+                                className={`h-[60px] rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 cursor-pointer transition-all overflow-hidden relative ${newChallenge.image ? 'border-indigo-500' : 'border-slate-200 hover:border-indigo-300'}`}
+                            >
+                                {newChallenge.image ? (
+                                    <img src={newChallenge.image} className="w-full h-full object-cover" alt="Preview" />
+                                ) : (
+                                    <>
+                                        <ImageIcon size={20} className="text-slate-400" />
+                                        <span className="text-xs font-bold text-slate-500">תמונת נושא</span>
+                                    </>
+                                )}
+                                <input id="admin-challenge-image" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, true)} />
+                            </div>
+
+                            <button 
+                                onClick={handleAdminCreateChallenge}
+                                className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-black hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 mt-2 h-[60px]"
+                            >
+                                <Plus size={20} /> צרי
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* רשימת האתגרים הקיימים */}
-            <div className="space-y-16">
-                {challenges.length === 0 ? (
-                    <div className="text-center py-20 bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
-                        <Target size={48} className="text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-400 font-bold text-lg">אין כרגע אתגרים פעילים. המנהלת תעלה אתגרים בקרוב!</p>
+            {/* חווית משתמש משופרת: תפריט אתגרים אופקי לנייד ולדסקטופ */}
+            {challenges.length === 0 ? (
+                <div className="text-center py-20 bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
+                    <Target size={48} className="text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-400 font-bold text-lg">אין כרגע אתגרי חוסן פעילים. חזרי לבדוק בקרוב!</p>
+                </div>
+            ) : (
+                <div className="space-y-8">
+                    {/* Ribbon - בחירת אתגר */}
+                    <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar scroll-smooth">
+                        {challenges.map((challenge) => {
+                            const isSelected = viewingChallengeId === (challenge._id || challenge.id);
+                            return (
+                                <button 
+                                    key={challenge._id || challenge.id}
+                                    onClick={() => setViewingChallengeId(challenge._id || challenge.id)}
+                                    className={`snap-center shrink-0 px-6 py-4 rounded-3xl font-black text-sm whitespace-nowrap transition-all border shadow-sm flex items-center gap-2 ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 scale-105' : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'}`}
+                                >
+                                    <Target size={18} className={isSelected ? 'text-indigo-200' : 'text-slate-400'} />
+                                    {challenge.title}
+                                    {challenge.isActive === false && <Lock size={14} className="mr-1 opacity-50" />}
+                                </button>
+                            );
+                        })}
                     </div>
-                ) : (
-                    challenges.map((challenge) => {
-                        // סינון התמונות ששייכות לאתגר הספציפי
+
+                    {/* תצוגת האתגר הנבחר */}
+                    {challenges.map((challenge) => {
+                        if (viewingChallengeId !== (challenge._id || challenge.id)) return null;
+                        
                         const currentEntries = challengeEntries.filter(e => e.challengeId === (challenge._id || challenge.id));
+                        const challengePrizes = challenge.prizes || (challenge.prize ? [challenge.prize] : []);
                         
                         return (
-                            <div key={challenge._id || challenge.id} className="bg-white rounded-[3.5rem] overflow-hidden border border-slate-100 shadow-2xl relative">
-                                {/* Header של האתגר */}
-                                <div className={`p-8 md:p-10 ${challenge.isActive !== false ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800' : 'bg-slate-800'} relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6`}>
-                                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-                                    <div className="relative z-10 text-center md:text-right space-y-2 text-white">
-                                        <h3 className="text-3xl md:text-4xl font-black">{challenge.title}</h3>
-                                        <p className="text-indigo-100 font-bold opacity-90">{challenge.notes}</p>
-                                        <div className="inline-flex items-center gap-2 text-indigo-900 font-bold bg-white px-4 py-1.5 rounded-full mt-2 shadow-lg">
-                                            <Trophy size={16} className="text-yellow-500" />
-                                            פרס: {challenge.prize}
+                            <div key={challenge._id || challenge.id} className="bg-white rounded-[3.5rem] overflow-hidden border border-slate-100 shadow-2xl relative animate-fade-in">
+                                {/* Header של האתגר (עם רקע תמונה במידה והמנהלת העלתה) */}
+                                <div className={`p-8 md:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 min-h-[250px]`}>
+                                    {challenge.image ? (
+                                        <>
+                                            <div className="absolute inset-0 bg-black/50 z-0"></div>
+                                            <img src={challenge.image} alt={challenge.title} className="absolute inset-0 w-full h-full object-cover z-[1]" />
+                                        </>
+                                    ) : (
+                                        <div className={`absolute inset-0 ${challenge.isActive !== false ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800' : 'bg-slate-800'}`}>
+                                            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                                         </div>
+                                    )}
+                                    
+                                    <div className="relative z-10 text-center md:text-right space-y-3 text-white flex-1 w-full">
+                                        <h3 className="text-4xl md:text-5xl font-black drop-shadow-md">{challenge.title}</h3>
+                                        {challenge.notes && <p className="text-indigo-100 font-bold text-lg max-w-2xl drop-shadow-md bg-black/20 p-4 rounded-2xl backdrop-blur-sm border border-white/10">{challenge.notes}</p>}
+                                        
+                                        {/* רינדור הפרסים */}
+                                        {renderChallengePrizes(challengePrizes)}
                                     </div>
                                     
-                                    <div className="relative z-10 flex flex-col gap-3 min-w-[200px]">
+                                    <div className="relative z-10 flex flex-col gap-3 min-w-[250px] w-full md:w-auto">
                                         {challenge.winnerFamily ? (
-                                            <div className="bg-yellow-400 text-yellow-900 px-6 py-4 rounded-3xl font-black text-center shadow-lg animate-bounce">
-                                                <Trophy size={20} className="mx-auto mb-1" />
-                                                מזל טוב למשפחת {challenge.winnerFamily}!
+                                            <div className="bg-gradient-to-r from-yellow-400 to-amber-500 text-amber-950 px-6 py-6 rounded-[2rem] font-black text-center shadow-xl border border-yellow-300 animate-bounce">
+                                                <Trophy size={28} className="mx-auto mb-2 opacity-80" />
+                                                <span className="block text-sm opacity-70 mb-1">הזוכה המאושרת:</span>
+                                                <span className="text-xl">משפחת {challenge.winnerFamily}</span>
                                             </div>
                                         ) : challenge.isActive !== false ? (
                                             <button 
                                                 onClick={() => setSelectedChallengeId(selectedChallengeId === (challenge._id || challenge.id) ? null : (challenge._id || challenge.id))}
-                                                className="bg-white text-indigo-600 px-8 py-4 rounded-3xl font-black shadow-xl hover:scale-105 transition-transform active:scale-95 flex items-center justify-center gap-2"
+                                                className={`w-full px-8 py-5 rounded-3xl font-black shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 text-lg ${selectedChallengeId === (challenge._id || challenge.id) ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-indigo-600 hover:scale-105'}`}
                                             >
-                                                {selectedChallengeId === (challenge._id || challenge.id) ? 'ביטול השתתפות' : 'השתתפי באתגר!'} <Target size={20} />
+                                                {selectedChallengeId === (challenge._id || challenge.id) ? 'סגירת טופס השתתפות' : 'השתתפי באתגר עכשיו!'} 
+                                                <Target size={24} className={selectedChallengeId === (challenge._id || challenge.id) ? 'text-slate-400' : 'text-indigo-400'} />
                                             </button>
                                         ) : (
-                                            <div className="bg-white/20 text-white px-6 py-4 rounded-3xl font-black text-center backdrop-blur-sm">
+                                            <div className="bg-black/40 text-white px-6 py-5 rounded-3xl font-black text-center backdrop-blur-md border border-white/20">
+                                                <Lock className="mx-auto mb-2 opacity-50" size={24}/>
                                                 האתגר הסתיים
                                             </div>
                                         )}
 
                                         {user?.isAdmin && (
                                             <div className="flex gap-2 mt-2">
-                                                <button onClick={() => handleAdminRunChallenge(challenge._id || challenge.id)} className="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-xs font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-1">
-                                                    <Eye size={14}/> הגרל
+                                                <button onClick={() => handleAdminRunChallenge(challenge._id || challenge.id)} className="flex-1 bg-emerald-500 text-white py-3 rounded-2xl text-sm font-black hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2 shadow-lg">
+                                                    <Eye size={16}/> הגרלי זוכה
                                                 </button>
-                                                <button onClick={() => handleAdminDeleteChallenge(challenge._id || challenge.id)} className="flex-1 bg-red-500 text-white py-2 rounded-xl text-xs font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-1">
-                                                    <Trash2 size={14}/> מחיקה
+                                                <button onClick={() => handleAdminDeleteChallenge(challenge._id || challenge.id)} className="flex-1 bg-red-500 text-white py-3 rounded-2xl text-sm font-black hover:bg-red-600 transition-colors flex items-center justify-center gap-2 shadow-lg">
+                                                    <Trash2 size={16}/> מחיקה
                                                 </button>
                                             </div>
                                         )}
@@ -550,15 +666,15 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
                                 {/* אזור טופס העלאה (נפתח רק אם המשתמשת לחצה על "השתתפי באתגר") */}
                                 {selectedChallengeId === (challenge._id || challenge.id) && (
-                                    <div className="p-8 md:p-12 bg-indigo-50/30 border-b border-indigo-100 animate-fade-in">
+                                    <div className="p-8 md:p-12 bg-gradient-to-b from-indigo-50/50 to-white border-b border-indigo-100 animate-fade-in">
                                         {!user ? (
-                                            <div className="text-center py-10 bg-white rounded-3xl border border-dashed border-indigo-200">
+                                            <div className="text-center py-10 bg-white rounded-3xl border border-dashed border-indigo-200 shadow-sm">
                                                 <Lock size={40} className="text-indigo-300 mx-auto mb-4" />
                                                 <h4 className="text-xl font-black text-slate-800">התחברי כדי להשתתף</h4>
-                                                <button onClick={() => window.location.hash = '/login'} className="mt-4 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition-all">התחברי למערכת</button>
+                                                <button onClick={() => window.location.hash = '/login'} className="mt-6 bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition-all">התחברי למערכת</button>
                                             </div>
                                         ) : (
-                                            <div className="grid md:grid-cols-2 gap-10 max-w-4xl mx-auto">
+                                            <div className="grid md:grid-cols-2 gap-10 max-w-4xl mx-auto bg-white p-8 rounded-[2.5rem] shadow-[0_10px_40px_rgba(79,70,229,0.08)] border border-indigo-50">
                                                 <div className="space-y-6">
                                                     <div className="space-y-3">
                                                         <label className="text-sm font-black text-slate-600 mr-2">שם משפחה (יוצג באתר)</label>
@@ -567,7 +683,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                                             value={familyName}
                                                             onChange={(e) => setFamilyName(e.target.value)}
                                                             placeholder="למשל: משפחת לוי"
-                                                            className="w-full px-6 py-4 rounded-2xl bg-white border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all font-bold text-lg shadow-sm"
+                                                            className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-lg"
                                                         />
                                                     </div>
 
@@ -578,43 +694,44 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                                             value={phone}
                                                             onChange={(e) => setPhone(e.target.value)}
                                                             placeholder="למשל: 050-1234567"
-                                                            className="w-full px-6 py-4 rounded-2xl bg-white border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all font-bold text-lg shadow-sm"
+                                                            className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-lg"
                                                         />
                                                     </div>
                                                 </div>
 
                                                 <div className="space-y-6 flex flex-col justify-end">
                                                     <div className="space-y-3 flex-1">
-                                                        <label className="text-sm font-black text-slate-600 mr-2">תמונה לאתגר</label>
+                                                        <label className="text-sm font-black text-slate-600 mr-2">העלי תמונה לאתגר 📸</label>
                                                         <div 
                                                             onClick={() => document.getElementById('challenge-input')?.click()}
-                                                            className={`group relative h-40 rounded-3xl border-4 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-4 bg-white ${entryImage ? 'border-indigo-500' : 'border-slate-200 hover:border-indigo-300 hover:bg-indigo-50'}`}
+                                                            className={`group relative h-36 rounded-3xl border-4 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-3 bg-slate-50 ${entryImage ? 'border-indigo-500' : 'border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50'}`}
                                                         >
                                                             {entryImage ? (
                                                                 <div className="w-full h-full relative">
                                                                     <img src={entryImage} className="w-full h-full object-cover" alt="Preview" />
-                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                        <Camera className="text-white" size={40} />
+                                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                                                        <Camera className="text-white" size={32} />
+                                                                        <span className="text-white font-bold ml-2">החלפת תמונה</span>
                                                                     </div>
                                                                 </div>
                                                             ) : (
                                                                 <>
-                                                                    <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-500 transition-colors">
-                                                                        <Camera size={24} />
+                                                                    <div className="w-14 h-14 bg-white shadow-sm rounded-2xl flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                                                                        <Camera size={28} />
                                                                     </div>
                                                                     <p className="font-black text-slate-500 group-hover:text-indigo-600 text-sm">לחצי להעלאת תמונה</p>
                                                                 </>
                                                             )}
-                                                            <input id="challenge-input" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                                                            <input id="challenge-input" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, false)} />
                                                         </div>
                                                     </div>
 
                                                     <button 
                                                         onClick={handleChallengeSubmit}
                                                         disabled={isSubmitting}
-                                                        className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-black text-lg shadow-xl hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                                                        className="w-full py-5 rounded-2xl bg-indigo-600 text-white font-black text-xl shadow-xl shadow-indigo-200 hover:bg-indigo-700 hover:shadow-2xl hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-50 disabled:hover:transform-none flex items-center justify-center gap-3"
                                                     >
-                                                        {isSubmitting ? <Loader2 className="animate-spin" /> : <Send size={20} />}
+                                                        {isSubmitting ? <Loader2 className="animate-spin" /> : <Send size={22} />}
                                                         שלחי והיכנסי לאתגר!
                                                     </button>
                                                 </div>
@@ -623,42 +740,50 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                     </div>
                                 )}
 
-                                {/* גלריית התמונות של האתגר */}
-                                <div className="p-8">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <ImageIcon className="text-indigo-500" size={24} />
-                                        <h4 className="text-xl font-black text-slate-800">העלאות של המשתתפות:</h4>
-                                        <span className="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-sm">{currentEntries.length}</span>
+                                {/* גלריית התמונות של האתגר הנבחר */}
+                                <div className="p-8 md:p-12">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500">
+                                            <ImageIcon size={24} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-2xl font-black text-slate-800">העלאות של המשתתפות</h4>
+                                            <p className="text-slate-400 font-bold text-sm">{currentEntries.length} משתתפות נכנסו לאתגר</p>
+                                        </div>
                                     </div>
 
                                     {currentEntries.length > 0 ? (
-                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
                                             {currentEntries.map((entry, idx) => (
-                                                <div key={idx} className="group relative bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 aspect-square">
-                                                    <img src={entry.image} alt={entry.familyName} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity flex flex-col justify-end p-4">
-                                                        <p className="text-white font-black text-sm">משפחת {entry.familyName}</p>
+                                                <div key={idx} className="group relative bg-slate-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-shadow border border-slate-100 aspect-[4/5]">
+                                                    <img src={entry.image} alt={entry.familyName} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-90 transition-opacity flex flex-col justify-end p-5">
+                                                        <p className="text-white font-black text-base drop-shadow-md">
+                                                            {/* תיקון באג ה-"משפחת משפחת" - אם כבר כתבה משפחת לא נוסיף */}
+                                                            {entry.familyName.startsWith('משפחת') ? entry.familyName : `משפחת ${entry.familyName}`}
+                                                        </p>
                                                         {user?.isAdmin && (
-                                                            <p className="text-yellow-300 text-xs font-bold mt-1 dir-ltr text-left">{entry.phone}</p>
+                                                            <p className="text-indigo-300 text-xs font-bold mt-1 dir-ltr text-left drop-shadow-sm">{entry.phone}</p>
                                                         )}
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-10 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                                            <p className="text-slate-400 font-bold">עדיין אין העלאות לאתגר זה. תהיי הראשונה!</p>
+                                        <div className="text-center py-16 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200">
+                                            <p className="text-slate-400 font-bold text-lg">עדיין אין העלאות לאתגר זה. תהיי הראשונה!</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         );
-                    })
-                )}
-            </div>
+                    })}
+                </div>
+            )}
         </div>
       )}
 
+      {/* --- מודל ההגרלות הלייב (לא לגעת) --- */}
       {selectedLottery && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-2xl animate-fade-in">
               <div className="w-full max-w-xl relative">

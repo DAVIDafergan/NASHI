@@ -183,8 +183,9 @@ const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 // ==========================================
 const ChallengeSchema = new mongoose.Schema({
   title: { type: String, required: true }, // שם האתגר
-  prize: { type: String, required: true }, // פרס
+  prizes: { type: [String], default: [] }, // רשימת פרסים (שודרג ממחרוזת בודדת)
   notes: { type: String, default: '' }, // הסבר / משימה
+  image: { type: String }, // תמונה לאתגר עצמו
   drawDate: { type: Date }, // תאריך יעד להגרלה
   isActive: { type: Boolean, default: true },
   winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -250,7 +251,7 @@ const Story = mongoose.model('Story', StorySchema);
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
-  Announcement, Challenge, ChallengeEntry, ContactMessage, // שונה ל-Challenge ו-ChallengeEntry
+  Announcement, Challenge, ChallengeEntry, ContactMessage,
   Ticket,
   Story // הוספת הסטורי לייצוא
 };
