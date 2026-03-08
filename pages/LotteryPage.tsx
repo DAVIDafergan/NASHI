@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft, Medal, Target, Plus, Trash2, Minus } from 'lucide-react';
+import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft, Medal, Target, Plus, Trash2, Minus, Edit } from 'lucide-react';
 import { LotteryItem, User } from '../types';
 import { useLocation } from 'react-router-dom';
 import { api } from '../services/api'; // ייבוא ה-API
@@ -33,14 +33,17 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   const [entryImage, setEntryImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // מצבי טופס למנהל (ליצירת אתגר חדש - שודרג עם מערך פרסים ותמונה)
+  // מצבי טופס למנהל (ליצירת ועריכת אתגר)
   const [newChallenge, setNewChallenge] = useState({
       title: '',
-      prizes: [''], // שינינו מ-prize בודד למערך של פרסים
+      prizes: [''], 
       notes: '',
-      image: '', // תמונה לאתגר עצמו
+      image: '', 
       drawDate: ''
   });
+  
+  // תוספת לעריכת אתגר קיים
+  const [editingChallengeId, setEditingChallengeId] = useState<string | null>(null);
 
   // Handle Admin triggering a live draw from AdminPage
   useEffect(() => {
@@ -208,19 +211,40 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       setNewChallenge({...newChallenge, prizes: updatedPrizes});
   };
 
-  const handleAdminCreateChallenge = async () => {
+  // פונקציית שמירה/יצירה של אתגר (תומכת גם בעריכה עכשיו)
+  const handleAdminSaveChallenge = async () => {
       if (!newChallenge.title || newChallenge.prizes[0] === '') return alert('חובה להזין כותרת ופרס אחד לפחות לאתגר');
       try {
-          await api.createChallenge(newChallenge);
-          alert('האתגר נוצר בהצלחה!');
+          if (editingChallengeId) {
+              await api.updateChallenge(editingChallengeId, newChallenge);
+              alert('האתגר עודכן בהצלחה!');
+          } else {
+              await api.createChallenge(newChallenge);
+              alert('האתגר נוצר בהצלחה!');
+          }
           setNewChallenge({ title: '', prizes: [''], notes: '', image: '', drawDate: '' });
+          setEditingChallengeId(null);
           
           const fetchedChallenges = await api.getChallenges();
           if (fetchedChallenges) {
               setChallenges(fetchedChallenges);
               if (!viewingChallengeId && fetchedChallenges.length > 0) setViewingChallengeId(fetchedChallenges[0]._id || fetchedChallenges[0].id);
           }
-      } catch (e) { alert('שגיאה ביצירת האתגר'); }
+      } catch (e) { alert(editingChallengeId ? 'שגיאה בעדכון האתגר' : 'שגיאה ביצירת האתגר'); }
+  };
+
+  // פונקציה ללחיצה על כפתור עריכת אתגר
+  const handleEditChallengeClick = (challenge: any) => {
+      setEditingChallengeId(challenge._id || challenge.id);
+      setNewChallenge({
+          title: challenge.title || '',
+          prizes: challenge.prizes && challenge.prizes.length > 0 ? challenge.prizes : [challenge.prize || ''],
+          notes: challenge.notes || '',
+          image: challenge.image || '',
+          drawDate: challenge.drawDate || ''
+      });
+      // גלילה למעלה לטופס העריכה
+      window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleAdminDeleteChallenge = async (challengeId: string) => {
@@ -228,6 +252,13 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       try {
           await api.deleteChallenge(challengeId);
           alert('האתגר נמחק בהצלחה');
+          
+          // איפוס מצב עריכה אם מחקנו את האתגר שאנחנו עורכים כרגע
+          if (editingChallengeId === challengeId) {
+              setEditingChallengeId(null);
+              setNewChallenge({ title: '', prizes: [''], notes: '', image: '', drawDate: '' });
+          }
+
           const fetchedChallenges = await api.getChallenges();
           if (fetchedChallenges) {
               setChallenges(fetchedChallenges);
@@ -471,13 +502,13 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
         /* --- ממשק אתגרים חדש - מעודן ומותאם לנייד --- */
         <div className="max-w-6xl mx-auto px-4 animate-scale-in space-y-6 md:space-y-8">
             
-            {/* ניהול למנהלת (הוספת אתגר) */}
+            {/* ניהול למנהלת (הוספת/עריכת אתגר) */}
             {user?.isAdmin && (
-                <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-indigo-100 shadow-lg relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-1.5 h-full bg-indigo-500"></div>
-                    <div className="flex items-center gap-2 mb-4 text-indigo-700">
-                        <Settings size={20} />
-                        <h4 className="text-xl md:text-2xl font-black">ניהול חוסן - יצירת אתגר</h4>
+                <div className={`bg-white p-6 md:p-8 rounded-[2rem] border ${editingChallengeId ? 'border-amber-300 shadow-[0_0_25px_rgba(251,191,36,0.3)]' : 'border-indigo-100 shadow-lg'} relative overflow-hidden`}>
+                    <div className={`absolute top-0 right-0 w-1.5 h-full ${editingChallengeId ? 'bg-amber-400' : 'bg-indigo-500'}`}></div>
+                    <div className={`flex items-center gap-2 mb-4 ${editingChallengeId ? 'text-amber-600' : 'text-indigo-700'}`}>
+                        {editingChallengeId ? <Edit size={20} /> : <Settings size={20} />}
+                        <h4 className="text-xl md:text-2xl font-black">ניהול חוסן - {editingChallengeId ? 'עריכת אתגר' : 'יצירת אתגר'}</h4>
                     </div>
                     
                     <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
@@ -543,12 +574,25 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                 <input id="admin-challenge-image" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, true)} />
                             </div>
 
-                            <button 
-                                onClick={handleAdminCreateChallenge}
-                                className="w-full bg-indigo-600 text-white py-3 md:py-4 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all flex items-center justify-center gap-1.5 mt-2 h-[48px] md:h-[56px]"
-                            >
-                                <Plus size={16} /> צרי אתגר
-                            </button>
+                            <div className="flex gap-2 mt-2 h-[48px] md:h-[56px]">
+                                <button 
+                                    onClick={handleAdminSaveChallenge}
+                                    className={`flex-1 text-white py-3 md:py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1.5 ${editingChallengeId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                >
+                                    {editingChallengeId ? <><Edit size={16} /> שמרי שינויים</> : <><Plus size={16} /> צרי אתגר</>}
+                                </button>
+                                {editingChallengeId && (
+                                    <button 
+                                        onClick={() => {
+                                            setEditingChallengeId(null);
+                                            setNewChallenge({ title: '', prizes: [''], notes: '', image: '', drawDate: '' });
+                                        }}
+                                        className="px-4 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all flex items-center justify-center"
+                                    >
+                                        ביטול
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -635,7 +679,10 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                         {user?.isAdmin && (
                                             <div className="flex gap-2 mt-1">
                                                 <button onClick={() => handleAdminRunChallenge(challenge._id || challenge.id)} className="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-1 shadow-sm">
-                                                    <Eye size={12}/> הגרלי זוכה
+                                                    <Eye size={12}/> הגרלי
+                                                </button>
+                                                <button onClick={() => handleEditChallengeClick(challenge)} className="flex-1 bg-amber-500 text-white py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-1 shadow-sm">
+                                                    <Edit size={12}/> עריכה
                                                 </button>
                                                 <button onClick={() => handleAdminDeleteChallenge(challenge._id || challenge.id)} className="flex-1 bg-red-500 text-white py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-1 shadow-sm">
                                                     <Trash2 size={12}/> מחיקה
@@ -741,6 +788,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                                     <img src={entry.image} alt={entry.familyName} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 transition-opacity flex flex-col justify-end p-3 md:p-4">
                                                         <p className="text-white font-bold text-xs md:text-sm drop-shadow-sm truncate">
+                                                            {/* תיקון באג ה-"משפחת משפחת" - אם כבר כתבה משפחת לא נוסיף */}
                                                             {entry.familyName.startsWith('משפחת') ? entry.familyName : `משפחת ${entry.familyName}`}
                                                         </p>
                                                         {user?.isAdmin && (

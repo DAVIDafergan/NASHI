@@ -691,6 +691,13 @@ router.post('/admin/challenges', authenticate, isAdmin, async (req, res) => {
         res.status(201).json(challenge);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+// עדכון אתגר קיים (מנהלות בלבד)
+router.put('/admin/challenges/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        const updated = await Challenge.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updated);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
 
 // מחיקת אתגר וכל התמונות המשויכות אליו (מנהלות בלבד)
 router.delete('/admin/challenges/:id', authenticate, isAdmin, async (req, res) => {

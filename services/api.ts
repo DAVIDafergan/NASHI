@@ -615,6 +615,17 @@ export const api = {
         }
         return res.json();
     },
+    
+    async updateChallenge(id: string, data: any): Promise<any> {
+        validateImageSize(data);
+        const res = await safeFetch(`${API_URL}/admin/challenges/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
 
     // ================= CONTACT MESSAGES =================
     async submitContactMessage(data: any) {
