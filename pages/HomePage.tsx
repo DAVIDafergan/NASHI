@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
-  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon // נוספו אייקונים לסטוריז
+  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2 // נוספו Trash2 ו-Share2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
@@ -18,13 +18,21 @@ interface AdItem {
   _id: string; type: 'image' | 'video'; content: string; link: string; title: string;
 }
 
-// ממשק חדש לסטוריז
+// ממשק חכם לסטוריז (כולל כיתוב)
 interface StoryItem {
   id?: string; _id?: string;
-  user: { name: string; avatar: string };
+  user: { _id?: string; id?: string; name: string; avatar: string };
   type: 'text' | 'image';
   content: string;
+  caption?: string; // טקסט שיופיע על התמונה
   createdAt?: string;
+}
+
+// ממשק חדש לקבוצת סטוריז (אוגד את הסטוריז של אותה משתמשת)
+interface UserStoryGroup {
+  userId: string;
+  user: { _id?: string; id?: string; name: string; avatar: string };
+  stories: StoryItem[];
 }
 
 const categories = [
@@ -37,6 +45,28 @@ const categories = [
 ];
 
 const API_URL = 'https://nashi-production.up.railway.app/api';
+
+// --- קומפוננטה עזר: מציירת את הפסים הצבעוניים סביב האוואטר לפי מספר הסטוריז ---
+const StoryRing = ({ count }: { count: number }) => {
+  if (count <= 1) {
+    return <div className="absolute inset-0 rounded-full border-[2.5px] border-rose-500"></div>;
+  }
+  const radius = 32.5;
+  const circumference = 2 * Math.PI * radius;
+  const gap = 8; // הרווח בין הפסים
+  const dashLength = (circumference / count) - gap;
+  
+  return (
+    <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 69 69">
+      <circle 
+         cx="34.5" cy="34.5" r={radius} 
+         fill="none" stroke="#f43f5e" strokeWidth="2.5"
+         strokeDasharray={`${dashLength} ${gap}`} 
+         strokeLinecap="round"
+      />
+    </svg>
+  );
+};
 
 const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin: () => void, onUpdateUser?: (u: any) => void }) => {
   const navigate = useNavigate();
@@ -60,12 +90,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [membershipForm, setMembershipForm] = useState({ age: '', occupation: '', address: '', phone: user?.phone || '' });
   const [isLoading, setIsLoading] = useState(true);
 
-  // === מצבים חדשים למערכת הסטוריז ===
-  const [stories, setStories] = useState<StoryItem[]>([]);
-  const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
+  // === מצבים למערכת הסטוריז המקובצים ===
+  const [groupedStories, setGroupedStories] = useState<UserStoryGroup[]>([]);
+  const [activeGroupIndex, setActiveGroupIndex] = useState<number | null>(null);
+  const [activeInnerIndex, setActiveInnerIndex] = useState<number>(0);
   const [storyProgress, setStoryProgress] = useState(0);
   const [showAddStoryModal, setShowAddStoryModal] = useState(false);
-  const [newStory, setNewStory] = useState<{ type: 'text' | 'image', content: string }>({ type: 'text', content: '' });
+  const [newStory, setNewStory] = useState<{ type: 'text' | 'image', content: string, caption?: string }>({ type: 'text', content: '', caption: '' });
   const [isUploadingStory, setIsUploadingStory] = useState(false);
 
   // לוגיקת טעינת נתונים
@@ -88,9 +119,21 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         setEvents(Array.isArray(evRes) ? evRes.map((e: any) => ({...e, id: e._id || e.id})) : []);
         setLotteries(Array.isArray(lotRes) ? lotRes.map((l: any) => ({...l, id: l._id || l.id})) : []);
         setAds(Array.isArray(adsRes) ? adsRes : []);
-        setStories(Array.isArray(storiesRes) ? storiesRes : []);
         
-        // בחירת אשת השבוע העדכנית ביותר במקרה שחוזר מערך מהשרת
+        // קיבוץ הסטוריז לפי משתמשת (כמו בוואצפ)
+        const validStories = Array.isArray(storiesRes) ? storiesRes : [];
+        const grouped = validStories.reduce((acc: UserStoryGroup[], story: any) => {
+            const uid = story.user?._id || story.user?.id;
+            let group = acc.find(g => g.userId === uid);
+            if (!group) {
+                group = { userId: uid, user: story.user, stories: [] };
+                acc.push(group);
+            }
+            group.stories.push(story);
+            return acc;
+        }, []);
+        setGroupedStories(grouped);
+        
         const persData = Array.isArray(persDataRaw) ? persDataRaw[0] : persDataRaw;
         setPersonality(persData);
         
@@ -141,9 +184,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     }
   }, [ads, currentAdIndex]);
 
-  // === טיימר למערכת הסטוריז (7 שניות לסטורי) ===
+  // === טיימר חכם למערכת הסטוריז המקובצים ===
   useEffect(() => {
-    if (activeStoryIndex === null) return;
+    if (activeGroupIndex === null) return;
     const duration = 7000;
     const intervalTime = 70; // עדכון כל 70 מ"ש לקבלת תנועה חלקה
     const step = 100 / (duration / intervalTime);
@@ -160,24 +203,35 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     }, intervalTime);
 
     return () => clearInterval(timer);
-  }, [activeStoryIndex]);
+  }, [activeGroupIndex, activeInnerIndex]);
 
   const handleNextStory = () => {
     setStoryProgress(0);
-    setActiveStoryIndex(prev => {
-      if (prev === null) return null;
-      if (prev < stories.length - 1) return prev + 1;
-      return null; // סגירת הסטוריז בסוף
-    });
+    const group = groupedStories[activeGroupIndex!];
+    if (activeInnerIndex < group.stories.length - 1) {
+        setActiveInnerIndex(prev => prev + 1); // עובר לסטורי הבא של אותה בחורה
+    } else {
+        if (activeGroupIndex! < groupedStories.length - 1) {
+            setActiveGroupIndex(prev => prev! + 1); // עובר לבחורה הבאה
+            setActiveInnerIndex(0);
+        } else {
+            setActiveGroupIndex(null); // נגמרו הסטוריז - סוגר
+        }
+    }
   };
 
   const handlePrevStory = () => {
     setStoryProgress(0);
-    setActiveStoryIndex(prev => {
-      if (prev === null) return null;
-      if (prev > 0) return prev - 1;
-      return prev; // הישארות בראשון
-    });
+    if (activeInnerIndex > 0) {
+        setActiveInnerIndex(prev => prev - 1); // חוזר לסטורי הקודם של אותה בחורה
+    } else {
+        if (activeGroupIndex! > 0) {
+            setActiveGroupIndex(prev => prev! - 1); // חוזר לבחורה הקודמת (לסטורי האחרון שלה)
+            setActiveInnerIndex(groupedStories[activeGroupIndex! - 1].stories.length - 1);
+        } else {
+            setActiveInnerIndex(0); // נשאר בסטורי הראשון
+        }
+    }
   };
 
   const submitNewStory = async () => {
@@ -187,12 +241,48 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         await api.uploadStory(newStory);
         alert('הסטורי נשלח בהצלחה וממתין לאישור מנהלת!');
         setShowAddStoryModal(false);
-        setNewStory({ type: 'text', content: '' });
+        setNewStory({ type: 'text', content: '', caption: '' });
     } catch (err: any) {
         alert(err.message || 'אירעה שגיאה בהעלאת הסטורי');
     } finally {
         setIsUploadingStory(false);
     }
+  };
+
+  // מחיקת סטורי אישי על ידי המשתמשת
+  const handleDeleteMyStory = async (storyId: string) => {
+    if (!window.confirm('למחוק את הסטורי שלך?')) return;
+    try {
+        await api.deleteMyStory(storyId);
+        // מעדכנים את המערך המקובץ במקום
+        setGroupedStories(prev => {
+            const newGroups = prev.map(g => ({
+                ...g,
+                stories: g.stories.filter(s => s._id !== storyId && s.id !== storyId)
+            })).filter(g => g.stories.length > 0);
+            return newGroups;
+        });
+        setActiveGroupIndex(null); // סגירת הנגן אחרי מחיקה
+    } catch (err: any) {
+        alert('שגיאה במחיקה: ' + err.message);
+    }
+  };
+
+  // שיתוף הסטורי לוואצפ/אפליקציות אחרות
+  const handleShareStory = async (story: StoryItem) => {
+      if (navigator.share) {
+          try {
+              await navigator.share({
+                  title: 'סטורי מקהילת נשי',
+                  text: story.type === 'text' ? story.content : (story.caption || 'צפי בסטורי הזה בקהילת נשי!'),
+                  url: window.location.href // שולח לינק לאתר הכללי (כי סטורי הוא זמני)
+              });
+          } catch (error) {
+              console.log('Error sharing', error);
+          }
+      } else {
+          alert("הדפדפן שלך לא תומך בשיתוף ישיר.");
+      }
   };
 
   const handleStoryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,7 +291,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     if (file.size > 5000000) { alert('הקובץ גדול מדי. המקסימום הוא 5MB'); return; }
     const reader = new FileReader();
     reader.onloadend = () => {
-        setNewStory({ type: 'image', content: reader.result as string });
+        setNewStory({ ...newStory, type: 'image', content: reader.result as string });
     };
     reader.readAsDataURL(file);
   };
@@ -296,6 +386,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   }
 
   const latestInspiration = inspirations[0] || { text: "הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך.", author: "נ.ש" };
+  const activeGroup = activeGroupIndex !== null ? groupedStories[activeGroupIndex] : null;
+  const currentStory = activeGroup ? activeGroup.stories[activeInnerIndex] : null;
 
   return (
     <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#fffcfc]" dir="rtl">
@@ -313,25 +405,27 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* Banner Area */}
         <div className="w-full">{renderAdBanner()}</div>
 
-        {/* --- אזור הסטוריז החדש (מוצג גם בנייד וגם בנייח למעלה) --- */}
+        {/* --- אזור הסטוריז המקובץ --- */}
         <div className="w-full px-5 pb-2 pt-1 overflow-x-auto no-scrollbar flex gap-4 snap-x">
            
            {/* כפתור הוספת סטורי */}
            <div className="flex flex-col items-center gap-1 shrink-0 snap-center" onClick={() => user ? setShowAddStoryModal(true) : onOpenLogin()}>
               <div className="relative w-[68px] h-[68px] rounded-full border-2 border-dashed border-rose-300 p-1 flex items-center justify-center bg-rose-50 cursor-pointer hover:bg-rose-100 transition-colors">
-                 {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" /> : <div className="w-full h-full rounded-full bg-slate-200"></div>}
+                 {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" /> : <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${user?.name || 'new'}`} className="w-full h-full rounded-full object-cover" />}
                  <div className="absolute bottom-0 right-0 bg-rose-500 text-white rounded-full p-[3px] border-2 border-white shadow-sm"><Plus size={12} strokeWidth={4}/></div>
               </div>
               <span className="text-[10px] text-slate-500 font-bold">הוספי סטורי</span>
            </div>
 
-           {/* רשימת הסטוריז */}
-           {stories.map((story, idx) => (
-              <div key={story._id || story.id || idx} className="flex flex-col items-center gap-1 shrink-0 snap-center cursor-pointer group" onClick={() => { setActiveStoryIndex(idx); setStoryProgress(0); }}>
-                 <div className="w-[68px] h-[68px] rounded-full p-[2px] bg-gradient-to-tr from-rose-400 via-purple-500 to-rose-500 transform group-active:scale-95 transition-transform">
-                    <img src={story.user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback'} className="w-full h-full rounded-full object-cover border-2 border-white" />
+           {/* רשימת המשתמשות שהעלו סטורי (כל משתמשת מופיעה פעם אחת עם טבעת מחולקת) */}
+           {groupedStories.map((group, idx) => (
+              <div key={group.userId} className="flex flex-col items-center gap-1 shrink-0 snap-center cursor-pointer group-hover" onClick={() => { setActiveGroupIndex(idx); setActiveInnerIndex(0); setStoryProgress(0); }}>
+                 <div className="relative w-[68px] h-[68px] p-1 flex items-center justify-center transform active:scale-95 transition-transform">
+                    {/* הטבעת שמתפצלת לפי כמות הסטוריז */}
+                    <StoryRing count={group.stories.length} />
+                    <img src={group.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${group.user?.name || 'user'}`} className="w-full h-full rounded-full object-cover border-2 border-white bg-white relative z-10" />
                  </div>
-                 <span className="text-[10px] text-slate-700 font-bold w-[68px] truncate text-center">{story.user?.name || 'משתמשת'}</span>
+                 <span className="text-[10px] text-slate-700 font-bold w-[68px] truncate text-center">{group.user?.name || 'משתמשת'}</span>
               </div>
            ))}
         </div>
@@ -639,14 +733,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       {/* --- מודלים --- */}
 
       {/* 1. מודל צפייה בסטורי (Fullscreen) */}
-      {activeStoryIndex !== null && stories[activeStoryIndex] && (
+      {activeGroup !== null && currentStory && (
          <div className="fixed inset-0 z-[400] bg-slate-950 flex flex-col animate-fade-in" dir="rtl">
-            {/* פסי התקדמות */}
+            {/* פסי התקדמות (לפי כמות הסטוריז של אותה משתמשת) */}
             <div className="absolute top-4 left-0 right-0 flex gap-1 px-3 z-50" dir="ltr">
-               {stories.map((_, idx) => (
+               {activeGroup.stories.map((_, idx) => (
                   <div key={idx} className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden backdrop-blur-sm">
                      <div className="h-full bg-white transition-all duration-75 ease-linear"
-                          style={{ width: idx === activeStoryIndex ? `${storyProgress}%` : idx < activeStoryIndex ? '100%' : '0%' }}>
+                          style={{ width: idx === activeInnerIndex ? `${storyProgress}%` : idx < activeInnerIndex ? '100%' : '0%' }}>
                      </div>
                   </div>
                ))}
@@ -655,19 +749,42 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             {/* הדר הסטורי */}
             <div className="absolute top-8 left-0 right-0 px-4 z-50 flex justify-between items-center drop-shadow-md">
                <div className="flex items-center gap-3">
-                  <img src={stories[activeStoryIndex].user?.avatar} className="w-10 h-10 rounded-full border border-white/40 shadow-sm" />
-                  <span className="text-white font-bold text-sm tracking-wide">{stories[activeStoryIndex].user?.name}</span>
+                  <img src={currentStory.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${currentStory.user?.name || 'user'}`} className="w-10 h-10 rounded-full border border-white/40 shadow-sm bg-white" />
+                  <span className="text-white font-bold text-sm tracking-wide">{currentStory.user?.name}</span>
                </div>
-               <button onClick={() => setActiveStoryIndex(null)} className="text-white p-2 hover:bg-white/10 rounded-full transition-colors"><X size={24}/></button>
+               <div className="flex gap-3 items-center">
+                  {/* כפתור שיתוף - משתמש ב-Web Share API */}
+                  <button onClick={() => handleShareStory(currentStory)} className="text-white p-2 hover:bg-blue-500/80 bg-black/20 backdrop-blur-md rounded-full transition-colors" title="שתפי את הסטורי">
+                     <Share2 size={20}/>
+                  </button>
+                  
+                  {/* כפתור מחיקה - מופיע רק אם הסטורי שייך למשתמשת */}
+                  {user && (currentStory.user?._id === user._id || currentStory.user?.id === user.id) && (
+                     <button onClick={() => handleDeleteMyStory(currentStory._id || currentStory.id!)} className="text-white p-2 hover:bg-red-500/80 bg-black/20 backdrop-blur-md rounded-full transition-colors" title="מחיקת הסטורי שלך">
+                        <Trash2 size={20}/>
+                     </button>
+                  )}
+                  <button onClick={() => setActiveGroupIndex(null)} className="text-white p-2 hover:bg-white/20 bg-black/20 backdrop-blur-md rounded-full transition-colors"><X size={24}/></button>
+               </div>
             </div>
             
             {/* אזור התוכן */}
             <div className="flex-1 relative flex items-center justify-center overflow-hidden">
-               {stories[activeStoryIndex].type === 'image' ? (
-                   <img src={stories[activeStoryIndex].content} className="w-full h-full object-contain" alt="Story" />
+               {currentStory.type === 'image' ? (
+                   <>
+                     <img src={currentStory.content} className="w-full h-full object-contain" alt="Story" />
+                     {/* הצגת טקסט על התמונה אם קיים */}
+                     {currentStory.caption && (
+                        <div className="absolute bottom-16 left-0 right-0 px-4 text-center z-50 animate-fade-in-up">
+                           <p className="inline-block bg-black/60 text-white px-5 py-3 rounded-2xl text-sm font-bold backdrop-blur-md shadow-2xl border border-white/10 leading-relaxed max-w-[90%]">
+                              {currentStory.caption}
+                           </p>
+                        </div>
+                     )}
+                   </>
                ) : (
                    <div className="w-full h-full bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700 flex items-center justify-center p-8 text-center">
-                      <p className="text-white text-3xl md:text-5xl font-black leading-snug drop-shadow-xl font-serif max-w-2xl">{stories[activeStoryIndex].content}</p>
+                      <p className="text-white text-3xl md:text-5xl font-black leading-snug drop-shadow-xl font-serif max-w-2xl">{currentStory.content}</p>
                    </div>
                )}
             </div>
@@ -687,13 +804,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  
                  <div className="flex gap-4 mb-6">
                     <button 
-                       onClick={() => setNewStory({...newStory, type: 'text'})} 
+                       onClick={() => setNewStory({...newStory, type: 'text', caption: ''})} 
                        className={`flex-1 py-3 rounded-2xl flex flex-col items-center gap-2 font-bold text-sm transition-colors border-2 ${newStory.type === 'text' ? 'border-rose-500 text-rose-600 bg-rose-50' : 'border-slate-100 text-slate-400'}`}
                     >
                        <TypeIcon size={24} /> טקסט
                     </button>
                     <button 
-                       onClick={() => setNewStory({...newStory, type: 'image'})} 
+                       onClick={() => setNewStory({...newStory, type: 'image', content: ''})} 
                        className={`flex-1 py-3 rounded-2xl flex flex-col items-center gap-2 font-bold text-sm transition-colors border-2 ${newStory.type === 'image' ? 'border-rose-500 text-rose-600 bg-rose-50' : 'border-slate-100 text-slate-400'}`}
                     >
                        <ImageIcon size={24} /> תמונה
@@ -708,23 +825,36 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                         onChange={e => setNewStory({...newStory, content: e.target.value})}
                      ></textarea>
                  ) : (
-                     <div className="relative border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-slate-400 bg-slate-50 overflow-hidden">
-                        <input type="file" accept="image/*" onChange={handleStoryImageUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                        {newStory.content ? (
-                           <img src={newStory.content} className="absolute inset-0 w-full h-full object-cover" />
-                        ) : (
-                           <>
-                              <Camera size={32} className="mb-2" />
-                              <p className="font-bold text-sm">לחצי לבחירת תמונה</p>
-                           </>
-                        )}
+                     <div className="space-y-4">
+                       <div className="relative border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-slate-400 bg-slate-50 overflow-hidden min-h-[160px]">
+                          <input type="file" accept="image/*" onChange={handleStoryImageUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                          {newStory.content ? (
+                             <img src={newStory.content} className="absolute inset-0 w-full h-full object-cover" />
+                          ) : (
+                             <>
+                                <Camera size={32} className="mb-2" />
+                                <p className="font-bold text-sm">לחצי לבחירת תמונה</p>
+                             </>
+                          )}
+                       </div>
+                       
+                       {/* שורת הכיתוב לתמונה */}
+                       {newStory.content && (
+                          <input 
+                             type="text" 
+                             placeholder="הוסיפי כיתוב לתמונה (אופציונלי)..." 
+                             className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-rose-200 text-slate-700 font-medium text-sm"
+                             value={newStory.caption || ''}
+                             onChange={e => setNewStory({...newStory, caption: e.target.value})}
+                          />
+                       )}
                      </div>
                  )}
 
                  <button 
                     onClick={submitNewStory} 
                     disabled={isUploadingStory || !newStory.content}
-                    className="w-full mt-6 bg-rose-500 text-white font-black py-4 rounded-xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full mt-6 bg-rose-500 text-white font-black py-4 rounded-xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-rose-600 transition-colors"
                  >
                     {isUploadingStory ? 'מעלה...' : 'שליחה לאישור'} <Send size={16} />
                  </button>

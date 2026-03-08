@@ -659,5 +659,13 @@ export const api = {
             headers: getHeaders()
         });
         return res.json();
+    },
+
+    async deleteMyStory(id: string): Promise<any> {
+        const res = await safeFetch(`${API_URL}/stories/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        return res.json();
     }
 };

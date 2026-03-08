@@ -227,6 +227,7 @@ const StorySchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // הפניה למשתמשת שהעלתה
   type: { type: String, enum: ['image', 'text'], default: 'text' }, // סוג הסטורי: תמונה או טקסט בלבד
   content: { type: String, required: true }, // התוכן עצמו (טקסט או תמונה כ-Base64)
+  caption: { type: String, default: '' }, // טקסט שיופיע מתחת לתמונה
   status: { type: String, enum: ['pending', 'approved'], default: 'pending' }, // סטטוס לאישור מנהלת
   createdAt: { type: Date, default: Date.now },
   approvedAt: { type: Date } // שדה שיתעדכן ברגע שהמנהלת מאשרת

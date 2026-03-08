@@ -834,7 +834,7 @@ router.get('/stories', async (req, res) => {
         // שולפים רק סטוריז במצב "approved". (ה-TTL במונגו כבר דואג למחוק את מה שעבר 24 שעות)
         const stories = await Story.find({ status: 'approved' })
             .populate('user', 'name avatar') // מביאים את שם ותמונת המשתמשת
-            .sort({ approvedAt: -1 }); // הכי חדשים בהתחלה
+            .sort({ approvedAt: 1 }); // סידור מהישן לחדש (כמו בוואצפ)
         res.json(stories);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -845,7 +845,8 @@ router.post('/stories', authenticate, async (req, res) => {
         const story = new Story({
             user: req.user.id,
             type: req.body.type || 'text',
-            content: req.body.content
+            content: req.body.content,
+            caption: req.body.caption || '' // <--- הוספנו פה את קבלת הטקסט!
             // status יהיה 'pending' אוטומטית לפי המודל
         });
         await story.save();
@@ -879,6 +880,22 @@ router.put('/admin/stories/:id/approve', authenticate, isAdmin, async (req, res)
 // מחיקת סטורי (על ידי מנהלת - אם סירבה לאשר או רצתה להסיר)
 router.delete('/admin/stories/:id', authenticate, isAdmin, async (req, res) => {
     try {
+        await Story.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// מחיקת סטורי על ידי המשתמשת עצמה (הבעלים של הסטורי)
+router.delete('/stories/:id', authenticate, async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id);
+        if (!story) return res.status(404).json({ error: 'Story not found' });
+        
+        // נוודא שמי שמנסה למחוק היא אכן המשתמשת שהעלתה את הסטורי
+        if (story.user.toString() !== req.user.id && !req.user.isAdmin) {
+            return res.status(403).json({ error: 'Unauthorized to delete this story' });
+        }
+        
         await Story.findByIdAndDelete(req.params.id);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
