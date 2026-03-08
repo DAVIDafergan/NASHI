@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft, Medal } from 'lucide-react';
+import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft, Medal, Target, Plus, Trash2 } from 'lucide-react';
 import { LotteryItem, User } from '../types';
 import { useLocation } from 'react-router-dom';
 import { api } from '../services/api'; // ייבוא ה-API
@@ -18,19 +18,24 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   const [countdown, setCountdown] = useState(3);
   const location = useLocation();
 
-  // --- מצבים חדשים עבור שולחן השבת ---
-  const [activeTab, setActiveTab] = useState<'regular' | 'shabbat'>('regular');
+  // --- מצבים חדשים עבור מערכת האתגרים (החליף את שולחן השבת) ---
+  const [activeTab, setActiveTab] = useState<'regular' | 'challenges'>('regular');
+  const [challenges, setChallenges] = useState<any[]>([]);
+  const [challengeEntries, setChallengeEntries] = useState<any[]>([]);
+  
+  // מצבי טופס למשתמש
+  const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
   const [familyName, setFamilyName] = useState('');
-  const [phone, setPhone] = useState(''); // שדה טלפון חדש
-  const [shabbatImage, setShabbatImage] = useState<string | null>(null);
+  const [phone, setPhone] = useState('');
+  const [entryImage, setEntryImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [shabbatEntries, setShabbatEntries] = useState<any[]>([]); 
-  const [shabbatSettings, setShabbatSettings] = useState({
-      prize: 'סט פמוטים יוקרתי',
-      notes: 'העלי תמונה של שולחן השבת המעוצב שלך ואולי תזכי!',
-      isActive: true,
-      drawDate: '', // תאריך לניהול סבבים
-      winnerFamily: ''
+
+  // מצבי טופס למנהל (ליצירת אתגר חדש)
+  const [newChallenge, setNewChallenge] = useState({
+      title: '',
+      prize: '',
+      notes: '',
+      drawDate: ''
   });
 
   // Handle Admin triggering a live draw from AdminPage
@@ -43,20 +48,21 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
       
       const params = new URLSearchParams(location.search);
-      if (params.get('tab') === 'shabbat') {
-          setActiveTab('shabbat');
+      if (params.get('tab') === 'challenges' || params.get('tab') === 'shabbat') {
+          setActiveTab('challenges');
       }
 
-      const fetchShabbatData = async () => {
+      const fetchChallengesData = async () => {
           try {
-              const settings = await api.getShabbatLotterySettings();
-              if (settings) setShabbatSettings(settings);
+              // קריאות API חדשות למערכת האתגרים - יש לעדכן את ה-backend בהתאם
+              const fetchedChallenges = await api.getChallenges();
+              if (fetchedChallenges) setChallenges(fetchedChallenges);
               
-              const entries = await api.getShabbatEntries();
-              if (entries) setShabbatEntries(entries);
-          } catch (e) { console.error("Failed to fetch shabbat data", e); }
+              const fetchedEntries = await api.getChallengeEntries();
+              if (fetchedEntries) setChallengeEntries(fetchedEntries);
+          } catch (e) { console.error("Failed to fetch challenges data", e); }
       };
-      fetchShabbatData();
+      fetchChallengesData();
   }, [location.state, lotteries, location.search]);
   
   const handleEnterLottery = (lottery: any) => {
@@ -144,29 +150,32 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
   };
 
+  // --- פונקציות ניהול והשתתפות באתגרים ---
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
           const reader = new FileReader();
-          reader.onloadend = () => setShabbatImage(reader.result as string);
+          reader.onloadend = () => setEntryImage(reader.result as string);
           reader.readAsDataURL(file);
       }
   };
 
-  const handleShabbatSubmit = async () => {
+  const handleChallengeSubmit = async () => {
       if (!user) return alert('נא להתחבר למערכת');
-      if (!familyName || !shabbatImage || !phone) return alert('נא למלא את כל הפרטים כולל טלפון');
+      if (!selectedChallengeId) return alert('נא לבחור אתגר');
+      if (!familyName || !entryImage || !phone) return alert('נא למלא את כל הפרטים כולל טלפון ותמונה');
       
       setIsSubmitting(true);
       try {
-          await api.enterShabbatLottery({ familyName, image: shabbatImage, phone });
-          alert('איזה יופי! התמונה הועלתה וצברת כרטיס להגרלה. שבת שלום! 🕯️');
-          setShabbatImage(null);
+          await api.enterChallenge({ challengeId: selectedChallengeId, familyName, image: entryImage, phone });
+          alert('איזה יופי! התמונה הועלתה ונכנסת לאתגר בהצלחה! 🎯');
+          setEntryImage(null);
           setFamilyName('');
           setPhone('');
-          // רענון הגלריה מהשרת בלבד כדי למנוע כפילות
-          const entries = await api.getShabbatEntries();
-          if (entries) setShabbatEntries(entries);
+          setSelectedChallengeId(null);
+          
+          const entries = await api.getChallengeEntries();
+          if (entries) setChallengeEntries(entries);
       } catch (err: any) {
           alert(err.message || 'שגיאה בשליחת התמונה');
       } finally {
@@ -174,36 +183,38 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
   };
 
-  const handleShareShabbat = () => {
-      const baseUrl = window.location.origin + window.location.pathname;
-      const shareUrl = `${baseUrl}#/lottery?tab=shabbat`;
-      const text = `בואי להעלות תמונה של שולחן השבת שלך ב'נשי' ואולי תזכי ב${shabbatSettings.prize}!`;
-      
-      if (navigator.share) {
-          navigator.share({ title: 'שולחן השבת שלי', text, url: shareUrl });
-      } else {
-          navigator.clipboard.writeText(shareUrl);
-          alert('הקישור הייעודי לשולחן השבת הועתק!');
-      }
+  const handleAdminCreateChallenge = async () => {
+      if (!newChallenge.title || !newChallenge.prize) return alert('חובה להזין כותרת ופרס לאתגר');
+      try {
+          await api.createChallenge(newChallenge);
+          alert('האתגר נוצר בהצלחה!');
+          setNewChallenge({ title: '', prize: '', notes: '', drawDate: '' });
+          
+          const fetchedChallenges = await api.getChallenges();
+          if (fetchedChallenges) setChallenges(fetchedChallenges);
+      } catch (e) { alert('שגיאה ביצירת האתגר'); }
   };
 
-  const handleAdminUpdateShabbat = async () => {
+  const handleAdminDeleteChallenge = async (challengeId: string) => {
+      if (!window.confirm('האם את בטוחה שברצונך למחוק אתגר זה ואת כל התמונות המשויכות אליו?')) return;
       try {
-          await api.updateShabbatLotterySettings(shabbatSettings);
-          alert('הגדרות הגרלת השבת עודכנו! אם שינית תאריך, הגלריה נוקתה.');
-          // רענון הגלריה למקרה שנמחקה
-          const entries = await api.getShabbatEntries();
-          setShabbatEntries(entries || []);
-      } catch (e) { alert('שגיאה בעדכון'); }
+          await api.deleteChallenge(challengeId);
+          alert('האתגר נמחק בהצלחה');
+          const fetchedChallenges = await api.getChallenges();
+          if (fetchedChallenges) setChallenges(fetchedChallenges);
+          const fetchedEntries = await api.getChallengeEntries();
+          if (fetchedEntries) setChallengeEntries(fetchedEntries);
+      } catch (e) { alert('שגיאה במחיקת האתגר'); }
   };
 
-  const handleAdminRunShabbat = async () => {
-      if (!window.confirm('האם להפעיל את ההגרלה ולבחור זוכה עכשיו?')) return;
+  const handleAdminRunChallenge = async (challengeId: string) => {
+      if (!window.confirm('האם להפעיל את ההגרלה ולבחור זוכה לאתגר זה עכשיו?')) return;
       try {
-          const res = await api.runShabbatLottery();
+          const res = await api.runChallengeLottery(challengeId);
           alert(`יש לנו זוכה! מזל טוב למשפחת ${res.winnerFamily}`);
-          setShabbatSettings({...shabbatSettings, winnerFamily: res.winnerFamily, isActive: false});
-      } catch (e: any) { alert(e.response?.data?.error || 'שגיאה בהפעלת ההגרלה'); }
+          const fetchedChallenges = await api.getChallenges();
+          if (fetchedChallenges) setChallenges(fetchedChallenges);
+      } catch (e: any) { alert(e.response?.data?.error || 'שגיאה בהפעלת ההגרלה לאתגר'); }
   };
 
   const simulateDraw = () => {
@@ -240,9 +251,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
   const filteredLotteries = lotteries.filter(l => !l.title.includes("שולחן השבת") && !l.title.includes("שולחן שבת"));
 
-  // פונקציית עזר להצגת רשימת פרסים מעוצבת
   const renderPrizeList = (lottery: any, isDark: boolean = false) => {
-    // איסוף כל הפרסים הקיימים (גם מהמערך וגם מהשדות הבודדים)
     const allPrizes = [
         lottery.prize,
         lottery.prize2,
@@ -253,7 +262,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
         lottery.prize7
     ].filter(Boolean);
 
-    // אם יש מערך prizes מובנה, נשתמש בו
     const finalPrizes = (lottery.prizes && lottery.prizes.length > 0) ? lottery.prizes : allPrizes;
 
     return (
@@ -303,10 +311,10 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
             הגרלות כלליות
           </button>
           <button 
-            onClick={() => setActiveTab('shabbat')}
-            className={`px-8 py-3 rounded-full font-black text-sm transition-all flex items-center gap-2 ${activeTab === 'shabbat' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            onClick={() => setActiveTab('challenges')}
+            className={`px-8 py-3 rounded-full font-black text-sm transition-all flex items-center gap-2 ${activeTab === 'challenges' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
           >
-            שולחן השבת שלי 🕯️
+            אתגרים נושאי פרסים 🎯
           </button>
       </div>
 
@@ -356,7 +364,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                 {lottery.isActive && <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>}
                             </div>
 
-                            {/* תצוגת פרסים מסודרת וברורה */}
                             <div className="space-y-3 mb-6 bg-rose-50/30 p-4 rounded-[2rem] border border-rose-100/50">
                                 <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">פירוט הפרסים:</p>
                                 {renderPrizeList(lottery)}
@@ -430,208 +437,223 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
             })}
         </div>
       ) : (
-        /* --- ממשק שולחן השבת שלי --- */
+        /* --- ממשק אתגרים חדש --- */
         <div className="max-w-6xl mx-auto px-2 animate-scale-in space-y-12">
-            <div className="bg-white rounded-[3.5rem] overflow-hidden border border-indigo-100 shadow-2xl relative">
-                <div className="h-48 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 relative flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-                    <div className="relative text-center space-y-2">
-                        <h3 className="text-3xl md:text-4xl font-black text-white">שולחן השבת שלי</h3>
-                        <div className="flex items-center justify-center gap-2 text-indigo-100 font-bold bg-white/10 px-4 py-1 rounded-full backdrop-blur-md">
-                           <Trophy size={16} className="text-yellow-400" />
-                           פרס השבוע: {shabbatSettings.prize}
-                        </div>
+            
+            {/* ניהול למנהלת (הוספת אתגר) */}
+            {user?.isAdmin && (
+                <div className="bg-white p-8 rounded-[3rem] border border-indigo-100 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-2 h-full bg-indigo-500"></div>
+                    <div className="flex items-center gap-2 mb-6 text-indigo-700">
+                        <Settings size={24} />
+                        <h4 className="text-2xl font-black">ניהול אתגרים - יצירת אתגר חדש</h4>
                     </div>
-                    <button 
-                        onClick={handleShareShabbat}
-                        className="absolute top-6 left-6 bg-white/20 backdrop-blur-xl p-3 rounded-2xl text-white hover:bg-white hover:text-indigo-600 transition-all shadow-lg border border-white/20"
-                    >
-                        <Share2 size={20} />
-                    </button>
-                </div>
-
-                <div className="p-8 md:p-12 space-y-10">
-                    <div className="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100/50 text-indigo-700 text-center font-bold">
-                        {shabbatSettings.notes || 'שתפי אותנו בהכנות שלך לשבת ואולי תזכי בפרס מפנק!'}
+                    
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-400 mr-2">כותרת האתגר (למשל: שולחן השבת שלי)</label>
+                            <input 
+                                type="text" 
+                                value={newChallenge.title} 
+                                onChange={(e) => setNewChallenge({...newChallenge, title: e.target.value})}
+                                className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-inner" 
+                                placeholder="שם האתגר..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-400 mr-2">פרס לזוכים</label>
+                            <input 
+                                type="text" 
+                                value={newChallenge.prize} 
+                                onChange={(e) => setNewChallenge({...newChallenge, prize: e.target.value})}
+                                className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-inner" 
+                                placeholder="למשל: סט פמוטים"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-400 mr-2">הסבר / משימה</label>
+                            <input 
+                                type="text" 
+                                value={newChallenge.notes} 
+                                onChange={(e) => setNewChallenge({...newChallenge, notes: e.target.value})}
+                                className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-inner" 
+                                placeholder="הנחיות למשתתפות..."
+                            />
+                        </div>
+                        <button 
+                            onClick={handleAdminCreateChallenge}
+                            className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-black hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 h-[56px]"
+                        >
+                            <Plus size={20} /> צרי אתגר
+                        </button>
                     </div>
-
-                    {user ? (
-                        <div className="grid md:grid-cols-2 gap-10">
-                            <div className="space-y-6">
-                                <div className="space-y-3">
-                                    <label className="text-sm font-black text-slate-600 mr-2">שם משפחה</label>
-                                    <input 
-                                        type="text" 
-                                        value={familyName}
-                                        onChange={(e) => setFamilyName(e.target.value)}
-                                        placeholder="למשל: משפחת לוי"
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all font-bold text-lg"
-                                    />
-                                </div>
-
-                                <div className="space-y-3">
-                                    <label className="text-sm font-black text-slate-600 mr-2">מספר טלפון (ליצירת קשר)</label>
-                                    <input 
-                                        type="tel" 
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        placeholder="למשל: 050-1234567"
-                                        className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all font-bold text-lg"
-                                    />
-                                </div>
-
-                                <div className="space-y-3">
-                                    <label className="text-sm font-black text-slate-600 mr-2">תמונה של השולחן</label>
-                                    <div 
-                                        onClick={() => document.getElementById('shabbat-input')?.click()}
-                                        className={`group relative h-64 rounded-3xl border-4 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-4 ${shabbatImage ? 'border-indigo-500' : 'border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30'}`}
-                                    >
-                                        {shabbatImage ? (
-                                            <div className="w-full h-full relative">
-                                                <img src={shabbatImage} className="w-full h-full object-cover" alt="Preview" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <Camera className="text-white" size={40} />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-500 transition-colors">
-                                                    <Camera size={32} />
-                                                </div>
-                                                <div className="text-center">
-                                                    <p className="font-black text-slate-500 group-hover:text-indigo-600">לחצי להעלאת תמונה</p>
-                                                    <p className="text-xs text-slate-400 font-medium">JPEG, PNG עד 10MB</p>
-                                                </div>
-                                            </>
-                                        )}
-                                        <input id="shabbat-input" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                                    </div>
-                                </div>
-
-                                <button 
-                                    onClick={handleShabbatSubmit}
-                                    disabled={isSubmitting || !shabbatSettings.isActive}
-                                    className="w-full py-5 rounded-2xl bg-indigo-600 text-white font-black text-xl shadow-xl hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
-                                >
-                                    {isSubmitting ? <Loader2 className="animate-spin" /> : <Send size={22} />}
-                                    {shabbatSettings.isActive ? 'שלחי והיכנסי להגרלה' : 'ההגרלה הסתיימה להשבוע'}
-                                </button>
-                            </div>
-
-                            <div className="bg-slate-50 rounded-[2.5rem] p-8 space-y-6 flex flex-col justify-center border border-slate-100">
-                                <div className="space-y-4">
-                                    <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
-                                        <Info size={24} />
-                                    </div>
-                                    <h4 className="text-xl font-black text-slate-800">איך זה עובד?</h4>
-                                    <ul className="space-y-4">
-                                        {[
-                                            'מצלמים את שולחן השבת הערוך והיפה שלכן.',
-                                            'מעלים את התמונה בצירוף שם המשפחה וטלפון.',
-                                            'כל תמונה מקנה כרטיס להגרלה השבועית.',
-                                            'הזוכה תוכרז במוצאי שבת כאן באתר.'
-                                        ].map((text, i) => (
-                                            <li key={i} className="flex items-start gap-3 font-bold text-slate-600">
-                                                <div className="w-6 h-6 rounded-full bg-white border border-indigo-200 flex items-center justify-center text-[10px] text-indigo-600 shrink-0 mt-0.5">{i+1}</div>
-                                                {text}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-
-                                {shabbatSettings.winnerFamily && (
-                                    <div className="mt-8 p-6 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-3xl text-white shadow-lg animate-bounce">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <Trophy size={20} />
-                                            <span className="font-black text-sm uppercase">הזוכה של השבוע:</span>
-                                        </div>
-                                        <h5 className="text-3xl font-black italic">משפחת {shabbatSettings.winnerFamily}</h5>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="text-center py-20 bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
-                            <Lock size={48} className="text-slate-300 mx-auto mb-4" />
-                            <h4 className="text-xl font-black text-slate-800">התחברי כדי להשתתף</h4>
-                            <p className="text-slate-500 font-bold mt-2">רק חברות קהילת 'נשי' יכולות להשתתף בתחרות שולחן השבת</p>
-                            <button onClick={() => window.location.hash = '/login'} className="mt-6 bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition-all">התחברי עכשיו</button>
-                        </div>
-                    )}
-
-                    {user?.isAdmin && (
-                        <div className="mt-16 pt-12 border-t border-slate-100">
-                            <div className="flex items-center gap-2 mb-8">
-                                <Settings className="text-slate-400" />
-                                <h4 className="text-2xl font-black text-slate-800">ניהול שולחן שבת</h4>
-                            </div>
-                            
-                            <div className="grid md:grid-cols-4 gap-4 items-end">
-                                <div className="md:col-span-2 space-y-2">
-                                    <label className="text-xs font-black text-slate-400 mr-2">הערות / טקסט להצגה</label>
-                                    <input 
-                                        type="text" 
-                                        value={shabbatSettings.notes} 
-                                        onChange={(e) => setShabbatSettings({...shabbatSettings, notes: e.target.value})}
-                                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-inner" 
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-rose-500 mr-2">תאריך הגרלה (שינוי ינקה גלריה!)</label>
-                                    <input 
-                                        type="date" 
-                                        value={shabbatSettings.drawDate} 
-                                        onChange={(e) => setShabbatSettings({...shabbatSettings, drawDate: e.target.value})}
-                                        className="w-full p-4 bg-rose-50 rounded-2xl font-bold border-none shadow-inner text-rose-600" 
-                                    />
-                                </div>
-                                <div className="flex gap-2">
-                                    <button 
-                                        onClick={handleAdminUpdateShabbat}
-                                        className="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-black hover:bg-indigo-600 transition-all"
-                                    >
-                                        שמירה
-                                    </button>
-                                </div>
-                            </div>
-
-                            <button 
-                                onClick={handleAdminRunShabbat}
-                                className="w-full mt-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-5 rounded-2xl font-black text-xl shadow-xl hover:shadow-indigo-200 flex items-center justify-center gap-3 active:scale-95 transition-all"
-                            >
-                                <Eye size={24} />
-                                הפעלה והגרלת זוכה (LIVE)
-                            </button>
-                        </div>
-                    )}
                 </div>
-            </div>
+            )}
 
-            <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                    <ImageIcon className="text-indigo-500" size={28} />
-                    <h3 className="text-2xl font-black text-slate-800">השולחנות של השבוע ✨</h3>
-                </div>
-                
-                {shabbatEntries.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {shabbatEntries.map((entry, idx) => (
-                            <div key={idx} className="group relative bg-white rounded-3xl overflow-hidden shadow-md border border-slate-100 aspect-square">
-                                <img src={entry.image} alt={entry.familyName} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                                    <p className="text-white font-black text-sm">משפחת {entry.familyName}</p>
-                                </div>
-                                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-indigo-600 shadow-sm">
-                                    #{idx + 1}
-                                </div>
-                            </div>
-                        ))}
+            {/* רשימת האתגרים הקיימים */}
+            <div className="space-y-16">
+                {challenges.length === 0 ? (
+                    <div className="text-center py-20 bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
+                        <Target size={48} className="text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-400 font-bold text-lg">אין כרגע אתגרים פעילים. המנהלת תעלה אתגרים בקרוב!</p>
                     </div>
                 ) : (
-                    <div className="text-center py-20 bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200">
-                        <ImageIcon size={40} className="text-slate-300 mx-auto mb-3" />
-                        <p className="text-slate-400 font-bold">עדיין לא הועלו שולחנות השבוע. תהיי הראשונה!</p>
-                    </div>
+                    challenges.map((challenge) => {
+                        // סינון התמונות ששייכות לאתגר הספציפי
+                        const currentEntries = challengeEntries.filter(e => e.challengeId === (challenge._id || challenge.id));
+                        
+                        return (
+                            <div key={challenge._id || challenge.id} className="bg-white rounded-[3.5rem] overflow-hidden border border-slate-100 shadow-2xl relative">
+                                {/* Header של האתגר */}
+                                <div className={`p-8 md:p-10 ${challenge.isActive !== false ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800' : 'bg-slate-800'} relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6`}>
+                                    <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                                    <div className="relative z-10 text-center md:text-right space-y-2 text-white">
+                                        <h3 className="text-3xl md:text-4xl font-black">{challenge.title}</h3>
+                                        <p className="text-indigo-100 font-bold opacity-90">{challenge.notes}</p>
+                                        <div className="inline-flex items-center gap-2 text-indigo-900 font-bold bg-white px-4 py-1.5 rounded-full mt-2 shadow-lg">
+                                            <Trophy size={16} className="text-yellow-500" />
+                                            פרס: {challenge.prize}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="relative z-10 flex flex-col gap-3 min-w-[200px]">
+                                        {challenge.winnerFamily ? (
+                                            <div className="bg-yellow-400 text-yellow-900 px-6 py-4 rounded-3xl font-black text-center shadow-lg animate-bounce">
+                                                <Trophy size={20} className="mx-auto mb-1" />
+                                                מזל טוב למשפחת {challenge.winnerFamily}!
+                                            </div>
+                                        ) : challenge.isActive !== false ? (
+                                            <button 
+                                                onClick={() => setSelectedChallengeId(selectedChallengeId === (challenge._id || challenge.id) ? null : (challenge._id || challenge.id))}
+                                                className="bg-white text-indigo-600 px-8 py-4 rounded-3xl font-black shadow-xl hover:scale-105 transition-transform active:scale-95 flex items-center justify-center gap-2"
+                                            >
+                                                {selectedChallengeId === (challenge._id || challenge.id) ? 'ביטול השתתפות' : 'השתתפי באתגר!'} <Target size={20} />
+                                            </button>
+                                        ) : (
+                                            <div className="bg-white/20 text-white px-6 py-4 rounded-3xl font-black text-center backdrop-blur-sm">
+                                                האתגר הסתיים
+                                            </div>
+                                        )}
+
+                                        {user?.isAdmin && (
+                                            <div className="flex gap-2 mt-2">
+                                                <button onClick={() => handleAdminRunChallenge(challenge._id || challenge.id)} className="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-xs font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-1">
+                                                    <Eye size={14}/> הגרל
+                                                </button>
+                                                <button onClick={() => handleAdminDeleteChallenge(challenge._id || challenge.id)} className="flex-1 bg-red-500 text-white py-2 rounded-xl text-xs font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-1">
+                                                    <Trash2 size={14}/> מחיקה
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* אזור טופס העלאה (נפתח רק אם המשתמשת לחצה על "השתתפי באתגר") */}
+                                {selectedChallengeId === (challenge._id || challenge.id) && (
+                                    <div className="p-8 md:p-12 bg-indigo-50/30 border-b border-indigo-100 animate-fade-in">
+                                        {!user ? (
+                                            <div className="text-center py-10 bg-white rounded-3xl border border-dashed border-indigo-200">
+                                                <Lock size={40} className="text-indigo-300 mx-auto mb-4" />
+                                                <h4 className="text-xl font-black text-slate-800">התחברי כדי להשתתף</h4>
+                                                <button onClick={() => window.location.hash = '/login'} className="mt-4 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition-all">התחברי למערכת</button>
+                                            </div>
+                                        ) : (
+                                            <div className="grid md:grid-cols-2 gap-10 max-w-4xl mx-auto">
+                                                <div className="space-y-6">
+                                                    <div className="space-y-3">
+                                                        <label className="text-sm font-black text-slate-600 mr-2">שם משפחה (יוצג באתר)</label>
+                                                        <input 
+                                                            type="text" 
+                                                            value={familyName}
+                                                            onChange={(e) => setFamilyName(e.target.value)}
+                                                            placeholder="למשל: משפחת לוי"
+                                                            className="w-full px-6 py-4 rounded-2xl bg-white border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all font-bold text-lg shadow-sm"
+                                                        />
+                                                    </div>
+
+                                                    <div className="space-y-3">
+                                                        <label className="text-sm font-black text-slate-600 mr-2">מספר טלפון (חסוי, להנהלה בלבד)</label>
+                                                        <input 
+                                                            type="tel" 
+                                                            value={phone}
+                                                            onChange={(e) => setPhone(e.target.value)}
+                                                            placeholder="למשל: 050-1234567"
+                                                            className="w-full px-6 py-4 rounded-2xl bg-white border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all font-bold text-lg shadow-sm"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-6 flex flex-col justify-end">
+                                                    <div className="space-y-3 flex-1">
+                                                        <label className="text-sm font-black text-slate-600 mr-2">תמונה לאתגר</label>
+                                                        <div 
+                                                            onClick={() => document.getElementById('challenge-input')?.click()}
+                                                            className={`group relative h-40 rounded-3xl border-4 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-4 bg-white ${entryImage ? 'border-indigo-500' : 'border-slate-200 hover:border-indigo-300 hover:bg-indigo-50'}`}
+                                                        >
+                                                            {entryImage ? (
+                                                                <div className="w-full h-full relative">
+                                                                    <img src={entryImage} className="w-full h-full object-cover" alt="Preview" />
+                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                        <Camera className="text-white" size={40} />
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-500 transition-colors">
+                                                                        <Camera size={24} />
+                                                                    </div>
+                                                                    <p className="font-black text-slate-500 group-hover:text-indigo-600 text-sm">לחצי להעלאת תמונה</p>
+                                                                </>
+                                                            )}
+                                                            <input id="challenge-input" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                                                        </div>
+                                                    </div>
+
+                                                    <button 
+                                                        onClick={handleChallengeSubmit}
+                                                        disabled={isSubmitting}
+                                                        className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-black text-lg shadow-xl hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                                                    >
+                                                        {isSubmitting ? <Loader2 className="animate-spin" /> : <Send size={20} />}
+                                                        שלחי והיכנסי לאתגר!
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* גלריית התמונות של האתגר */}
+                                <div className="p-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <ImageIcon className="text-indigo-500" size={24} />
+                                        <h4 className="text-xl font-black text-slate-800">העלאות של המשתתפות:</h4>
+                                        <span className="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-sm">{currentEntries.length}</span>
+                                    </div>
+
+                                    {currentEntries.length > 0 ? (
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                            {currentEntries.map((entry, idx) => (
+                                                <div key={idx} className="group relative bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 aspect-square">
+                                                    <img src={entry.image} alt={entry.familyName} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity flex flex-col justify-end p-4">
+                                                        <p className="text-white font-black text-sm">משפחת {entry.familyName}</p>
+                                                        {user?.isAdmin && (
+                                                            <p className="text-yellow-300 text-xs font-bold mt-1 dir-ltr text-left">{entry.phone}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-10 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                            <p className="text-slate-400 font-bold">עדיין אין העלאות לאתגר זה. תהיי הראשונה!</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })
                 )}
             </div>
         </div>
