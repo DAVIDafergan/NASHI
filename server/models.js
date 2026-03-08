@@ -178,24 +178,30 @@ const AnnouncementSchema = new mongoose.Schema({
 });
 const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 
-const ShabbatLotterySchema = new mongoose.Schema({
-  prize: { type: String, default: 'פרס יוקרתי' },
-  notes: { type: String, default: '' },
+// ==========================================
+// --- מודלים של מערכת האתגרים (החליף שולחן שבת) ---
+// ==========================================
+const ChallengeSchema = new mongoose.Schema({
+  title: { type: String, required: true }, // שם האתגר
+  prize: { type: String, required: true }, // פרס
+  notes: { type: String, default: '' }, // הסבר / משימה
+  drawDate: { type: Date }, // תאריך יעד להגרלה
   isActive: { type: Boolean, default: true },
   winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   winnerFamily: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
-const ShabbatLottery = mongoose.model('ShabbatLottery', ShabbatLotterySchema);
+const Challenge = mongoose.model('Challenge', ChallengeSchema);
 
-const ShabbatEntrySchema = new mongoose.Schema({
+const ChallengeEntrySchema = new mongoose.Schema({
+  challengeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Challenge', required: true }, // שיוך לאתגר הספציפי
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   familyName: { type: String, required: true },
   phone: { type: String, required: true }, 
   image: { type: String, required: true }, 
   createdAt: { type: Date, default: Date.now }
 });
-const ShabbatEntry = mongoose.model('ShabbatEntry', ShabbatEntrySchema);
+const ChallengeEntry = mongoose.model('ChallengeEntry', ChallengeEntrySchema);
 
 const ContactMessageSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -244,7 +250,7 @@ const Story = mongoose.model('Story', StorySchema);
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
-  Announcement, ShabbatLottery, ShabbatEntry, ContactMessage,
+  Announcement, Challenge, ChallengeEntry, ContactMessage, // שונה ל-Challenge ו-ChallengeEntry
   Ticket,
   Story // הוספת הסטורי לייצוא
 };

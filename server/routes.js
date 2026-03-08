@@ -7,7 +7,7 @@ import {
     User, Event, Class, Lottery, Settings, GiftCode, 
     Announcement, // הוספת המודל החדש לייבוא
     Personality, ForumPost, Community, Inspiration, Ad,
-    ShabbatLottery, ShabbatEntry, // הוספת המודלים של שולחן השבת לייבוא
+    Challenge, ChallengeEntry, // הוספת המודלים של האתגרים לייבוא במקום שבת
     ContactMessage, // הוספת מודל פניות הציבור לייבוא
     Ticket, // התווסף מודל הכרטיסים!
     Story // <--- תוספת: מודל הסטוריז
@@ -604,7 +604,7 @@ router.post('/membership/request', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ================= 12. העוזרת החכמה (GEMINI PROXY) - חדש! =================
+// ================= 12. העוזרת החכמה (GEMINI PROXY) =================
 
 router.post('/chat', async (req, res) => {
   const { prompt } = req.body;
@@ -619,7 +619,7 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-// ================= 13. שליחת תפוצה (BROADCAST & TEST) - מתוקן! =================
+// ================= 13. שליחת תפוצה (BROADCAST & TEST) =================
 
 router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) => {
   const { subject, content, image, logo, isTest, targetEmail } = req.body;
@@ -673,37 +673,47 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
   }
 });
 
-// ================= 14. שולחן השבת שלי (SHABBAT LOTTERY) =================
+// ================= 14. אתגרים (CHALLENGES) =================
 
-router.get('/shabbat-lottery/settings', async (req, res) => {
+// שליפת כל האתגרים למשתמש ולמנהל
+router.get('/challenges', async (req, res) => {
     try {
-        const settings = await ShabbatLottery.findOne().sort({ createdAt: -1 });
-        res.json(settings || { prize: 'פרס יוקרתי', notes: '', isActive: true });
+        const challenges = await Challenge.find().sort({ createdAt: -1 });
+        res.json(challenges);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/admin/shabbat-lottery/settings', authenticate, isAdmin, async (req, res) => {
+// יצירת אתגר חדש (מנהלות בלבד)
+router.post('/admin/challenges', authenticate, isAdmin, async (req, res) => {
     try {
-        let settings = await ShabbatLottery.findOne().sort({ createdAt: -1 });
-        if (!settings) {
-            settings = new ShabbatLottery(req.body);
-        } else {
-            Object.assign(settings, req.body);
-        }
-        await settings.save();
-        res.json(settings);
+        const challenge = new Challenge(req.body);
+        await challenge.save();
+        res.status(201).json(challenge);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/shabbat-lottery/enter', authenticate, async (req, res) => {
+// מחיקת אתגר וכל התמונות המשויכות אליו (מנהלות בלבד)
+router.delete('/admin/challenges/:id', authenticate, isAdmin, async (req, res) => {
     try {
-        const { familyName, image, phone } = req.body;
+        await Challenge.findByIdAndDelete(req.params.id);
+        await ChallengeEntry.deleteMany({ challengeId: req.params.id });
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// השתתפות באתגר (העלאת תמונה)
+router.post('/challenges/enter', authenticate, async (req, res) => {
+    try {
+        const { challengeId, familyName, image, phone } = req.body;
+        if (!challengeId) return res.status(400).json({ error: 'חובה לבחור אתגר' });
         if (!phone) return res.status(400).json({ error: 'מספר טלפון הוא שדה חובה' });
         
-        const existing = await ShabbatEntry.findOne({ userId: req.user.id });
-        if (existing) return res.status(400).json({ error: 'כבר שלחת תמונה להגרלה זו השבוע' });
+        // בדיקה אם המשתמשת כבר העלתה תמונה לאתגר הספציפי הזה
+        const existing = await ChallengeEntry.findOne({ userId: req.user.id, challengeId });
+        if (existing) return res.status(400).json({ error: 'כבר שלחת תמונה לאתגר זה' });
 
-        const entry = new ShabbatEntry({
+        const entry = new ChallengeEntry({
+            challengeId,
             userId: req.user.id,
             familyName,
             phone,
@@ -714,27 +724,29 @@ router.post('/shabbat-lottery/enter', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/admin/shabbat-lottery/entries', authenticate, isAdmin, async (req, res) => {
+// שליפת כל התמונות של כל האתגרים
+router.get('/challenges/entries', async (req, res) => {
     try {
-        const entries = await ShabbatEntry.find().sort({ createdAt: -1 });
+        const entries = await ChallengeEntry.find().sort({ createdAt: -1 });
         res.json(entries);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/admin/shabbat-lottery/run', authenticate, isAdmin, async (req, res) => {
+// ביצוע הגרלה ובחירת זוכה לאתגר ספציפי (מנהלות בלבד)
+router.post('/admin/challenges/:id/run', authenticate, isAdmin, async (req, res) => {
     try {
-        const entries = await ShabbatEntry.find();
-        if (entries.length === 0) return res.status(400).json({ error: 'אין משתתפות בהגרלה' });
+        const entries = await ChallengeEntry.find({ challengeId: req.params.id });
+        if (entries.length === 0) return res.status(400).json({ error: 'אין משתתפות באתגר זה' });
 
         const randomIndex = Math.floor(Math.random() * entries.length);
         const winner = entries[randomIndex];
 
-        const lottery = await ShabbatLottery.findOne().sort({ createdAt: -1 });
-        if (lottery) {
-            lottery.winnerId = winner.userId;
-            lottery.winnerFamily = winner.familyName;
-            lottery.isActive = false;
-            await lottery.save();
+        const challenge = await Challenge.findById(req.params.id);
+        if (challenge) {
+            challenge.winnerId = winner.userId;
+            challenge.winnerFamily = winner.familyName;
+            challenge.isActive = false;
+            await challenge.save();
         }
 
         res.json({ success: true, winnerFamily: winner.familyName });
@@ -780,7 +792,7 @@ router.put('/admin/messages/:id/read', authenticate, isAdmin, async (req, res) =
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ================= 16. כרטיסים וברקודים (TICKETS) - חדש! =================
+// ================= 16. כרטיסים וברקודים (TICKETS) =================
 
 router.get('/admin/tickets', authenticate, isAdmin, async (req, res) => {
     try {
@@ -827,7 +839,7 @@ router.post('/admin/tickets/verify/:code', authenticate, isAdmin, async (req, re
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ================= 17. סטוריז (STORIES) - חדש! =================
+// ================= 17. סטוריז (STORIES) =================
 
 // שליפת סטוריז מאושרים (עבור דף הבית)
 router.get('/stories', async (req, res) => {

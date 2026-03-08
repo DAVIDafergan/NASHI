@@ -562,6 +562,60 @@ export const api = {
         return res.json();
     },
 
+    // ================= CHALLENGES (NEW!) =================
+    async getChallenges(): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/challenges`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async createChallenge(data: any): Promise<any> {
+        const res = await safeFetch(`${API_URL}/admin/challenges`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async deleteChallenge(id: string): Promise<any> {
+        const res = await safeFetch(`${API_URL}/admin/challenges/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        return res.json();
+    },
+
+    async enterChallenge(entryData: { challengeId: string; familyName: string; image: string; phone: string }): Promise<any> {
+        validateImageSize(entryData);
+        const res = await safeFetch(`${API_URL}/challenges/enter`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(entryData)
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Failed to enter challenge');
+        }
+        return res.json();
+    },
+
+    async getChallengeEntries(): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/challenges/entries`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async runChallengeLottery(id: string): Promise<any> {
+        const res = await safeFetch(`${API_URL}/admin/challenges/${id}/run`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Failed to run challenge lottery');
+        }
+        return res.json();
+    },
+
     // ================= CONTACT MESSAGES =================
     async submitContactMessage(data: any) {
         validateImageSize(data);
@@ -624,7 +678,7 @@ export const api = {
         return data;
     },
 
-    // ================= STORIES (חדש!) =================
+    // ================= STORIES =================
     async getStories(): Promise<any[]> {
         const res = await safeFetch(`${API_URL}/stories`);
         return res.json();
@@ -669,7 +723,6 @@ export const api = {
         return res.json();
     },
 
-    // --- אלו שתי הפונקציות שהוספנו עכשיו ---
     async getActiveStoriesAdmin(): Promise<any[]> {
         const res = await safeFetch(`${API_URL}/admin/stories/active`, { headers: getHeaders() });
         return res.json();
