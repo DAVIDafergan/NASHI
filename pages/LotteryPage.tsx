@@ -159,17 +159,47 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
   };
 
-  // --- פונקציות ניהול והשתתפות באתגרים ---
+  // --- פונקציות ניהול והשתתפות באתגרים (כולל דחיסת תמונה) ---
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isChallengeAdminImage = false) => {
       const file = e.target.files?.[0];
       if (file) {
           const reader = new FileReader();
-          reader.onloadend = () => {
-              if (isChallengeAdminImage) {
-                  setNewChallenge({...newChallenge, image: reader.result as string});
-              } else {
-                  setEntryImage(reader.result as string);
-              }
+          reader.onload = (event) => {
+              const img = new Image();
+              img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  const MAX_WIDTH = 800; // רזולוציה מקסימלית לתמונה (כדי לא להעמיס על השרת)
+                  const MAX_HEIGHT = 800;
+                  let width = img.width;
+                  let height = img.height;
+
+                  if (width > height) {
+                      if (width > MAX_WIDTH) {
+                          height *= MAX_WIDTH / width;
+                          width = MAX_WIDTH;
+                      }
+                  } else {
+                      if (height > MAX_HEIGHT) {
+                          width *= MAX_HEIGHT / height;
+                          height = MAX_HEIGHT;
+                      }
+                  }
+
+                  canvas.width = width;
+                  canvas.height = height;
+                  const ctx = canvas.getContext('2d');
+                  ctx?.drawImage(img, 0, 0, width, height);
+                  
+                  // דחיסה ל-JPEG ב-70% איכות - מקטין את המשקל משמעותית
+                  const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                  if (isChallengeAdminImage) {
+                      setNewChallenge({...newChallenge, image: compressedDataUrl});
+                  } else {
+                      setEntryImage(compressedDataUrl);
+                  }
+              };
+              img.src = event.target?.result as string;
           };
           reader.readAsDataURL(file);
       }
@@ -182,15 +212,28 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       
       setIsSubmitting(true);
       try {
+          // חווית משתמש מיידית - מוסיפים את התמונה לתצוגה המקומית מיד כדי לא להמתין
+          const newEntry = {
+              challengeId: selectedChallengeId,
+              familyName: familyName,
+              image: entryImage,
+              phone: phone
+          };
+          setChallengeEntries(prev => [...prev, newEntry]);
+
           await api.enterChallenge({ challengeId: selectedChallengeId, familyName, image: entryImage, phone });
           alert('איזה יופי! התמונה הועלתה ונכנסת לאתגר בהצלחה! 🎯');
+          
           setEntryImage(null);
           setFamilyName('');
           setPhone('');
           setSelectedChallengeId(null);
           
-          const entries = await api.getChallengeEntries();
-          if (entries) setChallengeEntries(entries);
+          // סנכרון שקט מול השרת ברקע כדי להבטיח את שאר הנתונים
+          api.getChallengeEntries().then(entries => {
+              if (entries) setChallengeEntries(entries);
+          }).catch(e => console.error(e));
+          
       } catch (err: any) {
           alert(err.message || 'שגיאה בשליחת התמונה');
       } finally {
@@ -771,7 +814,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                 <div className="p-6 md:p-10">
                                     <div className="flex items-center justify-between mb-5">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 md:w-10 md:h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500">
+                                            <div className="w-8 h-8 md:w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500">
                                                 <ImageIcon size={18} />
                                             </div>
                                             <div>
