@@ -75,7 +75,7 @@ const renderTextWithLinks = (text: string) => {
 // --- קומפוננטה עזר: מציירת את הפסים הצבעוניים סביב האוואטר לפי מספר הסטוריז ---
 const StoryRing = ({ count }: { count: number }) => {
   if (count <= 1) {
-    return <div className="absolute inset-0 rounded-full border-[2.5px] border-rose-500"></div>;
+    return <div className="absolute inset-0 rounded-full border-[2.5px] border-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.3)]"></div>;
   }
   const radius = 32.5;
   const circumference = 2 * Math.PI * radius;
@@ -83,7 +83,7 @@ const StoryRing = ({ count }: { count: number }) => {
   const dashLength = (circumference / count) - gap;
   
   return (
-    <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 69 69">
+    <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none drop-shadow-[0_0_3px_rgba(244,63,94,0.4)]" viewBox="0 0 69 69">
       <circle 
          cx="34.5" cy="34.5" r={radius} 
          fill="none" stroke="#f43f5e" strokeWidth="2.5"
@@ -147,8 +147,15 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         setLotteries(Array.isArray(lotRes) ? lotRes.map((l: any) => ({...l, id: l._id || l.id})) : []);
         setAds(Array.isArray(adsRes) ? adsRes : []);
         
+        // סינון סטוריז - מציג רק את אלו מה-24 שעות האחרונות
+        const nowTime = new Date().getTime();
+        const validStories = Array.isArray(storiesRes) ? storiesRes.filter((story: any) => {
+          if (!story.createdAt) return true; // שומר על תמיכה לאחור בסטוריז ללא תאריך
+          const storyTime = new Date(story.createdAt).getTime();
+          return (nowTime - storyTime) < (24 * 60 * 60 * 1000); // קטן מ-24 שעות
+        }) : [];
+
         // קיבוץ הסטוריז לפי משתמשת (כמו בוואצפ)
-        const validStories = Array.isArray(storiesRes) ? storiesRes : [];
         const grouped = validStories.reduce((acc: UserStoryGroup[], story: any) => {
             const uid = story.user?._id || story.user?.id;
             let group = acc.find(g => g.userId === uid);
@@ -406,8 +413,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     if (!ad) return null;
 
     return (
-      <div className="md:mx-0 animate-fade-in transition-all duration-700 w-full">
-        <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden md:rounded-2xl shadow-sm border-b md:border border-rose-50">
+      <div className="md:mx-0 animate-fade-in transition-all duration-700 w-full hover:opacity-95 cursor-pointer">
+        <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden md:rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 border-b md:border border-rose-50">
           {ad.type === 'image' ? (
             <img src={ad.content} alt={ad.title || 'Ad'} className="w-full h-20 md:h-24 object-cover transition-transform duration-700 group-hover:scale-105" />
           ) : (
@@ -445,7 +452,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const currentStory = activeGroup ? activeGroup.stories[activeInnerIndex] : null;
 
   return (
-    <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#fffcfc]" dir="rtl">
+    <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#fffcfc] scroll-smooth" dir="rtl">
       
       {/* Background Ambience */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
@@ -469,7 +476,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" /> : <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${user?.name || 'new'}`} className="w-full h-full rounded-full object-cover" />}
                  
                  {/* כפתור הפלוס עם נקודה פועמת עדינה */}
-                 <div className="absolute bottom-0 right-0 bg-gradient-to-tr from-rose-500 to-purple-600 text-white rounded-full p-[3px] border-2 border-white shadow-md">
+                 <div className="absolute bottom-0 right-0 bg-gradient-to-tr from-rose-500 to-purple-600 text-white rounded-full p-[3px] border-2 border-white shadow-md group-hover:rotate-90 transition-transform duration-300">
                     <Plus size={12} strokeWidth={4}/>
                  </div>
                  <div className="absolute -top-0 -left-0 flex h-2.5 w-2.5">
@@ -490,10 +497,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            {/* רשימת המשתמשות שהעלו סטורי */}
            {groupedStories.map((group, idx) => (
               <div key={group.userId} className="flex flex-col items-center gap-1 shrink-0 snap-center cursor-pointer group-hover" onClick={() => { setActiveGroupIndex(idx); setActiveInnerIndex(0); setStoryProgress(0); }}>
-                 <div className="relative w-[68px] h-[68px] p-1 flex items-center justify-center transform active:scale-95 transition-transform">
+                 <div className="relative w-[68px] h-[68px] p-1 flex items-center justify-center transform active:scale-95 hover:scale-[1.03] transition-all duration-300">
                     {/* הטבעת שמתפצלת לפי כמות הסטוריז */}
                     <StoryRing count={group.stories.length} />
-                    <img src={group.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${group.user?.name || 'user'}`} className="w-full h-full rounded-full object-cover border-2 border-white bg-white relative z-10" />
+                    <img src={group.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${group.user?.name || 'user'}`} className="w-full h-full rounded-full object-cover border-2 border-white bg-white relative z-10 shadow-sm" />
                  </div>
                  <span className="text-[10px] text-slate-700 font-bold w-[68px] truncate text-center mt-1">{group.user?.name || 'משתמשת'}</span>
               </div>
@@ -508,7 +515,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <section className="px-5">
             <Link 
                 to="/lottery"
-                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-rose-500 via-purple-600 to-indigo-600 p-4 rounded-3xl shadow-[0_10px_20px_-10px_rgba(225,29,72,0.5)] active:scale-95 transition-all overflow-hidden"
+                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-rose-500 via-purple-600 to-indigo-600 p-4 rounded-3xl shadow-[0_10px_20px_-10px_rgba(225,29,72,0.5)] active:scale-95 transition-all overflow-hidden hover:shadow-lg"
             >
                 {/* אפקט תנועה עדין לרקע */}
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 group-hover:scale-110 transition-transform duration-700"></div>
@@ -560,7 +567,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <section className="space-y-4">
             <div className="flex items-center justify-between px-5">
               <h3 className="text-2xl font-black text-slate-800 tracking-tight">האירועים החמים</h3>
-              <Link to="/events" className="text-rose-500 text-xs font-bold bg-rose-50/80 px-4 py-1.5 rounded-full backdrop-blur-sm">ללוח המלא</Link>
+              <Link to="/events" className="text-rose-500 text-xs font-bold bg-rose-50/80 hover:bg-rose-100 px-4 py-1.5 rounded-full backdrop-blur-sm transition-colors">ללוח המלא</Link>
             </div>
             
             <div 
@@ -569,9 +576,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             >
                {events.map((event, i) => (
                  <div key={i} className="min-w-[100vw] px-5 snap-center">
-                    <div className="relative w-full h-[380px] rounded-[2.5rem] overflow-hidden shadow-[0_15px_40px_-10px_rgba(0,0,0,0.2)] group" onClick={() => navigate('/events')}>
+                    <div className="relative w-full h-[380px] rounded-[2.5rem] overflow-hidden shadow-[0_15px_40px_-10px_rgba(0,0,0,0.2)] hover:shadow-2xl transition-all duration-300 group cursor-pointer" onClick={() => navigate('/events')}>
                       {/* Full Image */}
-                      <img src={event.image} className="w-full h-full object-cover transform transition-transform duration-700 group-active:scale-105" alt={event.title} />
+                      <img src={event.image} className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105 group-active:scale-105" alt={event.title} />
                       
                       {/* STRONGER Gradient Overlay for readability */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent opacity-90"></div>
@@ -605,7 +612,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
                  <GraduationCap className="text-purple-500" size={22}/> חוגים וסדנאות
                </h3>
-               <Link to="/classes" className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-400"><ChevronLeft size={18}/></Link>
+               <Link to="/classes" className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm hover:bg-slate-50 text-slate-400 transition-colors"><ChevronLeft size={18}/></Link>
             </div>
             
             <div className="grid grid-cols-2 gap-3 px-5">
@@ -613,7 +620,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <div 
                   key={i} 
                   onClick={() => navigate('/classes')}
-                  className="bg-white p-3 rounded-[1.8rem] shadow-sm border border-slate-100/50 active:scale-95 transition-transform"
+                  className="bg-white p-3 rounded-[1.8rem] shadow-sm hover:shadow-md hover:-translate-y-0.5 border border-slate-100/50 active:scale-95 transition-all cursor-pointer"
                 >
                   <div className="relative h-28 mb-3">
                      <img src={cls.image} className="w-full h-full rounded-[1.2rem] object-cover" alt={cls.title} />
@@ -645,7 +652,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <section className="space-y-4 pt-4">
             <div className="flex items-center justify-between px-5">
               <h3 className="text-xl font-black text-slate-800">קהילה וחסד</h3>
-              <Link to="/community" className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-400"><ChevronLeft size={18}/></Link>
+              <Link to="/community" className="w-8 h-8 flex items-center justify-center bg-white hover:bg-slate-50 rounded-full shadow-sm text-slate-400 transition-colors"><ChevronLeft size={18}/></Link>
             </div>
             
             <div className="grid grid-cols-2 gap-3 px-5 pb-0">
@@ -653,7 +660,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  <div 
                     key={i} 
                     onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })}
-                    className="bg-white rounded-[2rem] p-3 shadow-sm border border-slate-50 flex flex-col gap-3 active:bg-slate-50 transition-colors"
+                    className="bg-white rounded-[2rem] p-3 shadow-sm hover:shadow-md hover:-translate-y-0.5 border border-slate-50 flex flex-col gap-3 active:bg-slate-50 transition-all cursor-pointer"
                  >
                     <img src={item.image} className="w-full h-24 rounded-2xl object-cover bg-slate-100" alt={item.title} />
                     <div className="flex flex-col justify-center overflow-hidden px-1">
@@ -664,7 +671,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                ))}
             </div>
             <div className="px-5">
-              <Link to="/community" className="block w-full text-center py-3 bg-rose-50 text-rose-500 rounded-xl text-xs font-black">לכל השירותים בקהילה</Link>
+              <Link to="/community" className="block w-full text-center py-3 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl text-xs font-black transition-colors">לכל השירותים בקהילה</Link>
             </div>
           </section>
 
@@ -673,10 +680,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             <section className="px-5 pb-0">
                <div 
                  onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}
-                 className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-xl shadow-purple-100 border border-purple-50"
+                 className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-xl shadow-purple-100 border border-purple-50 hover:shadow-2xl transition-all cursor-pointer group"
                >
                  <div className="h-48 w-full relative">
-                    <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} />
+                    <img src={personality.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={personality.name} />
                     <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
                  </div>
                  <div className="px-8 pb-8 relative -mt-12 text-center">
@@ -688,7 +695,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     <h3 className="text-2xl font-black text-slate-900 mb-1">{personality.name}</h3>
                     {personality.profession && <p className="text-rose-500 font-bold text-sm mb-2">{personality.profession}</p>}
                     <p className="text-slate-500 font-serif italic text-sm leading-relaxed mb-6">"{personality.motto}"</p>
-                    <button className="w-full py-3.5 rounded-xl bg-slate-900 text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2">
+                    <button className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-colors">
                        לראיון המלא <BookOpen size={16} className="text-rose-400"/>
                     </button>
                  </div>
@@ -722,7 +729,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                       <p className="text-sm text-slate-400 font-medium max-w-md">המקום שלך להכיר נשות עשייה וליהנות מהטבות ייחודיות.</p>
                   </div>
                   {!user?.isMemberRequested && (
-                    <button onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} className="bg-rose-500 text-white px-10 py-3.5 rounded-full font-black text-sm shadow-lg hover:bg-purple-600 transition-all">הצטרפי עכשיו</button>
+                    <button onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} className="bg-rose-500 text-white px-10 py-3.5 rounded-full font-black text-sm shadow-lg hover:scale-105 hover:bg-purple-600 transition-all">הצטרפי עכשיו</button>
                   )}
               </div>
             )}
@@ -735,7 +742,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                    <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/80 via-transparent"></div>
                    <div className="absolute bottom-10 left-10 p-10 text-left">
                       <h2 className="text-4xl font-black text-white mb-4">{event.title}</h2>
-                      <Link to="/events" className="inline-flex bg-white text-slate-900 px-10 py-4 rounded-2xl font-black text-sm hover:bg-purple-600 transition-all">לפרטים והרשמה</Link>
+                      <Link to="/events" className="inline-flex bg-white text-slate-900 px-10 py-4 rounded-2xl font-black text-sm hover:scale-105 hover:bg-purple-600 transition-all">לפרטים והרשמה</Link>
                    </div>
                 </div>
               ))}
@@ -746,11 +753,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
                   <GraduationCap className="text-purple-500" size={28}/> חוגי המעגל
                 </h3>
-                <Link to="/classes" className="bg-purple-50 text-purple-600 px-6 py-2 rounded-xl font-black text-sm hover:bg-purple-500 transition-all">לכל החוגים</Link>
+                <Link to="/classes" className="bg-purple-50 text-purple-600 px-6 py-2 rounded-xl font-black text-sm hover:scale-105 hover:bg-purple-100 transition-all">לכל החוגים</Link>
               </div>
               <div className="grid grid-cols-4 gap-6">
                  {classes.slice(0, 4).map((cls, i) => (
-                   <div key={i} onClick={() => navigate('/classes')} className="bg-white p-4 rounded-3xl border border-purple-50 shadow-sm hover:shadow-xl transition-all cursor-pointer group text-center">
+                   <div key={i} onClick={() => navigate('/classes')} className="bg-white p-4 rounded-3xl border border-purple-50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group text-center">
                       <img src={cls.image} className="w-full h-32 rounded-2xl object-cover mb-4 group-hover:scale-105 transition-transform" />
                       <h4 className="font-black text-slate-800">{cls.title}</h4>
                       <p className="text-slate-400 text-xs mt-1">{cls.instructor} | {cls.day}</p>
@@ -764,11 +771,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
                   <HeartHandshake className="text-rose-500" size={28}/> שירותי קהילה וגמ"חים
                 </h3>
-                <Link to="/community" className="bg-rose-50 text-rose-500 px-6 py-2 rounded-xl font-black text-sm hover:bg-rose-500 transition-all">לכל שירותי הקהילה</Link>
+                <Link to="/community" className="bg-rose-50 text-rose-500 px-6 py-2 rounded-xl font-black text-sm hover:scale-105 hover:bg-rose-100 transition-all">לכל שירותי הקהילה</Link>
               </div>
               <div className="grid grid-cols-3 gap-8">
                  {communityItems.slice(0, 3).map((item, i) => (
-                   <div key={i} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all cursor-pointer border border-rose-50">
+                   <div key={i} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:-translate-y-1 hover:shadow-2xl transition-all cursor-pointer border border-rose-50">
                       <img src={item.image} className="w-full h-40 object-cover" />
                       <div className="p-6">
                         <h4 className="font-black text-slate-800 text-lg">{item.title}</h4>
@@ -783,25 +790,25 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               <div className="col-span-2 space-y-12">
                  {personality && (
                     <section className="bg-white rounded-[3rem] p-10 shadow-sm border border-purple-50 flex items-center gap-10">
-                       <img src={personality.image} className="w-56 h-56 rounded-[2.5rem] object-cover shadow-lg border-8 border-purple-50" alt="" />
+                       <img src={personality.image} className="w-56 h-56 rounded-[2.5rem] object-cover shadow-lg border-8 border-purple-50 hover:scale-105 transition-transform duration-500" alt="" />
                        <div className="text-right space-y-4">
                           <span className="text-purple-500 font-black text-xs uppercase tracking-widest">אשת השבוע במעגל</span>
                           <h3 className="text-4xl font-black text-slate-900">{personality.name}</h3>
                           {personality.profession && <p className="text-rose-500 font-bold text-lg">{personality.profession}</p>}
                           <p className="text-xl text-slate-600 font-serif italic leading-relaxed">"{personality.motto}"</p>
-                          <button onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black text-sm flex items-center gap-2">לקריאת הראיון המלא <ChevronLeft size={18}/></button>
+                          <button onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black text-sm flex items-center gap-2 hover:scale-105 transition-all">לקריאת הראיון המלא <ChevronLeft size={18}/></button>
                        </div>
                     </section>
                  )}
               </div>
               <div className="space-y-8">
-                 <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white">
+                 <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white hover:shadow-lg transition-shadow">
                     <Quote className="text-rose-400 mb-4" size={24} />
                     <p className="font-serif italic leading-relaxed text-lg">"{latestInspiration.text}"</p>
                     <p className="mt-4 text-xs font-black text-rose-500">{latestInspiration.author}</p>
                  </div>
                  {announcements.slice(0, 2).map((ann, i) => (
-                   <div key={i} className="bg-white p-6 rounded-3xl border-r-8 border-purple-500 shadow-sm">
+                   <div key={i} className="bg-white p-6 rounded-3xl border-r-8 border-purple-500 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all">
                       <h4 className="font-black text-purple-600 text-sm mb-2 flex items-center gap-2"><Bell size={14}/> {ann.title}</h4>
                       <p className="text-xs text-slate-500 leading-relaxed">{ann.content}</p>
                    </div>
@@ -818,7 +825,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
             <p className="text-[10px] md:text-xs font-medium text-slate-300 tracking-wide font-serif">
                 כל הזכויות שמורות למעגל הנשי &copy; {new Date().getFullYear()} | בנייה ופיתוח ע"י 
-                <a href="https://wa.me/message/WZKLTKH4KELMD1" target="_blank" rel="noopener noreferrer" className="text-purple-400 font-black mr-1">
+                <a href="https://wa.me/message/WZKLTKH4KELMD1" target="_blank" rel="noopener noreferrer" className="text-purple-400 font-black mr-1 hover:text-purple-500 transition-colors">
                   DA פרויקטים ויזמות
                 </a>
             </p>
@@ -829,11 +836,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       {/* 1. מודל צפייה בסטורי (Fullscreen) */}
       {activeGroup !== null && currentStory && (
-         <div className="fixed inset-0 z-[400] bg-slate-950 flex flex-col animate-fade-in" dir="rtl">
+         <div className="fixed inset-0 z-[400] bg-slate-950/90 backdrop-blur-2xl flex flex-col animate-fade-in transition-all duration-300" dir="rtl">
             {/* פסי התקדמות (לפי כמות הסטוריז של אותה משתמשת) */}
             <div className="absolute top-4 left-0 right-0 flex gap-1 px-3 z-50" dir="ltr">
                {activeGroup.stories.map((_, idx) => (
-                  <div key={idx} className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden backdrop-blur-sm">
+                  <div key={idx} className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden backdrop-blur-sm shadow-sm">
                      <div className="h-full bg-white transition-all duration-75 ease-linear"
                          style={{ width: idx === activeInnerIndex ? `${storyProgress}%` : idx < activeInnerIndex ? '100%' : '0%' }}>
                      </div>
@@ -842,24 +849,24 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
             
             {/* הדר הסטורי */}
-            <div className="absolute top-8 left-0 right-0 px-4 z-50 flex justify-between items-center drop-shadow-md">
+            <div className="absolute top-8 left-0 right-0 px-4 z-50 flex justify-between items-center drop-shadow-lg">
                <div className="flex items-center gap-3">
                   <img src={currentStory.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${currentStory.user?.name || 'user'}`} className="w-10 h-10 rounded-full border border-white/40 shadow-sm bg-white" />
-                  <span className="text-white font-bold text-sm tracking-wide">{currentStory.user?.name}</span>
+                  <span className="text-white font-bold text-sm tracking-wide drop-shadow-md">{currentStory.user?.name}</span>
                </div>
                <div className="flex gap-3 items-center">
                   {/* כפתור שיתוף - משתמש ב-Web Share API */}
-                  <button onClick={() => handleShareStory(currentStory)} className="text-white p-2 hover:bg-blue-500/80 bg-black/20 backdrop-blur-md rounded-full transition-colors" title="שתפי את הסטורי">
+                  <button onClick={() => handleShareStory(currentStory)} className="text-white p-2 hover:bg-blue-500/80 bg-black/20 backdrop-blur-md rounded-full transition-colors shadow-sm" title="שתפי את הסטורי">
                      <Share2 size={20}/>
                   </button>
                   
                   {/* כפתור מחיקה - מופיע רק אם הסטורי שייך למשתמשת */}
                   {user && (currentStory.user?._id === user._id || currentStory.user?.id === user.id) && (
-                     <button onClick={() => handleDeleteMyStory(currentStory._id || currentStory.id!)} className="text-white p-2 hover:bg-red-500/80 bg-black/20 backdrop-blur-md rounded-full transition-colors" title="מחיקת הסטורי שלך">
+                     <button onClick={() => handleDeleteMyStory(currentStory._id || currentStory.id!)} className="text-white p-2 hover:bg-red-500/80 bg-black/20 backdrop-blur-md rounded-full transition-colors shadow-sm" title="מחיקת הסטורי שלך">
                         <Trash2 size={20}/>
                      </button>
                   )}
-                  <button onClick={() => setActiveGroupIndex(null)} className="text-white p-2 hover:bg-white/20 bg-black/20 backdrop-blur-md rounded-full transition-colors"><X size={24}/></button>
+                  <button onClick={() => setActiveGroupIndex(null)} className="text-white p-2 hover:bg-white/20 bg-black/20 backdrop-blur-md rounded-full transition-colors shadow-sm"><X size={24}/></button>
                </div>
             </div>
             
@@ -867,7 +874,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             <div className="flex-1 relative flex items-center justify-center overflow-hidden">
                {currentStory.type === 'image' ? (
                    <>
-                     <img src={currentStory.content} className="w-full h-full object-contain" alt="Story" />
+                     <img src={currentStory.content} className="w-full h-full object-contain drop-shadow-2xl" alt="Story" />
                      {/* הצגת טקסט על התמונה אם קיים */}
                      {currentStory.caption && (
                         <div className="absolute bottom-16 left-0 right-0 px-4 text-center z-[60] animate-fade-in-up flex justify-center">
@@ -887,8 +894,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
             
             {/* אזורי לחיצה לניווט (מימין אחורה, משמאל קדימה - מותאם לעברית) */}
-            <div className="absolute inset-y-24 right-0 w-1/3 z-40" onClick={handlePrevStory}></div>
-            <div className="absolute inset-y-24 left-0 w-2/3 z-40" onClick={handleNextStory}></div>
+            <div className="absolute inset-y-24 right-0 w-1/3 z-40 cursor-e-resize" onClick={handlePrevStory}></div>
+            <div className="absolute inset-y-24 left-0 w-2/3 z-40 cursor-w-resize" onClick={handleNextStory}></div>
          </div>
       )}
 
@@ -902,13 +909,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  <div className="flex gap-4 mb-6">
                     <button 
                        onClick={() => setNewStory({...newStory, type: 'text', caption: ''})} 
-                       className={`flex-1 py-3 rounded-2xl flex flex-col items-center gap-2 font-bold text-sm transition-colors border-2 ${newStory.type === 'text' ? 'border-rose-500 text-rose-600 bg-rose-50' : 'border-slate-100 text-slate-400'}`}
+                       className={`flex-1 py-3 rounded-2xl flex flex-col items-center gap-2 font-bold text-sm transition-colors border-2 ${newStory.type === 'text' ? 'border-rose-500 text-rose-600 bg-rose-50' : 'border-slate-100 text-slate-400 hover:bg-slate-50'}`}
                     >
                        <TypeIcon size={24} /> טקסט
                     </button>
                     <button 
                        onClick={() => setNewStory({...newStory, type: 'image', content: ''})} 
-                       className={`flex-1 py-3 rounded-2xl flex flex-col items-center gap-2 font-bold text-sm transition-colors border-2 ${newStory.type === 'image' ? 'border-rose-500 text-rose-600 bg-rose-50' : 'border-slate-100 text-slate-400'}`}
+                       className={`flex-1 py-3 rounded-2xl flex flex-col items-center gap-2 font-bold text-sm transition-colors border-2 ${newStory.type === 'image' ? 'border-rose-500 text-rose-600 bg-rose-50' : 'border-slate-100 text-slate-400 hover:bg-slate-50'}`}
                     >
                        <ImageIcon size={24} /> תמונה
                     </button>
@@ -916,14 +923,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
                  {newStory.type === 'text' ? (
                      <textarea 
-                        className="w-full h-32 bg-slate-50 border-none rounded-2xl p-4 resize-none outline-none focus:ring-2 focus:ring-rose-200 text-slate-700 font-medium"
+                        className="w-full h-32 bg-slate-50 border-none rounded-2xl p-4 resize-none outline-none focus:ring-2 focus:ring-rose-200 text-slate-700 font-medium transition-all"
                         placeholder="מה יושב לך על הלב היום?... (ניתן להדביק גם לינק)"
                         value={newStory.content}
                         onChange={e => setNewStory({...newStory, content: e.target.value})}
                      ></textarea>
                  ) : (
                      <div className="space-y-4">
-                       <div className="relative border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-slate-400 bg-slate-50 overflow-hidden min-h-[160px]">
+                       <div className="relative border-2 border-dashed border-slate-200 hover:border-rose-300 rounded-2xl p-8 flex flex-col items-center justify-center text-slate-400 bg-slate-50 overflow-hidden min-h-[160px] transition-colors">
                           <input type="file" accept="image/*" onChange={handleStoryImageUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
                           {newStory.content ? (
                              <img src={newStory.content} className="absolute inset-0 w-full h-full object-cover" />
@@ -940,7 +947,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                           <input 
                              type="text" 
                              placeholder="הוסיפי כיתוב לתמונה (ניתן גם לצרף לינק)..." 
-                             className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-rose-200 text-slate-700 font-medium text-sm"
+                             className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-rose-200 text-slate-700 font-medium text-sm transition-all"
                              value={newStory.caption || ''}
                              onChange={e => setNewStory({...newStory, caption: e.target.value})}
                           />
@@ -951,7 +958,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  <button 
                     onClick={submitNewStory} 
                     disabled={isUploadingStory || !newStory.content}
-                    className="w-full mt-6 bg-rose-500 text-white font-black py-4 rounded-xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-rose-600 transition-colors"
+                    className="w-full mt-6 bg-rose-500 text-white font-black py-4 rounded-xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-rose-600 hover:shadow-xl transition-all active:scale-95"
                  >
                     {isUploadingStory ? 'מעלה...' : 'שליחה לאישור'} <Send size={16} />
                  </button>
@@ -971,16 +978,16 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                       <h2 className="text-xl md:text-3xl font-black text-slate-800 font-serif">בקשת הצטרפות</h2>
                       <form onSubmit={handleMembershipSubmit} className="space-y-4 pt-4 border-t border-rose-50">
                           <div className="grid grid-cols-2 gap-3">
-                            <input required type="number" placeholder="גיל" className="p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
-                            <input required type="text" placeholder="עיסוק" className="p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
+                            <input required type="number" placeholder="גיל" className="p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200 transition-shadow" value={membershipForm.age} onChange={e=>setMembershipForm({...membershipForm, age: e.target.value})}/>
+                            <input required type="text" placeholder="עיסוק" className="p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200 transition-shadow" value={membershipForm.occupation} onChange={e=>setMembershipForm({...membershipForm, occupation: e.target.value})}/>
                           </div>
-                          <input required type="text" placeholder="כתובת מגורים" className="w-full p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
-                          <input required type="tel" placeholder="מספר טלפון" className="w-full p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
+                          <input required type="text" placeholder="כתובת מגורים" className="w-full p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200 transition-shadow" value={membershipForm.address} onChange={e=>setMembershipForm({...membershipForm, address: e.target.value})}/>
+                          <input required type="tel" placeholder="מספר טלפון" className="w-full p-4 bg-rose-50/30 rounded-xl font-bold text-sm text-right outline-none focus:ring-1 focus:ring-rose-200 transition-shadow" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
                           <div className="flex items-center gap-3">
-                             <input id="terms" type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="w-5 h-5 text-purple-600 rounded" />
-                             <label htmlFor="terms" className="text-xs font-bold text-slate-600">אני מאשרת את התקנון</label>
+                             <input id="terms" type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="w-5 h-5 text-purple-600 rounded cursor-pointer" />
+                             <label htmlFor="terms" className="text-xs font-bold text-slate-600 cursor-pointer">אני מאשרת את התקנון</label>
                           </div>
-                          <button type="submit" className="w-full py-4 bg-rose-500 text-white rounded-xl font-black text-sm shadow-xl active:scale-95">שליחת בקשה</button>
+                          <button type="submit" className="w-full py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-sm shadow-xl hover:shadow-2xl transition-all active:scale-95">שליחת בקשה</button>
                       </form>
                   </div>
               </div>
@@ -993,10 +1000,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            <div className="bg-white rounded-[2rem] w-full max-w-2xl p-8 shadow-2xl max-h-[80vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-black text-slate-800">תקנון ומדיניות</h3>
-                <button onClick={() => setShowTermsModal(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={20}/></button>
+                <button onClick={() => setShowTermsModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20}/></button>
               </div>
               <p className="text-slate-600 text-sm leading-relaxed">כאן מופיע התקנון המלא של האתר...</p>
-              <button onClick={() => setShowTermsModal(false)} className="w-full mt-8 py-3 bg-slate-900 text-white font-black rounded-xl">סגירה</button>
+              <button onClick={() => setShowTermsModal(false)} className="w-full mt-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl transition-colors">סגירה</button>
            </div>
         </div>
       )}
