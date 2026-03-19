@@ -405,6 +405,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       } catch (err) { alert("שגיאה בשליחה"); }
   };
 
+  const handlePassoverClick = (e: React.MouseEvent) => {
+    if (!user) {
+        e.preventDefault();
+        onOpenLogin();
+    }
+  };
+
   const renderAdBanner = () => {
     if (!ads || ads.length === 0) return null;
     const ad = ads[currentAdIndex]; 
@@ -452,6 +459,25 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   return (
     <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#fdfbfb] scroll-smooth" dir="rtl">
       
+      {/* הגדרות קריטיות לאנימציות מתקדמות עבור כפתור שי לחוסן */}
+      <style>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x {
+          animation: gradient-x 3s ease infinite;
+          background-size: 200% 200%;
+        }
+        @keyframes shimmer-sweep {
+          0% { transform: translateX(150%) skewX(-15deg); }
+          100% { transform: translateX(-150%) skewX(-15deg); }
+        }
+        .animate-shimmer-sweep {
+          animation: shimmer-sweep 2.5s infinite;
+        }
+      `}</style>
+
       {/* Background Ambience - Softer, more feminine */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(255,245,247,0.7),transparent_70%)]"></div>
@@ -500,36 +526,40 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* --- MOBILE VIEW START --- */}
         <div className="md:hidden space-y-10 mt-2">
           
-          {/* --- שי חוסן --- */}
-          {user && (
-            <section className="px-5">
-              <a 
-                  href="https://forms.gle/SFzVHywR1enHDJ4k7"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative flex items-center justify-between w-full bg-white/70 backdrop-blur-xl p-5 rounded-[2rem] shadow-[0_8px_30px_rgb(244,63,94,0.06)] border border-rose-50 active:scale-95 transition-all overflow-hidden"
-              >
-                  <div className="absolute inset-0 bg-gradient-to-r from-rose-50/50 to-pink-50/50 opacity-50 group-hover:opacity-80 transition-opacity"></div>
-                  
-                  <div className="relative z-10 flex items-center gap-4">
-                      <div className="bg-gradient-to-br from-rose-400 to-[#e8a5b2] p-3.5 rounded-2xl text-white shadow-lg shadow-rose-200/50">
-                          <Gift size={22} />
-                      </div>
-                      <div className="text-right">
-                          <h3 className="font-black text-xl text-slate-800 leading-tight">
-                            שי חוסן
-                            <span className="block mt-0.5 text-rose-500">לחג הפסח</span>
-                          </h3>
-                          <p className="text-slate-500 text-[11px] font-medium mt-1.5 bg-slate-100/70 px-2 py-0.5 rounded-full inline-block">עוד משהו טוב מהתרבות התורנית</p>
-                      </div>
-                  </div>
-                  
-                  <div className="relative z-10 bg-rose-50 text-rose-500 p-2.5 rounded-full shadow-sm group-hover:-translate-x-1 transition-transform">
-                      <ChevronLeft size={18} />
-                  </div>
-              </a>
-            </section>
-          )}
+          {/* --- שי חוסן (נייד) --- עיצוב זוהר ומקצועי --- */}
+          <section className="px-5">
+            <a 
+                href="https://forms.gle/SFzVHywR1enHDJ4k7"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handlePassoverClick}
+                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 p-[3px] rounded-[2.2rem] shadow-[0_0_25px_rgba(244,63,94,0.4)] active:scale-95 transition-all overflow-hidden animate-gradient-x"
+            >
+                {/* אפקט הברק שרץ על הכפתור */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
+                
+                <div className="w-full bg-white/10 backdrop-blur-md px-5 py-4 rounded-[2rem] flex items-center justify-between border border-white/20 relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/20 p-3.5 rounded-2xl text-white shadow-lg backdrop-blur-sm animate-pulse">
+                            <Gift size={26} strokeWidth={2.5} />
+                        </div>
+                        <div className="text-right">
+                            <h3 className="font-black text-2xl text-white leading-none drop-shadow-md flex items-center gap-2">
+                              שי חוסן <Sparkles size={16} className="text-yellow-200" />
+                            </h3>
+                            <span className="block mt-1 mb-1.5 text-rose-100 text-lg font-bold leading-none drop-shadow-sm">לחג הפסח</span>
+                            <p className="text-rose-50 text-[11px] font-bold bg-black/15 px-2.5 py-1 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-sm">
+                               עוד משהו טוב מהתרבות התורנית
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="relative z-10 bg-white text-rose-500 p-3 rounded-full shadow-xl group-hover:-translate-x-1 transition-transform">
+                        <ChevronLeft size={20} />
+                    </div>
+                </div>
+            </a>
+          </section>
 
           {/* 1. Announcements */}
           {announcements.length > 0 && (
@@ -709,7 +739,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                        <span className="font-black text-slate-800 text-3xl tracking-tight">{(user?.points || 0).toLocaleString()} <small className="text-sm opacity-50 font-medium">נק'</small></span>
                      </div>
                  </div>
-                 <a href="https://forms.gle/SFzVHywR1enHDJ4k7" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-[#d88a99] to-rose-400 text-white px-8 py-3.5 rounded-2xl text-sm font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2">שי חוסן לפסח <ChevronLeft size={16}/></a>
                </div>
             ) : (
               <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] text-slate-800 flex items-center justify-between gap-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white">
@@ -724,6 +753,39 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  )}
               </div>
             )}
+           </div>
+
+           {/* --- שי חוסן (מחשב) --- באנר זוהר ענק לכולם --- */}
+           <div className="mx-1 mt-6">
+               <a 
+                  href="https://forms.gle/SFzVHywR1enHDJ4k7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handlePassoverClick}
+                  className="relative group flex items-center justify-between bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 rounded-[3rem] p-1.5 shadow-[0_15px_50px_rgba(244,63,94,0.4)] hover:shadow-[0_20px_60px_rgba(244,63,94,0.6)] hover:-translate-y-1 transition-all duration-500 overflow-hidden animate-gradient-x"
+               >
+                  {/* אפקט הברק שרץ על הבאנר */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
+
+                  <div className="w-full bg-white/10 backdrop-blur-lg px-12 py-8 rounded-[2.6rem] flex items-center justify-between border border-white/30 relative z-10">
+                     <div className="flex items-center gap-8">
+                        <div className="bg-white/20 p-6 rounded-[1.8rem] text-white shadow-2xl backdrop-blur-md animate-pulse">
+                            <Gift size={44} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                            <h3 className="font-black text-5xl text-white tracking-tight drop-shadow-xl flex items-center gap-4">
+                               שי חוסן לחג הפסח <Sparkles className="text-yellow-200" size={36} />
+                            </h3>
+                            <p className="text-rose-50 text-base font-bold mt-4 bg-black/15 px-5 py-2 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-inner">
+                               עוד משהו טוב מהתרבות התורנית • לחצי כאן לקבלת השי
+                            </p>
+                        </div>
+                     </div>
+                     <div className="bg-white text-rose-500 px-10 py-5 rounded-3xl font-black text-xl shadow-2xl group-hover:bg-rose-50 group-hover:scale-105 transition-all flex items-center gap-3">
+                        {user ? 'לקבלת השי' : 'התחברי לקבלת השי'} <ChevronLeft size={24}/>
+                     </div>
+                  </div>
+               </a>
            </div>
 
            {/* Hero Slider */}
