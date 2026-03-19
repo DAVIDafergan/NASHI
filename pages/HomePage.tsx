@@ -500,29 +500,36 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* --- MOBILE VIEW START --- */}
         <div className="md:hidden space-y-10 mt-2">
           
-          {/* --- אתגרי החוסן והגרלות - עיצוב יוקרתי ועדין --- */}
-          <section className="px-5">
-            <Link 
-                to="/lottery"
-                className="group relative flex items-center justify-between w-full bg-white/70 backdrop-blur-xl p-5 rounded-[2rem] shadow-[0_8px_30px_rgb(244,63,94,0.06)] border border-rose-50 active:scale-95 transition-all overflow-hidden"
-            >
-                <div className="absolute inset-0 bg-gradient-to-r from-rose-50/50 to-pink-50/50 opacity-50 group-hover:opacity-80 transition-opacity"></div>
-                
-                <div className="relative z-10 flex items-center gap-4">
-                    <div className="bg-gradient-to-br from-rose-400 to-[#e8a5b2] p-3.5 rounded-2xl text-white shadow-lg shadow-rose-200/50">
-                        <Gift size={22} />
-                    </div>
-                    <div className="text-right">
-                        <h3 className="font-black text-lg text-slate-800 leading-tight">אתגרי החוסן והגרלות</h3>
-                        <p className="text-slate-500 text-xs font-medium mt-1">השתתפי, שתפי וזכי בפרסים שווים 🎀</p>
-                    </div>
-                </div>
-                
-                <div className="relative z-10 bg-rose-50 text-rose-500 p-2.5 rounded-full shadow-sm group-hover:-translate-x-1 transition-transform">
-                    <ChevronLeft size={18} />
-                </div>
-            </Link>
-          </section>
+          {/* --- שי חוסן --- */}
+          {user && (
+            <section className="px-5">
+              <a 
+                  href="https://forms.gle/SFzVHywR1enHDJ4k7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative flex items-center justify-between w-full bg-white/70 backdrop-blur-xl p-5 rounded-[2rem] shadow-[0_8px_30px_rgb(244,63,94,0.06)] border border-rose-50 active:scale-95 transition-all overflow-hidden"
+              >
+                  <div className="absolute inset-0 bg-gradient-to-r from-rose-50/50 to-pink-50/50 opacity-50 group-hover:opacity-80 transition-opacity"></div>
+                  
+                  <div className="relative z-10 flex items-center gap-4">
+                      <div className="bg-gradient-to-br from-rose-400 to-[#e8a5b2] p-3.5 rounded-2xl text-white shadow-lg shadow-rose-200/50">
+                          <Gift size={22} />
+                      </div>
+                      <div className="text-right">
+                          <h3 className="font-black text-xl text-slate-800 leading-tight">
+                            שי חוסן
+                            <span className="block mt-0.5 text-rose-500">לחג הפסח</span>
+                          </h3>
+                          <p className="text-slate-500 text-[11px] font-medium mt-1.5 bg-slate-100/70 px-2 py-0.5 rounded-full inline-block">עוד משהו טוב מהתרבות התורנית</p>
+                      </div>
+                  </div>
+                  
+                  <div className="relative z-10 bg-rose-50 text-rose-500 p-2.5 rounded-full shadow-sm group-hover:-translate-x-1 transition-transform">
+                      <ChevronLeft size={18} />
+                  </div>
+              </a>
+            </section>
+          )}
 
           {/* 1. Announcements */}
           {announcements.length > 0 && (
@@ -694,27 +701,27 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            {/* Welcome / Points Card */}
            <div className="mx-1">
             {user?.isMemberApproved ? (
-                <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-between">
-                  <div className="flex items-center gap-5">
-                      <div className="p-4 bg-gradient-to-br from-rose-100 to-pink-100 rounded-[1.2rem] shadow-inner text-rose-400"><Star fill="currentColor" size={20} /></div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">הניקוד שצברת בקהילה</p>
-                        <span className="font-black text-slate-800 text-3xl tracking-tight">{(user?.points || 0).toLocaleString()} <small className="text-sm opacity-50 font-medium">נק'</small></span>
-                      </div>
-                  </div>
-                  <Link to="/lottery" className="bg-gradient-to-r from-[#d88a99] to-rose-400 text-white px-8 py-3.5 rounded-2xl text-sm font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2">כניסה להגרלות <ChevronLeft size={16}/></Link>
-                </div>
+               <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-between">
+                 <div className="flex items-center gap-5">
+                     <div className="p-4 bg-gradient-to-br from-rose-100 to-pink-100 rounded-[1.2rem] shadow-inner text-rose-400"><Star fill="currentColor" size={20} /></div>
+                     <div>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">הניקוד שצברת בקהילה</p>
+                       <span className="font-black text-slate-800 text-3xl tracking-tight">{(user?.points || 0).toLocaleString()} <small className="text-sm opacity-50 font-medium">נק'</small></span>
+                     </div>
+                 </div>
+                 <a href="https://forms.gle/SFzVHywR1enHDJ4k7" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-[#d88a99] to-rose-400 text-white px-8 py-3.5 rounded-2xl text-sm font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2">שי חוסן לפסח <ChevronLeft size={16}/></a>
+               </div>
             ) : (
               <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] text-slate-800 flex items-center justify-between gap-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white">
-                  <div className="text-right space-y-3">
-                      <h3 className="text-3xl font-black flex items-center gap-3 text-slate-800">
-                         <Sparkles size={24} className="text-rose-400" /> {user?.isMemberRequested ? 'בקשתך בטיפול, איזה התרגשות!' : 'ברוכה הבאה למעגל הנשי'}
-                      </h3>
-                      <p className="text-base text-slate-500 font-medium max-w-lg leading-relaxed">המרחב הבטוח שלך להכיר נשות עשייה, לשתף, ללמוד וליהנות מהטבות ייחודיות.</p>
-                  </div>
-                  {!user?.isMemberRequested && (
-                    <button onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all">הצטרפי למעגל</button>
-                  )}
+                 <div className="text-right space-y-3">
+                     <h3 className="text-3xl font-black flex items-center gap-3 text-slate-800">
+                        <Sparkles size={24} className="text-rose-400" /> {user?.isMemberRequested ? 'בקשתך בטיפול, איזה התרגשות!' : 'ברוכה הבאה למעגל הנשי'}
+                     </h3>
+                     <p className="text-base text-slate-500 font-medium max-w-lg leading-relaxed">המרחב הבטוח שלך להכיר נשות עשייה, לשתף, ללמוד וליהנות מהטבות ייחודיות.</p>
+                 </div>
+                 {!user?.isMemberRequested && (
+                   <button onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all">הצטרפי למעגל</button>
+                 )}
               </div>
             )}
            </div>
