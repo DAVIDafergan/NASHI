@@ -1161,12 +1161,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  <X size={24}/>
               </button>
               <div className="w-full h-full rounded-[1.5rem] overflow-hidden relative">
-                 <iframe 
-                   src="https://nashi-81205509-24d67.web.app" 
-                   className="w-full h-full border-none"
-                   title="יצירת גלויה אישית"
-                   allow="camera; microphone"
-                 ></iframe>
+                <iframe 
+  src="https://my-web-app--nashi-81205509-24d67.europe-west4.hosted.app" 
+  className="w-full h-full border-none"
+  title="יצירת גלויה אישית"
+  allow="camera; microphone"
+></iframe>
               </div>
            </div>
         </div>
