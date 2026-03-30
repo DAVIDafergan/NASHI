@@ -118,6 +118,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [timeLeft, setTimeLeft] = useState('');
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPostcardModal, setShowPostcardModal] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [membershipForm, setMembershipForm] = useState({ age: '', occupation: '', address: '', phone: user?.phone || '' });
   const [isLoading, setIsLoading] = useState(true);
@@ -459,7 +460,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   return (
     <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#fdfbfb] scroll-smooth" dir="rtl">
       
-      {/* הגדרות קריטיות לאנימציות מתקדמות עבור כפתור שי לחוסן */}
+      {/* הגדרות קריטיות לאנימציות מתקדמות עבור כפתור שי לחוסן וכפתור הגלויה */}
       <style>{`
         @keyframes gradient-x {
           0%, 100% { background-position: 0% 50%; }
@@ -559,6 +560,36 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     </div>
                 </div>
             </a>
+          </section>
+
+          {/* --- כפתור יצירת גלויה (נייד) --- עיצוב זוהר ומזמין --- */}
+          <section className="px-5">
+            <div 
+                onClick={() => setShowPostcardModal(true)}
+                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 p-[3px] rounded-[2.2rem] shadow-[0_0_25px_rgba(192,132,252,0.4)] active:scale-95 transition-all overflow-hidden animate-gradient-x cursor-pointer"
+            >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
+                
+                <div className="w-full bg-white/10 backdrop-blur-md px-5 py-4 rounded-[2rem] flex items-center justify-between border border-white/20 relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/20 p-3.5 rounded-2xl text-white shadow-lg backdrop-blur-sm animate-pulse">
+                            <ImageIcon size={26} strokeWidth={2.5} />
+                        </div>
+                        <div className="text-right">
+                            <h3 className="font-black text-2xl text-white leading-none drop-shadow-md flex items-center gap-2">
+                              גלויה אישית <Sparkles size={16} className="text-yellow-200" />
+                            </h3>
+                            <span className="block mt-1 mb-1 text-purple-100 text-[13px] font-bold leading-tight drop-shadow-sm">
+                              עצבי ברכה מרגשת, הוסיפי מילים חמות ושתפי עם מי שאת אוהבת!
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div className="relative z-10 bg-white text-purple-500 p-3 rounded-full shadow-xl group-hover:-translate-x-1 transition-transform">
+                        <ChevronLeft size={20} />
+                    </div>
+                </div>
+            </div>
           </section>
 
           {/* 1. Announcements */}
@@ -788,8 +819,37 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                </a>
            </div>
 
+           {/* --- כפתור יצירת גלויה (מחשב) --- */}
+           <div className="mx-1 mt-6">
+                <div
+                   onClick={() => setShowPostcardModal(true)}
+                   className="relative group flex items-center justify-between bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 rounded-[3rem] p-1.5 shadow-[0_15px_50px_rgba(192,132,252,0.4)] hover:shadow-[0_20px_60px_rgba(192,132,252,0.6)] hover:-translate-y-1 transition-all duration-500 overflow-hidden animate-gradient-x cursor-pointer"
+                >
+                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
+
+                   <div className="w-full bg-white/10 backdrop-blur-lg px-12 py-8 rounded-[2.6rem] flex items-center justify-between border border-white/30 relative z-10">
+                      <div className="flex items-center gap-8">
+                         <div className="bg-white/20 p-6 rounded-[1.8rem] text-white shadow-2xl backdrop-blur-md animate-pulse">
+                             <ImageIcon size={44} strokeWidth={2.5} />
+                         </div>
+                         <div>
+                             <h3 className="font-black text-5xl text-white tracking-tight drop-shadow-xl flex items-center gap-4">
+                                צרי גלויה אישית <Sparkles className="text-yellow-200" size={36} />
+                             </h3>
+                             <p className="text-purple-50 text-base font-bold mt-4 bg-black/15 px-5 py-2 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-inner">
+                                בחרי עיצוב, הוסיפי ברכה חמה ושתפי עם האהובות שלך • לחצי כאן להתחלה
+                             </p>
+                         </div>
+                      </div>
+                      <div className="bg-white text-purple-500 px-10 py-5 rounded-3xl font-black text-xl shadow-2xl group-hover:bg-purple-50 group-hover:scale-105 transition-all flex items-center gap-3">
+                         ליצירת גלויה <ChevronLeft size={24}/>
+                      </div>
+                   </div>
+                </div>
+            </div>
+
            {/* Hero Slider */}
-           <section className="relative h-[500px] w-full overflow-hidden rounded-[3rem] shadow-[0_20px_50px_rgb(0,0,0,0.1)]">
+           <section className="relative h-[500px] w-full overflow-hidden rounded-[3rem] shadow-[0_20px_50px_rgb(0,0,0,0.1)] mt-8">
               {displayEvents.map((event, index) => (
                 <div key={index} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
@@ -1088,6 +1148,25 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </div>
               <div className="pt-6 shrink-0 border-t border-slate-100 mt-4">
                  <button onClick={() => setShowTermsModal(false)} className="w-full py-4 bg-slate-900 hover:bg-rose-500 text-white font-bold rounded-2xl transition-colors shadow-lg">סגירה והמשך</button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* 5. מודל יצירת גלויה (Iframe) */}
+      {showPostcardModal && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in text-right">
+           <div className="bg-white rounded-[2.5rem] w-full max-w-5xl h-[90vh] md:h-[85vh] p-2 sm:p-4 relative shadow-2xl flex flex-col border border-white overflow-hidden">
+              <button onClick={() => setShowPostcardModal(false)} className="absolute top-4 left-4 p-2 bg-slate-100 hover:bg-rose-50 rounded-full text-slate-600 transition-colors z-10 shadow-md">
+                 <X size={24}/>
+              </button>
+              <div className="w-full h-full rounded-[1.5rem] overflow-hidden relative">
+                 <iframe 
+                   src="https://nashi-81205509-24d67.web.app" 
+                   className="w-full h-full border-none"
+                   title="יצירת גלויה אישית"
+                   allow="camera; microphone"
+                 ></iframe>
               </div>
            </div>
         </div>
