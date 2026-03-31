@@ -423,7 +423,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       `טלפון: ${challengeForm.phone}\n\n` +
       `*** נא לצרף את תמונת האתגר למייל זה לפני השליחה! ***`
     );
-    window.location.href = `mailto:YA@101.ORG.IL?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:Nashi@101.org.il?subject=${subject}&body=${body}`;
     setShowChallengeModal(false);
     setChallengeForm({ name: '', phone: '', category: '' });
   };
