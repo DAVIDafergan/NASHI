@@ -569,7 +569,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                             </h3>
                             <span className="block mt-1 mb-1.5 text-rose-100 text-lg font-bold leading-none drop-shadow-sm">העלו תמונה וזכו!</span>
                             <p className="text-rose-50 text-[11px] font-bold bg-black/15 px-2.5 py-1 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-sm">
-                               שתפו אותנו באתגר שבחרתם
+                                שתפו אותנו באתגר שבחרתם
                             </p>
                         </div>
                     </div>
@@ -584,7 +584,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           {/* --- כפתור יצירת גלויה (נייד) --- עיצוב זוהר ומזמין --- */}
           <section className="px-5">
             <div 
-                onClick={() => setShowPostcardModal(true)}
+                onClick={() => user ? setShowPostcardModal(true) : onOpenLogin()}
                 className="group relative flex items-center justify-between w-full bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 p-[3px] rounded-[2.2rem] shadow-[0_0_25px_rgba(192,132,252,0.4)] active:scale-95 transition-all overflow-hidden animate-gradient-x cursor-pointer"
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
@@ -838,7 +838,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            {/* --- כפתור יצירת גלויה (מחשב) --- */}
            <div className="mx-1 mt-6">
                 <div
-                   onClick={() => setShowPostcardModal(true)}
+                   onClick={() => user ? setShowPostcardModal(true) : onOpenLogin()}
                    className="relative group flex items-center justify-between bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 rounded-[3rem] p-1.5 shadow-[0_15px_50px_rgba(192,132,252,0.4)] hover:shadow-[0_20px_60px_rgba(192,132,252,0.6)] hover:-translate-y-1 transition-all duration-500 overflow-hidden animate-gradient-x cursor-pointer"
                 >
                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
