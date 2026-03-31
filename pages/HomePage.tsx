@@ -123,6 +123,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [membershipForm, setMembershipForm] = useState({ age: '', occupation: '', address: '', phone: user?.phone || '' });
   const [isLoading, setIsLoading] = useState(true);
 
+  // === תוספות עבור אתגרי חוסן ===
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [challengeForm, setChallengeForm] = useState({ name: '', phone: '', category: '' });
+
   // === מצבים למערכת הסטוריז המקובצים ===
   const [groupedStories, setGroupedStories] = useState<UserStoryGroup[]>([]);
   const [activeGroupIndex, setActiveGroupIndex] = useState<number | null>(null);
@@ -406,6 +410,24 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       } catch (err) { alert("שגיאה בשליחה"); }
   };
 
+  const handleChallengeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!challengeForm.category) {
+      alert("אנא בחרי קטגוריה להשתתפות");
+      return;
+    }
+    const subject = encodeURIComponent(`השתתפות באתגרי חוסן - ${challengeForm.category}`);
+    const body = encodeURIComponent(
+      `אני רוצה להשתתף באתגר: ${challengeForm.category}\n\n` +
+      `שם מלא: ${challengeForm.name}\n` +
+      `טלפון: ${challengeForm.phone}\n\n` +
+      `*** נא לצרף את תמונת האתגר למייל זה לפני השליחה! ***`
+    );
+    window.location.href = `mailto:YA@101.ORG.IL?subject=${subject}&body=${body}`;
+    setShowChallengeModal(false);
+    setChallengeForm({ name: '', phone: '', category: '' });
+  };
+
   const handlePassoverClick = (e: React.MouseEvent) => {
     if (!user) {
         e.preventDefault();
@@ -529,12 +551,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           
           {/* --- שי חוסן (נייד) --- עיצוב זוהר ומקצועי --- */}
           <section className="px-5">
-            <a 
-                href="https://forms.gle/SFzVHywR1enHDJ4k7"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handlePassoverClick}
-                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 p-[3px] rounded-[2.2rem] shadow-[0_0_25px_rgba(244,63,94,0.4)] active:scale-95 transition-all overflow-hidden animate-gradient-x"
+            <div 
+                onClick={() => user ? setShowChallengeModal(true) : onOpenLogin()}
+                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 p-[3px] rounded-[2.2rem] shadow-[0_0_25px_rgba(244,63,94,0.4)] active:scale-95 transition-all overflow-hidden animate-gradient-x cursor-pointer"
             >
                 {/* אפקט הברק שרץ על הכפתור */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
@@ -542,15 +561,15 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <div className="w-full bg-white/10 backdrop-blur-md px-5 py-4 rounded-[2rem] flex items-center justify-between border border-white/20 relative z-10">
                     <div className="flex items-center gap-4">
                         <div className="bg-white/20 p-3.5 rounded-2xl text-white shadow-lg backdrop-blur-sm animate-pulse">
-                            <Gift size={26} strokeWidth={2.5} />
+                            <Target size={26} strokeWidth={2.5} />
                         </div>
                         <div className="text-right">
                             <h3 className="font-black text-2xl text-white leading-none drop-shadow-md flex items-center gap-2">
-                              שי חוסן <Sparkles size={16} className="text-yellow-200" />
+                              שיתוף אתגרי חוסן <Sparkles size={16} className="text-yellow-200" />
                             </h3>
-                            <span className="block mt-1 mb-1.5 text-rose-100 text-lg font-bold leading-none drop-shadow-sm">לחג הפסח</span>
+                            <span className="block mt-1 mb-1.5 text-rose-100 text-lg font-bold leading-none drop-shadow-sm">העלו תמונה וזכו!</span>
                             <p className="text-rose-50 text-[11px] font-bold bg-black/15 px-2.5 py-1 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-sm">
-                               עוד משהו טוב מהתרבות התורנית
+                               שתפו אותנו באתגר שבחרתם
                             </p>
                         </div>
                     </div>
@@ -559,7 +578,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                         <ChevronLeft size={20} />
                     </div>
                 </div>
-            </a>
+            </div>
           </section>
 
           {/* --- כפתור יצירת גלויה (נייד) --- עיצוב זוהר ומזמין --- */}
@@ -788,12 +807,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
            {/* --- שי חוסן (מחשב) --- באנר זוהר ענק לכולם --- */}
            <div className="mx-1 mt-6">
-               <a 
-                  href="https://forms.gle/SFzVHywR1enHDJ4k7"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={handlePassoverClick}
-                  className="relative group flex items-center justify-between bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 rounded-[3rem] p-1.5 shadow-[0_15px_50px_rgba(244,63,94,0.4)] hover:shadow-[0_20px_60px_rgba(244,63,94,0.6)] hover:-translate-y-1 transition-all duration-500 overflow-hidden animate-gradient-x"
+               <div 
+                  onClick={() => user ? setShowChallengeModal(true) : onOpenLogin()}
+                  className="relative group flex items-center justify-between bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 rounded-[3rem] p-1.5 shadow-[0_15px_50px_rgba(244,63,94,0.4)] hover:shadow-[0_20px_60px_rgba(244,63,94,0.6)] hover:-translate-y-1 transition-all duration-500 overflow-hidden animate-gradient-x cursor-pointer"
                >
                   {/* אפקט הברק שרץ על הבאנר */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
@@ -801,22 +817,22 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   <div className="w-full bg-white/10 backdrop-blur-lg px-12 py-8 rounded-[2.6rem] flex items-center justify-between border border-white/30 relative z-10">
                      <div className="flex items-center gap-8">
                         <div className="bg-white/20 p-6 rounded-[1.8rem] text-white shadow-2xl backdrop-blur-md animate-pulse">
-                            <Gift size={44} strokeWidth={2.5} />
+                            <Target size={44} strokeWidth={2.5} />
                         </div>
                         <div>
                             <h3 className="font-black text-5xl text-white tracking-tight drop-shadow-xl flex items-center gap-4">
-                               שי חוסן לחג הפסח <Sparkles className="text-yellow-200" size={36} />
+                               שיתוף אתגרי חוסן <Sparkles className="text-yellow-200" size={36} />
                             </h3>
                             <p className="text-rose-50 text-base font-bold mt-4 bg-black/15 px-5 py-2 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-inner">
-                               עוד משהו טוב מהתרבות התורנית • לחצי כאן לקבלת השי
+                               העלו תמונה וזכו! • לחצי כאן להשתתפות באתגר
                             </p>
                         </div>
                      </div>
                      <div className="bg-white text-rose-500 px-10 py-5 rounded-3xl font-black text-xl shadow-2xl group-hover:bg-rose-50 group-hover:scale-105 transition-all flex items-center gap-3">
-                        {user ? 'לקבלת השי' : 'התחברי לקבלת השי'} <ChevronLeft size={24}/>
+                        להשתתפות <ChevronLeft size={24}/>
                      </div>
                   </div>
-               </a>
+               </div>
            </div>
 
            {/* --- כפתור יצירת גלויה (מחשב) --- */}
@@ -1162,15 +1178,56 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </button>
               <div className="w-full h-full rounded-[1.5rem] overflow-hidden relative">
                 <iframe 
-  src="https://my-web-app--nashi-81205509-24d67.europe-west4.hosted.app" 
-  className="w-full h-full border-none"
-  title="יצירת גלויה אישית"
-  allow="camera; microphone"
-></iframe>
+                  src="https://my-web-app--nashi-81205509-24d67.europe-west4.hosted.app" 
+                  className="w-full h-full border-none"
+                  title="יצירת גלויה אישית"
+                  allow="camera; microphone"
+                ></iframe>
               </div>
            </div>
         </div>
       )}
+
+      {/* 6. מודל אתגרי חוסן (תוספת חדשה) */}
+      {showChallengeModal && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in text-right" dir="rtl">
+              <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 md:p-10 relative shadow-2xl border border-white">
+                  <button onClick={() => setShowChallengeModal(false)} className="absolute top-6 left-6 p-2 hover:bg-rose-50 rounded-full text-slate-400 transition-colors"><X size={20}/></button>
+                  <div className="text-right space-y-6">
+                      <div className="w-14 h-14 bg-rose-50 rounded-[1.2rem] flex items-center justify-center text-rose-400 shadow-sm"><Target size={28}/></div>
+                      <div>
+                          <h2 className="text-2xl font-black text-slate-800">שיתוף אתגרי חוסן</h2>
+                          <p className="text-slate-500 text-sm mt-1 font-medium">העלו תמונה וזכו! בחרו אתגר והשאירו פרטים.</p>
+                      </div>
+                      <form onSubmit={handleChallengeSubmit} className="space-y-4 pt-2">
+                          <input required type="text" placeholder="שם מלא" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-sm text-right outline-none focus:ring-2 focus:ring-rose-200" value={challengeForm.name} onChange={e=>setChallengeForm({...challengeForm, name: e.target.value})}/>
+                          <input required type="tel" placeholder="טלפון" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-sm text-right outline-none focus:ring-2 focus:ring-rose-200" value={challengeForm.phone} onChange={e=>setChallengeForm({...challengeForm, phone: e.target.value})}/>
+                          
+                          <div className="space-y-2 mt-4">
+                              <label className="text-sm font-bold text-slate-700">באיזה אתגר תרצו להשתתף?</label>
+                              <div className="grid grid-cols-2 gap-3">
+                                  {['אתגר האריה 🦁', 'אתגר האפייה 🥖', 'אתגר הגיבור שלי 🦸‍♂️', 'אתגר הגלויה 💌'].map(cat => (
+                                      <label key={cat} className={`flex items-center p-3 border rounded-xl cursor-pointer transition-all ${challengeForm.category === cat ? 'border-rose-400 bg-rose-50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}>
+                                          <input type="radio" name="challengeCategory" value={cat} checked={challengeForm.category === cat} onChange={e => setChallengeForm({...challengeForm, category: e.target.value})} className="hidden" />
+                                          <span className="text-sm font-medium">{cat}</span>
+                                      </label>
+                                  ))}
+                              </div>
+                          </div>
+
+                          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mt-4">
+                              <p className="text-xs font-bold text-yellow-800 text-center leading-relaxed">
+                                  שימו לב: בלחיצה על שליחה תועברו למייל. <br/> חובה לצרף את התמונה למייל שייפתח לפני השליחה!
+                              </p>
+                          </div>
+
+                          <button type="submit" className="w-full mt-4 py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl transition-all active:scale-95">פתיחת מייל לשליחת התמונה</button>
+                      </form>
+                  </div>
+              </div>
+          </div>
+      )}
+
     </div>
   );
 };
