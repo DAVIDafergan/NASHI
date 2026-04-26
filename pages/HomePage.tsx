@@ -154,8 +154,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         
         const nowTime = new Date().getTime();
         const validStories = Array.isArray(storiesRes) ? storiesRes.filter((story: any) => {
-          if (!story.createdAt) return true; 
-          const storyTime = new Date(story.createdAt).getTime();
+          const timeField = story.approvedAt || story.createdAt;
+          if (!timeField) return true; 
+          const storyTime = new Date(timeField).getTime();
           return (nowTime - storyTime) < (24 * 60 * 60 * 1000); 
         }) : [];
 
@@ -650,7 +651,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                        <span className="text-rose-500 font-black text-[10px] uppercase tracking-widest">אשת השבוע</span>
                     </div>
                     <h3 className="text-2xl font-black text-slate-800 mb-1.5">{personality.name}</h3>
-                    {personality.profession && <p className="text-[#d88a99] font-bold text-sm mb-3">{personality.profession}</p>}
+                    {personality.role && <p className="text-[#d88a99] font-bold text-sm mb-3">{personality.role}</p>}
                     <p className="text-slate-500 font-serif text-sm leading-relaxed mb-8 px-2 line-clamp-3">"{personality.motto}"</p>
                     <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 text-rose-500 font-black text-sm border border-rose-100 flex items-center justify-center gap-2 transition-all duration-300">
                        לקריאת הראיון <BookOpen size={16} />
@@ -777,7 +778,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                              <span className="text-rose-500 font-bold text-xs uppercase tracking-widest">אשת השבוע במעגל</span>
                           </div>
                           <h3 className="text-4xl font-black text-slate-800">{personality.name}</h3>
-                          {personality.profession && <p className="text-[#d88a99] font-bold text-lg">{personality.profession}</p>}
+                          {personality.role && <p className="text-[#d88a99] font-bold text-lg">{personality.role}</p>}
                           <p className="text-lg text-slate-500 font-serif leading-relaxed line-clamp-3">"{personality.motto}"</p>
                           <button className="text-rose-500 font-bold text-sm flex items-center gap-2 pt-2 group-hover:translate-x-[-8px] transition-transform duration-300">לקריאת הראיון המלא <ArrowLeft size={16}/></button>
                        </div>
