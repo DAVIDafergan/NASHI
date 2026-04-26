@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
-  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2, Target
+  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
@@ -118,14 +118,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [timeLeft, setTimeLeft] = useState('');
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [showPostcardModal, setShowPostcardModal] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [membershipForm, setMembershipForm] = useState({ age: '', occupation: '', address: '', phone: user?.phone || '' });
   const [isLoading, setIsLoading] = useState(true);
-
-  // === תוספות עבור אתגרי חוסן ===
-  const [showChallengeModal, setShowChallengeModal] = useState(false);
-  const [challengeForm, setChallengeForm] = useState({ name: '', phone: '', category: '' });
 
   // === מצבים למערכת הסטוריז המקובצים ===
   const [groupedStories, setGroupedStories] = useState<UserStoryGroup[]>([]);
@@ -410,31 +405,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       } catch (err) { alert("שגיאה בשליחה"); }
   };
 
-  const handleChallengeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!challengeForm.category) {
-      alert("אנא בחרי קטגוריה להשתתפות");
-      return;
-    }
-    const subject = encodeURIComponent(`השתתפות באתגרי חוסן - ${challengeForm.category}`);
-    const body = encodeURIComponent(
-      `אני רוצה להשתתף באתגר: ${challengeForm.category}\n\n` +
-      `שם מלא: ${challengeForm.name}\n` +
-      `טלפון: ${challengeForm.phone}\n\n` +
-      `*** נא לצרף את תמונת האתגר למייל זה לפני השליחה! ***`
-    );
-    window.location.href = `mailto:Nashi@101.org.il?subject=${subject}&body=${body}`;
-    setShowChallengeModal(false);
-    setChallengeForm({ name: '', phone: '', category: '' });
-  };
-
-  const handlePassoverClick = (e: React.MouseEvent) => {
-    if (!user) {
-        e.preventDefault();
-        onOpenLogin();
-    }
-  };
-
   const renderAdBanner = () => {
     if (!ads || ads.length === 0) return null;
     const ad = ads[currentAdIndex]; 
@@ -482,26 +452,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   return (
     <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#fdfbfb] scroll-smooth" dir="rtl">
       
-      {/* הגדרות קריטיות לאנימציות מתקדמות עבור כפתור שי לחוסן וכפתור הגלויה */}
-      <style>{`
-        @keyframes gradient-x {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        .animate-gradient-x {
-          animation: gradient-x 3s ease infinite;
-          background-size: 200% 200%;
-        }
-        @keyframes shimmer-sweep {
-          0% { transform: translateX(150%) skewX(-15deg); }
-          100% { transform: translateX(-150%) skewX(-15deg); }
-        }
-        .animate-shimmer-sweep {
-          animation: shimmer-sweep 2.5s infinite;
-        }
-      `}</style>
-
-      {/* Background Ambience - Softer, more feminine */}
+      {/* Background Ambience */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,rgba(255,245,247,0.7),transparent_70%)]"></div>
           <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-rose-50/50 rounded-full blur-[100px] opacity-70"></div>
@@ -515,102 +466,36 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         <div className="w-full px-4 md:px-0">{renderAdBanner()}</div>
 
         {/* --- אזור הסטוריז המקובץ --- */}
-        <div className="w-full px-5 pb-4 pt-2 overflow-x-auto no-scrollbar flex gap-5 snap-x">
+        <div className="relative w-full">
+          <div className="w-full px-5 pb-4 pt-2 overflow-x-auto no-scrollbar flex gap-5 snap-x">
             
-           {/* כפתור הוספת סטורי מונפש ויוקרתי */}
+           {/* כפתור הוספת סטורי */}
            <div className="flex flex-col items-center gap-2 shrink-0 snap-center group" onClick={() => user ? setShowAddStoryModal(true) : onOpenLogin()}>
-              <div className="relative w-[72px] h-[72px] rounded-full p-1 flex items-center justify-center bg-white/60 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.05] shadow-[0_4px_20px_rgb(244,63,94,0.08)] border border-rose-100">
+              <div className="relative w-[72px] h-[72px] rounded-full p-1 flex items-center justify-center bg-white/80 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.07] active:scale-95 shadow-[0_4px_20px_rgba(244,63,94,0.1)] border-2 border-rose-100/80">
                  {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" /> : <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${user?.name || 'new'}`} className="w-full h-full rounded-full object-cover opacity-80" />}
-                 
-                 {/* כפתור הפלוס - עדין יותר */}
-                 <div className="absolute bottom-0 right-0 bg-white text-[#d88a99] rounded-full p-[4px] border border-rose-100 shadow-md group-hover:rotate-90 transition-transform duration-300 z-10">
-                    <Plus size={14} strokeWidth={3}/>
+                 <div className="absolute bottom-0 right-0 bg-gradient-to-br from-rose-400 to-pink-500 text-white rounded-full p-[5px] border-2 border-white shadow-md group-hover:rotate-90 transition-transform duration-300 z-10">
+                    <Plus size={12} strokeWidth={3}/>
                  </div>
               </div>
-              
-              <div className="flex flex-col items-center mt-1">
-                 <span className="text-[11px] font-bold text-slate-700 tracking-wide">הוספי רגע</span>
-              </div>
+              <span className="text-[11px] font-bold text-slate-600 tracking-wide">הוספי רגע</span>
            </div>
 
            {/* רשימת המשתמשות שהעלו סטורי */}
            {groupedStories.map((group, idx) => (
-              <div key={group.userId} className="flex flex-col items-center gap-2 shrink-0 snap-center cursor-pointer group-hover" onClick={() => { setActiveGroupIndex(idx); setActiveInnerIndex(0); setStoryProgress(0); }}>
-                 <div className="relative w-[72px] h-[72px] p-[3px] flex items-center justify-center transform active:scale-95 hover:scale-[1.05] transition-all duration-300">
-                    {/* הטבעת שמתפצלת לפי כמות הסטוריז */}
+              <div key={group.userId} className="flex flex-col items-center gap-2 shrink-0 snap-center cursor-pointer" onClick={() => { setActiveGroupIndex(idx); setActiveInnerIndex(0); setStoryProgress(0); }}>
+                 <div className="relative w-[72px] h-[72px] p-[3px] flex items-center justify-center transform active:scale-95 hover:scale-[1.07] transition-all duration-300">
                     <StoryRing count={group.stories.length} />
-                    <img src={group.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${group.user?.name || 'user'}`} className="w-full h-full rounded-full object-cover border-[3px] border-white bg-white relative z-10 shadow-sm" />
+                    <img src={group.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${group.user?.name || 'user'}`} className="w-full h-full rounded-full object-cover border-[3px] border-white bg-white relative z-10 shadow-md" />
                  </div>
-                 <span className="text-[11px] text-slate-600 font-medium w-[72px] truncate text-center">{group.user?.name || 'משתמשת'}</span>
+                 <span className="text-[11px] text-slate-600 font-semibold w-[72px] truncate text-center">{group.user?.name || 'משתמשת'}</span>
               </div>
            ))}
+          </div>
         </div>
 
         {/* --- MOBILE VIEW START --- */}
         <div className="md:hidden space-y-10 mt-2">
           
-          {/* --- שי חוסן (נייד) --- עיצוב זוהר ומקצועי --- */}
-          <section className="px-5">
-            <div 
-                onClick={() => user ? setShowChallengeModal(true) : onOpenLogin()}
-                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 p-[3px] rounded-[2.2rem] shadow-[0_0_25px_rgba(244,63,94,0.4)] active:scale-95 transition-all overflow-hidden animate-gradient-x cursor-pointer"
-            >
-                {/* אפקט הברק שרץ על הכפתור */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
-                
-                <div className="w-full bg-white/10 backdrop-blur-md px-5 py-4 rounded-[2rem] flex items-center justify-between border border-white/20 relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-3.5 rounded-2xl text-white shadow-lg backdrop-blur-sm animate-pulse">
-                            <Target size={26} strokeWidth={2.5} />
-                        </div>
-                        <div className="text-right">
-                            <h3 className="font-black text-2xl text-white leading-none drop-shadow-md flex items-center gap-2">
-                              שיתוף אתגרי חוסן <Sparkles size={16} className="text-yellow-200" />
-                            </h3>
-                            <span className="block mt-1 mb-1.5 text-rose-100 text-lg font-bold leading-none drop-shadow-sm">העלו תמונה וזכו!</span>
-                            <p className="text-rose-50 text-[11px] font-bold bg-black/15 px-2.5 py-1 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-sm">
-                                שתפו אותנו באתגר שבחרתם
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div className="relative z-10 bg-white text-rose-500 p-3 rounded-full shadow-xl group-hover:-translate-x-1 transition-transform">
-                        <ChevronLeft size={20} />
-                    </div>
-                </div>
-            </div>
-          </section>
-
-          {/* --- כפתור יצירת גלויה (נייד) --- עיצוב זוהר ומזמין --- */}
-          <section className="px-5">
-            <div 
-                onClick={() => user ? setShowPostcardModal(true) : onOpenLogin()}
-                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 p-[3px] rounded-[2.2rem] shadow-[0_0_25px_rgba(192,132,252,0.4)] active:scale-95 transition-all overflow-hidden animate-gradient-x cursor-pointer"
-            >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
-                
-                <div className="w-full bg-white/10 backdrop-blur-md px-5 py-4 rounded-[2rem] flex items-center justify-between border border-white/20 relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-3.5 rounded-2xl text-white shadow-lg backdrop-blur-sm animate-pulse">
-                            <ImageIcon size={26} strokeWidth={2.5} />
-                        </div>
-                        <div className="text-right">
-                            <h3 className="font-black text-2xl text-white leading-none drop-shadow-md flex items-center gap-2">
-                              גלויה אישית <Sparkles size={16} className="text-yellow-200" />
-                            </h3>
-                            <span className="block mt-1 mb-1 text-purple-100 text-[13px] font-bold leading-tight drop-shadow-sm">
-                              עצבי ברכה מרגשת, הוסיפי מילים חמות ושתפי עם מי שאת אוהבת!
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div className="relative z-10 bg-white text-purple-500 p-3 rounded-full shadow-xl group-hover:-translate-x-1 transition-transform">
-                        <ChevronLeft size={20} />
-                    </div>
-                </div>
-            </div>
-          </section>
-
           {/* 1. Announcements */}
           {announcements.length > 0 && (
             <section className="px-5">
@@ -680,12 +565,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </section>
 
           {/* 3. Classes - Elegant Grid */}
-          <section className="bg-gradient-to-b from-rose-50/30 to-transparent py-10 -mx-0">
+          <section className="bg-gradient-to-b from-rose-50/40 to-transparent py-10 -mx-0">
             <div className="px-5 mb-6 flex items-center justify-between">
                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
                  <GraduationCap className="text-[#d88a99]" size={22}/> חוגים וסדנאות
                </h3>
-               <Link to="/classes" className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm hover:bg-rose-50 text-slate-400 transition-colors"><ChevronLeft size={18}/></Link>
+               <Link to="/classes" className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors bg-white px-3 py-1.5 rounded-full shadow-sm border border-rose-100">כל החוגים <ChevronLeft size={14}/></Link>
             </div>
             
             <div className="grid grid-cols-2 gap-4 px-5">
@@ -693,14 +578,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <div 
                   key={i} 
                   onClick={() => navigate('/classes')}
-                  className="bg-white/80 backdrop-blur-sm p-3.5 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-rose-50/50 hover:-translate-y-1 active:scale-95 transition-all cursor-pointer"
+                  className="bg-white p-3.5 rounded-[2rem] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-100/80 hover:-translate-y-1 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
                 >
                   <div className="relative h-32 mb-4 overflow-hidden rounded-[1.5rem]">
-                     <img src={cls.image} className="w-full h-full object-cover" alt={cls.title} loading="lazy" />
+                     <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={cls.title} loading="lazy" />
                      <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-slate-700 shadow-sm">{cls.day}</div>
                   </div>
                   <h4 className="font-black text-slate-800 text-sm px-1 leading-snug">{cls.title}</h4>
-                  <p className="text-[11px] text-slate-400 font-medium px-1 mt-1 truncate">{cls.instructor}</p>
+                  <p className="text-[11px] text-rose-400 font-semibold px-1 mt-1 truncate">{cls.instructor}</p>
                 </div>
               ))}
             </div>
@@ -708,12 +593,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
           {/* 4. Daily Inspiration - Soft Quote Card */}
           <section className="px-5">
-            <div className="bg-gradient-to-br from-rose-50 via-white to-pink-50 rounded-[2.5rem] p-8 relative overflow-hidden shadow-[0_8px_30px_rgb(244,63,94,0.05)] border border-white">
-               <Quote className="text-rose-200 mb-5 opacity-60" size={36} />
+            <div className="bg-gradient-to-br from-rose-50 via-white to-pink-50/80 rounded-[2.5rem] p-8 relative overflow-hidden shadow-[0_8px_32px_rgba(244,63,94,0.07)] border border-rose-100/50">
+               <div className="absolute -top-6 -right-6 text-rose-100 opacity-50"><Quote size={80} /></div>
+               <Quote className="text-rose-300 mb-5" size={28} />
                <p className="text-xl font-serif leading-relaxed relative z-10 text-slate-700 font-medium">"{latestInspiration.text}"</p>
-               <div className="mt-8 pt-6 border-t border-rose-100/50 flex justify-between items-center">
-                  <span className="text-[11px] text-slate-400 font-medium uppercase tracking-widest">השראה יומית</span>
-                  <span className="text-sm font-bold text-[#d88a99]">{latestInspiration.author}</span>
+               <div className="mt-8 pt-5 border-t border-rose-100/60 flex justify-between items-center">
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">השראה יומית</span>
+                  <span className="text-sm font-black text-[#d88a99]">{latestInspiration.author}</span>
                </div>
             </div>
           </section>
@@ -722,7 +608,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <section className="space-y-5 pt-4">
             <div className="flex items-center justify-between px-5">
               <h3 className="text-xl font-black text-slate-800">קהילה וחסד</h3>
-              <Link to="/community" className="w-8 h-8 flex items-center justify-center bg-white hover:bg-rose-50 rounded-full shadow-[0_2px_10px_rgb(0,0,0,0.04)] text-slate-400 transition-colors"><ChevronLeft size={18}/></Link>
+              <Link to="/community" className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors bg-white px-3 py-1.5 rounded-full shadow-sm border border-rose-100">לכל השירותים <ChevronLeft size={14}/></Link>
             </div>
             
             <div className="grid grid-cols-2 gap-4 px-5 pb-2">
@@ -730,18 +616,20 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  <div 
                     key={i} 
                     onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })}
-                    className="bg-white/70 backdrop-blur-sm rounded-[2rem] p-3.5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white flex flex-col gap-3 active:scale-95 transition-all cursor-pointer"
+                    className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-100 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
                  >
-                    <img src={item.image} className="w-full h-28 rounded-[1.5rem] object-cover bg-slate-50" alt={item.title} loading="lazy" />
-                    <div className="flex flex-col justify-center overflow-hidden px-1">
+                    <div className="relative h-28 overflow-hidden">
+                      <img src={item.image} className="w-full h-full object-cover bg-slate-50 group-hover:scale-105 transition-transform duration-500" alt={item.title} loading="lazy" />
+                    </div>
+                    <div className="p-3 flex flex-col gap-1">
                        <h4 className="font-black text-slate-800 text-sm truncate w-full">{item.title}</h4>
-                       <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed font-medium">{item.description || 'לפרטים נוספים ודרכי יצירת קשר'}</p>
+                       <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed font-medium">{item.description || 'לפרטים נוספים ודרכי יצירת קשר'}</p>
                     </div>
                  </div>
                ))}
             </div>
             <div className="px-5">
-              <Link to="/community" className="block w-full text-center py-4 bg-white/60 backdrop-blur-sm border border-rose-50 hover:bg-white text-rose-400 rounded-2xl text-sm font-bold shadow-sm transition-colors">לכל השירותים בקהילה</Link>
+              <Link to="/community" className="block w-full text-center py-4 bg-white border border-rose-100 hover:bg-rose-50 text-rose-500 rounded-2xl text-sm font-bold shadow-sm transition-all duration-300 hover:shadow-md">לכל השירותים בקהילה</Link>
             </div>
           </section>
 
@@ -750,22 +638,21 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             <section className="px-5 pb-4">
                <div 
                  onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}
-                 className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-[0_10px_40px_rgb(244,63,94,0.06)] border border-white hover:shadow-xl transition-all cursor-pointer group"
+                 className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-[0_12px_40px_rgba(244,63,94,0.08)] border border-slate-100 hover:shadow-[0_16px_48px_rgba(244,63,94,0.12)] transition-all duration-500 cursor-pointer group"
                >
-                 <div className="h-56 w-full relative">
+                 <div className="h-60 w-full relative">
                     <img src={personality.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={personality.name} loading="lazy" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/30 to-transparent"></div>
                  </div>
-                 <div className="px-8 pb-10 relative -mt-16 text-center z-10">
-                    <div className="inline-block bg-white/90 backdrop-blur-md p-1.5 rounded-full shadow-sm mb-4">
-                       <div className="bg-rose-50 text-rose-400 px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100/50">
-                          אשת השבוע
-                       </div>
+                 <div className="px-8 pb-10 relative -mt-14 text-center z-10">
+                    <div className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-4 py-2 rounded-full shadow-md mb-5 border border-rose-100">
+                       <span className="w-2 h-2 bg-rose-400 rounded-full animate-pulse"></span>
+                       <span className="text-rose-500 font-black text-[10px] uppercase tracking-widest">אשת השבוע</span>
                     </div>
                     <h3 className="text-2xl font-black text-slate-800 mb-1.5">{personality.name}</h3>
                     {personality.profession && <p className="text-[#d88a99] font-bold text-sm mb-3">{personality.profession}</p>}
                     <p className="text-slate-500 font-serif text-sm leading-relaxed mb-8 px-2 line-clamp-3">"{personality.motto}"</p>
-                    <button className="w-full py-4 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-500 font-black text-sm shadow-sm flex items-center justify-center gap-2 transition-colors">
+                    <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 text-rose-500 font-black text-sm border border-rose-100 flex items-center justify-center gap-2 transition-all duration-300">
                        לקריאת הראיון <BookOpen size={16} />
                     </button>
                  </div>
@@ -781,9 +668,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            {/* Welcome / Points Card */}
            <div className="mx-1">
             {user?.isMemberApproved ? (
-               <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-between">
+               <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-[0_8px_32px_rgba(0,0,0,0.05)] flex items-center justify-between">
                  <div className="flex items-center gap-5">
-                     <div className="p-4 bg-gradient-to-br from-rose-100 to-pink-100 rounded-[1.2rem] shadow-inner text-rose-400"><Star fill="currentColor" size={20} /></div>
+                     <div className="p-4 bg-gradient-to-br from-rose-400 to-pink-500 rounded-[1.2rem] shadow-lg text-white"><Star fill="currentColor" size={20} /></div>
                      <div>
                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">הניקוד שצברת בקהילה</p>
                        <span className="font-black text-slate-800 text-3xl tracking-tight">{(user?.points || 0).toLocaleString()} <small className="text-sm opacity-50 font-medium">נק'</small></span>
@@ -791,7 +678,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  </div>
                </div>
             ) : (
-              <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] text-slate-800 flex items-center justify-between gap-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white">
+              <div className="bg-white p-10 rounded-[2.5rem] text-slate-800 flex items-center justify-between gap-6 shadow-[0_8px_32px_rgba(0,0,0,0.05)] border border-slate-100">
                  <div className="text-right space-y-3">
                      <h3 className="text-3xl font-black flex items-center gap-3 text-slate-800">
                         <Sparkles size={24} className="text-rose-400" /> {user?.isMemberRequested ? 'בקשתך בטיפול, איזה התרגשות!' : 'ברוכה הבאה למעגל הנשי'}
@@ -799,85 +686,32 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                      <p className="text-base text-slate-500 font-medium max-w-lg leading-relaxed">המרחב הבטוח שלך להכיר נשות עשייה, לשתף, ללמוד וליהנות מהטבות ייחודיות.</p>
                  </div>
                  {!user?.isMemberRequested && (
-                   <button onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all">הצטרפי למעגל</button>
+                   <button onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">הצטרפי למעגל</button>
                  )}
               </div>
             )}
            </div>
 
-           {/* --- שי חוסן (מחשב) --- באנר זוהר ענק לכולם --- */}
-           <div className="mx-1 mt-6">
-               <div 
-                  onClick={() => user ? setShowChallengeModal(true) : onOpenLogin()}
-                  className="relative group flex items-center justify-between bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 rounded-[3rem] p-1.5 shadow-[0_15px_50px_rgba(244,63,94,0.4)] hover:shadow-[0_20px_60px_rgba(244,63,94,0.6)] hover:-translate-y-1 transition-all duration-500 overflow-hidden animate-gradient-x cursor-pointer"
-               >
-                  {/* אפקט הברק שרץ על הבאנר */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
-
-                  <div className="w-full bg-white/10 backdrop-blur-lg px-12 py-8 rounded-[2.6rem] flex items-center justify-between border border-white/30 relative z-10">
-                     <div className="flex items-center gap-8">
-                        <div className="bg-white/20 p-6 rounded-[1.8rem] text-white shadow-2xl backdrop-blur-md animate-pulse">
-                            <Target size={44} strokeWidth={2.5} />
-                        </div>
-                        <div>
-                            <h3 className="font-black text-5xl text-white tracking-tight drop-shadow-xl flex items-center gap-4">
-                               שיתוף אתגרי חוסן <Sparkles className="text-yellow-200" size={36} />
-                            </h3>
-                            <p className="text-rose-50 text-base font-bold mt-4 bg-black/15 px-5 py-2 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-inner">
-                               העלו תמונה וזכו! • לחצי כאן להשתתפות באתגר
-                            </p>
-                        </div>
-                     </div>
-                     <div className="bg-white text-rose-500 px-10 py-5 rounded-3xl font-black text-xl shadow-2xl group-hover:bg-rose-50 group-hover:scale-105 transition-all flex items-center gap-3">
-                        להשתתפות <ChevronLeft size={24}/>
-                     </div>
-                  </div>
-               </div>
-           </div>
-
-           {/* --- כפתור יצירת גלויה (מחשב) --- */}
-           <div className="mx-1 mt-6">
-                <div
-                   onClick={() => user ? setShowPostcardModal(true) : onOpenLogin()}
-                   className="relative group flex items-center justify-between bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 rounded-[3rem] p-1.5 shadow-[0_15px_50px_rgba(192,132,252,0.4)] hover:shadow-[0_20px_60px_rgba(192,132,252,0.6)] hover:-translate-y-1 transition-all duration-500 overflow-hidden animate-gradient-x cursor-pointer"
-                >
-                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full animate-shimmer-sweep pointer-events-none"></div>
-
-                   <div className="w-full bg-white/10 backdrop-blur-lg px-12 py-8 rounded-[2.6rem] flex items-center justify-between border border-white/30 relative z-10">
-                      <div className="flex items-center gap-8">
-                         <div className="bg-white/20 p-6 rounded-[1.8rem] text-white shadow-2xl backdrop-blur-md animate-pulse">
-                             <ImageIcon size={44} strokeWidth={2.5} />
-                         </div>
-                         <div>
-                             <h3 className="font-black text-5xl text-white tracking-tight drop-shadow-xl flex items-center gap-4">
-                                צרי גלויה אישית <Sparkles className="text-yellow-200" size={36} />
-                             </h3>
-                             <p className="text-purple-50 text-base font-bold mt-4 bg-black/15 px-5 py-2 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-inner">
-                                בחרי עיצוב, הוסיפי ברכה חמה ושתפי עם האהובות שלך • לחצי כאן להתחלה
-                             </p>
-                         </div>
-                      </div>
-                      <div className="bg-white text-purple-500 px-10 py-5 rounded-3xl font-black text-xl shadow-2xl group-hover:bg-purple-50 group-hover:scale-105 transition-all flex items-center gap-3">
-                         ליצירת גלויה <ChevronLeft size={24}/>
-                      </div>
-                   </div>
-                </div>
-            </div>
-
            {/* Hero Slider */}
-           <section className="relative h-[500px] w-full overflow-hidden rounded-[3rem] shadow-[0_20px_50px_rgb(0,0,0,0.1)] mt-8">
+           <section className="relative h-[520px] w-full overflow-hidden rounded-[3rem] shadow-[0_24px_60px_rgba(0,0,0,0.12)] mt-8">
               {displayEvents.map((event, index) => (
                 <div key={index} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
-                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent"></div>
+                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
                    <div className="absolute bottom-12 left-12 right-12 flex justify-between items-end">
                       <div className="text-left max-w-2xl">
-                         <div className="flex items-center gap-2 text-rose-200 text-sm font-medium uppercase tracking-widest mb-4">
-                            <MapPin size={16} /> {event.location}
+                         <div className="flex items-center gap-2 text-rose-300 text-sm font-medium uppercase tracking-widest mb-4">
+                            <MapPin size={14} /> {event.location}
                          </div>
-                         <h2 className="text-5xl font-black text-white leading-tight">{event.title}</h2>
+                         <h2 className="text-5xl font-black text-white leading-tight drop-shadow-md">{event.title}</h2>
                       </div>
-                      <Link to="/events" className="shrink-0 bg-white/20 backdrop-blur-md text-white border border-white/30 px-10 py-4 rounded-2xl font-bold text-base hover:bg-white hover:text-slate-900 transition-all shadow-lg">לפרטים והרשמה</Link>
+                      <Link to="/events" className="shrink-0 bg-white/15 backdrop-blur-md text-white border border-white/40 px-10 py-4 rounded-2xl font-bold text-base hover:bg-white hover:text-slate-900 transition-all duration-300 shadow-lg">לפרטים והרשמה</Link>
+                   </div>
+                   {/* Slide indicator dots */}
+                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                     {displayEvents.map((_, di) => (
+                       <div key={di} className={`rounded-full transition-all duration-500 ${di === currentSlide ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/40'}`}></div>
+                     ))}
                    </div>
                 </div>
               ))}
@@ -889,16 +723,17 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
                   <GraduationCap className="text-[#d88a99]" size={28}/> חוגי המעגל
                 </h3>
-                <Link to="/classes" className="text-slate-500 hover:text-rose-500 font-bold text-sm transition-colors flex items-center gap-1">לכל החוגים <ChevronLeft size={16}/></Link>
+                <Link to="/classes" className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-rose-100 hover:shadow-md">לכל החוגים <ChevronLeft size={14}/></Link>
               </div>
               <div className="grid grid-cols-4 gap-6">
                  {classes.slice(0, 4).map((cls, i) => (
-                   <div key={i} onClick={() => navigate('/classes')} className="bg-white/80 backdrop-blur-sm p-4 rounded-[2rem] border border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgb(244,63,94,0.06)] hover:-translate-y-1 transition-all cursor-pointer group text-center">
+                   <div key={i} onClick={() => navigate('/classes')} className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_rgba(244,63,94,0.08)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group text-center">
                       <div className="overflow-hidden rounded-[1.5rem] mb-4 h-40">
-                         <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                         <img src={cls.image} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700" loading="lazy" />
                       </div>
-                      <h4 className="font-black text-slate-800 text-lg">{cls.title}</h4>
-                      <p className="text-slate-400 text-sm mt-1.5 font-medium">{cls.instructor} <span className="mx-1">•</span> {cls.day}</p>
+                      <h4 className="font-black text-slate-800 text-base">{cls.title}</h4>
+                      <p className="text-rose-400 text-xs mt-2 font-semibold">{cls.instructor}</p>
+                      <p className="text-slate-400 text-xs mt-0.5 font-medium">{cls.day}</p>
                    </div>
                  ))}
               </div>
@@ -910,13 +745,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
                   <HeartHandshake className="text-rose-400" size={28}/> קהילה וחסד
                 </h3>
-                <Link to="/community" className="text-slate-500 hover:text-rose-500 font-bold text-sm transition-colors flex items-center gap-1">לכל השירותים <ChevronLeft size={16}/></Link>
+                <Link to="/community" className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-rose-100 hover:shadow-md">לכל השירותים <ChevronLeft size={14}/></Link>
               </div>
               <div className="grid grid-cols-3 gap-8">
                  {communityItems.slice(0, 3).map((item, i) => (
-                   <div key={i} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white/80 backdrop-blur-sm rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgb(244,63,94,0.06)] hover:-translate-y-1 transition-all cursor-pointer border border-white group">
+                   <div key={i} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_36px_rgba(244,63,94,0.09)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer border border-slate-100 group">
                       <div className="overflow-hidden h-48">
-                         <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                         <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                       </div>
                       <div className="p-6 text-center">
                         <h4 className="font-black text-slate-800 text-xl">{item.title}</h4>
@@ -931,26 +766,27 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            <div className="grid grid-cols-3 gap-10">
               <div className="col-span-2 space-y-10">
                  {personality && (
-                    <section className="bg-gradient-to-br from-white to-rose-50/30 rounded-[3rem] p-10 shadow-[0_10px_40px_rgb(0,0,0,0.04)] border border-white flex items-center gap-10 group cursor-pointer" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}>
+                    <section className="bg-white rounded-[3rem] p-10 shadow-[0_10px_40px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center gap-10 group cursor-pointer hover:shadow-[0_16px_50px_rgba(244,63,94,0.1)] transition-all duration-500" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}>
                        <div className="shrink-0 relative">
-                          <div className="absolute inset-0 bg-rose-200 blur-2xl opacity-40 rounded-full group-hover:opacity-60 transition-opacity"></div>
-                          <img src={personality.image} className="w-64 h-64 rounded-[2.5rem] object-cover shadow-lg border-8 border-white relative z-10 group-hover:scale-105 transition-transform duration-700" alt="" loading="lazy" />
+                          <div className="absolute inset-0 bg-rose-200 blur-3xl opacity-30 rounded-full group-hover:opacity-50 transition-opacity duration-500"></div>
+                          <img src={personality.image} className="w-64 h-64 rounded-[2.5rem] object-cover shadow-xl border-4 border-white relative z-10 group-hover:scale-[1.03] transition-transform duration-700" alt="" loading="lazy" />
                        </div>
                        <div className="text-right space-y-4">
-                          <div className="inline-block bg-white px-4 py-1.5 rounded-full shadow-sm border border-rose-50">
-                             <span className="text-rose-400 font-bold text-xs uppercase tracking-widest">אשת השבוע במעגל</span>
+                          <div className="inline-flex items-center gap-2 bg-rose-50 px-4 py-1.5 rounded-full border border-rose-100">
+                             <span className="w-2 h-2 bg-rose-400 rounded-full animate-pulse"></span>
+                             <span className="text-rose-500 font-bold text-xs uppercase tracking-widest">אשת השבוע במעגל</span>
                           </div>
                           <h3 className="text-4xl font-black text-slate-800">{personality.name}</h3>
                           {personality.profession && <p className="text-[#d88a99] font-bold text-lg">{personality.profession}</p>}
                           <p className="text-lg text-slate-500 font-serif leading-relaxed line-clamp-3">"{personality.motto}"</p>
-                          <button className="text-rose-500 font-bold text-sm flex items-center gap-2 pt-2 group-hover:translate-x-[-8px] transition-transform">לקריאת הראיון המלא <ArrowLeft size={16}/></button>
+                          <button className="text-rose-500 font-bold text-sm flex items-center gap-2 pt-2 group-hover:translate-x-[-8px] transition-transform duration-300">לקריאת הראיון המלא <ArrowLeft size={16}/></button>
                        </div>
                     </section>
                  )}
               </div>
               <div className="space-y-8">
                  {/* Inspiration Desktop */}
-                 <div className="bg-gradient-to-br from-rose-100 to-[#e8a5b2] rounded-[2.5rem] p-8 text-slate-800 shadow-[0_10px_30px_rgb(232,165,178,0.2)] relative overflow-hidden">
+                 <div className="bg-gradient-to-br from-rose-100 to-[#e8a5b2] rounded-[2.5rem] p-8 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
                     <div className="absolute -top-10 -right-10 text-white/20"><Quote size={120} /></div>
                     <div className="relative z-10">
                        <Quote className="text-white mb-6" size={28} />
@@ -1167,65 +1003,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </div>
            </div>
         </div>
-      )}
-
-      {/* 5. מודל יצירת גלויה (Iframe) */}
-      {showPostcardModal && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in text-right">
-           <div className="bg-white rounded-[2.5rem] w-full max-w-5xl h-[90vh] md:h-[85vh] p-2 sm:p-4 relative shadow-2xl flex flex-col border border-white overflow-hidden">
-              <button onClick={() => setShowPostcardModal(false)} className="absolute top-4 left-4 p-2 bg-slate-100 hover:bg-rose-50 rounded-full text-slate-600 transition-colors z-10 shadow-md">
-                 <X size={24}/>
-              </button>
-              <div className="w-full h-full rounded-[1.5rem] overflow-hidden relative">
-                <iframe 
-                  src="https://my-web-app--nashi-81205509-24d67.europe-west4.hosted.app" 
-                  className="w-full h-full border-none"
-                  title="יצירת גלויה אישית"
-                  allow="camera; microphone"
-                ></iframe>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* 6. מודל אתגרי חוסן (תוספת חדשה) */}
-      {showChallengeModal && (
-          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in text-right" dir="rtl">
-              <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 md:p-10 relative shadow-2xl border border-white">
-                  <button onClick={() => setShowChallengeModal(false)} className="absolute top-6 left-6 p-2 hover:bg-rose-50 rounded-full text-slate-400 transition-colors"><X size={20}/></button>
-                  <div className="text-right space-y-6">
-                      <div className="w-14 h-14 bg-rose-50 rounded-[1.2rem] flex items-center justify-center text-rose-400 shadow-sm"><Target size={28}/></div>
-                      <div>
-                          <h2 className="text-2xl font-black text-slate-800">שיתוף אתגרי חוסן</h2>
-                          <p className="text-slate-500 text-sm mt-1 font-medium">העלו תמונה וזכו! בחרו אתגר והשאירו פרטים.</p>
-                      </div>
-                      <form onSubmit={handleChallengeSubmit} className="space-y-4 pt-2">
-                          <input required type="text" placeholder="שם מלא" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-sm text-right outline-none focus:ring-2 focus:ring-rose-200" value={challengeForm.name} onChange={e=>setChallengeForm({...challengeForm, name: e.target.value})}/>
-                          <input required type="tel" placeholder="טלפון" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-sm text-right outline-none focus:ring-2 focus:ring-rose-200" value={challengeForm.phone} onChange={e=>setChallengeForm({...challengeForm, phone: e.target.value})}/>
-                          
-                          <div className="space-y-2 mt-4">
-                              <label className="text-sm font-bold text-slate-700">באיזה אתגר תרצו להשתתף?</label>
-                              <div className="grid grid-cols-2 gap-3">
-                                  {['אתגר האריה 🦁', 'אתגר האפייה 🥖', 'אתגר הגיבור שלי 🦸‍♂️', 'אתגר הגלויה 💌'].map(cat => (
-                                      <label key={cat} className={`flex items-center p-3 border rounded-xl cursor-pointer transition-all ${challengeForm.category === cat ? 'border-rose-400 bg-rose-50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}>
-                                          <input type="radio" name="challengeCategory" value={cat} checked={challengeForm.category === cat} onChange={e => setChallengeForm({...challengeForm, category: e.target.value})} className="hidden" />
-                                          <span className="text-sm font-medium">{cat}</span>
-                                      </label>
-                                  ))}
-                              </div>
-                          </div>
-
-                          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mt-4">
-                              <p className="text-xs font-bold text-yellow-800 text-center leading-relaxed">
-                                  שימו לב: בלחיצה על שליחה תועברו למייל. <br/> חובה לצרף את התמונה למייל שייפתח לפני השליחה!
-                              </p>
-                          </div>
-
-                          <button type="submit" className="w-full mt-4 py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl transition-all active:scale-95">פתיחת מייל לשליחת התמונה</button>
-                      </form>
-                  </div>
-              </div>
-          </div>
       )}
 
     </div>

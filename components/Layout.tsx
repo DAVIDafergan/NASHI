@@ -70,7 +70,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
       {/* --- Header --- */}
       <header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b ${
-            scrolled ? 'bg-white/80 backdrop-blur-xl border-white/40 h-16 shadow-sm shadow-rose-100/30' : 'bg-white/30 border-transparent h-20'
+            scrolled ? 'bg-white/90 backdrop-blur-xl border-slate-100/80 h-16 shadow-sm' : 'bg-white/40 backdrop-blur-md border-transparent h-20'
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between gap-4">
@@ -97,16 +97,16 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
             </div>
           </div>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1 bg-white/40 backdrop-blur-md px-1.5 py-1 rounded-full border border-white/60 shadow-sm">
+            {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-1 bg-white/60 backdrop-blur-md px-1.5 py-1 rounded-full border border-slate-200/60 shadow-sm">
             {navLinks.map((link) => (
               <Link 
                 key={link.path}
                 to={link.path} 
                 className={`px-4 py-2 rounded-full text-[11px] lg:text-xs font-bold transition-all duration-300 ${
                     isActive(link.path) 
-                    ? 'bg-white text-rose-600 shadow-sm shadow-rose-100' 
-                    : 'text-slate-500 hover:text-rose-500 hover:bg-white/50'
+                    ? 'bg-white text-rose-600 shadow-sm' 
+                    : 'text-slate-500 hover:text-rose-500 hover:bg-white/70'
                 }`}
               >
                 {link.label}
@@ -144,21 +144,23 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                 </button>
 
                 {isProfileMenuOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-48 md:w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl shadow-rose-100/50 border border-white py-2 animate-fade-in-up origin-top-left z-[60]">
-                    <div className="md:hidden px-4 py-2 border-b border-slate-50 mb-1">
+                  <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.12)] border border-slate-100 py-2 animate-fade-in-up origin-top-left z-[60]">
+                    <div className="md:hidden px-4 py-3 border-b border-slate-50 mb-1">
                         <p className="text-sm font-bold text-slate-800">{user.name}</p>
-                        <p className="text-xs text-slate-500">{user.email}</p>
+                        <p className="text-xs text-slate-400">{user.email}</p>
                     </div>
-                    <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-500 transition-colors"><UserIcon size={16} />האזור האישי</Link>
-                    {user.isAdmin && <Link to="/admin" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-500 transition-colors"><ShieldCheck size={16} />ניהול מערכת</Link>}
-                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-colors mt-1"><LogOut size={16} />התנתקות</button>
+                    <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-500 transition-colors rounded-lg mx-1"><UserIcon size={15} />האזור האישי</Link>
+                    {user.isAdmin && <Link to="/admin" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-500 transition-colors rounded-lg mx-1"><ShieldCheck size={15} />ניהול מערכת</Link>}
+                    <div className="border-t border-slate-50 mt-1 pt-1">
+                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-colors rounded-lg mx-1"><LogOut size={15} />התנתקות</button>
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
               <button 
                 onClick={onOpenLogin}
-                className="bg-gradient-to-r from-rose-500 to-pink-600 text-white px-4 md:px-5 py-1.5 md:py-2 rounded-full font-bold text-[11px] md:text-xs hover:shadow-lg hover:shadow-rose-300 hover:-translate-y-0.5 transition-all shadow-md"
+                className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-full font-bold text-[11px] md:text-xs hover:shadow-lg hover:shadow-rose-200 hover:-translate-y-0.5 transition-all duration-300 shadow-md"
               >
                 כניסה
               </button>
@@ -176,7 +178,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
       </main>
       
       {/* --- Mobile Bottom Navigation --- */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-rose-100/50 pb-safe pt-1 px-4 z-40 flex justify-between items-center h-[65px] shadow-[0_-5px_20px_rgba(251,113,133,0.1)] rounded-t-[20px]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-100 pb-safe pt-1 px-4 z-40 flex justify-between items-center h-[65px] shadow-[0_-8px_30px_rgba(0,0,0,0.06)] rounded-t-[24px]">
          {mobileNavLinks.map((link) => {
              const active = isActive(link.path);
              const onClick = (link.path === '/profile' && !user) ? handleMobileProfileClick : undefined;
@@ -192,11 +194,11 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                 >
                     <div className={`
                         p-1.5 rounded-full transition-all duration-300
-                        ${active ? 'bg-gradient-to-tr from-rose-50 to-pink-50 text-rose-500 -translate-y-1 shadow-sm' : 'text-slate-400 hover:text-rose-400'}
+                        ${active ? 'bg-rose-50 text-rose-500 -translate-y-1' : 'text-slate-400 hover:text-rose-400'}
                     `}>
                         {link.icon}
                     </div>
-                    <span className={`text-[9px] font-bold transition-all ${active ? 'text-rose-500 opacity-100' : 'text-slate-400 opacity-70'}`}>
+                    <span className={`text-[9px] font-bold transition-all ${active ? 'text-rose-500' : 'text-slate-400'}`}>
                         {link.label}
                     </span>
                 </Wrapper>
