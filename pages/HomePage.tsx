@@ -636,26 +636,25 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
           {/* 6. Personality of the Week */}
           {personality && (
-            <section className="px-5 pb-4">
+            <section className="px-5 pb-6">
                <div 
                  onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}
-                 className="relative bg-white rounded-[2.5rem] overflow-hidden shadow-[0_12px_40px_rgba(244,63,94,0.08)] border border-slate-100 hover:shadow-[0_16px_48px_rgba(244,63,94,0.12)] transition-all duration-500 cursor-pointer group"
+                 className="relative rounded-[2.5rem] overflow-hidden shadow-[0_12px_40px_rgba(244,63,94,0.14)] cursor-pointer group active:scale-[0.98] transition-all duration-300"
                >
-                 <div className="h-60 w-full relative">
+                 <div className="relative h-72 overflow-hidden">
                     <img src={personality.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={personality.name} loading="lazy" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/30 to-transparent"></div>
-                 </div>
-                 <div className="px-8 pb-10 relative -mt-14 text-center z-10">
-                    <div className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-4 py-2 rounded-full shadow-md mb-5 border border-rose-100">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                    <div className="absolute top-5 right-5 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-rose-100">
                        <span className="w-2 h-2 bg-rose-400 rounded-full animate-pulse"></span>
                        <span className="text-rose-500 font-black text-[10px] uppercase tracking-widest">אשת השבוע</span>
                     </div>
-                    <h3 className="text-2xl font-black text-slate-800 mb-1.5">{personality.name}</h3>
-                    {personality.role && <p className="text-[#d88a99] font-bold text-sm mb-3">{personality.role}</p>}
-                    <p className="text-slate-500 font-serif text-sm leading-relaxed mb-8 px-2 line-clamp-3">"{personality.motto}"</p>
-                    <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 text-rose-500 font-black text-sm border border-rose-100 flex items-center justify-center gap-2 transition-all duration-300">
-                       לקריאת הראיון <BookOpen size={16} />
-                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 p-7 text-right">
+                       <h3 className="text-2xl font-black text-white leading-tight drop-shadow-sm">{personality.name}</h3>
+                       {personality.role && <p className="text-rose-200 font-semibold text-sm mt-1.5">{personality.role}</p>}
+                       <div className="mt-4 flex items-center gap-1.5 justify-end text-white/75 text-xs font-bold">
+                          לקריאת הראיון המלא <ArrowLeft size={13}/>
+                       </div>
+                    </div>
                  </div>
                </div>
             </section>
@@ -779,7 +778,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                           </div>
                           <h3 className="text-4xl font-black text-slate-800">{personality.name}</h3>
                           {personality.role && <p className="text-[#d88a99] font-bold text-lg">{personality.role}</p>}
-                          <p className="text-lg text-slate-500 font-serif leading-relaxed line-clamp-3">"{personality.motto}"</p>
                           <button className="text-rose-500 font-bold text-sm flex items-center gap-2 pt-2 group-hover:translate-x-[-8px] transition-transform duration-300">לקריאת הראיון המלא <ArrowLeft size={16}/></button>
                        </div>
                     </section>
