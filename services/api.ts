@@ -320,7 +320,8 @@ export const api = {
     async getPersonality() {
         const res = await safeFetch(`${API_URL}/personality`);
         const data = await res.json();
-        return (data && data.questions) ? data : { ...data, questions: [] };
+        if (!data || !data.name) return null;
+        return data.questions ? data : { ...data, questions: [] };
     },
 
     async getAllPersonalities(): Promise<PersonalityProfile[]> {
