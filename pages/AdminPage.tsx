@@ -50,6 +50,12 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'stories' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast' | 'messages' | 'tickets'>('summary');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Pagination states (20 items per page)
+  const ITEMS_PER_PAGE = 20;
+  const [usersPage, setUsersPage] = useState(1);
+  const [eventsPage, setEventsPage] = useState(1);
+  const [classesPage, setClassesPage] = useState(1);
   
   // תאריך לצורך סיכום חודשי
   const [viewDate, setViewDate] = useState(new Date());
@@ -520,7 +526,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             { id: 'personality', label: 'אשת השבוע', icon: <Sparkles size={16} /> },
             { id: 'settings', label: 'הגדרות', icon: <Settings size={16} /> },
         ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-lg scale-105' : 'hover:bg-slate-50 text-slate-500'}`}>
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); setUsersPage(1); setEventsPage(1); setClassesPage(1); }} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-lg scale-105' : 'hover:bg-slate-50 text-slate-500'}`}>
               {tab.icon} {tab.label}
               {tab.id === 'stories' && pendingStories.length > 0 && <span className="bg-rose-500 text-white text-[10px] px-1.5 rounded-full">{pendingStories.length}</span>}
             </button>
@@ -536,7 +542,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             placeholder="חיפוש חופשי..." 
             className="w-full pr-12 pl-4 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-rose-200 text-right"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setUsersPage(1); }}
           />
         </div>
       )}
@@ -1119,76 +1125,112 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
 
         {/* טאב משתמשים */}
-        {activeTab === 'users' && (
-          <div className="bg-white rounded-[3rem] shadow-sm overflow-hidden border border-slate-100 animate-fade-in overflow-x-auto">
-            <table className="w-full text-right min-w-[500px]">
-              <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
-                <tr><th className="p-6 text-right">שם</th><th className="p-6 text-right">ניקוד</th><th className="p-6 text-right">סטטוס</th><th className="p-6 text-right">פעולות</th></tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {apiUsers.filter(u => (u.name || '').includes(searchTerm)).map(u => (
-                  <tr key={u._id || u.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-6 font-bold">{u.name}<br/><span className="text-[10px] text-slate-400">{u.email}</span></td>
-                    <td className="p-6 font-black text-rose-500">{u.points}</td>
-                    <td className="p-6 text-xs">{u.isMemberApproved ? 'חברת מעגל' : 'רשומה'}</td>
-                    <td className="p-6 flex gap-2">
-                        <button onClick={() => sendPersonalBenefit(u.email)} className="p-2 bg-yellow-50 text-yellow-600 rounded-xl hover:scale-110 transition-transform" title="שליחת לינק להטבה אישית"><Award size={18}/></button>
-                        <button onClick={() => handleDelete(u._id || u.id, 'user', u.name)} className="p-2 bg-red-50 text-red-600 rounded-xl hover:scale-110 transition-transform"><Trash2 size={18}/></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {activeTab === 'users' && (() => {
+          const filteredUsers = apiUsers.filter(u => (u.name || '').includes(searchTerm) || (u.email || '').includes(searchTerm));
+          const totalUsersPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
+          const pagedUsers = filteredUsers.slice((usersPage - 1) * ITEMS_PER_PAGE, usersPage * ITEMS_PER_PAGE);
+          return (
+            <div className="space-y-4 animate-fade-in">
+              <div className="bg-white rounded-[3rem] shadow-sm overflow-hidden border border-slate-100 overflow-x-auto">
+                <table className="w-full text-right min-w-[500px]">
+                  <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
+                    <tr><th className="p-6 text-right">שם</th><th className="p-6 text-right">ניקוד</th><th className="p-6 text-right">סטטוס</th><th className="p-6 text-right">פעולות</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pagedUsers.map(u => (
+                      <tr key={u._id || u.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-6 font-bold">{u.name}<br/><span className="text-[10px] text-slate-400">{u.email}</span></td>
+                        <td className="p-6 font-black text-rose-500">{u.points}</td>
+                        <td className="p-6 text-xs">{u.isMemberApproved ? 'חברת מעגל' : 'רשומה'}</td>
+                        <td className="p-6 flex gap-2">
+                            <button onClick={() => sendPersonalBenefit(u.email)} className="p-2 bg-yellow-50 text-yellow-600 rounded-xl hover:scale-110 transition-transform" title="שליחת לינק להטבה אישית"><Award size={18}/></button>
+                            <button onClick={() => handleDelete(u._id || u.id, 'user', u.name)} className="p-2 bg-red-50 text-red-600 rounded-xl hover:scale-110 transition-transform"><Trash2 size={18}/></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {totalUsersPages > 1 && (
+                <div className="flex items-center justify-center gap-3 py-2">
+                  <button aria-label="עמוד קודם" onClick={() => setUsersPage(p => Math.max(1, p - 1))} disabled={usersPage === 1} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronRight size={18}/></button>
+                  <span className="text-sm font-bold text-slate-600">{usersPage} / {totalUsersPages}</span>
+                  <button aria-label="עמוד הבא" onClick={() => setUsersPage(p => Math.min(totalUsersPages, p + 1))} disabled={usersPage === totalUsersPages} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronLeft size={18}/></button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* טאב אירועים */}
-        {activeTab === 'events' && (
-          <div className="space-y-6 animate-fade-in">
-            <button onClick={() => { setEventForm({ title: '', location: '', category: 'מוזיקה', image: '', date: '', time: '', isHero: false, price: 0, earlyBirdPrice: 0, earlyBirdEndDate: '', sessions: [], notes: '', targetAges: '', hebrewDate: '', ticketLink: '', logo: '' }); setIsEventModalOpen(true); }} className="w-full md:w-auto bg-rose-600 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> אירוע חדש</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {apiEvents.map(ev => (
-                <div key={ev._id || ev.id} className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100 animate-fade-in-up">
-                  {ev.isHero && <Sparkles className="text-yellow-400 mb-2 animate-pulse" size={16}/>}
-                  <img src={ev.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-slate-800 text-right">{ev.title}</h4>
-                  <div className="flex justify-between items-center mt-4">
-                    <span className="text-[10px] text-slate-400">{ev.location}</span>
-                    <div className="flex gap-2">
-                      <button className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => { setEventForm(ev); setIsEventModalOpen(true); }}><Edit size={18}/></button>
-                      <button className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDelete(ev._id || ev.id, 'event', ev.title)}><Trash2 size={18}/></button>
+        {activeTab === 'events' && (() => {
+          const totalEventsPages = Math.max(1, Math.ceil(apiEvents.length / ITEMS_PER_PAGE));
+          const pagedEvents = apiEvents.slice((eventsPage - 1) * ITEMS_PER_PAGE, eventsPage * ITEMS_PER_PAGE);
+          return (
+            <div className="space-y-6 animate-fade-in">
+              <button onClick={() => { setEventForm({ title: '', location: '', category: 'מוזיקה', image: '', date: '', time: '', isHero: false, price: 0, earlyBirdPrice: 0, earlyBirdEndDate: '', sessions: [], notes: '', targetAges: '', hebrewDate: '', ticketLink: '', logo: '' }); setIsEventModalOpen(true); }} className="w-full md:w-auto bg-rose-600 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> אירוע חדש</button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pagedEvents.map(ev => (
+                  <div key={ev._id || ev.id} className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100 animate-fade-in-up">
+                    {ev.isHero && <Sparkles className="text-yellow-400 mb-2 animate-pulse" size={16}/>}
+                    <img src={ev.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
+                    <h4 className="font-black text-slate-800 text-right">{ev.title}</h4>
+                    <div className="flex justify-between items-center mt-4">
+                      <span className="text-[10px] text-slate-400">{ev.location}</span>
+                      <div className="flex gap-2">
+                        <button className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => { setEventForm(ev); setIsEventModalOpen(true); }}><Edit size={18}/></button>
+                        <button className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDelete(ev._id || ev.id, 'event', ev.title)}><Trash2 size={18}/></button>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+              {totalEventsPages > 1 && (
+                <div className="flex items-center justify-center gap-3 py-2">
+                  <button aria-label="עמוד קודם" onClick={() => setEventsPage(p => Math.max(1, p - 1))} disabled={eventsPage === 1} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronRight size={18}/></button>
+                  <span className="text-sm font-bold text-slate-600">{eventsPage} / {totalEventsPages}</span>
+                  <button aria-label="עמוד הבא" onClick={() => setEventsPage(p => Math.min(totalEventsPages, p + 1))} disabled={eventsPage === totalEventsPages} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronLeft size={18}/></button>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* טאב חוגים */}
-        {activeTab === 'classes' && (
-          <div className="space-y-6 animate-fade-in">
-            <button onClick={() => { setClassForm({ title: '', instructor: '', contactPhone: '', registrationPhone: '', day: 'ראשון', time: '', location: '', price: 0, ageGroup: '', gender: 'נשים', image: '' }); setIsClassModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> חוג חדש</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
-              {apiClasses.map(c => (
-                <div key={c._id || c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up shadow-sm">
-                  <img src={c.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-lg">{c.title}</h4>
-                  <p className="text-xs text-slate-500 font-bold">{c.instructor} | {c.gender}</p>
-                  <p className="text-[10px] text-slate-400 mt-1">{c.day} ב-{c.time} | {c.location}</p>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-[10px] text-blue-500 font-black flex items-center gap-1"><Phone size={10}/> הרשמה: {c.registrationPhone}</p>
-                    <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Users size={10}/> מדריכה: {c.contactPhone}</p>
+        {activeTab === 'classes' && (() => {
+          const totalClassesPages = Math.max(1, Math.ceil(apiClasses.length / ITEMS_PER_PAGE));
+          const pagedClasses = apiClasses.slice((classesPage - 1) * ITEMS_PER_PAGE, classesPage * ITEMS_PER_PAGE);
+          return (
+            <div className="space-y-6 animate-fade-in">
+              <button onClick={() => { setClassForm({ title: '', instructor: '', contactPhone: '', registrationPhone: '', day: 'ראשון', time: '', location: '', price: 0, ageGroup: '', gender: 'נשים', image: '' }); setIsClassModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> חוג חדש</button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
+                {pagedClasses.map(c => (
+                  <div key={c._id || c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up shadow-sm">
+                    <img src={c.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
+                    <h4 className="font-black text-lg">{c.title}</h4>
+                    <p className="text-xs text-slate-500 font-bold">{c.instructor} | {c.gender}</p>
+                    <p className="text-[10px] text-slate-400 mt-1">{c.day} ב-{c.time} | {c.location}</p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-[10px] text-blue-500 font-black flex items-center gap-1"><Phone size={10}/> הרשמה: {c.registrationPhone}</p>
+                      <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Users size={10}/> מדריכה: {c.contactPhone}</p>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <button onClick={() => { setClassForm(c); setIsClassModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><Edit size={16}/></button>
+                      <button onClick={() => handleDelete(c._id || c.id, 'class', c.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                    </div>
                   </div>
-                  <div className="flex gap-2 mt-4">
-                    <button onClick={() => { setClassForm(c); setIsClassModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><Edit size={16}/></button>
-                    <button onClick={() => handleDelete(c._id || c.id, 'class', c.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
-                  </div>
+                ))}
+              </div>
+              {totalClassesPages > 1 && (
+                <div className="flex items-center justify-center gap-3 py-2">
+                  <button aria-label="עמוד קודם" onClick={() => setClassesPage(p => Math.max(1, p - 1))} disabled={classesPage === 1} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronRight size={18}/></button>
+                  <span className="text-sm font-bold text-slate-600">{classesPage} / {totalClassesPages}</span>
+                  <button aria-label="עמוד הבא" onClick={() => setClassesPage(p => Math.min(totalClassesPages, p + 1))} disabled={classesPage === totalClassesPages} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronLeft size={18}/></button>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* טאב הגרלות */}
         {activeTab === 'lotteries' && (
