@@ -94,13 +94,10 @@ const createSimpleRateLimiter = (limit, windowMs) => {
 
 const zodiacWheelRateLimit = createSimpleRateLimiter(10, 60 * 1000);
 
-const validateZodiacWinChanceBudget = async ({ winChance, isActive = true, excludeId = null }) => {
-    if (!isActive) return true;
-    const query = { isActive: true };
-    if (excludeId) query._id = { $ne: excludeId };
-    const existing = await ZodiacWheelPrize.find(query).select('winChance');
-    const currentSum = existing.reduce((sum, item) => sum + (Number(item.winChance) || 0), 0);
-    return (currentSum + (Number(winChance) || 0)) <= 100;
+const normalizeChance = (value, fallback = 20) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallback;
+    return Math.max(0, Math.min(100, numeric));
 };
 
 // ================= 1. אישורים (APPROVALS) =================
@@ -350,6 +347,13 @@ router.get('/zodiac-wheel/prizes', zodiacWheelRateLimit, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/zodiac-wheel/config', zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const settings = await getPointsConfig();
+        res.json({ totalWinChance: normalizeChance(settings.zodiacWheelWinChance, 20) });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/zodiac-wheel/status', authenticate, zodiacWheelRateLimit, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('lastZodiacWheelSpinAt');
@@ -383,27 +387,27 @@ router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req
             });
         }
 
-        const prizes = await ZodiacWheelPrize
-            .find({ isActive: true, stock: { $gt: 0 }, winChance: { $gt: 0 } })
-            .sort({ createdAt: 1 });
+        const settings = await getPointsConfig();
+        const totalWinningChance = normalizeChance(settings.zodiacWheelWinChance, 20);
 
-        const totalWinningChance = Math.min(100, prizes.reduce((acc, p) => acc + (p.winChance || 0), 0));
+        const prizes = await ZodiacWheelPrize
+            .find({ isActive: true, stock: { $gt: 0 } })
+            .sort({ createdAt: 1 });
         const randomRoll = Math.random() * 100;
 
         let won = false;
         let selectedPrize = null;
 
         if (prizes.length > 0 && randomRoll < totalWinningChance) {
-            let weightedRoll = Math.random() * totalWinningChance;
-            for (const prize of prizes) {
-                weightedRoll -= (prize.winChance || 0);
-                if (weightedRoll <= 0) {
-                    selectedPrize = await ZodiacWheelPrize.findOneAndUpdate(
-                        { _id: prize._id, stock: { $gt: 0 } },
-                        { $inc: { stock: -1 } },
-                        { new: true }
-                    );
-                    if (selectedPrize) won = true;
+            const shuffled = [...prizes].sort(() => Math.random() - 0.5);
+            for (const prize of shuffled) {
+                selectedPrize = await ZodiacWheelPrize.findOneAndUpdate(
+                    { _id: prize._id, stock: { $gt: 0 } },
+                    { $inc: { stock: -1 } },
+                    { new: true }
+                );
+                if (selectedPrize) {
+                    won = true;
                     break;
                 }
             }
@@ -435,26 +439,23 @@ router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req
 
 router.get('/admin/zodiac-wheel/stats', zodiacWheelRateLimit, authenticate, isAdmin, async (req, res) => {
     try {
-        const [activePrizes, totalSpins, winningSpins] = await Promise.all([
-            ZodiacWheelPrize.find({ isActive: true }).select('winChance'),
+        const [settings, totalSpins, winningSpins] = await Promise.all([
+            getPointsConfig(),
             ZodiacWheelSpin.countDocuments(),
             ZodiacWheelSpin.find({ won: true })
-                .populate('userId', 'name email')
+                .populate('userId', 'name email phone')
                 .sort({ createdAt: -1 })
-                .limit(200)
         ]);
 
-        const totalWinChance = Math.min(
-            100,
-            activePrizes.reduce((sum, item) => sum + (Number(item.winChance) || 0), 0)
-        );
+        const totalWinChance = normalizeChance(settings.zodiacWheelWinChance, 20);
 
         const winners = winningSpins.map(spin => ({
             _id: spin._id,
             createdAt: spin.createdAt,
             prizeTitle: spin.prizeTitle || 'הטבה מיוחדת',
             userName: spin.userId?.name || 'משתמש לא זמין',
-            userEmail: spin.userId?.email || ''
+            userEmail: spin.userId?.email || '',
+            userPhone: spin.userId?.phone || ''
         }));
 
         res.json({
@@ -472,16 +473,32 @@ router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateL
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/admin/zodiac-wheel/settings', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const settings = await getPointsConfig();
+        res.json({ totalWinChance: normalizeChance(settings.zodiacWheelWinChance, 20) });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/admin/zodiac-wheel/settings', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const totalWinChance = normalizeChance(req.body.totalWinChance, 20);
+        const settings = await getPointsConfig();
+        settings.zodiacWheelWinChance = totalWinChance;
+        await settings.save();
+        res.json({ totalWinChance });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
     try {
-        const isWithinBudget = await validateZodiacWinChanceBudget({
-            winChance: req.body.winChance,
+        const payload = {
+            title: req.body.title,
+            description: req.body.description || '',
+            stock: Math.max(0, Number(req.body.stock) || 0),
             isActive: req.body.isActive !== false
-        });
-        if (!isWithinBudget) {
-            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
-        }
-        const prize = await new ZodiacWheelPrize(req.body).save();
+        };
+        const prize = await new ZodiacWheelPrize(payload).save();
         res.status(201).json(prize);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -490,15 +507,13 @@ router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelR
     try {
         const current = await ZodiacWheelPrize.findById(req.params.id);
         if (!current) return res.status(404).json({ error: 'Prize not found' });
-        const isWithinBudget = await validateZodiacWinChanceBudget({
-            winChance: req.body.winChance ?? current.winChance,
-            isActive: req.body.isActive ?? current.isActive,
-            excludeId: req.params.id
-        });
-        if (!isWithinBudget) {
-            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
-        }
-        const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const payload = {
+            title: req.body.title ?? current.title,
+            description: req.body.description ?? current.description,
+            stock: Math.max(0, Number(req.body.stock ?? current.stock) || 0),
+            isActive: req.body.isActive ?? current.isActive
+        };
+        const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, payload, { new: true });
         res.json(updated);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });

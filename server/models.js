@@ -131,7 +131,8 @@ const Lottery = mongoose.model('Lottery', LotterySchema);
 const SettingsSchema = new mongoose.Schema({
   pointsPerRegister: { type: Number, default: 50 },
   pointsPerEventJoin: { type: Number, default: 10 },
-  pointsPerShare: { type: Number, default: 5 }
+  pointsPerShare: { type: Number, default: 5 },
+  zodiacWheelWinChance: { type: Number, default: 20, min: 0, max: 100 }
 });
 const Settings = mongoose.model('Settings', SettingsSchema);
 
@@ -254,7 +255,6 @@ const ZodiacWheelPrizeSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, default: '' },
   stock: { type: Number, default: 0, min: 0 },
-  winChance: { type: Number, default: 0, min: 0, max: 100 },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });

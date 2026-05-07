@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Sparkles, Gift, Lock, RefreshCw, Crown } from 'lucide-react';
+import { Sparkles, Gift, Lock, RefreshCw, Crown, X } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../services/api';
 
@@ -20,11 +20,9 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
   const [canSpin, setCanSpin] = useState(false);
   const [nextSpinAt, setNextSpinAt] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState('');
+  const [totalWinChance, setTotalWinChance] = useState(0);
 
-  const totalWinChance = useMemo(
-    () => Math.min(100, prizes.reduce((sum, item) => sum + (Number(item?.winChance) || 0), 0)),
-    [prizes]
-  );
+  const normalizedWinChance = Math.max(0, Math.min(100, Number(totalWinChance) || 0));
 
   const displaySegments = useMemo(() => {
     if (prizes.length === 0) {
@@ -35,7 +33,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
       }));
     }
 
-    const winningSlots = Math.max(1, Math.min(BASE_SEGMENTS_COUNT - 1, Math.round((totalWinChance / 100) * BASE_SEGMENTS_COUNT)));
+    const winningSlots = Math.max(1, Math.min(BASE_SEGMENTS_COUNT - 1, Math.round((normalizedWinChance / 100) * BASE_SEGMENTS_COUNT)));
     const losingSlots = Math.max(1, BASE_SEGMENTS_COUNT - winningSlots);
 
     const winSegments = Array.from({ length: winningSlots }, (_, i) => {
@@ -62,7 +60,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
     }
 
     return segments;
-  }, [prizes, totalWinChance]);
+  }, [prizes, normalizedWinChance]);
 
   const segmentAngle = 360 / displaySegments.length;
   const wheelGradient = `conic-gradient(${displaySegments
@@ -75,8 +73,12 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const wheelPrizes = await api.getZodiacWheelPrizes();
+      const [wheelPrizes, wheelConfig] = await Promise.all([
+        api.getZodiacWheelPrizes(),
+        api.getZodiacWheelConfig().catch(() => ({ totalWinChance: 0 }))
+      ]);
       setPrizes(Array.isArray(wheelPrizes) ? wheelPrizes : []);
+      setTotalWinChance(Math.max(0, Math.min(100, Number(wheelConfig?.totalWinChance) || 0)));
 
       if (user) {
         const status = await api.getZodiacWheelStatus();
@@ -125,7 +127,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
           ? winningSegmentIndexes[Math.floor(Math.random() * winningSegmentIndexes.length)] ?? 0
           : losingSegmentIndexes[Math.floor(Math.random() * losingSegmentIndexes.length)] ?? 0);
       const targetAngle = 360 - ((finalIndex + 0.5) * segmentAngle);
-      const spins = 10 * 360;
+      const spins = 12 * 360;
       const newRotation = rotation + spins + targetAngle;
       setRotation(newRotation);
 
@@ -134,7 +136,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
         setCanSpin(false);
         setNextSpinAt(res.nextSpinAt || null);
         setSpinning(false);
-      }, 5600);
+      }, 6800);
     } catch (error: any) {
       setSpinning(false);
       setResultMessage(error.message || 'שגיאה בסיבוב הגלגל');
@@ -151,7 +153,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="bg-gradient-to-l from-rose-100 via-white to-purple-100 rounded-[2.5rem] border border-rose-100 p-8 shadow-xl text-center">
           <h1 className="text-3xl md:text-4xl font-black text-slate-800 flex items-center justify-center gap-3">
-            <Sparkles className="text-rose-500" /> גלגל המזלות
+            <Sparkles className="text-rose-500" /> גלגל המזל
           </h1>
           <p className="mt-3 text-slate-600 font-medium">סיבוב יומי אחד לכל משתמשת רשומה, עם הטבות שוות ומזל גדול ✨</p>
         </div>
@@ -164,10 +166,11 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
               style={{
                 background: wheelGradient,
                 transform: `rotate(${rotation}deg)`,
-                transition: spinning ? 'transform 5.5s cubic-bezier(0.12, 0.88, 0.27, 1)' : 'none'
+                transition: spinning ? 'transform 6.7s cubic-bezier(0.1, 0.86, 0.2, 1)' : 'none'
               }}
             >
               <div className="absolute inset-[8%] rounded-full border border-white/25 pointer-events-none" />
+              {spinning && <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none" />}
               {displaySegments.map((segment, i) => (
                 <div
                   key={segment.key}
@@ -178,7 +181,9 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
                     textAlign: 'center'
                   }}
                 >
-                  <span className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]">{segment.label}</span>
+                  <span className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)] inline-flex items-center justify-center">
+                    {segment.type === 'win' ? <Gift size={18} /> : <X size={18} />}
+                  </span>
                 </div>
               ))}
             </div>
@@ -190,8 +195,8 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
           <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm space-y-4">
             <h3 className="font-black text-xl text-slate-800">מה אפשר לזכות?</h3>
             <div className="text-xs bg-amber-50 border border-amber-100 text-amber-700 p-3 rounded-xl font-bold">
-              סיכוי הזכייה הכללי בגלגל: {totalWinChance}% (השאר הוא "נסה שוב")
-            </div>
+               סיכוי הזכייה הכללי בגלגל: {normalizedWinChance}% (השאר הוא "ללא זכייה")
+             </div>
             <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
               {prizes.length === 0 ? (
                 <p className="text-slate-500 text-sm">אין כרגע הטבות מוגדרות. ניתן עדיין לסובב ולקבל "ללא זכייה".</p>
@@ -214,7 +219,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
                 disabled={!canSpin || spinning || loading}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-fuchsia-500 text-white font-black disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {spinning ? 'הגלגל מסתובב...' : canSpin ? 'סובבי עכשיו' : 'הסיבוב היומי נוצל'}
+              {spinning ? 'הגלגל מסתובב... מחזיקות אצבעות ✨' : canSpin ? 'סובבי עכשיו' : 'הסיבוב היומי נוצל'}
               </button>
             )}
 

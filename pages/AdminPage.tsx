@@ -109,8 +109,9 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
   const [shabbatParticipants, setShabbatParticipants] = useState<any[]>([]);
   const [zodiacPrizes, setZodiacPrizes] = useState<any[]>([]);
-  const [zodiacPrizeForm, setZodiacPrizeForm] = useState({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true });
+  const [zodiacPrizeForm, setZodiacPrizeForm] = useState({ _id: '', title: '', description: '', stock: 0, isActive: true });
   const [zodiacStats, setZodiacStats] = useState<{ totalSpins: number; totalWinChance: number; winners: any[] }>({ totalSpins: 0, totalWinChance: 0, winners: [] });
+  const [zodiacWheelWinChance, setZodiacWheelWinChance] = useState(20);
 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [communityForm, setCommunityForm] = useState<Partial<any>>({ 
@@ -224,9 +225,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         }
 
         if (activeTab === 'zodiacWheel') {
-            const [zodiacItems, zodiacStatsData] = await Promise.all([
+            const [zodiacItems, zodiacStatsData, zodiacSettings] = await Promise.all([
                 api.getAdminZodiacWheelPrizes().catch(() => []),
-                api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalWinChance: 0, winners: [] }))
+                api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalWinChance: 0, winners: [] })),
+                api.getAdminZodiacWheelSettings().catch(() => ({ totalWinChance: 0 }))
             ]);
             setZodiacPrizes(Array.isArray(zodiacItems) ? zodiacItems : []);
             setZodiacStats({
@@ -234,6 +236,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 totalWinChance: Number(zodiacStatsData?.totalWinChance) || 0,
                 winners: Array.isArray(zodiacStatsData?.winners) ? zodiacStatsData.winners : []
             });
+            setZodiacWheelWinChance(Math.max(0, Math.min(100, Number(zodiacSettings?.totalWinChance) || 0)));
         }
 
         if (activeTab === 'personality') {
@@ -467,9 +470,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   };
 
   const refreshZodiacWheelAdminData = async () => {
-      const [updatedPrizes, stats] = await Promise.all([
+      const [updatedPrizes, stats, settings] = await Promise.all([
           api.getAdminZodiacWheelPrizes().catch(() => []),
-          api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalWinChance: 0, winners: [] }))
+          api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalWinChance: 0, winners: [] })),
+          api.getAdminZodiacWheelSettings().catch(() => ({ totalWinChance: 0 }))
       ]);
       setZodiacPrizes(Array.isArray(updatedPrizes) ? updatedPrizes : []);
       setZodiacStats({
@@ -477,6 +481,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           totalWinChance: Number(stats?.totalWinChance) || 0,
           winners: Array.isArray(stats?.winners) ? stats.winners : []
       });
+      setZodiacWheelWinChance(Math.max(0, Math.min(100, Number(settings?.totalWinChance) || 0)));
   };
 
   const saveZodiacPrize = async () => {
@@ -485,7 +490,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           title: zodiacPrizeForm.title.trim(),
           description: zodiacPrizeForm.description.trim(),
           stock: Math.max(0, Number(zodiacPrizeForm.stock) || 0),
-          winChance: Math.min(100, Math.max(0, Number(zodiacPrizeForm.winChance) || 0)),
           isActive: zodiacPrizeForm.isActive
       };
 
@@ -495,10 +499,21 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           } else {
               await api.createZodiacWheelPrize(payload);
           }
-          setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true });
+          setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, isActive: true });
           await refreshZodiacWheelAdminData();
       } catch (e) {
           alert('שגיאה בשמירת ההטבה');
+      }
+  };
+
+  const saveZodiacWheelSettings = async () => {
+      try {
+          await api.updateAdminZodiacWheelSettings({
+              totalWinChance: Math.max(0, Math.min(100, Number(zodiacWheelWinChance) || 0))
+          });
+          await refreshZodiacWheelAdminData();
+      } catch (e) {
+          alert('שגיאה בשמירת אחוז הזכייה של הגלגל');
       }
   };
 
@@ -604,7 +619,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             { id: 'events', label: 'אירועים', icon: <Calendar size={16} /> },
             { id: 'classes', label: 'חוגים', icon: <GraduationCap size={16} /> },
             { id: 'lotteries', label: 'הגרלות', icon: <Gift size={16} /> },
-            { id: 'zodiacWheel', label: 'גלגל המזלות', icon: <Sparkles size={16} /> },
+            { id: 'zodiacWheel', label: 'גלגל המזל', icon: <Sparkles size={16} /> },
             { id: 'community', label: 'קהילה', icon: <HeartHandshake size={16} /> },
             { id: 'forum', label: 'פורום נשי', icon: <MessageSquare size={16} /> },
             { id: 'inspirations', label: 'השראה יומית', icon: <Quote size={16} /> },
@@ -1503,7 +1518,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             <div className="bg-white p-8 rounded-[3rem] border border-fuchsia-100 shadow-sm space-y-6">
               <div className="flex items-center gap-3 border-b border-fuchsia-100 pb-4">
                 <div className="p-3 bg-fuchsia-600 text-white rounded-2xl shadow-lg"><Sparkles size={22} /></div>
-                <h3 className="text-2xl font-black text-fuchsia-900">ניהול גלגל המזלות</h3>
+                <h3 className="text-2xl font-black text-fuchsia-900">ניהול גלגל המזל</h3>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -1527,15 +1542,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   value={zodiacPrizeForm.stock}
                   onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, stock: Number(e.target.value) })}
                 />
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  placeholder="אחוז זכייה בהטבה"
-                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
-                  value={zodiacPrizeForm.winChance}
-                  onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, winChance: Number(e.target.value) })}
-                />
               </div>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -1546,21 +1552,38 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   {zodiacPrizeForm._id ? 'עדכון הטבה' : 'הוספת הטבה לגלגל'}
                 </button>
                 <button
-                  onClick={() => setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true })}
+                  onClick={() => setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, isActive: true })}
                   className="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl font-black"
                 >
                   איפוס טופס
                 </button>
-                <p className="text-sm text-slate-500 font-bold">האחוז הכולל של גלגל המזלות כרגע: {zodiacStats.totalWinChance}%. שאר הסיכוי מוצג כ״נסה שוב״.</p>
+                <p className="text-sm text-slate-500 font-bold">אחוז הזכייה של הגלגל מנוהל גלובלית לכל הסיבובים.</p>
+              </div>
+
+              <div className="bg-fuchsia-50 border border-fuchsia-100 rounded-2xl p-4 flex flex-wrap items-center gap-3">
+                <p className="text-sm font-black text-fuchsia-900">אחוז זכייה כללי בגלגל (מתוך 100):</p>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="w-28 p-3 bg-white rounded-xl font-black outline-none border border-fuchsia-200 text-center"
+                  value={zodiacWheelWinChance}
+                  onChange={e => setZodiacWheelWinChance(Number(e.target.value))}
+                />
+                <button
+                  onClick={saveZodiacWheelSettings}
+                  className="bg-fuchsia-600 text-white px-5 py-3 rounded-xl font-black hover:bg-fuchsia-700 transition-colors"
+                >
+                  שמירת אחוז זכייה כללי
+                </button>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-right min-w-[600px]">
+                <table className="w-full text-right min-w-[560px]">
                   <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
                     <tr>
                       <th className="p-4">הטבה</th>
                       <th className="p-4">מלאי</th>
-                      <th className="p-4">סיכוי</th>
                       <th className="p-4">סטטוס</th>
                       <th className="p-4">פעולות</th>
                     </tr>
@@ -1573,7 +1596,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                           {item.description && <p className="text-xs text-slate-400 mt-1">{item.description}</p>}
                         </td>
                         <td className="p-4 font-black text-indigo-600">{item.stock}</td>
-                        <td className="p-4 font-black text-fuchsia-600">{item.winChance}%</td>
                         <td className="p-4 text-xs font-bold">{item.isActive ? 'פעיל' : 'כבוי'}</td>
                         <td className="p-4">
                           <div className="flex gap-2">
@@ -1583,7 +1605,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                                 title: item.title || '',
                                 description: item.description || '',
                                 stock: item.stock || 0,
-                                winChance: item.winChance || 0,
                                 isActive: !!item.isActive
                               })}
                               className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"
@@ -1599,7 +1620,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     ))}
                     {zodiacPrizes.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="p-8 text-center text-slate-400 italic">אין עדיין הטבות בגלגל המזלות</td>
+                        <td colSpan={4} className="p-8 text-center text-slate-400 italic">אין עדיין הטבות בגלגל המזל</td>
                       </tr>
                     )}
                   </tbody>
@@ -1608,12 +1629,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             </div>
 
             <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm overflow-x-auto">
-              <h4 className="font-black text-xl text-slate-800 mb-4">רשימת זוכות בגלגל (כולל מייל)</h4>
+              <h4 className="font-black text-xl text-slate-800 mb-4">רשימת זוכות בגלגל (כולל פרטי משתמש)</h4>
               <table className="w-full text-right min-w-[640px]">
                 <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
                   <tr>
                     <th className="p-4">שם</th>
                     <th className="p-4">מייל</th>
+                    <th className="p-4">טלפון</th>
                     <th className="p-4">הפרס שזכתה</th>
                     <th className="p-4">תאריך זכייה</th>
                   </tr>
@@ -1623,12 +1645,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     <tr key={winner._id} className="hover:bg-slate-50">
                       <td className="p-4 font-bold text-slate-700">{winner.userName || '-'}</td>
                       <td className="p-4 text-sm text-slate-600" dir="ltr">{winner.userEmail || '-'}</td>
+                      <td className="p-4 text-sm text-slate-600" dir="ltr">{winner.userPhone || '-'}</td>
                       <td className="p-4 font-bold text-fuchsia-700">{winner.prizeTitle || 'הטבה מיוחדת'}</td>
                       <td className="p-4 text-xs text-slate-500">{winner.createdAt ? new Date(winner.createdAt).toLocaleString('he-IL') : '-'}</td>
                     </tr>
                   ))}
                   {zodiacStats.winners.length === 0 && (
-                    <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">עדיין אין זכיות רשומות בגלגל</td></tr>
+                    <tr><td colSpan={5} className="p-8 text-center text-slate-400 italic">עדיין אין זכיות רשומות בגלגל</td></tr>
                   )}
                 </tbody>
               </table>

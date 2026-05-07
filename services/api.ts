@@ -8,6 +8,7 @@ interface ZodiacWheelWinner {
     prizeTitle: string;
     userName: string;
     userEmail: string;
+    userPhone?: string;
 }
 
 const getHeaders = () => {
@@ -252,6 +253,11 @@ export const api = {
         return res.json();
     },
 
+    async getZodiacWheelConfig(): Promise<{ totalWinChance: number }> {
+        const res = await safeFetch(`${API_URL}/zodiac-wheel/config`);
+        return res.json();
+    },
+
     async getZodiacWheelStatus(): Promise<{ canSpin: boolean; nextSpinAt: string | null; lastSpinAt: string | null }> {
         const res = await safeFetch(`${API_URL}/zodiac-wheel/status`, { headers: getHeaders() });
         return res.json();
@@ -277,7 +283,21 @@ export const api = {
         return res.json();
     },
 
-    async createZodiacWheelPrize(data: { title: string; description?: string; stock: number; winChance: number; isActive?: boolean }): Promise<any> {
+    async getAdminZodiacWheelSettings(): Promise<{ totalWinChance: number }> {
+        const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/settings`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async updateAdminZodiacWheelSettings(data: { totalWinChance: number }): Promise<{ totalWinChance: number }> {
+        const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/settings`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async createZodiacWheelPrize(data: { title: string; description?: string; stock: number; isActive?: boolean }): Promise<any> {
         const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes`, {
             method: 'POST',
             headers: getHeaders(),
@@ -286,7 +306,7 @@ export const api = {
         return res.json();
     },
 
-    async updateZodiacWheelPrize(id: string, data: { title: string; description?: string; stock: number; winChance: number; isActive?: boolean }): Promise<any> {
+    async updateZodiacWheelPrize(id: string, data: { title: string; description?: string; stock: number; isActive?: boolean }): Promise<any> {
         const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes/${id}`, {
             method: 'PUT',
             headers: getHeaders(),
