@@ -94,15 +94,6 @@ const createSimpleRateLimiter = (limit, windowMs) => {
 
 const zodiacWheelRateLimit = createSimpleRateLimiter(10, 60 * 1000);
 
-const validateZodiacWinChanceBudget = async ({ winChance, isActive = true, excludeId = null }) => {
-    if (!isActive) return true;
-    const query = { isActive: true };
-    if (excludeId) query._id = { $ne: excludeId };
-    const existing = await ZodiacWheelPrize.find(query).select('winChance');
-    const currentSum = existing.reduce((sum, item) => sum + (Number(item.winChance) || 0), 0);
-    return (currentSum + (Number(winChance) || 0)) <= 100;
-};
-
 // ================= 1. אישורים (APPROVALS) =================
 
 router.get('/admin/approvals', authenticate, isAdmin, async (req, res) => {
@@ -384,28 +375,64 @@ router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req
         }
 
         const prizes = await ZodiacWheelPrize
-            .find({ isActive: true, stock: { $gt: 0 }, winChance: { $gt: 0 } })
+            .find({ isActive: true, stock: { $gt: 0 }, dailyWinners: { $gt: 0 } })
             .sort({ createdAt: 1 });
-
-        const totalWinningChance = Math.min(100, prizes.reduce((acc, p) => acc + (p.winChance || 0), 0));
-        const randomRoll = Math.random() * 100;
 
         let won = false;
         let selectedPrize = null;
 
-        if (prizes.length > 0 && randomRoll < totalWinningChance) {
-            let weightedRoll = Math.random() * totalWinningChance;
-            for (const prize of prizes) {
-                weightedRoll -= (prize.winChance || 0);
-                if (weightedRoll <= 0) {
+        if (prizes.length > 0) {
+            const winsToday = await ZodiacWheelSpin.aggregate([
+                {
+                    $match: {
+                        won: true,
+                        createdAt: { $gte: cycleStart },
+                        prizeId: { $ne: null }
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$prizeId',
+                        count: { $sum: 1 }
+                    }
+                }
+            ]);
+            const winsMap = new Map(winsToday.map(item => [String(item._id), Number(item.count) || 0]));
+
+            const remainingPrizes = prizes
+                .map(prize => {
+                    const wonToday = winsMap.get(String(prize._id)) || 0;
+                    const remainingDailyWinners = Math.max(0, (Number(prize.dailyWinners) || 0) - wonToday);
+                    return { prize, remainingDailyWinners };
+                })
+                .filter(item => item.remainingDailyWinners > 0);
+
+            if (remainingPrizes.length > 0) {
+                let pool = [...remainingPrizes];
+                while (pool.length > 0 && !selectedPrize) {
+                    const totalRemainingWinners = pool.reduce((sum, item) => sum + item.remainingDailyWinners, 0);
+                    let roll = Math.random() * totalRemainingWinners;
+                    let chosenIndex = 0;
+                    for (let i = 0; i < pool.length; i += 1) {
+                        roll -= pool[i].remainingDailyWinners;
+                        if (roll <= 0) {
+                            chosenIndex = i;
+                            break;
+                        }
+                    }
+
+                    const chosen = pool[chosenIndex].prize;
                     selectedPrize = await ZodiacWheelPrize.findOneAndUpdate(
-                        { _id: prize._id, stock: { $gt: 0 } },
+                        { _id: chosen._id, stock: { $gt: 0 } },
                         { $inc: { stock: -1 } },
                         { new: true }
                     );
-                    if (selectedPrize) won = true;
-                    break;
+
+                    if (!selectedPrize) {
+                        pool.splice(chosenIndex, 1);
+                    }
                 }
+                won = !!selectedPrize;
             }
         }
 
@@ -435,19 +462,20 @@ router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req
 
 router.get('/admin/zodiac-wheel/stats', zodiacWheelRateLimit, authenticate, isAdmin, async (req, res) => {
     try {
-        const [activePrizes, totalSpins, winningSpins] = await Promise.all([
-            ZodiacWheelPrize.find({ isActive: true }).select('winChance'),
+        const now = new Date();
+        const cycleStart = getZodiacWheelCycleStart(now);
+
+        const [activePrizes, totalSpins, winningSpins, todayWinners] = await Promise.all([
+            ZodiacWheelPrize.find({ isActive: true }).select('dailyWinners'),
             ZodiacWheelSpin.countDocuments(),
             ZodiacWheelSpin.find({ won: true })
                 .populate('userId', 'name email')
                 .sort({ createdAt: -1 })
-                .limit(200)
+                .limit(200),
+            ZodiacWheelSpin.countDocuments({ won: true, createdAt: { $gte: cycleStart } })
         ]);
 
-        const totalWinChance = Math.min(
-            100,
-            activePrizes.reduce((sum, item) => sum + (Number(item.winChance) || 0), 0)
-        );
+        const totalDailyWinners = activePrizes.reduce((sum, item) => sum + (Number(item.dailyWinners) || 0), 0);
 
         const winners = winningSpins.map(spin => ({
             _id: spin._id,
@@ -459,7 +487,8 @@ router.get('/admin/zodiac-wheel/stats', zodiacWheelRateLimit, authenticate, isAd
 
         res.json({
             totalSpins,
-            totalWinChance,
+            totalDailyWinners,
+            todayWinners,
             winners
         });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -474,14 +503,11 @@ router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateL
 
 router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
     try {
-        const isWithinBudget = await validateZodiacWinChanceBudget({
-            winChance: req.body.winChance,
-            isActive: req.body.isActive !== false
-        });
-        if (!isWithinBudget) {
-            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
-        }
-        const prize = await new ZodiacWheelPrize(req.body).save();
+        const payload = {
+            ...req.body,
+            dailyWinners: Math.max(0, Math.floor(Number(req.body.dailyWinners) || 0))
+        };
+        const prize = await new ZodiacWheelPrize(payload).save();
         res.status(201).json(prize);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -490,16 +516,21 @@ router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelR
     try {
         const current = await ZodiacWheelPrize.findById(req.params.id);
         if (!current) return res.status(404).json({ error: 'Prize not found' });
-        const isWithinBudget = await validateZodiacWinChanceBudget({
-            winChance: req.body.winChance ?? current.winChance,
-            isActive: req.body.isActive ?? current.isActive,
-            excludeId: req.params.id
-        });
-        if (!isWithinBudget) {
-            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
-        }
-        const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const payload = {
+            ...req.body,
+            dailyWinners: req.body.dailyWinners === undefined
+                ? current.dailyWinners
+                : Math.max(0, Math.floor(Number(req.body.dailyWinners) || 0))
+        };
+        const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, payload, { new: true });
         res.json(updated);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const result = await ZodiacWheelPrize.deleteMany({});
+        res.json({ success: true, deletedCount: result.deletedCount || 0 });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

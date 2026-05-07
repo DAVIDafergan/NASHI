@@ -21,11 +21,6 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
   const [nextSpinAt, setNextSpinAt] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState('');
 
-  const totalWinChance = useMemo(
-    () => Math.min(100, prizes.reduce((sum, item) => sum + (Number(item?.winChance) || 0), 0)),
-    [prizes]
-  );
-
   const displaySegments = useMemo(() => {
     if (prizes.length === 0) {
       return Array.from({ length: BASE_SEGMENTS_COUNT }, (_, i) => ({
@@ -35,7 +30,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
       }));
     }
 
-    const winningSlots = Math.max(1, Math.min(BASE_SEGMENTS_COUNT - 1, Math.round((totalWinChance / 100) * BASE_SEGMENTS_COUNT)));
+    const winningSlots = Math.max(1, Math.min(BASE_SEGMENTS_COUNT - 1, Math.floor(BASE_SEGMENTS_COUNT / 2)));
     const losingSlots = Math.max(1, BASE_SEGMENTS_COUNT - winningSlots);
 
     const winSegments = Array.from({ length: winningSlots }, (_, i) => {
@@ -62,7 +57,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
     }
 
     return segments;
-  }, [prizes, totalWinChance]);
+  }, [prizes]);
 
   const segmentAngle = 360 / displaySegments.length;
   const wheelGradient = `conic-gradient(${displaySegments
@@ -190,7 +185,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
           <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm space-y-4">
             <h3 className="font-black text-xl text-slate-800">מה אפשר לזכות?</h3>
             <div className="text-xs bg-amber-50 border border-amber-100 text-amber-700 p-3 rounded-xl font-bold">
-              סיכוי הזכייה הכללי בגלגל: {totalWinChance}% (השאר הוא "נסה שוב")
+              המנהלת מגדירה לכל הטבה כמה זוכות יכולות לזכות בה בכל יום.
             </div>
             <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
               {prizes.length === 0 ? (
