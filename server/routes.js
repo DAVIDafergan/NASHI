@@ -504,7 +504,9 @@ router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateL
 router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
     try {
         const payload = {
-            ...req.body,
+            title: String(req.body.title || '').trim(),
+            description: String(req.body.description || '').trim(),
+            stock: Math.max(0, Math.floor(Number(req.body.stock) || 0)),
             dailyWinners: Math.max(0, Math.floor(Number(req.body.dailyWinners) || 0))
         };
         const prize = await new ZodiacWheelPrize(payload).save();
@@ -517,10 +519,15 @@ router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelR
         const current = await ZodiacWheelPrize.findById(req.params.id);
         if (!current) return res.status(404).json({ error: 'Prize not found' });
         const payload = {
-            ...req.body,
+            title: req.body.title === undefined ? current.title : String(req.body.title || '').trim(),
+            description: req.body.description === undefined ? current.description : String(req.body.description || '').trim(),
+            stock: req.body.stock === undefined
+                ? current.stock
+                : Math.max(0, Math.floor(Number(req.body.stock) || 0)),
             dailyWinners: req.body.dailyWinners === undefined
                 ? current.dailyWinners
-                : Math.max(0, Math.floor(Number(req.body.dailyWinners) || 0))
+                : Math.max(0, Math.floor(Number(req.body.dailyWinners) || 0)),
+            isActive: req.body.isActive === undefined ? current.isActive : Boolean(req.body.isActive)
         };
         const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, payload, { new: true });
         res.json(updated);
