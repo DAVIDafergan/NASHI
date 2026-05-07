@@ -443,7 +443,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           u.createdAt ? new Date(u.createdAt).toLocaleDateString('he-IL') : ''
       ]);
 
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // BOM לשמירה על תצוגת עברית תקינה באקסל
       csvContent += headers.join(",") + "\n";
       rows.forEach(row => { csvContent += row.join(",") + "\n"; });
 

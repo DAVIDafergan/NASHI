@@ -92,7 +92,16 @@ const createSimpleRateLimiter = (limit, windowMs) => {
     };
 };
 
-const zodiacWheelRateLimit = createSimpleRateLimiter(30, 60 * 1000);
+const zodiacWheelRateLimit = createSimpleRateLimiter(10, 60 * 1000);
+
+const validateZodiacWinChanceBudget = async ({ winChance, isActive = true, excludeId = null }) => {
+    if (!isActive) return true;
+    const query = { isActive: true };
+    if (excludeId) query._id = { $ne: excludeId };
+    const existing = await ZodiacWheelPrize.find(query).select('winChance');
+    const currentSum = existing.reduce((sum, item) => sum + (Number(item.winChance) || 0), 0);
+    return (currentSum + (Number(winChance) || 0)) <= 100;
+};
 
 // ================= 1. אישורים (APPROVALS) =================
 
@@ -433,6 +442,13 @@ router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateL
 
 router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
     try {
+        const isWithinBudget = await validateZodiacWinChanceBudget({
+            winChance: req.body.winChance,
+            isActive: req.body.isActive !== false
+        });
+        if (!isWithinBudget) {
+            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
+        }
         const prize = await new ZodiacWheelPrize(req.body).save();
         res.status(201).json(prize);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -440,6 +456,16 @@ router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRate
 
 router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelRateLimit, requireValidObjectId('id'), async (req, res) => {
     try {
+        const current = await ZodiacWheelPrize.findById(req.params.id);
+        if (!current) return res.status(404).json({ error: 'Prize not found' });
+        const isWithinBudget = await validateZodiacWinChanceBudget({
+            winChance: req.body.winChance ?? current.winChance,
+            isActive: req.body.isActive ?? current.isActive,
+            excludeId: req.params.id
+        });
+        if (!isWithinBudget) {
+            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
+        }
         const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(updated);
     } catch (err) { res.status(500).json({ error: err.message }); }
