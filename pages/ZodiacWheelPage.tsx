@@ -50,7 +50,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
     } finally {
       setLoading(false);
     }
-  }, [user?.id, user?._id]);
+  }, [user]);
 
   useEffect(() => {
     loadData();

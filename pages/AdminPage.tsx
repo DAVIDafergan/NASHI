@@ -433,7 +433,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   };
 
   const exportUsersToExcel = () => {
-      const headers = ["שם", "אימייל", "טלפון", "נקודות", "סטטוס", "תאריך הרשמה"];
+      const headers = ["שם", "דוא\"ל", "טלפון", "נקודות", "סטטוס", "תאריך הרשמה"];
       const rows = apiUsers.map(u => [
           `"${u.name || ''}"`,
           `"${u.email || ''}"`,
@@ -1468,7 +1468,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     >
                         איפוס טופס
                     </button>
-                    <p className="text-sm text-slate-500 font-bold">החלק שלא מוקצה לסיכויים הוא \"ללא זכייה\" (למשל 10 מתוך 100).</p>
+                    <p className="text-sm text-slate-500 font-bold">החלק שלא מוקצה לסיכויים הוא \"ללא זכייה\" (למשל: 10 מתוך 100 לזכייה, ו-90 ללא זכייה).</p>
                 </div>
 
                 <div className="overflow-x-auto">

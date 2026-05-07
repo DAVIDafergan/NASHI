@@ -83,7 +83,7 @@ const createSimpleRateLimiter = (limit, windowMs) => {
         }
 
         if (current.count >= limit) {
-            return res.status(429).json({ error: 'יותר מדי בקשות, נסי שוב בעוד זמן קצר.' });
+            return res.status(429).json({ error: 'יותר מדי בקשות, יש לנסות שוב בעוד זמן קצר.' });
         }
 
         current.count += 1;
@@ -412,9 +412,9 @@ router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req
         });
 
         return res.json({
-            won,
-            message: won
-                ? `מזל טוב! זכית ב-${selectedPrize.title}`
+                    won,
+                    message: won
+                ? `מזל טוב! זכית ב-${selectedPrize?.title || 'הטבה מיוחדת'}`
                 : 'הפעם לא זכית, אבל מחר ב-08:00 מחכה לך סיבוב חדש ✨',
             prize: selectedPrize || null,
             nextSpinAt: getNextZodiacWheelCycleStart(now)
