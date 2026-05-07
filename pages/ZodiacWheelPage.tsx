@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Sparkles, Gift, Lock, RefreshCw } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../services/api';
@@ -32,7 +32,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
     .map((_, i) => `${wheelColors[i % wheelColors.length]} ${i * segmentAngle}deg ${(i + 1) * segmentAngle}deg`)
     .join(', ')})`;
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const wheelPrizes = await api.getZodiacWheelPrizes();
@@ -50,11 +50,11 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, user?._id]);
 
   useEffect(() => {
     loadData();
-  }, [user?.id, user?._id]);
+  }, [loadData]);
 
   const handleSpin = async () => {
     if (!user) {

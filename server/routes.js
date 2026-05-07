@@ -83,7 +83,7 @@ const createSimpleRateLimiter = (limit, windowMs) => {
         }
 
         if (current.count >= limit) {
-            return res.status(429).json({ error: 'יותר מדי בקשות, נסי שוב בעוד דקה.' });
+            return res.status(429).json({ error: 'יותר מדי בקשות, נסי שוב בעוד זמן קצר.' });
         }
 
         current.count += 1;
