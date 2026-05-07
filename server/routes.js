@@ -433,7 +433,7 @@ router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req
     }
 });
 
-router.get('/admin/zodiac-wheel/stats', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+router.get('/admin/zodiac-wheel/stats', zodiacWheelRateLimit, authenticate, isAdmin, async (req, res) => {
     try {
         const [activePrizes, totalSpins, winningSpins] = await Promise.all([
             ZodiacWheelPrize.find({ isActive: true }).select('winChance'),
@@ -453,7 +453,7 @@ router.get('/admin/zodiac-wheel/stats', authenticate, isAdmin, zodiacWheelRateLi
             _id: spin._id,
             createdAt: spin.createdAt,
             prizeTitle: spin.prizeTitle || 'הטבה מיוחדת',
-            userName: spin.userId?.name || 'משתמשת לא זמינה',
+            userName: spin.userId?.name || 'משתמש לא זמין',
             userEmail: spin.userId?.email || ''
         }));
 

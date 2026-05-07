@@ -1495,7 +1495,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <p className="text-3xl font-black text-fuchsia-700">{zodiacStats.totalWinChance}%</p>
               </div>
               <div className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
-                <p className="text-xs text-amber-600 font-bold mb-1">סה״כ זכיות שנרשמו</p>
+                <p className="text-xs text-amber-600 font-bold mb-1">סה"כ זכיות שנרשמו</p>
                 <p className="text-3xl font-black text-amber-700">{zodiacStats.winners.length}</p>
               </div>
             </div>
@@ -1531,7 +1531,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   type="number"
                   min={0}
                   max={100}
-                  placeholder="משקל חלוקה פנימי"
+                  placeholder="אחוז זכייה בהטבה"
                   className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
                   value={zodiacPrizeForm.winChance}
                   onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, winChance: Number(e.target.value) })}
@@ -1560,7 +1560,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     <tr>
                       <th className="p-4">הטבה</th>
                       <th className="p-4">מלאי</th>
-                      <th className="p-4">משקל</th>
+                      <th className="p-4">סיכוי</th>
                       <th className="p-4">סטטוס</th>
                       <th className="p-4">פעולות</th>
                     </tr>
@@ -1573,7 +1573,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                           {item.description && <p className="text-xs text-slate-400 mt-1">{item.description}</p>}
                         </td>
                         <td className="p-4 font-black text-indigo-600">{item.stock}</td>
-                        <td className="p-4 font-black text-fuchsia-600">{item.winChance}</td>
+                        <td className="p-4 font-black text-fuchsia-600">{item.winChance}%</td>
                         <td className="p-4 text-xs font-bold">{item.isActive ? 'פעיל' : 'כבוי'}</td>
                         <td className="p-4">
                           <div className="flex gap-2">
