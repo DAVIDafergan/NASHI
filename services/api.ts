@@ -2,6 +2,14 @@ import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, Fo
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
 
+interface ZodiacWheelWinner {
+    _id: string;
+    createdAt: string;
+    prizeTitle: string;
+    userName: string;
+    userEmail: string;
+}
+
 const getHeaders = () => {
     const token = localStorage.getItem('token');
     return {
@@ -261,6 +269,11 @@ export const api = {
 
     async getAdminZodiacWheelPrizes(): Promise<any[]> {
         const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async getAdminZodiacWheelStats(): Promise<{ totalSpins: number; totalWinChance: number; winners: ZodiacWheelWinner[] }> {
+        const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/stats`, { headers: getHeaders() });
         return res.json();
     },
 
