@@ -264,6 +264,11 @@ export const api = {
         return res.json();
     },
 
+    async getAdminZodiacWheelStats(): Promise<{ totalSpins: number; totalWinChance: number; winners: any[] }> {
+        const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/stats`, { headers: getHeaders() });
+        return res.json();
+    },
+
     async createZodiacWheelPrize(data: { title: string; description?: string; stock: number; winChance: number; isActive?: boolean }): Promise<any> {
         const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes`, {
             method: 'POST',

@@ -433,6 +433,38 @@ router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req
     }
 });
 
+router.get('/admin/zodiac-wheel/stats', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const [activePrizes, totalSpins, winningSpins] = await Promise.all([
+            ZodiacWheelPrize.find({ isActive: true }).select('winChance'),
+            ZodiacWheelSpin.countDocuments(),
+            ZodiacWheelSpin.find({ won: true })
+                .populate('userId', 'name email')
+                .sort({ createdAt: -1 })
+                .limit(200)
+        ]);
+
+        const totalWinChance = Math.min(
+            100,
+            activePrizes.reduce((sum, item) => sum + (Number(item.winChance) || 0), 0)
+        );
+
+        const winners = winningSpins.map(spin => ({
+            _id: spin._id,
+            createdAt: spin.createdAt,
+            prizeTitle: spin.prizeTitle || 'הטבה מיוחדת',
+            userName: spin.userId?.name || 'משתמשת לא זמינה',
+            userEmail: spin.userId?.email || ''
+        }));
+
+        res.json({
+            totalSpins,
+            totalWinChance,
+            winners
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
     try {
         const prizes = await ZodiacWheelPrize.find().sort({ createdAt: 1 });

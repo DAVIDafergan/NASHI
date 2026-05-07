@@ -47,7 +47,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, v
 );
 
 const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> = ({ user }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'stories' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast' | 'messages' | 'tickets'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'stories' | 'users' | 'events' | 'classes' | 'lotteries' | 'zodiacWheel' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast' | 'messages' | 'tickets'>('summary');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -110,6 +110,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const [shabbatParticipants, setShabbatParticipants] = useState<any[]>([]);
   const [zodiacPrizes, setZodiacPrizes] = useState<any[]>([]);
   const [zodiacPrizeForm, setZodiacPrizeForm] = useState({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true });
+  const [zodiacStats, setZodiacStats] = useState<{ totalSpins: number; totalWinChance: number; winners: any[] }>({ totalSpins: 0, totalWinChance: 0, winners: [] });
 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [communityForm, setCommunityForm] = useState<Partial<any>>({ 
@@ -220,9 +221,19 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             
             const entries = await api.getShabbatEntries();
             if(entries) setShabbatParticipants(entries);
+        }
 
-            const zodiacItems = await api.getAdminZodiacWheelPrizes().catch(() => []);
+        if (activeTab === 'zodiacWheel') {
+            const [zodiacItems, zodiacStatsData] = await Promise.all([
+                api.getAdminZodiacWheelPrizes().catch(() => []),
+                api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalWinChance: 0, winners: [] }))
+            ]);
             setZodiacPrizes(Array.isArray(zodiacItems) ? zodiacItems : []);
+            setZodiacStats({
+                totalSpins: Number(zodiacStatsData?.totalSpins) || 0,
+                totalWinChance: Number(zodiacStatsData?.totalWinChance) || 0,
+                winners: Array.isArray(zodiacStatsData?.winners) ? zodiacStatsData.winners : []
+            });
         }
 
         if (activeTab === 'personality') {
@@ -455,6 +466,19 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
       link.click();
   };
 
+  const refreshZodiacWheelAdminData = async () => {
+      const [updatedPrizes, stats] = await Promise.all([
+          api.getAdminZodiacWheelPrizes().catch(() => []),
+          api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalWinChance: 0, winners: [] }))
+      ]);
+      setZodiacPrizes(Array.isArray(updatedPrizes) ? updatedPrizes : []);
+      setZodiacStats({
+          totalSpins: Number(stats?.totalSpins) || 0,
+          totalWinChance: Number(stats?.totalWinChance) || 0,
+          winners: Array.isArray(stats?.winners) ? stats.winners : []
+      });
+  };
+
   const saveZodiacPrize = async () => {
       if (!zodiacPrizeForm.title.trim()) return alert('חובה להזין שם הטבה');
       const payload = {
@@ -472,8 +496,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               await api.createZodiacWheelPrize(payload);
           }
           setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true });
-          const updated = await api.getAdminZodiacWheelPrizes();
-          setZodiacPrizes(Array.isArray(updated) ? updated : []);
+          await refreshZodiacWheelAdminData();
       } catch (e) {
           alert('שגיאה בשמירת ההטבה');
       }
@@ -483,8 +506,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
       if (!window.confirm('למחוק את ההטבה מהגלגל?')) return;
       try {
           await api.deleteZodiacWheelPrize(id);
-          const updated = await api.getAdminZodiacWheelPrizes();
-          setZodiacPrizes(Array.isArray(updated) ? updated : []);
+          await refreshZodiacWheelAdminData();
       } catch (e) {
           alert('שגיאה במחיקת ההטבה');
       }
@@ -579,10 +601,11 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             { id: 'broadcast', label: 'שליחת תפוצה', icon: <Send size={16} /> },
             { id: 'announcements', label: 'הודעות הנהלה', icon: <Bell size={16} /> },
             { id: 'users', label: 'משתמשים', icon: <Users size={16} /> },
-            { id: 'events', label: 'אירועים', icon: <Calendar size={16} /> },
-            { id: 'classes', label: 'חוגים', icon: <GraduationCap size={16} /> },
-            { id: 'lotteries', label: 'הגרלות', icon: <Gift size={16} /> },
-            { id: 'community', label: 'קהילה', icon: <HeartHandshake size={16} /> },
+             { id: 'events', label: 'אירועים', icon: <Calendar size={16} /> },
+             { id: 'classes', label: 'חוגים', icon: <GraduationCap size={16} /> },
+             { id: 'lotteries', label: 'הגרלות', icon: <Gift size={16} /> },
+             { id: 'zodiacWheel', label: 'גלגל המזלות', icon: <Sparkles size={16} /> },
+             { id: 'community', label: 'קהילה', icon: <HeartHandshake size={16} /> },
             { id: 'forum', label: 'פורום נשי', icon: <MessageSquare size={16} /> },
             { id: 'inspirations', label: 'השראה יומית', icon: <Quote size={16} /> },
             { id: 'ads', label: 'פרסומים', icon: <Megaphone size={16} /> },
@@ -1417,113 +1440,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 </div>
             </div>
 
-            <div className="bg-white p-8 rounded-[3rem] border border-fuchsia-100 shadow-sm space-y-6">
-                <div className="flex items-center gap-3 border-b border-fuchsia-100 pb-4">
-                    <div className="p-3 bg-fuchsia-600 text-white rounded-2xl shadow-lg"><Sparkles size={22} /></div>
-                    <h3 className="text-2xl font-black text-fuchsia-900">ניהול גלגל המזלות</h3>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                    <input
-                        placeholder="שם ההטבה"
-                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
-                        value={zodiacPrizeForm.title}
-                        onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, title: e.target.value })}
-                    />
-                    <input
-                        placeholder="תיאור קצר (אופציונלי)"
-                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
-                        value={zodiacPrizeForm.description}
-                        onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, description: e.target.value })}
-                    />
-                    <input
-                        type="number"
-                        min={0}
-                        placeholder="מלאי"
-                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
-                        value={zodiacPrizeForm.stock}
-                        onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, stock: Number(e.target.value) })}
-                    />
-                    <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        placeholder="אחוז זכייה מתוך 100"
-                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
-                        value={zodiacPrizeForm.winChance}
-                        onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, winChance: Number(e.target.value) })}
-                    />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4">
-                    <button
-                        onClick={saveZodiacPrize}
-                        className="bg-fuchsia-600 text-white px-6 py-3 rounded-2xl font-black shadow-lg hover:bg-fuchsia-700 transition-colors"
-                    >
-                        {zodiacPrizeForm._id ? 'עדכון הטבה' : 'הוספת הטבה לגלגל'}
-                    </button>
-                    <button
-                        onClick={() => setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true })}
-                        className="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl font-black"
-                    >
-                        איפוס טופס
-                    </button>
-                    <p className="text-sm text-slate-500 font-bold">החלק שלא מוקצה לסיכויים הוא \"ללא זכייה\" (למשל: 10 מתוך 100 לזכייה, ו-90 ללא זכייה).</p>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-right min-w-[600px]">
-                        <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
-                            <tr>
-                                <th className="p-4">הטבה</th>
-                                <th className="p-4">מלאי</th>
-                                <th className="p-4">סיכוי</th>
-                                <th className="p-4">סטטוס</th>
-                                <th className="p-4">פעולות</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {zodiacPrizes.map((item: any) => (
-                                <tr key={item._id} className="hover:bg-slate-50">
-                                    <td className="p-4 font-bold text-slate-700">
-                                        {item.title}
-                                        {item.description && <p className="text-xs text-slate-400 mt-1">{item.description}</p>}
-                                    </td>
-                                    <td className="p-4 font-black text-indigo-600">{item.stock}</td>
-                                    <td className="p-4 font-black text-fuchsia-600">{item.winChance}%</td>
-                                    <td className="p-4 text-xs font-bold">{item.isActive ? 'פעיל' : 'כבוי'}</td>
-                                    <td className="p-4">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => setZodiacPrizeForm({
-                                                    _id: item._id || '',
-                                                    title: item.title || '',
-                                                    description: item.description || '',
-                                                    stock: item.stock || 0,
-                                                    winChance: item.winChance || 0,
-                                                    isActive: !!item.isActive
-                                                })}
-                                                className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"
-                                            >
-                                                <Edit size={16} />
-                                            </button>
-                                            <button onClick={() => deleteZodiacPrize(item._id)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {zodiacPrizes.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} className="p-8 text-center text-slate-400 italic">אין עדיין הטבות בגלגל המזלות</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <div className="space-y-6">
                 <button onClick={() => { setLotteryForm({ title: '', prize: '', prize2: '', prize3: '', prize4: '', prize5: '', prize6: '', prize7: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '' }); setIsLotteryModalOpen(true); }} className="w-full md:w-auto bg-purple-600 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> הגרלה רגילה חדשה</button>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
@@ -1563,6 +1479,159 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     </div>
                   ))}
                 </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'zodiacWheel' && (
+          <div className="space-y-8 animate-fade-in">
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <p className="text-xs text-slate-500 font-bold mb-1">סך כל הסיבובים בגלגל</p>
+                <p className="text-3xl font-black text-slate-800">{zodiacStats.totalSpins}</p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-fuchsia-100 shadow-sm">
+                <p className="text-xs text-fuchsia-500 font-bold mb-1">סיכוי זכייה כולל בגלגל</p>
+                <p className="text-3xl font-black text-fuchsia-700">{zodiacStats.totalWinChance}%</p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
+                <p className="text-xs text-amber-600 font-bold mb-1">סה״כ זכיות שנרשמו</p>
+                <p className="text-3xl font-black text-amber-700">{zodiacStats.winners.length}</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-[3rem] border border-fuchsia-100 shadow-sm space-y-6">
+              <div className="flex items-center gap-3 border-b border-fuchsia-100 pb-4">
+                <div className="p-3 bg-fuchsia-600 text-white rounded-2xl shadow-lg"><Sparkles size={22} /></div>
+                <h3 className="text-2xl font-black text-fuchsia-900">ניהול גלגל המזלות</h3>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <input
+                  placeholder="שם ההטבה"
+                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                  value={zodiacPrizeForm.title}
+                  onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, title: e.target.value })}
+                />
+                <input
+                  placeholder="תיאור קצר (אופציונלי)"
+                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                  value={zodiacPrizeForm.description}
+                  onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, description: e.target.value })}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="מלאי"
+                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                  value={zodiacPrizeForm.stock}
+                  onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, stock: Number(e.target.value) })}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  placeholder="משקל חלוקה פנימי"
+                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                  value={zodiacPrizeForm.winChance}
+                  onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, winChance: Number(e.target.value) })}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  onClick={saveZodiacPrize}
+                  className="bg-fuchsia-600 text-white px-6 py-3 rounded-2xl font-black shadow-lg hover:bg-fuchsia-700 transition-colors"
+                >
+                  {zodiacPrizeForm._id ? 'עדכון הטבה' : 'הוספת הטבה לגלגל'}
+                </button>
+                <button
+                  onClick={() => setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true })}
+                  className="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl font-black"
+                >
+                  איפוס טופס
+                </button>
+                <p className="text-sm text-slate-500 font-bold">האחוז הכולל של גלגל המזלות כרגע: {zodiacStats.totalWinChance}%. שאר הסיכוי מוצג כ״נסה שוב״.</p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-right min-w-[600px]">
+                  <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
+                    <tr>
+                      <th className="p-4">הטבה</th>
+                      <th className="p-4">מלאי</th>
+                      <th className="p-4">משקל</th>
+                      <th className="p-4">סטטוס</th>
+                      <th className="p-4">פעולות</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {zodiacPrizes.map((item: any) => (
+                      <tr key={item._id} className="hover:bg-slate-50">
+                        <td className="p-4 font-bold text-slate-700">
+                          {item.title}
+                          {item.description && <p className="text-xs text-slate-400 mt-1">{item.description}</p>}
+                        </td>
+                        <td className="p-4 font-black text-indigo-600">{item.stock}</td>
+                        <td className="p-4 font-black text-fuchsia-600">{item.winChance}</td>
+                        <td className="p-4 text-xs font-bold">{item.isActive ? 'פעיל' : 'כבוי'}</td>
+                        <td className="p-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setZodiacPrizeForm({
+                                _id: item._id || '',
+                                title: item.title || '',
+                                description: item.description || '',
+                                stock: item.stock || 0,
+                                winChance: item.winChance || 0,
+                                isActive: !!item.isActive
+                              })}
+                              className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button onClick={() => deleteZodiacPrize(item._id)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {zodiacPrizes.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-400 italic">אין עדיין הטבות בגלגל המזלות</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm overflow-x-auto">
+              <h4 className="font-black text-xl text-slate-800 mb-4">רשימת זוכות בגלגל (כולל מייל)</h4>
+              <table className="w-full text-right min-w-[640px]">
+                <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
+                  <tr>
+                    <th className="p-4">שם</th>
+                    <th className="p-4">מייל</th>
+                    <th className="p-4">הפרס שזכתה</th>
+                    <th className="p-4">תאריך זכייה</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {zodiacStats.winners.map((winner: any) => (
+                    <tr key={winner._id} className="hover:bg-slate-50">
+                      <td className="p-4 font-bold text-slate-700">{winner.userName || '-'}</td>
+                      <td className="p-4 text-sm text-slate-600" dir="ltr">{winner.userEmail || '-'}</td>
+                      <td className="p-4 font-bold text-fuchsia-700">{winner.prizeTitle || 'הטבה מיוחדת'}</td>
+                      <td className="p-4 text-xs text-slate-500">{winner.createdAt ? new Date(winner.createdAt).toLocaleString('he-IL') : '-'}</td>
+                    </tr>
+                  ))}
+                  {zodiacStats.winners.length === 0 && (
+                    <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">עדיין אין זכיות רשומות בגלגל</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
