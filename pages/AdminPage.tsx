@@ -108,6 +108,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   });
 
   const [shabbatParticipants, setShabbatParticipants] = useState<any[]>([]);
+  const [zodiacPrizes, setZodiacPrizes] = useState<any[]>([]);
+  const [zodiacPrizeForm, setZodiacPrizeForm] = useState({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true });
 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [communityForm, setCommunityForm] = useState<Partial<any>>({ 
@@ -218,6 +220,9 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             
             const entries = await api.getShabbatEntries();
             if(entries) setShabbatParticipants(entries);
+
+            const zodiacItems = await api.getAdminZodiacWheelPrizes().catch(() => []);
+            setZodiacPrizes(Array.isArray(zodiacItems) ? zodiacItems : []);
         }
 
         if (activeTab === 'personality') {
@@ -425,6 +430,64 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
       link.setAttribute("download", "shabbat_participants.csv");
       document.body.appendChild(link);
       link.click();
+  };
+
+  const exportUsersToExcel = () => {
+      const headers = ["שם", "אימייל", "טלפון", "נקודות", "סטטוס", "תאריך הרשמה"];
+      const rows = apiUsers.map(u => [
+          `"${u.name || ''}"`,
+          `"${u.email || ''}"`,
+          `"${u.phone || ''}"`,
+          u.points || 0,
+          u.isMemberApproved ? "חברת מעגל" : "רשומה",
+          u.createdAt ? new Date(u.createdAt).toLocaleDateString('he-IL') : ''
+      ]);
+
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+      csvContent += headers.join(",") + "\n";
+      rows.forEach(row => { csvContent += row.join(",") + "\n"; });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "registered_users.csv");
+      document.body.appendChild(link);
+      link.click();
+  };
+
+  const saveZodiacPrize = async () => {
+      if (!zodiacPrizeForm.title.trim()) return alert('חובה להזין שם הטבה');
+      const payload = {
+          title: zodiacPrizeForm.title.trim(),
+          description: zodiacPrizeForm.description.trim(),
+          stock: Math.max(0, Number(zodiacPrizeForm.stock) || 0),
+          winChance: Math.min(100, Math.max(0, Number(zodiacPrizeForm.winChance) || 0)),
+          isActive: zodiacPrizeForm.isActive
+      };
+
+      try {
+          if (zodiacPrizeForm._id) {
+              await api.updateZodiacWheelPrize(zodiacPrizeForm._id, payload);
+          } else {
+              await api.createZodiacWheelPrize(payload);
+          }
+          setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true });
+          const updated = await api.getAdminZodiacWheelPrizes();
+          setZodiacPrizes(Array.isArray(updated) ? updated : []);
+      } catch (e) {
+          alert('שגיאה בשמירת ההטבה');
+      }
+  };
+
+  const deleteZodiacPrize = async (id: string) => {
+      if (!window.confirm('למחוק את ההטבה מהגלגל?')) return;
+      try {
+          await api.deleteZodiacWheelPrize(id);
+          const updated = await api.getAdminZodiacWheelPrizes();
+          setZodiacPrizes(Array.isArray(updated) ? updated : []);
+      } catch (e) {
+          alert('שגיאה במחיקת ההטבה');
+      }
   };
 
   // Broadcast Email Logic
@@ -1131,6 +1194,15 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           const pagedUsers = filteredUsers.slice((usersPage - 1) * ITEMS_PER_PAGE, usersPage * ITEMS_PER_PAGE);
           return (
             <div className="space-y-4 animate-fade-in">
+              <div className="flex justify-between items-center bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+                <h3 className="font-black text-slate-800">ניהול משתמשות רשומות</h3>
+                <button
+                  onClick={exportUsersToExcel}
+                  className="flex items-center gap-2 bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-black hover:bg-emerald-600 transition-colors"
+                >
+                  <Download size={16} /> ייצוא משתמשות לאקסל
+                </button>
+              </div>
               <div className="bg-white rounded-[3rem] shadow-sm overflow-hidden border border-slate-100 overflow-x-auto">
                 <table className="w-full text-right min-w-[500px]">
                   <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
@@ -1342,6 +1414,113 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-[3rem] border border-fuchsia-100 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 border-b border-fuchsia-100 pb-4">
+                    <div className="p-3 bg-fuchsia-600 text-white rounded-2xl shadow-lg"><Sparkles size={22} /></div>
+                    <h3 className="text-2xl font-black text-fuchsia-900">ניהול גלגל המזלות</h3>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    <input
+                        placeholder="שם ההטבה"
+                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                        value={zodiacPrizeForm.title}
+                        onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, title: e.target.value })}
+                    />
+                    <input
+                        placeholder="תיאור קצר (אופציונלי)"
+                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                        value={zodiacPrizeForm.description}
+                        onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, description: e.target.value })}
+                    />
+                    <input
+                        type="number"
+                        min={0}
+                        placeholder="מלאי"
+                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                        value={zodiacPrizeForm.stock}
+                        onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, stock: Number(e.target.value) })}
+                    />
+                    <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        placeholder="אחוז זכייה מתוך 100"
+                        className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                        value={zodiacPrizeForm.winChance}
+                        onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, winChance: Number(e.target.value) })}
+                    />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4">
+                    <button
+                        onClick={saveZodiacPrize}
+                        className="bg-fuchsia-600 text-white px-6 py-3 rounded-2xl font-black shadow-lg hover:bg-fuchsia-700 transition-colors"
+                    >
+                        {zodiacPrizeForm._id ? 'עדכון הטבה' : 'הוספת הטבה לגלגל'}
+                    </button>
+                    <button
+                        onClick={() => setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true })}
+                        className="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl font-black"
+                    >
+                        איפוס טופס
+                    </button>
+                    <p className="text-sm text-slate-500 font-bold">החלק שלא מוקצה לסיכויים הוא \"ללא זכייה\" (למשל 10 מתוך 100).</p>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-right min-w-[600px]">
+                        <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
+                            <tr>
+                                <th className="p-4">הטבה</th>
+                                <th className="p-4">מלאי</th>
+                                <th className="p-4">סיכוי</th>
+                                <th className="p-4">סטטוס</th>
+                                <th className="p-4">פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {zodiacPrizes.map((item: any) => (
+                                <tr key={item._id} className="hover:bg-slate-50">
+                                    <td className="p-4 font-bold text-slate-700">
+                                        {item.title}
+                                        {item.description && <p className="text-xs text-slate-400 mt-1">{item.description}</p>}
+                                    </td>
+                                    <td className="p-4 font-black text-indigo-600">{item.stock}</td>
+                                    <td className="p-4 font-black text-fuchsia-600">{item.winChance}%</td>
+                                    <td className="p-4 text-xs font-bold">{item.isActive ? 'פעיל' : 'כבוי'}</td>
+                                    <td className="p-4">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setZodiacPrizeForm({
+                                                    _id: item._id || '',
+                                                    title: item.title || '',
+                                                    description: item.description || '',
+                                                    stock: item.stock || 0,
+                                                    winChance: item.winChance || 0,
+                                                    isActive: !!item.isActive
+                                                })}
+                                                className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                            <button onClick={() => deleteZodiacPrize(item._id)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {zodiacPrizes.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="p-8 text-center text-slate-400 italic">אין עדיין הטבות בגלגל המזלות</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

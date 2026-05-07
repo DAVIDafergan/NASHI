@@ -238,6 +238,58 @@ export const api = {
         return res.json();
     },
 
+    // ================= ZODIAC WHEEL =================
+    async getZodiacWheelPrizes(): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/zodiac-wheel/prizes`);
+        return res.json();
+    },
+
+    async getZodiacWheelStatus(): Promise<{ canSpin: boolean; nextSpinAt: string | null; lastSpinAt: string | null }> {
+        const res = await safeFetch(`${API_URL}/zodiac-wheel/status`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async spinZodiacWheel(): Promise<{ won: boolean; message: string; prize: any; nextSpinAt: string }> {
+        const res = await safeFetch(`${API_URL}/zodiac-wheel/spin`, {
+            method: 'POST',
+            headers: getHeaders()
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'שגיאה בביצוע הסיבוב');
+        return data;
+    },
+
+    async getAdminZodiacWheelPrizes(): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes`, { headers: getHeaders() });
+        return res.json();
+    },
+
+    async createZodiacWheelPrize(data: { title: string; description?: string; stock: number; winChance: number; isActive?: boolean }): Promise<any> {
+        const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async updateZodiacWheelPrize(id: string, data: { title: string; description?: string; stock: number; winChance: number; isActive?: boolean }): Promise<any> {
+        const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async deleteZodiacWheelPrize(id: string): Promise<any> {
+        const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        return res.json();
+    },
+
     // ================= FORUM =================
     async getForumPosts(): Promise<ForumPost[]> {
         const res = await safeFetch(`${API_URL}/forum`, { headers: getHeaders() });

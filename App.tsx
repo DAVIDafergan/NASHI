@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage';
 import ContactPage from './pages/ContactPage';
 import AdminPage from './pages/AdminPage';
 import LotteryPage from './pages/LotteryPage';
+import ZodiacWheelPage from './pages/ZodiacWheelPage';
 import ForumPage from './pages/ForumPage'; 
 import CommunityPage from './pages/CommunityPage'; 
 import InterviewPage from './pages/InterviewPage';
@@ -222,6 +223,7 @@ const App: React.FC = () => {
               path="/lottery" 
               element={<LotteryPage lotteries={lotteries} user={user} onUpdateUser={handleUpdateUser} onUpdateLottery={(l) => setLotteries(lotteries.map(item => item.id === l.id ? l : item))} />} 
             />
+            <Route path="/zodiac-wheel" element={<ZodiacWheelPage user={user} onOpenLogin={handleOpenAuth} />} />
 
             <Route path="/forum" element={<ForumPage user={user} searchTerm={globalSearchTerm} />} />
             <Route path="/community" element={<CommunityPage searchTerm={globalSearchTerm} />} />
