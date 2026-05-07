@@ -354,7 +354,7 @@ router.get('/zodiac-wheel/config', zodiacWheelRateLimit, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/zodiac-wheel/status', authenticate, zodiacWheelRateLimit, async (req, res) => {
+router.get('/zodiac-wheel/status', zodiacWheelRateLimit, authenticate, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('lastZodiacWheelSpinAt');
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -372,7 +372,7 @@ router.get('/zodiac-wheel/status', authenticate, zodiacWheelRateLimit, async (re
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req, res) => {
+router.post('/zodiac-wheel/spin', zodiacWheelRateLimit, authenticate, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -466,21 +466,21 @@ router.get('/admin/zodiac-wheel/stats', zodiacWheelRateLimit, authenticate, isAd
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+router.get('/admin/zodiac-wheel/prizes', zodiacWheelRateLimit, authenticate, isAdmin, async (req, res) => {
     try {
         const prizes = await ZodiacWheelPrize.find().sort({ createdAt: 1 });
         res.json(prizes);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/admin/zodiac-wheel/settings', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+router.get('/admin/zodiac-wheel/settings', zodiacWheelRateLimit, authenticate, isAdmin, async (req, res) => {
     try {
         const settings = await getPointsConfig();
         res.json({ totalWinChance: normalizeChance(settings.zodiacWheelWinChance, 20) });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/admin/zodiac-wheel/settings', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+router.put('/admin/zodiac-wheel/settings', zodiacWheelRateLimit, authenticate, isAdmin, async (req, res) => {
     try {
         const totalWinChance = normalizeChance(req.body.totalWinChance, 20);
         const settings = await getPointsConfig();
@@ -490,7 +490,7 @@ router.put('/admin/zodiac-wheel/settings', authenticate, isAdmin, zodiacWheelRat
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+router.post('/admin/zodiac-wheel/prizes', zodiacWheelRateLimit, authenticate, isAdmin, async (req, res) => {
     try {
         const payload = {
             title: req.body.title,
@@ -503,7 +503,7 @@ router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRate
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelRateLimit, requireValidObjectId('id'), async (req, res) => {
+router.put('/admin/zodiac-wheel/prizes/:id', zodiacWheelRateLimit, authenticate, isAdmin, requireValidObjectId('id'), async (req, res) => {
     try {
         const current = await ZodiacWheelPrize.findById(req.params.id);
         if (!current) return res.status(404).json({ error: 'Prize not found' });
@@ -513,12 +513,13 @@ router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelR
             stock: Math.max(0, Number(req.body.stock ?? current.stock) || 0),
             isActive: req.body.isActive ?? current.isActive
         };
-        const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, payload, { new: true });
-        res.json(updated);
+        current.set(payload);
+        await current.save();
+        res.json(current);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelRateLimit, requireValidObjectId('id'), async (req, res) => {
+router.delete('/admin/zodiac-wheel/prizes/:id', zodiacWheelRateLimit, authenticate, isAdmin, requireValidObjectId('id'), async (req, res) => {
     try {
         await ZodiacWheelPrize.findByIdAndDelete(req.params.id);
         res.json({ success: true });
