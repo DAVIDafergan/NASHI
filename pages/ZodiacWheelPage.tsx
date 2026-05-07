@@ -9,6 +9,7 @@ interface ZodiacWheelPageProps {
 }
 
 const wheelColors = ['#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+const DEFAULT_NON_WIN_STOCK = Number.MAX_SAFE_INTEGER;
 
 const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) => {
   const [prizes, setPrizes] = useState<any[]>([]);
@@ -21,7 +22,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
 
   const activeSegments = useMemo(() => {
     if (prizes.length === 0) {
-      return [{ _id: 'default', title: 'ללא זכייה', description: '', stock: 999999, winChance: 0 }];
+      return [{ _id: 'default', title: 'ללא זכייה', description: '', stock: DEFAULT_NON_WIN_STOCK, winChance: 0 }];
     }
     return prizes;
   }, [prizes]);

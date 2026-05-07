@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto'; // תוספת עבור ייצור טוקנים מאובטחים
+import mongoose from 'mongoose';
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
     Announcement, // הוספת המודל החדש לייבוא
@@ -61,6 +62,37 @@ const getNextZodiacWheelCycleStart = (currentDate = new Date()) => {
     cycleStart.setDate(cycleStart.getDate() + 1);
     return cycleStart;
 };
+
+const requireValidObjectId = (paramName = 'id') => (req, res, next) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params[paramName])) {
+        return res.status(400).json({ error: 'Invalid ID format' });
+    }
+    next();
+};
+
+const createSimpleRateLimiter = (limit, windowMs) => {
+    const bucket = new Map();
+    return (req, res, next) => {
+        const now = Date.now();
+        const key = `${req.ip}:${req.user?.id || 'guest'}:${req.path}`;
+        const current = bucket.get(key);
+
+        if (!current || now > current.resetAt) {
+            bucket.set(key, { count: 1, resetAt: now + windowMs });
+            return next();
+        }
+
+        if (current.count >= limit) {
+            return res.status(429).json({ error: 'יותר מדי בקשות, נסי שוב בעוד דקה.' });
+        }
+
+        current.count += 1;
+        bucket.set(key, current);
+        return next();
+    };
+};
+
+const zodiacWheelRateLimit = createSimpleRateLimiter(30, 60 * 1000);
 
 // ================= 1. אישורים (APPROVALS) =================
 
@@ -300,7 +332,7 @@ router.post('/lotteries/:id/complete-mission', authenticate, async (req, res) =>
 
 // ================= 5.1 גלגל המזלות (ZODIAC WHEEL) =================
 
-router.get('/zodiac-wheel/prizes', async (req, res) => {
+router.get('/zodiac-wheel/prizes', zodiacWheelRateLimit, async (req, res) => {
     try {
         const prizes = await ZodiacWheelPrize
             .find({ isActive: true })
@@ -309,7 +341,7 @@ router.get('/zodiac-wheel/prizes', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/zodiac-wheel/status', authenticate, async (req, res) => {
+router.get('/zodiac-wheel/status', authenticate, zodiacWheelRateLimit, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('lastZodiacWheelSpinAt');
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -327,7 +359,7 @@ router.get('/zodiac-wheel/status', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/zodiac-wheel/spin', authenticate, async (req, res) => {
+router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -392,28 +424,28 @@ router.post('/zodiac-wheel/spin', authenticate, async (req, res) => {
     }
 });
 
-router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, async (req, res) => {
+router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
     try {
         const prizes = await ZodiacWheelPrize.find().sort({ createdAt: 1 });
         res.json(prizes);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, async (req, res) => {
+router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
     try {
         const prize = await new ZodiacWheelPrize(req.body).save();
         res.status(201).json(prize);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, async (req, res) => {
+router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelRateLimit, requireValidObjectId('id'), async (req, res) => {
     try {
         const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(updated);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelRateLimit, requireValidObjectId('id'), async (req, res) => {
     try {
         await ZodiacWheelPrize.findByIdAndDelete(req.params.id);
         res.json({ success: true });
