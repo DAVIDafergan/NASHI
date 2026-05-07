@@ -20,6 +20,8 @@ const UserSchema = new mongoose.Schema({
   // שדות לאיפוס סיסמה (חדש)
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
+  lastZodiacWheelSpinAt: { type: Date },
+  zodiacWheelSpinsCount: { type: Number, default: 0 },
   
   likedEventIds: [{ type: String }],
   createdAt: { type: Date, default: Date.now }
@@ -178,24 +180,31 @@ const AnnouncementSchema = new mongoose.Schema({
 });
 const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 
-const ShabbatLotterySchema = new mongoose.Schema({
-  prize: { type: String, default: 'פרס יוקרתי' },
-  notes: { type: String, default: '' },
+// ==========================================
+// --- מודלים של מערכת האתגרים (החליף שולחן שבת) ---
+// ==========================================
+const ChallengeSchema = new mongoose.Schema({
+  title: { type: String, required: true }, // שם האתגר
+  prizes: { type: [String], default: [] }, // רשימת פרסים (שודרג ממחרוזת בודדת)
+  notes: { type: String, default: '' }, // הסבר / משימה
+  image: { type: String }, // תמונה לאתגר עצמו
+  drawDate: { type: Date }, // תאריך יעד להגרלה
   isActive: { type: Boolean, default: true },
   winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   winnerFamily: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
-const ShabbatLottery = mongoose.model('ShabbatLottery', ShabbatLotterySchema);
+const Challenge = mongoose.model('Challenge', ChallengeSchema);
 
-const ShabbatEntrySchema = new mongoose.Schema({
+const ChallengeEntrySchema = new mongoose.Schema({
+  challengeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Challenge', required: true }, // שיוך לאתגר הספציפי
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   familyName: { type: String, required: true },
   phone: { type: String, required: true }, 
   image: { type: String, required: true }, 
   createdAt: { type: Date, default: Date.now }
 });
-const ShabbatEntry = mongoose.model('ShabbatEntry', ShabbatEntrySchema);
+const ChallengeEntry = mongoose.model('ChallengeEntry', ChallengeEntrySchema);
 
 const ContactMessageSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -220,9 +229,52 @@ const TicketSchema = new mongoose.Schema({
 });
 const Ticket = mongoose.model('Ticket', TicketSchema);
 
+// ==========================================
+// --- מודל סטוריז חדש (תוספת) ---
+// ==========================================
+const StorySchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // הפניה למשתמשת שהעלתה
+  type: { type: String, enum: ['image', 'text'], default: 'text' }, // סוג הסטורי: תמונה או טקסט בלבד
+  content: { type: String, required: true }, // התוכן עצמו (טקסט או תמונה כ-Base64)
+  caption: { type: String, default: '' }, // טקסט שיופיע מתחת לתמונה
+  status: { type: String, enum: ['pending', 'approved'], default: 'pending' }, // סטטוס לאישור מנהלת
+  createdAt: { type: Date, default: Date.now },
+  approvedAt: { type: Date }, // שדה שיתעדכן ברגע שהמנהלת מאשרת
+  // --- תוספות חדשות: ספירת צפיות ---
+  views: { type: Number, default: 0 },
+  viewedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // כדי לא לספור את אותה משתמשת פעמיים
+});
+
+// אינדקס TTL (Time-To-Live): ימחק את המסמך אוטומטית 24 שעות (86400 שניות) לאחר תאריך האישור
+StorySchema.index({ approvedAt: 1 }, { expireAfterSeconds: 86400 });
+
+const Story = mongoose.model('Story', StorySchema);
+
+const ZodiacWheelPrizeSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  stock: { type: Number, default: 0, min: 0 },
+  winChance: { type: Number, default: 0, min: 0, max: 100 },
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const ZodiacWheelPrize = mongoose.model('ZodiacWheelPrize', ZodiacWheelPrizeSchema);
+
+const ZodiacWheelSpinSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  prizeId: { type: mongoose.Schema.Types.ObjectId, ref: 'ZodiacWheelPrize' },
+  prizeTitle: { type: String, default: '' },
+  won: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+const ZodiacWheelSpin = mongoose.model('ZodiacWheelSpin', ZodiacWheelSpinSchema);
+
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
-  Announcement, ShabbatLottery, ShabbatEntry, ContactMessage,
-  Ticket // נוסף לייצוא
+  Announcement, Challenge, ChallengeEntry, ContactMessage,
+  Ticket,
+  Story, // הוספת הסטורי לייצוא
+  ZodiacWheelPrize,
+  ZodiacWheelSpin
 };

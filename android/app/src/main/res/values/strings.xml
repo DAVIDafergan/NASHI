@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">nashi</string>
+    <string name="title_activity_main">nashi</string>
+    <string name="package_name">com.nashi.app</string>
+    <string name="custom_url_scheme">com.nashi.app</string>
+</resources>

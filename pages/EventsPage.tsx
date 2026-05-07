@@ -44,7 +44,6 @@ const EventsPage = () => {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   
   const [sortBy, setSortBy] = useState<'date' | 'price-low' | 'price-high'>('date');
-  const [showPastEvents, setShowPastEvents] = useState(false);
   const [onlyFree, setOnlyFree] = useState(false);
 
   const [reviewText, setReviewText] = useState('');
@@ -134,15 +133,23 @@ const EventsPage = () => {
   };
 
   const filteredEvents = events.filter(event => {
-    const isPast = new Date(event.date) < new Date();
     const matchesSearch = event.title.toLowerCase().includes(filter.toLowerCase()) || event.location.toLowerCase().includes(filter.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-    const matchesPastStatus = showPastEvents ? true : !isPast;
     const matchesFree = onlyFree ? getDisplayPrice(event).value === 0 : true;
     
-    return matchesSearch && matchesCategory && matchesPastStatus && matchesFree;
+    return matchesSearch && matchesCategory && matchesFree;
   }).sort((a, b) => {
-      if (sortBy === 'date') return new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (sortBy === 'date') {
+          // דואג שאירועי עבר יופיעו תמיד למטה, כדי לא להסתיר אירועים חדשים
+          const isPastA = new Date(a.date) < new Date();
+          const isPastB = new Date(b.date) < new Date();
+          
+          if (isPastA && !isPastB) return 1;
+          if (!isPastA && isPastB) return -1;
+          
+          // אם שניהם בעבר או שניהם בעתיד, סדר לפי תאריך
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
       if (sortBy === 'price-low') return getDisplayPrice(a).value - getDisplayPrice(b).value;
       if (sortBy === 'price-high') return getDisplayPrice(b).value - getDisplayPrice(a).value;
       return 0;
@@ -253,9 +260,6 @@ const EventsPage = () => {
             <button onClick={() => setOnlyFree(!onlyFree)} className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-black transition-all border ${onlyFree ? 'bg-emerald-500 text-white border-emerald-500 shadow-md' : 'bg-white text-slate-400 border-rose-50'}`}>
                 <Ticket size={14}/> חינם בלבד
             </button>
-            <button onClick={() => setShowPastEvents(!showPastEvents)} className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-black transition-all border ${showPastEvents ? 'bg-slate-800 text-white border-slate-800 shadow-md' : 'bg-white text-slate-400 border-rose-50'}`}>
-                <History size={14}/> אירועי עבר
-            </button>
             <div className="h-4 w-px bg-rose-100 mx-2"></div>
             <select 
                 value={sortBy} 
@@ -349,7 +353,7 @@ const EventsPage = () => {
                 <Calendar size={28} />
             </div>
             <p className="text-slate-400 text-base font-black">לא מצאנו אירועים שתואמים לחיפוש שלך...</p>
-            <button onClick={() => {setFilter(''); setSelectedCategory('all'); setShowPastEvents(true);}} className="mt-4 text-rose-500 text-sm font-black underline decoration-2 underline-offset-4">אולי תרצי לראות אירועי עבר?</button>
+            <button onClick={() => {setFilter(''); setSelectedCategory('all'); setOnlyFree(false);}} className="mt-4 text-rose-500 text-sm font-black underline decoration-2 underline-offset-4">ניקוי סינונים</button>
           </div>
       )}
 

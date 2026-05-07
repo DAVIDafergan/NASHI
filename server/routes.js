@@ -7,9 +7,11 @@ import {
     User, Event, Class, Lottery, Settings, GiftCode, 
     Announcement, // הוספת המודל החדש לייבוא
     Personality, ForumPost, Community, Inspiration, Ad,
-    ShabbatLottery, ShabbatEntry, // הוספת המודלים של שולחן השבת לייבוא
+    Challenge, ChallengeEntry, // הוספת המודלים של האתגרים לייבוא במקום שבת
     ContactMessage, // הוספת מודל פניות הציבור לייבוא
-    Ticket // התווסף מודל הכרטיסים!
+    Ticket, // התווסף מודל הכרטיסים!
+    Story, // <--- תוספת: מודל הסטוריז
+    ZodiacWheelPrize, ZodiacWheelSpin
 } from './models.js';
 
 const router = express.Router();
@@ -45,6 +47,61 @@ async function getPointsConfig() {
     }
     return settings;
 }
+
+const getZodiacWheelCycleStart = (currentDate = new Date()) => {
+    const cycleStart = new Date(currentDate);
+    cycleStart.setHours(8, 0, 0, 0);
+    if (currentDate < cycleStart) {
+        cycleStart.setDate(cycleStart.getDate() - 1);
+    }
+    return cycleStart;
+};
+
+const getNextZodiacWheelCycleStart = (currentDate = new Date()) => {
+    const cycleStart = getZodiacWheelCycleStart(currentDate);
+    cycleStart.setDate(cycleStart.getDate() + 1);
+    return cycleStart;
+};
+
+const requireValidObjectId = (paramName = 'id') => (req, res, next) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params[paramName])) {
+        return res.status(400).json({ error: 'Invalid ID format' });
+    }
+    next();
+};
+
+const createSimpleRateLimiter = (limit, windowMs) => {
+    const bucket = new Map();
+    return (req, res, next) => {
+        const now = Date.now();
+        const key = `${req.ip}:${req.user?.id || 'guest'}:${req.path}`;
+        const current = bucket.get(key);
+
+        if (!current || now > current.resetAt) {
+            bucket.set(key, { count: 1, resetAt: now + windowMs });
+            return next();
+        }
+
+        if (current.count >= limit) {
+            return res.status(429).json({ error: 'יותר מדי בקשות, יש לנסות שוב בעוד זמן קצר.' });
+        }
+
+        current.count += 1;
+        bucket.set(key, current);
+        return next();
+    };
+};
+
+const zodiacWheelRateLimit = createSimpleRateLimiter(10, 60 * 1000);
+
+const validateZodiacWinChanceBudget = async ({ winChance, isActive = true, excludeId = null }) => {
+    if (!isActive) return true;
+    const query = { isActive: true };
+    if (excludeId) query._id = { $ne: excludeId };
+    const existing = await ZodiacWheelPrize.find(query).select('winChance');
+    const currentSum = existing.reduce((sum, item) => sum + (Number(item.winChance) || 0), 0);
+    return (currentSum + (Number(winChance) || 0)) <= 100;
+};
 
 // ================= 1. אישורים (APPROVALS) =================
 
@@ -87,7 +144,8 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({
             name, email, password: hashedPassword, phone,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+            // אוואטרים חמודים לנשים - מודל lorelei עם פילטרים לחיוך, הבעות מתוקות וצבעי רקע נעימים
+            avatar: `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(name)}&backgroundColor=ffd5dc,ffdfbf,c0aede,d1d4f9,ffc0cb&mouth=smile,happy,cute&eyes=happy,open,wink`,
             points: config.pointsPerRegister || 50
         });
         await user.save();
@@ -277,6 +335,177 @@ router.post('/lotteries/:id/complete-mission', authenticate, async (req, res) =>
         
         lottery.participants.push(req.user.id);
         await lottery.save();
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 5.1 גלגל המזלות (ZODIAC WHEEL) =================
+
+router.get('/zodiac-wheel/prizes', zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const prizes = await ZodiacWheelPrize
+            .find({ isActive: true })
+            .sort({ createdAt: 1 });
+        res.json(prizes);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/zodiac-wheel/status', authenticate, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('lastZodiacWheelSpinAt');
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const now = new Date();
+        const cycleStart = getZodiacWheelCycleStart(now);
+        const lastSpin = user.lastZodiacWheelSpinAt ? new Date(user.lastZodiacWheelSpinAt) : null;
+        const canSpin = !lastSpin || lastSpin < cycleStart;
+
+        res.json({
+            canSpin,
+            lastSpinAt: user.lastZodiacWheelSpinAt || null,
+            nextSpinAt: getNextZodiacWheelCycleStart(now)
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const now = new Date();
+        const cycleStart = getZodiacWheelCycleStart(now);
+        const alreadySpun = user.lastZodiacWheelSpinAt && new Date(user.lastZodiacWheelSpinAt) >= cycleStart;
+        if (alreadySpun) {
+            return res.status(400).json({
+                error: 'כבר ביצעת סיבוב היום. סיבוב חדש נפתח כל יום ב-08:00.',
+                nextSpinAt: getNextZodiacWheelCycleStart(now)
+            });
+        }
+
+        const prizes = await ZodiacWheelPrize
+            .find({ isActive: true, stock: { $gt: 0 }, winChance: { $gt: 0 } })
+            .sort({ createdAt: 1 });
+
+        const totalWinningChance = Math.min(100, prizes.reduce((acc, p) => acc + (p.winChance || 0), 0));
+        const randomRoll = Math.random() * 100;
+
+        let won = false;
+        let selectedPrize = null;
+
+        if (prizes.length > 0 && randomRoll < totalWinningChance) {
+            let weightedRoll = Math.random() * totalWinningChance;
+            for (const prize of prizes) {
+                weightedRoll -= (prize.winChance || 0);
+                if (weightedRoll <= 0) {
+                    selectedPrize = await ZodiacWheelPrize.findOneAndUpdate(
+                        { _id: prize._id, stock: { $gt: 0 } },
+                        { $inc: { stock: -1 } },
+                        { new: true }
+                    );
+                    if (selectedPrize) won = true;
+                    break;
+                }
+            }
+        }
+
+        user.lastZodiacWheelSpinAt = now;
+        user.zodiacWheelSpinsCount = (user.zodiacWheelSpinsCount || 0) + 1;
+        await user.save();
+
+        await ZodiacWheelSpin.create({
+            userId: user._id,
+            prizeId: selectedPrize?._id || undefined,
+            prizeTitle: selectedPrize?.title || '',
+            won
+        });
+
+        return res.json({
+                    won,
+                    message: won
+                ? `מזל טוב! זכית ב-${selectedPrize?.title || 'הטבה מיוחדת'}`
+                : 'הפעם לא זכית, אבל מחר ב-08:00 מחכה לך סיבוב חדש ✨',
+            prize: selectedPrize || null,
+            nextSpinAt: getNextZodiacWheelCycleStart(now)
+        });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+router.get('/admin/zodiac-wheel/stats', zodiacWheelRateLimit, authenticate, isAdmin, async (req, res) => {
+    try {
+        const [activePrizes, totalSpins, winningSpins] = await Promise.all([
+            ZodiacWheelPrize.find({ isActive: true }).select('winChance'),
+            ZodiacWheelSpin.countDocuments(),
+            ZodiacWheelSpin.find({ won: true })
+                .populate('userId', 'name email')
+                .sort({ createdAt: -1 })
+                .limit(200)
+        ]);
+
+        const totalWinChance = Math.min(
+            100,
+            activePrizes.reduce((sum, item) => sum + (Number(item.winChance) || 0), 0)
+        );
+
+        const winners = winningSpins.map(spin => ({
+            _id: spin._id,
+            createdAt: spin.createdAt,
+            prizeTitle: spin.prizeTitle || 'הטבה מיוחדת',
+            userName: spin.userId?.name || 'משתמש לא זמין',
+            userEmail: spin.userId?.email || ''
+        }));
+
+        res.json({
+            totalSpins,
+            totalWinChance,
+            winners
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const prizes = await ZodiacWheelPrize.find().sort({ createdAt: 1 });
+        res.json(prizes);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const isWithinBudget = await validateZodiacWinChanceBudget({
+            winChance: req.body.winChance,
+            isActive: req.body.isActive !== false
+        });
+        if (!isWithinBudget) {
+            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
+        }
+        const prize = await new ZodiacWheelPrize(req.body).save();
+        res.status(201).json(prize);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelRateLimit, requireValidObjectId('id'), async (req, res) => {
+    try {
+        const current = await ZodiacWheelPrize.findById(req.params.id);
+        if (!current) return res.status(404).json({ error: 'Prize not found' });
+        const isWithinBudget = await validateZodiacWinChanceBudget({
+            winChance: req.body.winChance ?? current.winChance,
+            isActive: req.body.isActive ?? current.isActive,
+            excludeId: req.params.id
+        });
+        if (!isWithinBudget) {
+            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
+        }
+        const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updated);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelRateLimit, requireValidObjectId('id'), async (req, res) => {
+    try {
+        await ZodiacWheelPrize.findByIdAndDelete(req.params.id);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -602,7 +831,7 @@ router.post('/membership/request', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ================= 12. העוזרת החכמה (GEMINI PROXY) - חדש! =================
+// ================= 12. העוזרת החכמה (GEMINI PROXY) =================
 
 router.post('/chat', async (req, res) => {
   const { prompt } = req.body;
@@ -617,7 +846,7 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-// ================= 13. שליחת תפוצה (BROADCAST & TEST) - מתוקן! =================
+// ================= 13. שליחת תפוצה (BROADCAST & TEST) =================
 
 router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) => {
   const { subject, content, image, logo, isTest, targetEmail } = req.body;
@@ -671,37 +900,54 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
   }
 });
 
-// ================= 14. שולחן השבת שלי (SHABBAT LOTTERY) =================
+// ================= 14. אתגרים (CHALLENGES) =================
 
-router.get('/shabbat-lottery/settings', async (req, res) => {
+// שליפת כל האתגרים למשתמש ולמנהל
+router.get('/challenges', async (req, res) => {
     try {
-        const settings = await ShabbatLottery.findOne().sort({ createdAt: -1 });
-        res.json(settings || { prize: 'פרס יוקרתי', notes: '', isActive: true });
+        const challenges = await Challenge.find().sort({ createdAt: -1 });
+        res.json(challenges);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/admin/shabbat-lottery/settings', authenticate, isAdmin, async (req, res) => {
+// יצירת אתגר חדש (מנהלות בלבד)
+router.post('/admin/challenges', authenticate, isAdmin, async (req, res) => {
     try {
-        let settings = await ShabbatLottery.findOne().sort({ createdAt: -1 });
-        if (!settings) {
-            settings = new ShabbatLottery(req.body);
-        } else {
-            Object.assign(settings, req.body);
-        }
-        await settings.save();
-        res.json(settings);
+        const challenge = new Challenge(req.body);
+        await challenge.save();
+        res.status(201).json(challenge);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+// עדכון אתגר קיים (מנהלות בלבד)
+router.put('/admin/challenges/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        const updated = await Challenge.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updated);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// מחיקת אתגר וכל התמונות המשויכות אליו (מנהלות בלבד)
+router.delete('/admin/challenges/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        await Challenge.findByIdAndDelete(req.params.id);
+        await ChallengeEntry.deleteMany({ challengeId: req.params.id });
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/shabbat-lottery/enter', authenticate, async (req, res) => {
+// השתתפות באתגר (העלאת תמונה)
+router.post('/challenges/enter', authenticate, async (req, res) => {
     try {
-        const { familyName, image, phone } = req.body;
+        const { challengeId, familyName, image, phone } = req.body;
+        if (!challengeId) return res.status(400).json({ error: 'חובה לבחור אתגר' });
         if (!phone) return res.status(400).json({ error: 'מספר טלפון הוא שדה חובה' });
         
-        const existing = await ShabbatEntry.findOne({ userId: req.user.id });
-        if (existing) return res.status(400).json({ error: 'כבר שלחת תמונה להגרלה זו השבוע' });
+        // בדיקה אם המשתמשת כבר העלתה תמונה לאתגר הספציפי הזה
+        const existing = await ChallengeEntry.findOne({ userId: req.user.id, challengeId });
+        if (existing) return res.status(400).json({ error: 'כבר שלחת תמונה לאתגר זה' });
 
-        const entry = new ShabbatEntry({
+        const entry = new ChallengeEntry({
+            challengeId,
             userId: req.user.id,
             familyName,
             phone,
@@ -712,27 +958,29 @@ router.post('/shabbat-lottery/enter', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/admin/shabbat-lottery/entries', authenticate, isAdmin, async (req, res) => {
+// שליפת כל התמונות של כל האתגרים
+router.get('/challenges/entries', async (req, res) => {
     try {
-        const entries = await ShabbatEntry.find().sort({ createdAt: -1 });
+        const entries = await ChallengeEntry.find().sort({ createdAt: -1 });
         res.json(entries);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/admin/shabbat-lottery/run', authenticate, isAdmin, async (req, res) => {
+// ביצוע הגרלה ובחירת זוכה לאתגר ספציפי (מנהלות בלבד)
+router.post('/admin/challenges/:id/run', authenticate, isAdmin, async (req, res) => {
     try {
-        const entries = await ShabbatEntry.find();
-        if (entries.length === 0) return res.status(400).json({ error: 'אין משתתפות בהגרלה' });
+        const entries = await ChallengeEntry.find({ challengeId: req.params.id });
+        if (entries.length === 0) return res.status(400).json({ error: 'אין משתתפות באתגר זה' });
 
         const randomIndex = Math.floor(Math.random() * entries.length);
         const winner = entries[randomIndex];
 
-        const lottery = await ShabbatLottery.findOne().sort({ createdAt: -1 });
-        if (lottery) {
-            lottery.winnerId = winner.userId;
-            lottery.winnerFamily = winner.familyName;
-            lottery.isActive = false;
-            await lottery.save();
+        const challenge = await Challenge.findById(req.params.id);
+        if (challenge) {
+            challenge.winnerId = winner.userId;
+            challenge.winnerFamily = winner.familyName;
+            challenge.isActive = false;
+            await challenge.save();
         }
 
         res.json({ success: true, winnerFamily: winner.familyName });
@@ -778,7 +1026,7 @@ router.put('/admin/messages/:id/read', authenticate, isAdmin, async (req, res) =
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ================= 16. כרטיסים וברקודים (TICKETS) - חדש! =================
+// ================= 16. כרטיסים וברקודים (TICKETS) =================
 
 router.get('/admin/tickets', authenticate, isAdmin, async (req, res) => {
     try {
@@ -822,6 +1070,191 @@ router.post('/admin/tickets/verify/:code', authenticate, isAdmin, async (req, re
         await ticket.save();
 
         res.json({ success: true, message: 'כניסה אושרה בהצלחה!', eventTitle: ticket.eventId?.title });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 17. סטוריז (STORIES) =================
+
+// שליפת סטוריז מאושרים (עבור דף הבית)
+router.get('/stories', async (req, res) => {
+    try {
+        // שולפים רק סטוריז במצב "approved". (ה-TTL במונגו כבר דואג למחוק את מה שעבר 24 שעות)
+        const stories = await Story.find({ status: 'approved' })
+            .populate('user', 'name avatar') // מביאים את שם ותמונת המשתמשת
+            .sort({ approvedAt: 1 }); // סידור מהישן לחדש (כמו בוואצפ)
+        res.json(stories);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// העלאת סטורי חדש על ידי משתמשת (מחייב חיבור)
+router.post('/stories', authenticate, async (req, res) => {
+    try {
+        const story = new Story({
+            user: req.user.id,
+            type: req.body.type || 'text',
+            content: req.body.content,
+            caption: req.body.caption || '' // <--- הוספנו פה את קבלת הטקסט!
+            // status יהיה 'pending' אוטומטית לפי המודל
+        });
+        await story.save();
+        res.status(201).json({ success: true, message: 'הסטורי נשלח לאישור מנהלת' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// שליפת הסטוריז הממתינים לאישור (מנהלות בלבד)
+router.get('/admin/stories', authenticate, isAdmin, async (req, res) => {
+    try {
+        const stories = await Story.find({ status: 'pending' })
+            .populate('user', 'name avatar')
+            .sort({ createdAt: -1 });
+        res.json(stories);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// אישור סטורי על ידי המנהלת
+router.put('/admin/stories/:id/approve', authenticate, isAdmin, async (req, res) => {
+    try {
+        // חשוב: מעדכנים את שדה approvedAt לעכשיו, מה שמתחיל את שעון העצר של ה-24 שעות!
+        const story = await Story.findByIdAndUpdate(
+            req.params.id, 
+            { status: 'approved', approvedAt: Date.now() }, 
+            { new: true }
+        );
+        res.json({ success: true, story });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// מחיקת סטורי (על ידי מנהלת - אם סירבה לאשר או רצתה להסיר)
+router.delete('/admin/stories/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        await Story.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// מחיקת סטורי על ידי המשתמשת עצמה (הבעלים של הסטורי)
+router.delete('/stories/:id', authenticate, async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id);
+        if (!story) return res.status(404).json({ error: 'Story not found' });
+        
+        // נוודא שמי שמנסה למחוק היא אכן המשתמשת שהעלתה את הסטורי
+        if (story.user.toString() !== req.user.id && !req.user.isAdmin) {
+            return res.status(403).json({ error: 'Unauthorized to delete this story' });
+        }
+        
+        await Story.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- שליפת סטוריז פעילים למנהלת (כולל צפיות) ---
+router.get('/admin/stories/active', authenticate, isAdmin, async (req, res) => {
+    try {
+        const stories = await Story.find({ status: 'approved' })
+            .populate('user', 'name avatar')
+            .sort({ approvedAt: -1 });
+        res.json(stories);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- עדכון ספירת צפיות בסטורי ---
+router.post('/stories/:id/view', authenticate, async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id);
+        if (!story) return res.status(404).json({ error: 'Story not found' });
+        
+        // אם המשתמשת עוד לא צפתה בסטורי, נוסיף אותה ונעלה את המונה
+        if (!story.viewedBy.includes(req.user.id)) {
+            story.viewedBy.push(req.user.id);
+            story.views += 1;
+            await story.save();
+        }
+        res.json({ success: true, views: story.views });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- יצירת תמונה אמיתית מתוך ה-Base64 עבור וואטסאפ ---
+router.get('/stories/image/:id', async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id);
+        if (!story || story.type !== 'image' || !story.content) {
+            return res.status(404).send('Image not found');
+        }
+        
+        // חילוץ הנתונים מהטקסט (Base64)
+        const matches = story.content.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) {
+            return res.status(400).send('Invalid image format');
+        }
+        
+        const imgType = matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        
+        // החזרת הנתונים כקובץ תמונה לכל דבר!
+        res.writeHead(200, {
+            'Content-Type': imgType,
+            'Content-Length': buffer.length
+        });
+        res.end(buffer);
+    } catch (err) { res.status(500).send(err.message); }
+});
+
+// --- ראוט מיוחד לשיתוף בוואצפ (OG Tags) מתוקן ועשיר ---
+router.get('/stories/share/:id', async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id).populate('user', 'name');
+        if (!story) return res.status(404).send('הסטורי לא נמצא או שנמחק');
+
+        const isText = story.type === 'text';
+        const title = `סטורי חדש מאת ${story.user?.name || 'חברה בקהילה'} | קהילת נשי`;
+        
+        // אם הסטורי הוא טקסט - נציג את הטקסט שלו כתיאור. אם תמונה - נציג את הכיתוב שהיא הוסיפה.
+        const description = isText ? story.content : (story.caption || 'היכנסי לראות את הסטורי שהעליתי הרגע לקהילה!');
+        
+        // כתובת השרת שלנו (כדי לחלץ את התמונה)
+        const serverUrl = req.protocol + '://' + req.get('host');
+        
+        // תמונת ברירת מחדל (אפשר להחליף את הלינק של Unsplash בלינק ללוגו של קהילת נשי!)
+        const defaultImageUrl = 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'; 
+        
+        // בסטורי טקסט אין לנו תמונה במסד, אז ניתן את תמונת הדיפולט.
+        const imageUrl = isText ? defaultImageUrl : `${serverUrl}/api/stories/image/${story._id}`; 
+        
+        // הכתובת אליה המשתמשת תועבר כשתלחץ על הלינק (לדף הבית של האתר שלך)
+        const frontendUrl = process.env.FRONTEND_URL || 'https://nashi-production.up.railway.app';
+        const redirectUrl = `${frontendUrl}/#/?storyId=${story._id}`;
+
+        const html = `
+        <!DOCTYPE html>
+        <html lang="he" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <title>${title}</title>
+            
+            <meta property="og:title" content="${title}" />
+            <meta property="og:description" content="${description}" />
+            <meta property="og:image" content="${imageUrl}" />
+            <meta property="og:url" content="${redirectUrl}" />
+            <meta property="og:type" content="website" />
+            <meta property="og:site_name" content="קהילת נשי" />
+
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" content="${title}" />
+            <meta name="twitter:description" content="${description}" />
+            <meta name="twitter:image" content="${imageUrl}" />
+            
+            <script>
+                // הפניה אוטומטית לאתר מיד אחרי שוואצפ שואב את הנתונים המקדימים
+                window.location.href = "${redirectUrl}";
+            </script>
+        </head>
+        <body style="background:#fffcfc; text-align:center; padding-top:50px; font-family:sans-serif;">
+            <h2>מעביר אותך לסטורי...</h2>
+        </body>
+        </html>
+        `;
+        res.send(html);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
