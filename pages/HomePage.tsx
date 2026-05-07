@@ -466,6 +466,15 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* Banner Area */}
         <div className="w-full px-4 md:px-0">{renderAdBanner()}</div>
 
+        <div className="px-4 md:px-0">
+          <button
+            onClick={() => navigate('/zodiac-wheel')}
+            className="w-full bg-gradient-to-l from-fuchsia-600 via-purple-600 to-rose-500 text-white py-5 rounded-[2rem] shadow-[0_14px_40px_rgba(190,24,93,0.25)] border border-fuchsia-200/40 hover:scale-[1.01] transition-all flex items-center justify-center gap-3 font-black text-lg"
+          >
+            <Gift size={22} /> גלגל המזלות
+          </button>
+        </div>
+
         {/* --- אזור הסטוריז המקובץ --- */}
         <div className="relative w-full">
           <div className="w-full px-5 pb-4 pt-2 overflow-x-auto no-scrollbar flex gap-5 snap-x">

@@ -10,7 +10,8 @@ import {
     Challenge, ChallengeEntry, // הוספת המודלים של האתגרים לייבוא במקום שבת
     ContactMessage, // הוספת מודל פניות הציבור לייבוא
     Ticket, // התווסף מודל הכרטיסים!
-    Story // <--- תוספת: מודל הסטוריז
+    Story, // <--- תוספת: מודל הסטוריז
+    ZodiacWheelPrize, ZodiacWheelSpin
 } from './models.js';
 
 const router = express.Router();
@@ -46,6 +47,61 @@ async function getPointsConfig() {
     }
     return settings;
 }
+
+const getZodiacWheelCycleStart = (currentDate = new Date()) => {
+    const cycleStart = new Date(currentDate);
+    cycleStart.setHours(8, 0, 0, 0);
+    if (currentDate < cycleStart) {
+        cycleStart.setDate(cycleStart.getDate() - 1);
+    }
+    return cycleStart;
+};
+
+const getNextZodiacWheelCycleStart = (currentDate = new Date()) => {
+    const cycleStart = getZodiacWheelCycleStart(currentDate);
+    cycleStart.setDate(cycleStart.getDate() + 1);
+    return cycleStart;
+};
+
+const requireValidObjectId = (paramName = 'id') => (req, res, next) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params[paramName])) {
+        return res.status(400).json({ error: 'Invalid ID format' });
+    }
+    next();
+};
+
+const createSimpleRateLimiter = (limit, windowMs) => {
+    const bucket = new Map();
+    return (req, res, next) => {
+        const now = Date.now();
+        const key = `${req.ip}:${req.user?.id || 'guest'}:${req.path}`;
+        const current = bucket.get(key);
+
+        if (!current || now > current.resetAt) {
+            bucket.set(key, { count: 1, resetAt: now + windowMs });
+            return next();
+        }
+
+        if (current.count >= limit) {
+            return res.status(429).json({ error: 'יותר מדי בקשות, יש לנסות שוב בעוד זמן קצר.' });
+        }
+
+        current.count += 1;
+        bucket.set(key, current);
+        return next();
+    };
+};
+
+const zodiacWheelRateLimit = createSimpleRateLimiter(10, 60 * 1000);
+
+const validateZodiacWinChanceBudget = async ({ winChance, isActive = true, excludeId = null }) => {
+    if (!isActive) return true;
+    const query = { isActive: true };
+    if (excludeId) query._id = { $ne: excludeId };
+    const existing = await ZodiacWheelPrize.find(query).select('winChance');
+    const currentSum = existing.reduce((sum, item) => sum + (Number(item.winChance) || 0), 0);
+    return (currentSum + (Number(winChance) || 0)) <= 100;
+};
 
 // ================= 1. אישורים (APPROVALS) =================
 
@@ -279,6 +335,145 @@ router.post('/lotteries/:id/complete-mission', authenticate, async (req, res) =>
         
         lottery.participants.push(req.user.id);
         await lottery.save();
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 5.1 גלגל המזלות (ZODIAC WHEEL) =================
+
+router.get('/zodiac-wheel/prizes', zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const prizes = await ZodiacWheelPrize
+            .find({ isActive: true })
+            .sort({ createdAt: 1 });
+        res.json(prizes);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/zodiac-wheel/status', authenticate, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('lastZodiacWheelSpinAt');
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const now = new Date();
+        const cycleStart = getZodiacWheelCycleStart(now);
+        const lastSpin = user.lastZodiacWheelSpinAt ? new Date(user.lastZodiacWheelSpinAt) : null;
+        const canSpin = !lastSpin || lastSpin < cycleStart;
+
+        res.json({
+            canSpin,
+            lastSpinAt: user.lastZodiacWheelSpinAt || null,
+            nextSpinAt: getNextZodiacWheelCycleStart(now)
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/zodiac-wheel/spin', authenticate, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const now = new Date();
+        const cycleStart = getZodiacWheelCycleStart(now);
+        const alreadySpun = user.lastZodiacWheelSpinAt && new Date(user.lastZodiacWheelSpinAt) >= cycleStart;
+        if (alreadySpun) {
+            return res.status(400).json({
+                error: 'כבר ביצעת סיבוב היום. סיבוב חדש נפתח כל יום ב-08:00.',
+                nextSpinAt: getNextZodiacWheelCycleStart(now)
+            });
+        }
+
+        const prizes = await ZodiacWheelPrize
+            .find({ isActive: true, stock: { $gt: 0 }, winChance: { $gt: 0 } })
+            .sort({ createdAt: 1 });
+
+        const totalWinningChance = Math.min(100, prizes.reduce((acc, p) => acc + (p.winChance || 0), 0));
+        const randomRoll = Math.random() * 100;
+
+        let won = false;
+        let selectedPrize = null;
+
+        if (prizes.length > 0 && randomRoll < totalWinningChance) {
+            let weightedRoll = Math.random() * totalWinningChance;
+            for (const prize of prizes) {
+                weightedRoll -= (prize.winChance || 0);
+                if (weightedRoll <= 0) {
+                    selectedPrize = await ZodiacWheelPrize.findOneAndUpdate(
+                        { _id: prize._id, stock: { $gt: 0 } },
+                        { $inc: { stock: -1 } },
+                        { new: true }
+                    );
+                    if (selectedPrize) won = true;
+                    break;
+                }
+            }
+        }
+
+        user.lastZodiacWheelSpinAt = now;
+        user.zodiacWheelSpinsCount = (user.zodiacWheelSpinsCount || 0) + 1;
+        await user.save();
+
+        await ZodiacWheelSpin.create({
+            userId: user._id,
+            prizeId: selectedPrize?._id || undefined,
+            prizeTitle: selectedPrize?.title || '',
+            won
+        });
+
+        return res.json({
+                    won,
+                    message: won
+                ? `מזל טוב! זכית ב-${selectedPrize?.title || 'הטבה מיוחדת'}`
+                : 'הפעם לא זכית, אבל מחר ב-08:00 מחכה לך סיבוב חדש ✨',
+            prize: selectedPrize || null,
+            nextSpinAt: getNextZodiacWheelCycleStart(now)
+        });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+router.get('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const prizes = await ZodiacWheelPrize.find().sort({ createdAt: 1 });
+        res.json(prizes);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/zodiac-wheel/prizes', authenticate, isAdmin, zodiacWheelRateLimit, async (req, res) => {
+    try {
+        const isWithinBudget = await validateZodiacWinChanceBudget({
+            winChance: req.body.winChance,
+            isActive: req.body.isActive !== false
+        });
+        if (!isWithinBudget) {
+            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
+        }
+        const prize = await new ZodiacWheelPrize(req.body).save();
+        res.status(201).json(prize);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelRateLimit, requireValidObjectId('id'), async (req, res) => {
+    try {
+        const current = await ZodiacWheelPrize.findById(req.params.id);
+        if (!current) return res.status(404).json({ error: 'Prize not found' });
+        const isWithinBudget = await validateZodiacWinChanceBudget({
+            winChance: req.body.winChance ?? current.winChance,
+            isActive: req.body.isActive ?? current.isActive,
+            excludeId: req.params.id
+        });
+        if (!isWithinBudget) {
+            return res.status(400).json({ error: 'סך אחוזי הזכייה של כל ההטבות הפעילות חייב להיות עד 100.' });
+        }
+        const updated = await ZodiacWheelPrize.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updated);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWheelRateLimit, requireValidObjectId('id'), async (req, res) => {
+    try {
+        await ZodiacWheelPrize.findByIdAndDelete(req.params.id);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
