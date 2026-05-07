@@ -254,7 +254,7 @@ const ZodiacWheelPrizeSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, default: '' },
   stock: { type: Number, default: 0, min: 0 },
-  winChance: { type: Number, default: 0, min: 0, max: 100 },
+  dailyWinners: { type: Number, default: 0, min: 0 },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });

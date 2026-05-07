@@ -109,8 +109,8 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
 
   const [shabbatParticipants, setShabbatParticipants] = useState<any[]>([]);
   const [zodiacPrizes, setZodiacPrizes] = useState<any[]>([]);
-  const [zodiacPrizeForm, setZodiacPrizeForm] = useState({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true });
-  const [zodiacStats, setZodiacStats] = useState<{ totalSpins: number; totalWinChance: number; winners: any[] }>({ totalSpins: 0, totalWinChance: 0, winners: [] });
+  const [zodiacPrizeForm, setZodiacPrizeForm] = useState({ _id: '', title: '', description: '', stock: 0, dailyWinners: 1, isActive: true });
+  const [zodiacStats, setZodiacStats] = useState<{ totalSpins: number; totalDailyWinners: number; todayWinners: number; winners: any[] }>({ totalSpins: 0, totalDailyWinners: 0, todayWinners: 0, winners: [] });
 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [communityForm, setCommunityForm] = useState<Partial<any>>({ 
@@ -226,12 +226,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         if (activeTab === 'zodiacWheel') {
             const [zodiacItems, zodiacStatsData] = await Promise.all([
                 api.getAdminZodiacWheelPrizes().catch(() => []),
-                api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalWinChance: 0, winners: [] }))
+                api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalDailyWinners: 0, todayWinners: 0, winners: [] }))
             ]);
             setZodiacPrizes(Array.isArray(zodiacItems) ? zodiacItems : []);
             setZodiacStats({
                 totalSpins: Number(zodiacStatsData?.totalSpins) || 0,
-                totalWinChance: Number(zodiacStatsData?.totalWinChance) || 0,
+                totalDailyWinners: Number(zodiacStatsData?.totalDailyWinners) || 0,
+                todayWinners: Number(zodiacStatsData?.todayWinners) || 0,
                 winners: Array.isArray(zodiacStatsData?.winners) ? zodiacStatsData.winners : []
             });
         }
@@ -469,12 +470,13 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   const refreshZodiacWheelAdminData = async () => {
       const [updatedPrizes, stats] = await Promise.all([
           api.getAdminZodiacWheelPrizes().catch(() => []),
-          api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalWinChance: 0, winners: [] }))
+          api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalDailyWinners: 0, todayWinners: 0, winners: [] }))
       ]);
       setZodiacPrizes(Array.isArray(updatedPrizes) ? updatedPrizes : []);
       setZodiacStats({
           totalSpins: Number(stats?.totalSpins) || 0,
-          totalWinChance: Number(stats?.totalWinChance) || 0,
+          totalDailyWinners: Number(stats?.totalDailyWinners) || 0,
+          todayWinners: Number(stats?.todayWinners) || 0,
           winners: Array.isArray(stats?.winners) ? stats.winners : []
       });
   };
@@ -485,7 +487,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           title: zodiacPrizeForm.title.trim(),
           description: zodiacPrizeForm.description.trim(),
           stock: Math.max(0, Number(zodiacPrizeForm.stock) || 0),
-          winChance: Math.min(100, Math.max(0, Number(zodiacPrizeForm.winChance) || 0)),
+          dailyWinners: Math.max(0, Math.floor(Number(zodiacPrizeForm.dailyWinners) || 0)),
           isActive: zodiacPrizeForm.isActive
       };
 
@@ -495,7 +497,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           } else {
               await api.createZodiacWheelPrize(payload);
           }
-          setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true });
+          setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, dailyWinners: 1, isActive: true });
           await refreshZodiacWheelAdminData();
       } catch (e) {
           alert('שגיאה בשמירת ההטבה');
@@ -509,6 +511,17 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           await refreshZodiacWheelAdminData();
       } catch (e) {
           alert('שגיאה במחיקת ההטבה');
+      }
+  };
+
+  const deleteAllZodiacPrizes = async () => {
+      if (!window.confirm('למחוק את כל ההטבות הקיימות בגלגל? פעולה זו אינה הפיכה.')) return;
+      try {
+          await api.deleteAllZodiacWheelPrizes();
+          setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, dailyWinners: 1, isActive: true });
+          await refreshZodiacWheelAdminData();
+      } catch (e) {
+          alert('שגיאה במחיקת כל ההטבות');
       }
   };
 
@@ -1491,12 +1504,12 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <p className="text-3xl font-black text-slate-800">{zodiacStats.totalSpins}</p>
               </div>
               <div className="bg-white p-5 rounded-2xl border border-fuchsia-100 shadow-sm">
-                <p className="text-xs text-fuchsia-500 font-bold mb-1">סיכוי זכייה כולל בגלגל</p>
-                <p className="text-3xl font-black text-fuchsia-700">{zodiacStats.totalWinChance}%</p>
+                <p className="text-xs text-fuchsia-500 font-bold mb-1">מכסת זוכות יומית מוגדרת</p>
+                <p className="text-3xl font-black text-fuchsia-700">{zodiacStats.totalDailyWinners}</p>
               </div>
               <div className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
-                <p className="text-xs text-amber-600 font-bold mb-1">סה"כ זכיות שנרשמו</p>
-                <p className="text-3xl font-black text-amber-700">{zodiacStats.winners.length}</p>
+                <p className="text-xs text-amber-600 font-bold mb-1">זוכות היום</p>
+                <p className="text-3xl font-black text-amber-700">{zodiacStats.todayWinners}</p>
               </div>
             </div>
 
@@ -1507,35 +1520,50 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
-                <input
-                  placeholder="שם ההטבה"
-                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
-                  value={zodiacPrizeForm.title}
-                  onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, title: e.target.value })}
-                />
-                <input
-                  placeholder="תיאור קצר (אופציונלי)"
-                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
-                  value={zodiacPrizeForm.description}
-                  onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, description: e.target.value })}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="מלאי"
-                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
-                  value={zodiacPrizeForm.stock}
-                  onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, stock: Number(e.target.value) })}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  placeholder="אחוז זכייה בהטבה"
-                  className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
-                  value={zodiacPrizeForm.winChance}
-                  onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, winChance: Number(e.target.value) })}
-                />
+                <div className="space-y-2">
+                  <label className="block text-sm font-black text-slate-700">שם ההטבה</label>
+                  <input
+                    placeholder="לדוגמה: שובר לבית קפה"
+                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                    value={zodiacPrizeForm.title}
+                    onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, title: e.target.value })}
+                  />
+                  <p className="text-xs text-slate-500">זה השם שיוצג לזוכה לאחר הסיבוב.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-black text-slate-700">תיאור ההטבה (אופציונלי)</label>
+                  <input
+                    placeholder="מה מקבלים בהטבה"
+                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                    value={zodiacPrizeForm.description}
+                    onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, description: e.target.value })}
+                  />
+                  <p className="text-xs text-slate-500">פירוט קצר שיופיע ברשימת ההטבות בגלגל.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-black text-slate-700">מלאי כולל</label>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="כמות פריטים זמינים"
+                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                    value={zodiacPrizeForm.stock}
+                    onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, stock: Number(e.target.value) })}
+                  />
+                  <p className="text-xs text-slate-500">כמה פעמים ניתן לחלק את ההטבה עד שהמלאי נגמר.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-black text-slate-700">כמות זוכות ביום</label>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="לדוגמה: 3 זוכות ביום"
+                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                    value={zodiacPrizeForm.dailyWinners}
+                    onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, dailyWinners: Number(e.target.value) })}
+                  />
+                  <p className="text-xs text-slate-500">המכסה היומית המקסימלית לזוכות בהטבה הזו.</p>
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -1546,12 +1574,18 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   {zodiacPrizeForm._id ? 'עדכון הטבה' : 'הוספת הטבה לגלגל'}
                 </button>
                 <button
-                  onClick={() => setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, winChance: 10, isActive: true })}
+                  onClick={() => setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, dailyWinners: 1, isActive: true })}
                   className="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl font-black"
                 >
                   איפוס טופס
                 </button>
-                <p className="text-sm text-slate-500 font-bold">האחוז הכולל של גלגל המזלות כרגע: {zodiacStats.totalWinChance}%. שאר הסיכוי מוצג כ״נסה שוב״.</p>
+                <button
+                  onClick={deleteAllZodiacPrizes}
+                  className="bg-red-50 text-red-600 px-6 py-3 rounded-2xl font-black border border-red-200"
+                >
+                  מחיקת כל ההטבות הקיימות
+                </button>
+                <p className="text-sm text-slate-500 font-bold">הגלגל עובד לפי מכסת זוכות יומית לכל הטבה (לא לפי אחוזים).</p>
               </div>
 
               <div className="overflow-x-auto">
@@ -1560,7 +1594,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     <tr>
                       <th className="p-4">הטבה</th>
                       <th className="p-4">מלאי</th>
-                      <th className="p-4">סיכוי</th>
+                      <th className="p-4">זוכות ביום</th>
                       <th className="p-4">סטטוס</th>
                       <th className="p-4">פעולות</th>
                     </tr>
@@ -1573,7 +1607,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                           {item.description && <p className="text-xs text-slate-400 mt-1">{item.description}</p>}
                         </td>
                         <td className="p-4 font-black text-indigo-600">{item.stock}</td>
-                        <td className="p-4 font-black text-fuchsia-600">{item.winChance}%</td>
+                        <td className="p-4 font-black text-fuchsia-600">{item.dailyWinners ?? 0}</td>
                         <td className="p-4 text-xs font-bold">{item.isActive ? 'פעיל' : 'כבוי'}</td>
                         <td className="p-4">
                           <div className="flex gap-2">
@@ -1583,7 +1617,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                                 title: item.title || '',
                                 description: item.description || '',
                                 stock: item.stock || 0,
-                                winChance: item.winChance || 0,
+                                dailyWinners: item.dailyWinners ?? 0,
                                 isActive: !!item.isActive
                               })}
                               className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"
@@ -1599,7 +1633,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     ))}
                     {zodiacPrizes.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="p-8 text-center text-slate-400 italic">אין עדיין הטבות בגלגל המזלות</td>
+                        <td colSpan={5} className="p-8 text-center text-slate-400 italic">אין עדיין הטבות בגלגל המזלות — אפשר להתחיל להזין חדשות</td>
                       </tr>
                     )}
                   </tbody>

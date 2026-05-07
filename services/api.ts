@@ -272,12 +272,12 @@ export const api = {
         return res.json();
     },
 
-    async getAdminZodiacWheelStats(): Promise<{ totalSpins: number; totalWinChance: number; winners: ZodiacWheelWinner[] }> {
+    async getAdminZodiacWheelStats(): Promise<{ totalSpins: number; totalDailyWinners: number; todayWinners: number; winners: ZodiacWheelWinner[] }> {
         const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/stats`, { headers: getHeaders() });
         return res.json();
     },
 
-    async createZodiacWheelPrize(data: { title: string; description?: string; stock: number; winChance: number; isActive?: boolean }): Promise<any> {
+    async createZodiacWheelPrize(data: { title: string; description?: string; stock: number; dailyWinners: number; isActive?: boolean }): Promise<any> {
         const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes`, {
             method: 'POST',
             headers: getHeaders(),
@@ -286,11 +286,19 @@ export const api = {
         return res.json();
     },
 
-    async updateZodiacWheelPrize(id: string, data: { title: string; description?: string; stock: number; winChance: number; isActive?: boolean }): Promise<any> {
+    async updateZodiacWheelPrize(id: string, data: { title: string; description?: string; stock: number; dailyWinners: number; isActive?: boolean }): Promise<any> {
         const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes/${id}`, {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(data)
+        });
+        return res.json();
+    },
+
+    async deleteAllZodiacWheelPrizes(): Promise<any> {
+        const res = await safeFetch(`${API_URL}/admin/zodiac-wheel/prizes`, {
+            method: 'DELETE',
+            headers: getHeaders()
         });
         return res.json();
     },
