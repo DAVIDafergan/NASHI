@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
-  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2, Play
+  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2,
+  Gift, Trophy, MessageCircle
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
@@ -49,8 +50,17 @@ const categories = [
 
 const API_URL = 'https://nashi-production.up.railway.app/api';
 
-// כתובת סרטון "מה זה נשי" — כשיהיה סרטון בפועל, הכניסי כאן את הקישור אליו
-const ABOUT_VIDEO_URL = '';
+// פיצ'רי הפלטפורמה המוצגים בסקשן "מה זה נשי?" — אייקון, טקסט וצבע (מתחלף בין קורל לירוק אבטיח)
+const platformFeatures = [
+  { icon: Calendar, label: 'אירועים קהילתיים', color: 'green' as const },
+  { icon: Gift, label: 'גמחים והודעות', color: 'coral' as const },
+  { icon: Briefcase, label: 'עסקים בקהילה', color: 'green' as const },
+  { icon: GraduationCap, label: 'חוגים וקורסים', color: 'coral' as const },
+  { icon: Trophy, label: 'הגרלות וזכייה', color: 'green' as const },
+  { icon: Camera, label: 'סטוריז וזכרונות', color: 'coral' as const },
+  { icon: MessageCircle, label: 'פורום דיון', color: 'green' as const },
+  { icon: Users, label: 'קהילה וחברות', color: 'coral' as const },
+];
 
 // --- פונקציית עזר חכמה לזיהוי לינקים והצגתם נכון ---
 const renderTextWithLinks = (text: string) => {
@@ -521,32 +531,38 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </ScrollReveal>
         </section>
 
-        {/* מה זה נשי? — About section, video slot ready for a future About video */}
-        <ScrollReveal as="section" delay={80} className="w-full px-5 md:px-0">
+        {/* מה זה נשי? — Animated feature showcase (icons + text, no video) */}
+        <section className="w-full px-5 md:px-0">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] p-6 md:p-10">
-            <h2 className="text-xl md:text-2xl font-bold text-[#1A202C] mb-1">מה זה נשי?</h2>
-            <p className="text-[#718096] text-sm md:text-base mb-5">היכרות קצרה עם הקהילה שלנו</p>
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-[#FDEAE3] to-[#DCEEE5] border border-slate-100 flex items-center justify-center">
-              {ABOUT_VIDEO_URL ? (
-                <video
-                  src={ABOUT_VIDEO_URL}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-3 text-[#2D6A4F]">
-                  <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-md">
-                    <Play size={22} className="ml-0.5" fill="currentColor" />
-                  </div>
-                  <span className="text-sm font-bold">הסרטון בדרך אלייך</span>
-                </div>
-              )}
+            <ScrollReveal>
+              <h2 className="text-xl md:text-2xl font-bold text-[#1A202C] mb-2">מה זה נשי?</h2>
+            </ScrollReveal>
+            <ScrollReveal delay={100} className="block mb-7">
+              <p className="text-[#4A5568] text-sm md:text-base leading-relaxed max-w-2xl">
+                פלטפורמה המחברת קהילה בנשים — אירועים, עסקים, חוגים, סטוריז ועוד
+              </p>
+            </ScrollReveal>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
+              {platformFeatures.map((feature, i) => {
+                const Icon = feature.icon;
+                const isGreen = feature.color === 'green';
+                return (
+                  <ScrollReveal
+                    key={feature.label}
+                    delay={300 * (i + 1)}
+                    className="flex flex-row sm:flex-col items-center gap-3 sm:gap-2 sm:text-center"
+                  >
+                    <div className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center ${isGreen ? 'bg-[#DCEEE5] text-[#2D6A4F]' : 'bg-[#FDEAE3] text-[#E88B70]'}`}>
+                      <Icon size={26} strokeWidth={2} />
+                    </div>
+                    <span className="text-[15px] font-medium text-[#1A202C]">{feature.label}</span>
+                  </ScrollReveal>
+                );
+              })}
             </div>
           </div>
-        </ScrollReveal>
+        </section>
 
         {/* Banner Area */}
         <div className="w-full px-4 md:px-0">{renderAdBanner()}</div>
