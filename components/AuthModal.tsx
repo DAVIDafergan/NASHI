@@ -57,14 +57,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-right" dir="rtl">
-      
+    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right" dir="rtl" onClick={onClose}>
+
       {/* כרטיס הטופס */}
       {!showTerms ? (
-        <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden relative animate-scale-up">
-          
+        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-md shadow-2xl overflow-hidden relative animate-slide-up max-h-[88vh] flex flex-col">
+          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0"></div>
+
           {/* כותרת */}
-          <div className="bg-gradient-to-r from-purple-600 to-rose-500 p-8 text-white text-center relative">
+          <div className="bg-gradient-to-r from-purple-600 to-rose-500 p-8 text-white text-center relative shrink-0">
             <button onClick={onClose} className="absolute top-4 left-4 p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors">
               <X size={20} />
             </button>
@@ -76,7 +77,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
             </p>
           </div>
 
-          <div className="p-8">
+          <div className="p-8 overflow-y-auto flex-1">
             <form onSubmit={handleSubmit} className="space-y-4">
               
               {isRegister && (
@@ -213,8 +214,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
         </div>
       ) : (
         // --- מודאל התקנון (נפתח במקום הטופס) ---
-        <div className="bg-white rounded-[2rem] w-full max-w-xl shadow-2xl relative flex flex-col max-h-[80vh] animate-scale-up border-t-8 border-purple-500">
-           <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-xl shadow-2xl relative flex flex-col max-h-[88vh] animate-slide-up border-t-4 border-[#2D6A4F]">
+           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0"></div>
+           <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2"><ShieldCheck className="text-purple-500"/> תקנון ומדיניות האתר</h3>
               <button onClick={() => setShowTerms(false)} className="p-2 hover:bg-white rounded-full transition-colors"><X size={20}/></button>
            </div>
@@ -247,7 +249,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
              <p>על תקנון זה ועל השימוש באתר יחולו דיני מדינת ישראל בלבד, וסמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים בישראל.</p>
              <p className="italic mt-2 text-xs opacity-70">תקנון זה נועד להבהיר את אופן השימוש באתר ולשמור על קהילה בטוחה, מכבדת ומעצימה.</p>
            </div>
-           <div className="p-4 border-t border-slate-100 bg-slate-50">
+           <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
              <button onClick={() => { setShowTerms(false); setFormData({...formData, agreedToTerms: true}); }} className="w-full py-3 bg-purple-600 text-white rounded-xl font-black hover:bg-purple-700 transition-colors">קראתי ואני מאשרת את התקנון</button>
            </div>
         </div>

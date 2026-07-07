@@ -316,9 +316,10 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
 
       {/* מודאל פתיחת נושא חדש */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in text-right">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6 md:p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right" onClick={() => setIsModalOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-lg p-6 md:p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[88vh] animate-slide-up border-t-4 border-[#2D6A4F]">
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-4 shrink-0"></div>
+            <div className="flex justify-between items-center mb-6 shrink-0">
               <h3 className="text-xl font-bold text-[#1A202C]">פתיחת נושא חדש</h3>
               <button onClick={() => setIsModalOpen(false)} className="w-9 h-9 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors"><X size={18}/></button>
             </div>

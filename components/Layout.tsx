@@ -218,8 +218,9 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
 
       {/* מודל תקנון גלובלי - זמין לכל האתר */}
       {showTermsModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in text-right">
-              <div className="bg-white rounded-[2rem] w-full max-w-2xl p-6 md:p-10 relative shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right" onClick={() => setShowTermsModal(false)}>
+              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-2xl p-6 md:p-10 relative shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-slide-up border-t-4 border-[#2D6A4F]">
+                  <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-4 shrink-0"></div>
                   <div className="flex items-center justify-between mb-6 shrink-0">
                       <h2 className="text-xl font-black text-slate-800 flex items-center gap-2"><ShieldCheck className="text-rose-500"/> תקנון ומדיניות שימוש</h2>
                       <button onClick={() => setShowTermsModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20}/></button>

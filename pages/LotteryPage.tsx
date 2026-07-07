@@ -856,9 +856,10 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       )}
 
       {/* --- מודל ההגרלות הלייב --- */}
+      {/* הערה: מודל הגרלה חיה נשאר עם עיצובו התיאטרלי הכהה (dramatic reveal) ומרכוז במקום bottom-sheet — לחיצה על הרקע סוגרת, בהתאם לשאר האתר */}
       {selectedLottery && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in">
-              <div className="w-full max-w-md relative">
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in" onClick={() => setSelectedLottery(null)}>
+              <div className="w-full max-w-md relative" onClick={(e) => e.stopPropagation()}>
                   <button onClick={() => setSelectedLottery(null)} className="absolute -top-12 right-0 p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-all"><X size={20} /></button>
                   
                   <div className="bg-gradient-to-b from-indigo-950 via-purple-900 to-slate-950 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative">

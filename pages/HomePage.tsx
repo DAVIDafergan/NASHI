@@ -975,8 +975,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       {/* 2. מודל העלאת סטורי חדש */}
       {showAddStoryModal && (
-          <div className="fixed inset-0 z-[450] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in text-right">
-             <div className="bg-white rounded-t-[2.5rem] md:rounded-[2.5rem] w-full max-w-md p-8 relative shadow-2xl border border-white">
+          <div className="fixed inset-0 z-[450] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right" onClick={() => setShowAddStoryModal(false)}>
+             <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-md p-8 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#2D6A4F]">
+                 <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-5"></div>
                  <button onClick={() => setShowAddStoryModal(false)} className="absolute top-6 left-6 p-2 bg-slate-50 text-slate-400 rounded-full hover:bg-rose-50 hover:text-rose-400 transition-colors"><X size={20}/></button>
                  <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Sparkles className="text-[#d88a99]" size={20}/> שתפי רגע למעגל</h2>
                  
@@ -1042,9 +1043,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       {/* 3. מודל בקשת הצטרפות */}
       {showMembershipModal && (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in text-right">
-              <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 md:p-10 relative shadow-2xl border border-white">
-                  <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-rose-300 to-pink-300"></div>
+          <div className="fixed inset-0 z-[250] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right" onClick={() => setShowMembershipModal(false)}>
+              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-lg p-8 md:p-10 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#2D6A4F]">
+                  <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-4 mb-5"></div>
                   <button onClick={() => setShowMembershipModal(false)} className="absolute top-6 left-6 p-2 hover:bg-rose-50 rounded-full text-slate-400 transition-colors"><X size={20}/></button>
                   <div className="text-right space-y-6">
                       <div className="w-14 h-14 bg-rose-50 rounded-[1.2rem] flex items-center justify-center text-rose-400 shadow-sm"><Sparkles size={28}/></div>
@@ -1072,8 +1073,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       {/* 4. מודל תקנון */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in text-right">
-           <div className="bg-white rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl max-h-[85vh] overflow-hidden flex flex-col border border-white">
+        <div className="fixed inset-0 z-[300] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right" onClick={() => setShowTermsModal(false)}>
+           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-2xl p-8 shadow-2xl max-h-[88vh] overflow-hidden flex flex-col animate-slide-up border-t-4 border-[#2D6A4F]">
+              <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-4 shrink-0"></div>
               <div className="flex justify-between items-center mb-6 shrink-0">
                 <h3 className="text-2xl font-black text-slate-800">תקנון ומדיניות</h3>
                 <button onClick={() => setShowTermsModal(false)} className="p-2 hover:bg-rose-50 rounded-full text-slate-400 transition-colors"><X size={20}/></button>
