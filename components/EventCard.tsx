@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, MapPin } from 'lucide-react';
+import { Calendar, MapPin, CheckCircle2 } from 'lucide-react';
 
 interface EventCardProps {
   title: string;
@@ -43,11 +43,11 @@ const EventCard: React.FC<EventCardProps> = ({
           src={image}
           alt={title}
           loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+          className={`w-full h-full object-cover transition-transform duration-700 hover:scale-105 ${isPast ? 'grayscale-[0.35]' : ''}`}
         />
         {isPast ? (
-          <span className="absolute top-3 right-3 bg-[#CBD5E0] text-[#1A202C] px-3 py-1 rounded-full text-[11px] font-bold shadow-sm">
-            עבר
+          <span className="absolute top-3 right-3 inline-flex items-center gap-1.5 bg-[#CBD5E0] text-[#1A202C] px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm">
+            <CheckCircle2 size={13} /> האירוע הסתיים
           </span>
         ) : category && (
           <span className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-bold text-slate-700 shadow-sm">

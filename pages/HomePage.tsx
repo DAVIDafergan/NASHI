@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
   Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2,
-  Gift, Trophy, MessageCircle
+  Gift, Trophy, MessageCircle, CheckCircle2
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
@@ -239,21 +239,21 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   // סליידר אירועים אוטומטי בנייד
   useEffect(() => {
     const slider = mobileSliderRef.current;
-    if (!slider || events.length === 0) return;
+    if (!slider || upcomingEvents.length === 0) return;
 
     const interval = setInterval(() => {
-      const cardWidth = slider.offsetWidth; 
+      const cardWidth = slider.offsetWidth;
       const maxScroll = slider.scrollWidth - slider.offsetWidth;
-      
+
       if (Math.abs(slider.scrollLeft) >= maxScroll - 10) {
         slider.scrollTo({ left: 0, behavior: 'smooth' });
       } else {
         slider.scrollBy({ left: -cardWidth, behavior: 'smooth' });
       }
-    }, 4000); 
+    }, 4000);
 
     return () => clearInterval(interval);
-  }, [events]);
+  }, [upcomingEvents]);
 
   useEffect(() => {
     if (ads && ads.length > 1 && ads[currentAdIndex]?.type === 'image') {
@@ -375,6 +375,16 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
   const heroEvents = events.filter(e => e.isHero);
   const displayEvents = heroEvents.length > 0 ? heroEvents : events.slice(0, 3);
+
+  // "אירועים קרובים" — מציג רק אירועים שטרם עברו, ממוינים מהקרוב ביותר; אם אין אף אירוע עתידי, נופלים חזרה לרשימה המלאה כדי לא להציג סליידר ריק
+  // ממוין ב-useMemo (לא בכל רינדור) כדי שלא יאפס את אינטרוול הגלילה האוטומטית של הסליידר בכל עדכון state אחר בעמוד
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    const future = [...events]
+      .filter(e => new Date(e.date) >= now)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return future.length > 0 ? future : events;
+  }, [events]);
 
   useEffect(() => {
     if (displayEvents && displayEvents.length > 0) {
@@ -636,7 +646,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               ref={mobileSliderRef}
               className="-mx-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar pb-8"
             >
-               {events.map((event, i) => (
+               {upcomingEvents.map((event, i) => (
                  <div key={i} className="min-w-[100vw] px-5 snap-center">
                     <EventCard
                       title={event.title}
@@ -644,6 +654,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                       dateLabel={event.date ? new Date(event.date).toLocaleDateString('he-IL', { day: '2-digit', month: 'short' }) : ''}
                       location={event.location}
                       category={event.category}
+                      isPast={new Date(event.date) < new Date()}
+                      ctaLabel="לפרטים והרשמה"
                       onClick={() => navigate('/events')}
                     />
                  </div>
@@ -780,10 +792,17 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
            {/* Hero Slider */}
            <ScrollReveal as="section" className="relative h-[520px] w-full overflow-hidden rounded-[3rem] shadow-[0_24px_60px_rgba(0,0,0,0.12)] mt-8">
-              {displayEvents.map((event, index) => (
+              {displayEvents.map((event, index) => {
+                const isPastHero = new Date(event.date) < new Date();
+                return (
                 <div key={index} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
-                   <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
+                   <div className={`absolute inset-0 bg-cover bg-center ${isPastHero ? 'grayscale-[0.5]' : ''}`} style={{ backgroundImage: `url(${event.image})` }}></div>
                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
+                   {isPastHero && (
+                     <span className="absolute top-8 right-8 inline-flex items-center gap-1.5 bg-[#CBD5E0] text-[#1A202C] px-4 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                       <CheckCircle2 size={14} /> האירוע הסתיים
+                     </span>
+                   )}
                    <div className="absolute bottom-12 left-12 right-12 flex justify-between items-end">
                       <div className="text-left max-w-2xl">
                          <div className="flex items-center gap-2 text-rose-300 text-sm font-medium uppercase tracking-widest mb-4">
@@ -791,7 +810,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                          </div>
                          <h2 className="text-5xl font-black text-white leading-tight drop-shadow-md">{event.title}</h2>
                       </div>
-                      <Link to="/events" className="shrink-0 bg-white/15 backdrop-blur-md text-white border border-white/40 px-10 py-4 rounded-2xl font-bold text-base hover:bg-white hover:text-slate-900 transition-all duration-300 shadow-lg">לפרטים והרשמה</Link>
+                      <Link to="/events" className="shrink-0 bg-white/15 backdrop-blur-md text-white border border-white/40 px-10 py-4 rounded-2xl font-bold text-base hover:bg-white hover:text-slate-900 transition-all duration-300 shadow-lg">
+                        {isPastHero ? 'צפי בסיכום האירוע' : 'לפרטים והרשמה'}
+                      </Link>
                    </div>
                    {/* Slide indicator dots */}
                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
@@ -800,7 +821,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                      ))}
                    </div>
                 </div>
-              ))}
+                );
+              })}
            </ScrollReveal>
 
            {/* Classes Desktop */}
@@ -849,46 +871,67 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            </section>
 
            {/* Personality & Grid Desktop */}
-           <ScrollReveal className="grid grid-cols-3 gap-10">
-              <div className="col-span-2 space-y-10">
-                 {personality && (
-                    <section className="bg-white rounded-2xl p-8 shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-slate-100 flex items-center gap-8 cursor-pointer hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] hover:scale-[1.01] transition-all duration-300" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}>
-                       <div className="shrink-0 w-[140px] h-[140px] rounded-2xl overflow-hidden border-2 border-[#DCEEE5]">
-                          <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} loading="lazy" />
-                       </div>
-                       <div className="text-right">
-                          <span className="inline-block text-[10px] font-bold text-[#2D6A4F] bg-[#DCEEE5] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2.5">אשת השבוע במעגל</span>
-                          <h3 className="text-xl font-semibold text-[#1A202C]">{personality.name}</h3>
-                          {personality.role && <p className="text-[#4A5568] text-sm mt-1.5 line-clamp-2 leading-[1.4] max-w-md">{personality.role}</p>}
-                          <span className="inline-flex items-center gap-1.5 mt-4 bg-[#2D6A4F] text-white text-sm font-bold px-5 py-2.5 min-h-[44px] rounded-lg hover:bg-[#245A41] transition-colors">
-                             צפה בפרופיל <ArrowLeft size={14}/>
-                          </span>
-                       </div>
-                    </section>
-                 )}
-              </div>
-              <div className="space-y-8">
-                 {/* Inspiration Desktop */}
-                 <div className="bg-gradient-to-br from-rose-100 to-[#e8a5b2] rounded-[2.5rem] p-8 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
-                    <div className="absolute -top-10 -right-10 text-white/20"><Quote size={120} /></div>
-                    <div className="relative z-10">
-                       <Quote className="text-white mb-6" size={28} />
-                       <p className="font-serif leading-relaxed text-xl text-slate-800 font-medium">"{latestInspiration.text}"</p>
-                       <p className="mt-6 text-sm font-black text-slate-700 opacity-80">{latestInspiration.author}</p>
-                    </div>
-                 </div>
-                 {/* Announcements Desktop */}
-                 <div className="space-y-4">
-                    <h4 className="font-bold text-slate-400 text-sm px-2 uppercase tracking-widest">לוח מודעות</h4>
-                    {announcements.slice(0, 2).map((ann, i) => (
-                      <div key={i} className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-r-4 border-rose-300 shadow-sm hover:shadow-md transition-all">
-                         <h4 className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2"><Bell className="text-rose-300" size={16}/> {ann.title}</h4>
-                         <p className="text-sm text-slate-500 leading-relaxed font-medium">{ann.content}</p>
+           {personality ? (
+             <ScrollReveal className="grid grid-cols-3 gap-10">
+                <div className="col-span-2 space-y-10">
+                   <section className="bg-white rounded-2xl p-8 shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-slate-100 flex items-center gap-8 cursor-pointer hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] hover:scale-[1.01] transition-all duration-300" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}>
+                      <div className="shrink-0 w-[140px] h-[140px] rounded-2xl overflow-hidden border-2 border-[#DCEEE5]">
+                         <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} loading="lazy" />
                       </div>
-                    ))}
-                 </div>
-              </div>
-           </ScrollReveal>
+                      <div className="text-right">
+                         <span className="inline-block text-[10px] font-bold text-[#2D6A4F] bg-[#DCEEE5] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2.5">אשת השבוע במעגל</span>
+                         <h3 className="text-xl font-semibold text-[#1A202C]">{personality.name}</h3>
+                         {personality.role && <p className="text-[#4A5568] text-sm mt-1.5 line-clamp-2 leading-[1.4] max-w-md">{personality.role}</p>}
+                         <span className="inline-flex items-center gap-1.5 mt-4 bg-[#2D6A4F] text-white text-sm font-bold px-5 py-2.5 min-h-[44px] rounded-lg hover:bg-[#245A41] transition-colors">
+                            צפה בפרופיל <ArrowLeft size={14}/>
+                         </span>
+                      </div>
+                   </section>
+                </div>
+                <div className="space-y-8">
+                   {/* Inspiration Desktop */}
+                   <div className="bg-gradient-to-br from-rose-100 to-[#e8a5b2] rounded-[2.5rem] p-8 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
+                      <div className="absolute -top-10 -right-10 text-white/20"><Quote size={120} /></div>
+                      <div className="relative z-10">
+                         <Quote className="text-white mb-6" size={28} />
+                         <p className="font-serif leading-relaxed text-xl text-slate-800 font-medium">"{latestInspiration.text}"</p>
+                         <p className="mt-6 text-sm font-black text-slate-700 opacity-80">{latestInspiration.author}</p>
+                      </div>
+                   </div>
+                   {/* Announcements Desktop */}
+                   <div className="space-y-4">
+                      <h4 className="font-bold text-slate-400 text-sm px-2 uppercase tracking-widest">לוח מודעות</h4>
+                      {announcements.slice(0, 2).map((ann, i) => (
+                        <div key={i} className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-r-4 border-rose-300 shadow-sm hover:shadow-md transition-all">
+                           <h4 className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2"><Bell className="text-rose-300" size={16}/> {ann.title}</h4>
+                           <p className="text-sm text-slate-500 leading-relaxed font-medium">{ann.content}</p>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             </ScrollReveal>
+           ) : (
+             /* אין כרגע "אשת השבוע" פעילה — לא שומרים מקום ריק, ההשראה וההודעות תופסות את כל הרוחב */
+             <ScrollReveal className="grid grid-cols-2 gap-8">
+                <div className="bg-gradient-to-br from-rose-100 to-[#e8a5b2] rounded-[2.5rem] p-10 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
+                   <div className="absolute -top-10 -right-10 text-white/20"><Quote size={120} /></div>
+                   <div className="relative z-10">
+                      <Quote className="text-white mb-6" size={28} />
+                      <p className="font-serif leading-relaxed text-2xl text-slate-800 font-medium">"{latestInspiration.text}"</p>
+                      <p className="mt-6 text-sm font-black text-slate-700 opacity-80">{latestInspiration.author}</p>
+                   </div>
+                </div>
+                <div className="space-y-4">
+                   <h4 className="font-bold text-slate-400 text-sm px-2 uppercase tracking-widest">לוח מודעות</h4>
+                   {announcements.slice(0, 2).map((ann, i) => (
+                     <div key={i} className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-r-4 border-rose-300 shadow-sm hover:shadow-md transition-all">
+                        <h4 className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2"><Bell className="text-rose-300" size={16}/> {ann.title}</h4>
+                        <p className="text-sm text-slate-500 leading-relaxed font-medium">{ann.content}</p>
+                     </div>
+                   ))}
+                </div>
+             </ScrollReveal>
+           )}
         </div>
 
         {/* Footer - Elegant */}
