@@ -68,9 +68,9 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
     <div className="flex flex-col min-h-screen w-full font-sans text-slate-600">
       
       {/* --- Header --- */}
-      <header 
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b ${
-            scrolled ? 'bg-white/90 backdrop-blur-xl border-slate-100/80 h-16 shadow-sm' : 'bg-white/40 backdrop-blur-md border-transparent h-20'
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white ${
+            scrolled ? 'h-16 shadow-[0_1px_3px_rgba(0,0,0,0.1)]' : 'h-20 shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between gap-4">
@@ -86,11 +86,11 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
 
             {/* שורת חיפוש חופשי (Desktop) */}
             <div className="hidden lg:flex items-center relative group flex-1 max-w-xs">
-                <Search className="absolute right-3 text-slate-400 group-focus-within:text-rose-500 transition-colors" size={16} />
-                <input 
-                    type="text" 
-                    placeholder="חיפוש חופשי באתר..." 
-                    className="w-full pr-10 pl-4 py-2 bg-white/50 border border-white/60 rounded-full outline-none focus:ring-2 focus:ring-rose-100 text-xs transition-all"
+                <Search className="absolute right-3 text-slate-400 group-focus-within:text-[#2D6A4F] transition-colors" size={16} />
+                <input
+                    type="text"
+                    placeholder="חיפוש חופשי באתר..."
+                    className="w-full pr-10 pl-4 py-2 bg-[#F5F5F5] border border-transparent rounded-full outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F]/30 text-xs transition-all"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -98,18 +98,17 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
           </div>
 
             {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1 bg-white/60 backdrop-blur-md px-1.5 py-1 rounded-full border border-slate-200/60 shadow-sm">
+          <nav className="hidden md:flex items-center gap-5">
             {navLinks.map((link) => (
-              <Link 
+              <Link
                 key={link.path}
-                to={link.path} 
-                className={`px-4 py-2 rounded-full text-[11px] lg:text-xs font-bold transition-all duration-300 ${
-                    isActive(link.path) 
-                    ? 'bg-white text-rose-600 shadow-sm' 
-                    : 'text-slate-500 hover:text-rose-500 hover:bg-white/70'
-                }`}
+                to={link.path}
+                className="relative py-2 text-[13px] font-bold text-slate-600 hover:text-[#2D6A4F] transition-colors duration-300 group/link"
               >
                 {link.label}
+                <span className={`absolute -bottom-0.5 right-0 h-[2px] bg-[#2D6A4F] transition-all duration-300 ease-out ${
+                    isActive(link.path) ? 'w-full' : 'w-0 group-hover/link:w-full'
+                }`}></span>
               </Link>
             ))}
           </nav>
@@ -118,29 +117,29 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
           <div className="flex items-center gap-4">
             {user ? (
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center gap-2 pl-1 pr-1 py-1 rounded-full bg-white/60 border border-white hover:border-rose-200 hover:bg-rose-50/50 hover:shadow-md transition-all group"
+                  className="flex items-center gap-2 pl-1 pr-1 py-1 rounded-full bg-[#F5F5F5] border border-transparent hover:border-[#2D6A4F]/25 hover:bg-[#DCEEE5]/60 transition-all group"
                 >
                   <div className="text-right hidden md:block pl-2">
-                    <p className="text-xs font-bold text-slate-700 group-hover:text-rose-600 transition-colors">{user.name.split(' ')[0]}</p>
+                    <p className="text-xs font-bold text-slate-700 group-hover:text-[#2D6A4F] transition-colors">{user.name.split(' ')[0]}</p>
                     {/* הצגת נקודות מותנית */}
                     {user.isMemberApproved && (
-                      <p className="text-[10px] text-rose-400 font-medium">{user.points} נק'</p>
+                      <p className="text-[10px] text-[#2D6A4F] font-medium">{user.points} נק'</p>
                     )}
                   </div>
 
                   {/* Mobile Only Points display */}
                   {user.isMemberApproved && (
                     <div className="md:hidden flex flex-col items-end pr-2 pl-1">
-                        <span className="text-[10px] font-bold text-rose-500">{user.points} נק'</span>
+                        <span className="text-[10px] font-bold text-[#2D6A4F]">{user.points} נק'</span>
                     </div>
                   )}
 
-                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-rose-50 overflow-hidden border-2 border-white shadow-sm ring-1 ring-rose-100">
+                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#DCEEE5] overflow-hidden border-2 border-white shadow-sm ring-1 ring-[#DCEEE5]">
                     <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} alt={user.name} className="w-full h-full object-cover" />
                   </div>
-                  <ChevronDown size={12} className="text-slate-400 ml-0.5 group-hover:text-rose-400 hidden md:block" />
+                  <ChevronDown size={12} className="text-slate-400 ml-0.5 group-hover:text-[#2D6A4F] hidden md:block" />
                 </button>
 
                 {isProfileMenuOpen && (
@@ -149,18 +148,18 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                         <p className="text-sm font-bold text-slate-800">{user.name}</p>
                         <p className="text-xs text-slate-400">{user.email}</p>
                     </div>
-                    <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-500 transition-colors rounded-lg mx-1"><UserIcon size={15} />האזור האישי</Link>
-                    {user.isAdmin && <Link to="/admin" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-500 transition-colors rounded-lg mx-1"><ShieldCheck size={15} />ניהול מערכת</Link>}
+                    <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-[#DCEEE5]/50 hover:text-[#2D6A4F] transition-colors rounded-lg mx-1"><UserIcon size={15} />האזור האישי</Link>
+                    {user.isAdmin && <Link to="/admin" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-[#DCEEE5]/50 hover:text-[#2D6A4F] transition-colors rounded-lg mx-1"><ShieldCheck size={15} />ניהול מערכת</Link>}
                     <div className="border-t border-slate-50 mt-1 pt-1">
-                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-colors rounded-lg mx-1"><LogOut size={15} />התנתקות</button>
+                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors rounded-lg mx-1"><LogOut size={15} />התנתקות</button>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <button 
+              <button
                 onClick={onOpenLogin}
-                className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-full font-bold text-[11px] md:text-xs hover:shadow-lg hover:shadow-rose-200 hover:-translate-y-0.5 transition-all duration-300 shadow-md"
+                className="bg-[#2D6A4F] text-white px-6 py-2.5 min-h-[44px] rounded-lg font-bold text-xs hover:bg-[#245A41] hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-sm"
               >
                 כניסה
               </button>
@@ -194,11 +193,11 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                 >
                     <div className={`
                         p-2 rounded-full transition-all duration-300
-                        ${active ? 'bg-gradient-to-tr from-rose-50 to-pink-50 text-rose-500 -translate-y-1 shadow-sm' : 'text-slate-400 hover:text-rose-400'}
+                        ${active ? 'bg-[#DCEEE5] text-[#2D6A4F] -translate-y-1 shadow-sm' : 'text-slate-400 hover:text-[#2D6A4F]'}
                     `}>
                         {link.icon}
                     </div>
-                    <span className={`text-[9px] font-bold transition-all ${active ? 'text-rose-500' : 'text-slate-400'}`}>
+                    <span className={`text-[9px] font-bold transition-all ${active ? 'text-[#2D6A4F]' : 'text-slate-400'}`}>
                         {link.label}
                     </span>
                 </Wrapper>

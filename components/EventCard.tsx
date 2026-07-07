@@ -36,23 +36,22 @@ const EventCard: React.FC<EventCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-pointer flex flex-col ${className}`}
+      className={`bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-pointer flex flex-col ${isPast ? 'opacity-[0.85]' : ''} ${className}`}
     >
       <div className="relative h-44 sm:h-48 overflow-hidden bg-slate-50 shrink-0">
         <img
           src={image}
           alt={title}
           loading="lazy"
-          className={`w-full h-full object-cover transition-transform duration-700 hover:scale-105 ${isPast ? 'grayscale-[0.4] brightness-90' : ''}`}
+          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
         />
-        {category && (
+        {isPast ? (
+          <span className="absolute top-3 right-3 bg-[#CBD5E0] text-[#1A202C] px-3 py-1 rounded-full text-[11px] font-bold shadow-sm">
+            עבר
+          </span>
+        ) : category && (
           <span className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-bold text-slate-700 shadow-sm">
             {category}
-          </span>
-        )}
-        {isPast && (
-          <span className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-[10px] font-bold">
-            הסתיים
           </span>
         )}
       </div>
@@ -74,9 +73,13 @@ const EventCard: React.FC<EventCardProps> = ({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onClick?.(); }}
-          className="mt-1 w-full py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-[#E85C5C] active:scale-95 transition-all min-h-[44px]"
+          className={`mt-1 w-full py-3 rounded-xl text-sm font-bold active:scale-95 transition-all min-h-[44px] ${
+            isPast
+              ? 'bg-[#F5F5F5] text-[#718096] hover:bg-[#EDEDED]'
+              : 'bg-slate-900 text-white hover:bg-[#E85C5C]'
+          }`}
         >
-          {ctaLabel}
+          {isPast ? 'הסתיים' : ctaLabel}
         </button>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Bell, Star, Music, Palette, Activity, Briefcase, Mic, Gift, Clock, Sparkles,
+import {
+  Bell, Star, Music, Palette, Activity, Briefcase, Mic, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
-  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2, Target
+  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2, Play
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
@@ -48,6 +48,9 @@ const categories = [
 ];
 
 const API_URL = 'https://nashi-production.up.railway.app/api';
+
+// כתובת סרטון "מה זה נשי" — כשיהיה סרטון בפועל, הכניסי כאן את הקישור אליו
+const ABOUT_VIDEO_URL = '';
 
 // --- פונקציית עזר חכמה לזיהוי לינקים והצגתם נכון ---
 const renderTextWithLinks = (text: string) => {
@@ -463,17 +466,31 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#DCEEE5] rounded-full blur-[100px] opacity-60"></div>
 
           {/* Decorative watermelon slices — subtle float + scroll parallax, corners of the screen */}
-          <WatermelonSlice className="absolute -top-5 -right-5 opacity-90" size={104} rotate={14} parallax={16} />
+          <WatermelonSlice className="absolute -top-5 -right-5 opacity-90" size={104} rotate={14} motion="float" parallax={16} />
           <WatermelonSlice className="absolute top-28 -left-9 opacity-60" size={72} rotate={-18} flip motion="float-reverse" parallax={-12} />
           <WatermelonSlice className="absolute bottom-16 -right-8 opacity-50" size={86} rotate={-10} motion="float-reverse" parallax={10} />
-          <WatermelonSlice className="absolute bottom-48 -left-6 opacity-70" size={64} rotate={22} flip parallax={-18} />
+          <WatermelonSlice className="absolute -bottom-5 -left-5 opacity-80" size={92} rotate={22} flip motion="float-reverse" parallax={-18} />
       </div>
 
       {/* Main Content Container */}
       <div className="max-w-5xl mx-auto md:px-8 pt-0 md:pt-10 relative z-10 space-y-10 md:space-y-12">
 
         {/* Hero — SUMMER 2026 */}
-        <section className="w-full px-5 md:px-0 pt-5 md:pt-6 pb-2 md:pb-4">
+        <section className="relative w-full px-5 md:px-0 pt-5 md:pt-6 pb-2 md:pb-4 overflow-hidden">
+          {/* Small secondary wave accent, top-left of hero */}
+          <svg width="90" height="14" viewBox="0 0 90 14" fill="none" className="absolute left-0 top-1 opacity-50 hidden md:block pointer-events-none" aria-hidden="true">
+            <path
+              d="M1 7 Q 12 -2, 23 7 T 45 7 T 67 7 T 89 7"
+              stroke="#F8A88F"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              fill="none"
+              pathLength="1"
+              strokeDasharray="1"
+              className="animate-draw-wave"
+              style={{ animationDelay: '450ms' }}
+            />
+          </svg>
           <ScrollReveal>
             <p className="text-[11px] md:text-xs font-bold tracking-[0.25em] text-[#C94848] uppercase mb-3">קהילת נשי מציגה</p>
           </ScrollReveal>
@@ -504,17 +521,35 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </ScrollReveal>
         </section>
 
+        {/* מה זה נשי? — About section, video slot ready for a future About video */}
+        <ScrollReveal as="section" delay={80} className="w-full px-5 md:px-0">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] p-6 md:p-10">
+            <h2 className="text-xl md:text-2xl font-bold text-[#1A202C] mb-1">מה זה נשי?</h2>
+            <p className="text-[#718096] text-sm md:text-base mb-5">היכרות קצרה עם הקהילה שלנו</p>
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-[#FDEAE3] to-[#DCEEE5] border border-slate-100 flex items-center justify-center">
+              {ABOUT_VIDEO_URL ? (
+                <video
+                  src={ABOUT_VIDEO_URL}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-3 text-[#2D6A4F]">
+                  <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-md">
+                    <Play size={22} className="ml-0.5" fill="currentColor" />
+                  </div>
+                  <span className="text-sm font-bold">הסרטון בדרך אלייך</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </ScrollReveal>
+
         {/* Banner Area */}
         <div className="w-full px-4 md:px-0">{renderAdBanner()}</div>
-
-        <div className="px-4 md:px-0">
-          <button
-            onClick={() => navigate('/zodiac-wheel')}
-            className="w-full bg-gradient-to-l from-fuchsia-600 via-purple-600 to-rose-500 text-white py-5 rounded-[2rem] shadow-[0_14px_40px_rgba(190,24,93,0.25)] border border-fuchsia-200/40 hover:scale-[1.01] transition-all flex items-center justify-center gap-3 font-black text-lg"
-          >
-            <Gift size={22} /> גלגל המזלות
-          </button>
-        </div>
 
         {/* --- אזור הסטוריז המקובץ --- */}
         <div className="relative w-full">
@@ -547,68 +582,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* --- MOBILE VIEW START --- */}
         <div className="md:hidden space-y-10 mt-2">
           
-          {/* --- שי חוסן (נייד) --- עיצוב זוהר ומקצועי --- */}
-          <section className="px-5">
-            <div 
-                onClick={() => user ? setShowChallengeModal(true) : onOpenLogin()}
-                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 p-[3px] rounded-[2.2rem] shadow-[0_0_25px_rgba(244,63,94,0.4)] active:scale-95 transition-all overflow-hidden cursor-pointer"
-            >
-                {/* אפקט הברק שרץ על הכפתור */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full opacity-0 group-hover:opacity-100 group-hover:animate-shimmer-sweep transition-opacity duration-300 pointer-events-none"></div>
-                
-                <div className="w-full bg-white/10 backdrop-blur-md px-5 py-4 rounded-[2rem] flex items-center justify-between border border-white/20 relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-3.5 rounded-2xl text-white shadow-lg backdrop-blur-sm">
-                            <Target size={26} strokeWidth={2.5} />
-                        </div>
-                        <div className="text-right">
-                            <h3 className="font-black text-2xl text-white leading-none drop-shadow-md flex items-center gap-2">
-                              שיתוף אתגרי חוסן <Sparkles size={16} className="text-yellow-200" />
-                            </h3>
-                            <span className="block mt-1 mb-1.5 text-rose-100 text-lg font-bold leading-none drop-shadow-sm">העלו תמונה וזכו!</span>
-                            <p className="text-rose-50 text-[11px] font-bold bg-black/15 px-2.5 py-1 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-sm">
-                                שתפו אותנו באתגר שבחרתם
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div className="relative z-10 bg-white text-rose-500 p-3 rounded-full shadow-xl group-hover:-translate-x-1 transition-transform">
-                        <ChevronLeft size={20} />
-                    </div>
-                </div>
-            </div>
-          </section>
-
-          {/* --- כפתור יצירת גלויה (נייד) --- עיצוב זוהר ומזמין --- */}
-          <section className="px-5">
-            <div 
-                onClick={() => user ? setShowPostcardModal(true) : onOpenLogin()}
-                className="group relative flex items-center justify-between w-full bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 p-[3px] rounded-[2.2rem] shadow-[0_0_25px_rgba(192,132,252,0.4)] active:scale-95 transition-all overflow-hidden cursor-pointer"
-            >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full opacity-0 group-hover:opacity-100 group-hover:animate-shimmer-sweep transition-opacity duration-300 pointer-events-none"></div>
-                
-                <div className="w-full bg-white/10 backdrop-blur-md px-5 py-4 rounded-[2rem] flex items-center justify-between border border-white/20 relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-3.5 rounded-2xl text-white shadow-lg backdrop-blur-sm">
-                            <ImageIcon size={26} strokeWidth={2.5} />
-                        </div>
-                        <div className="text-right">
-                            <h3 className="font-black text-2xl text-white leading-none drop-shadow-md flex items-center gap-2">
-                              גלויה אישית <Sparkles size={16} className="text-yellow-200" />
-                            </h3>
-                            <span className="block mt-1 mb-1 text-purple-100 text-[13px] font-bold leading-tight drop-shadow-sm">
-                              עצבי ברכה מרגשת, הוסיפי מילים חמות ושתפי עם מי שאת אוהבת!
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div className="relative z-10 bg-white text-purple-500 p-3 rounded-full shadow-xl group-hover:-translate-x-1 transition-transform">
-                        <ChevronLeft size={20} />
-                    </div>
-                </div>
-            </div>
-          </section>
-
           {/* 1. Announcements */}
           {announcements.length > 0 && (
             <section className="px-5">
@@ -739,23 +712,19 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
              <ScrollReveal>
                <div
                  onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}
-                 className="relative rounded-[2.5rem] overflow-hidden shadow-[0_12px_40px_rgba(244,63,94,0.14)] cursor-pointer group active:scale-[0.98] transition-all duration-300"
+                 className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] p-5 flex items-center gap-4 cursor-pointer hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] hover:scale-[1.01] transition-all duration-300 active:scale-[0.98]"
                >
-                 <div className="relative h-72 overflow-hidden">
-                    <img src={personality.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={personality.name} loading="lazy" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-                    <div className="absolute top-5 right-5 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-rose-100">
-                       <span className="w-2 h-2 bg-rose-400 rounded-full animate-pulse"></span>
-                       <span className="text-rose-500 font-black text-[10px] uppercase tracking-widest">אשת השבוע</span>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-7 text-right">
-                       <h3 className="text-2xl font-black text-white leading-tight drop-shadow-sm">{personality.name}</h3>
-                       {personality.role && <p className="text-rose-200 font-semibold text-sm mt-1.5">{personality.role}</p>}
-                       <div className="mt-4 flex items-center gap-1.5 justify-end text-white/75 text-xs font-bold">
-                          לקריאת הראיון המלא <ArrowLeft size={13}/>
-                       </div>
-                    </div>
-                 </div>
+                  <div className="relative shrink-0 w-[120px] h-[120px] rounded-2xl overflow-hidden border-2 border-[#DCEEE5]">
+                     <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} loading="lazy" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-right">
+                     <span className="inline-block text-[10px] font-bold text-[#2D6A4F] bg-[#DCEEE5] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2">אשת השבוע</span>
+                     <h3 className="text-base font-semibold text-[#1A202C] leading-snug truncate">{personality.name}</h3>
+                     {personality.role && <p className="text-[#4A5568] text-sm mt-1 line-clamp-2 leading-[1.4]">{personality.role}</p>}
+                     <span className="inline-flex items-center gap-1.5 mt-3 bg-[#2D6A4F] text-white text-xs font-bold px-4 py-2.5 min-h-[36px] rounded-lg hover:bg-[#245A41] transition-colors">
+                        צפה בפרופיל <ArrowLeft size={13}/>
+                     </span>
+                  </div>
                </div>
              </ScrollReveal>
             </section>
@@ -792,65 +761,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </div>
             )}
            </ScrollReveal>
-
-           {/* --- שי חוסן (מחשב) --- באנר זוהר ענק לכולם --- */}
-           <div className="mx-1 mt-6">
-               <div 
-                  onClick={() => user ? setShowChallengeModal(true) : onOpenLogin()}
-                  className="relative group flex items-center justify-between bg-gradient-to-r from-rose-400 via-[#ff7eb3] to-rose-500 rounded-[3rem] p-1.5 shadow-[0_15px_50px_rgba(244,63,94,0.4)] hover:shadow-[0_20px_60px_rgba(244,63,94,0.6)] hover:-translate-y-1 transition-all duration-500 overflow-hidden cursor-pointer"
-               >
-                  {/* אפקט הברק שרץ על הבאנר */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full opacity-0 group-hover:opacity-100 group-hover:animate-shimmer-sweep transition-opacity duration-300 pointer-events-none"></div>
-
-                  <div className="w-full bg-white/10 backdrop-blur-lg px-12 py-8 rounded-[2.6rem] flex items-center justify-between border border-white/30 relative z-10">
-                     <div className="flex items-center gap-8">
-                        <div className="bg-white/20 p-6 rounded-[1.8rem] text-white shadow-2xl backdrop-blur-md">
-                            <Target size={44} strokeWidth={2.5} />
-                        </div>
-                        <div>
-                            <h3 className="font-black text-5xl text-white tracking-tight drop-shadow-xl flex items-center gap-4">
-                               שיתוף אתגרי חוסן <Sparkles className="text-yellow-200" size={36} />
-                            </h3>
-                            <p className="text-rose-50 text-base font-bold mt-4 bg-black/15 px-5 py-2 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-inner">
-                               העלו תמונה וזכו! • לחצי כאן להשתתפות באתגר
-                            </p>
-                        </div>
-                     </div>
-                     <div className="bg-white text-rose-500 px-10 py-5 rounded-3xl font-black text-xl shadow-2xl group-hover:bg-rose-50 group-hover:scale-105 transition-all flex items-center gap-3">
-                        להשתתפות <ChevronLeft size={24}/>
-                     </div>
-                  </div>
-               </div>
-           </div>
-
-           {/* --- כפתור יצירת גלויה (מחשב) --- */}
-           <div className="mx-1 mt-6">
-                <div
-                   onClick={() => user ? setShowPostcardModal(true) : onOpenLogin()}
-                   className="relative group flex items-center justify-between bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 rounded-[3rem] p-1.5 shadow-[0_15px_50px_rgba(192,132,252,0.4)] hover:shadow-[0_20px_60px_rgba(192,132,252,0.6)] hover:-translate-y-1 transition-all duration-500 overflow-hidden cursor-pointer"
-                >
-                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full opacity-0 group-hover:opacity-100 group-hover:animate-shimmer-sweep transition-opacity duration-300 pointer-events-none"></div>
-
-                   <div className="w-full bg-white/10 backdrop-blur-lg px-12 py-8 rounded-[2.6rem] flex items-center justify-between border border-white/30 relative z-10">
-                      <div className="flex items-center gap-8">
-                         <div className="bg-white/20 p-6 rounded-[1.8rem] text-white shadow-2xl backdrop-blur-md">
-                             <ImageIcon size={44} strokeWidth={2.5} />
-                         </div>
-                         <div>
-                             <h3 className="font-black text-5xl text-white tracking-tight drop-shadow-xl flex items-center gap-4">
-                                צרי גלויה אישית <Sparkles className="text-yellow-200" size={36} />
-                             </h3>
-                             <p className="text-purple-50 text-base font-bold mt-4 bg-black/15 px-5 py-2 rounded-full inline-block backdrop-blur-md border border-white/20 shadow-inner">
-                                בחרי עיצוב, הוסיפי ברכה חמה ושתפי עם האהובות שלך • לחצי כאן להתחלה
-                             </p>
-                         </div>
-                      </div>
-                      <div className="bg-white text-purple-500 px-10 py-5 rounded-3xl font-black text-xl shadow-2xl group-hover:bg-purple-50 group-hover:scale-105 transition-all flex items-center gap-3">
-                         ליצירת גלויה <ChevronLeft size={24}/>
-                      </div>
-                   </div>
-                </div>
-            </div>
 
            {/* Hero Slider */}
            <ScrollReveal as="section" className="relative h-[520px] w-full overflow-hidden rounded-[3rem] shadow-[0_24px_60px_rgba(0,0,0,0.12)] mt-8">
@@ -926,19 +836,17 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            <ScrollReveal className="grid grid-cols-3 gap-10">
               <div className="col-span-2 space-y-10">
                  {personality && (
-                    <section className="bg-white rounded-[3rem] p-10 shadow-[0_10px_40px_rgba(0,0,0,0.05)] border border-slate-100 flex items-center gap-10 group cursor-pointer hover:shadow-[0_16px_50px_rgba(244,63,94,0.1)] transition-all duration-500" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}>
-                       <div className="shrink-0 relative">
-                          <div className="absolute inset-0 bg-rose-200 blur-3xl opacity-30 rounded-full group-hover:opacity-50 transition-opacity duration-500"></div>
-                          <img src={personality.image} className="w-64 h-64 rounded-[2.5rem] object-cover shadow-xl border-4 border-white relative z-10 group-hover:scale-[1.03] transition-transform duration-700" alt="" loading="lazy" />
+                    <section className="bg-white rounded-2xl p-8 shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-slate-100 flex items-center gap-8 cursor-pointer hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] hover:scale-[1.01] transition-all duration-300" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}>
+                       <div className="shrink-0 w-[140px] h-[140px] rounded-2xl overflow-hidden border-2 border-[#DCEEE5]">
+                          <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} loading="lazy" />
                        </div>
-                       <div className="text-right space-y-4">
-                          <div className="inline-flex items-center gap-2 bg-rose-50 px-4 py-1.5 rounded-full border border-rose-100">
-                             <span className="w-2 h-2 bg-rose-400 rounded-full animate-pulse"></span>
-                             <span className="text-rose-500 font-bold text-xs uppercase tracking-widest">אשת השבוע במעגל</span>
-                          </div>
-                          <h3 className="text-4xl font-black text-slate-800">{personality.name}</h3>
-                          {personality.role && <p className="text-[#d88a99] font-bold text-lg">{personality.role}</p>}
-                          <button className="text-rose-500 font-bold text-sm flex items-center gap-2 pt-2 group-hover:translate-x-[-8px] transition-transform duration-300">לקריאת הראיון המלא <ArrowLeft size={16}/></button>
+                       <div className="text-right">
+                          <span className="inline-block text-[10px] font-bold text-[#2D6A4F] bg-[#DCEEE5] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2.5">אשת השבוע במעגל</span>
+                          <h3 className="text-xl font-semibold text-[#1A202C]">{personality.name}</h3>
+                          {personality.role && <p className="text-[#4A5568] text-sm mt-1.5 line-clamp-2 leading-[1.4] max-w-md">{personality.role}</p>}
+                          <span className="inline-flex items-center gap-1.5 mt-4 bg-[#2D6A4F] text-white text-sm font-bold px-5 py-2.5 min-h-[44px] rounded-lg hover:bg-[#245A41] transition-colors">
+                             צפה בפרופיל <ArrowLeft size={14}/>
+                          </span>
                        </div>
                     </section>
                  )}
