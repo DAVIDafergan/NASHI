@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2, ExternalLink, Lock } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import EventCard from '../components/EventCard';
+import ScrollReveal from '../components/ScrollReveal';
 
 // --- Types ---
 interface EventSession {
@@ -275,73 +277,23 @@ const EventsPage = () => {
 
       {/* --- Events Grid --- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-        {filteredEvents.map(event => {
-            const avgRating = getAverageRating(event.ratings);
-            const { value: displayPrice, isEarly } = getDisplayPrice(event);
+        {filteredEvents.map((event, i) => {
             const isPast = new Date(event.date) < new Date();
-            
+
             return (
-                <div 
-                    key={event.id} 
-                    onClick={() => setSelectedEvent(event)}
-                    className={`bg-white rounded-[2.5rem] p-3 shadow-md border border-rose-50/50 hover:shadow-2xl hover:shadow-rose-100/40 transition-all duration-500 group cursor-pointer active:scale-[0.98] flex flex-col relative overflow-hidden ${isPast ? 'grayscale-[0.5] opacity-80' : ''}`}
-                >
-                    {/* Image Section - Large on mobile */}
-                    <div className="h-64 sm:h-44 md:h-52 overflow-hidden relative rounded-[2rem] shrink-0 bg-slate-50 shadow-inner">
-                        <img src={event.image} alt={event.title} className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ${isPast ? 'brightness-75' : ''}`} />
-                        
-                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black text-rose-500 shadow-sm border border-white/50">
-                            {event.category}
-                        </div>
-
-                        {isPast && (
-                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                <span className="bg-white/20 backdrop-blur-md text-white border border-white/30 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">חוויה מהעבר</span>
-                            </div>
-                        )}
-
-                        {isEarly && !isPast && (
-                          <div className="absolute top-4 left-4 bg-rose-500 text-white px-3 py-1.5 rounded-full text-[9px] font-black animate-pulse shadow-lg border border-white/30">מכירה מוקדמת!</div>
-                        )}
-                    </div>
-                    
-                    {/* Content Section */}
-                    <div className="px-3 pb-2 pt-5 flex-1 flex flex-col text-right">
-                        
-                        <div className="flex justify-between items-start mb-2">
-                            <h3 className="text-xl md:text-lg font-black text-slate-800 leading-tight group-hover:text-rose-600 transition-colors font-serif">
-                                {event.title}
-                            </h3>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 mb-5 justify-start font-bold">
-                            <div className="flex items-center gap-1.5">
-                                <Calendar size={14} className="text-rose-300" />
-                                <span>{event.hebrewDate || new Date(event.date).toLocaleDateString('he-IL', {day: '2-digit', month: '2-digit'})}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <Clock size={14} className="text-rose-300" />
-                                <span>{formatEventTime(event)}</span>
-                            </div>
-                            {Number(avgRating) > 0 && (
-                                <div className="flex items-center gap-1 text-yellow-500 bg-yellow-50/50 px-2 py-0.5 rounded-lg border border-yellow-100/50">
-                                    <Star size={10} fill="currentColor" /> {avgRating}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-rose-50/50 w-full">
-                            <div className="font-black text-lg md:text-base text-slate-700 flex items-center gap-2">
-                                {displayPrice === 0 ? <span className="text-emerald-500">חינם</span> : `₪${displayPrice}`}
-                                {isEarly && <span className="text-xs text-slate-300 line-through font-bold">₪{event.price}</span>}
-                            </div>
-                            <div className="flex items-center gap-2 text-rose-500 bg-rose-50 px-5 py-2.5 rounded-2xl group-hover:bg-rose-500 group-hover:text-white transition-all duration-300 shadow-sm border border-rose-100/30 font-black text-xs md:text-sm">
-                                <span>{isPast ? 'לסיכום' : 'לפרטים'}</span>
-                                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform"/>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <ScrollReveal key={event.id} delay={(i % 8) * 60}>
+                  <EventCard
+                      title={event.title}
+                      image={event.image}
+                      dateLabel={event.hebrewDate || new Date(event.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}
+                      time={formatEventTime(event)}
+                      location={event.location}
+                      category={event.category}
+                      isPast={isPast}
+                      ctaLabel={isPast ? 'לסיכום' : 'לפרטים והרשמה'}
+                      onClick={() => setSelectedEvent(event)}
+                  />
+                </ScrollReveal>
             );
         })}
       </div>

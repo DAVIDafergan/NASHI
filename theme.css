@@ -1,11 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* 1. Tailwind Directives - חייב להופיע בראש הקובץ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: 'Heebo', 'Assistant', Arial, sans-serif;
+  }
+}
 
 :root {
   --color-primary: #ff5722;
@@ -40,10 +45,19 @@
   --z-index-tooltip: 3000;
 }
 
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
+
 /* Reduced Motion Support - מחוץ ל-root */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
     animation: none !important;
+  }
+  html {
+    scroll-behavior: auto;
   }
 }

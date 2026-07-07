@@ -185,13 +185,13 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
              const Wrapper = onClick ? 'button' : Link;
 
              return (
-                <Wrapper 
-                    key={link.path} 
+                <Wrapper
+                    key={link.path}
                     {...linkProps as any}
-                    className={`flex flex-col items-center justify-center gap-1 w-14 transition-all duration-300`}
+                    className={`flex flex-col items-center justify-center gap-1 w-14 min-h-[44px] transition-all duration-300`}
                 >
                     <div className={`
-                        p-1.5 rounded-full transition-all duration-300
+                        p-2 rounded-full transition-all duration-300
                         ${active ? 'bg-gradient-to-tr from-rose-50 to-pink-50 text-rose-500 -translate-y-1 shadow-sm' : 'text-slate-400 hover:text-rose-400'}
                     `}>
                         {link.icon}
