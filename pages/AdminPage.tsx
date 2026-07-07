@@ -47,9 +47,15 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, v
 );
 
 const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> = ({ user }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'stories' | 'users' | 'events' | 'classes' | 'lotteries' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast' | 'messages' | 'tickets'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'stories' | 'users' | 'events' | 'classes' | 'lotteries' | 'zodiacWheel' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast' | 'messages' | 'tickets'>('summary');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Pagination states (20 items per page)
+  const ITEMS_PER_PAGE = 20;
+  const [usersPage, setUsersPage] = useState(1);
+  const [eventsPage, setEventsPage] = useState(1);
+  const [classesPage, setClassesPage] = useState(1);
   
   // תאריך לצורך סיכום חודשי
   const [viewDate, setViewDate] = useState(new Date());
@@ -102,6 +108,9 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   });
 
   const [shabbatParticipants, setShabbatParticipants] = useState<any[]>([]);
+  const [zodiacPrizes, setZodiacPrizes] = useState<any[]>([]);
+  const [zodiacPrizeForm, setZodiacPrizeForm] = useState({ _id: '', title: '', description: '', stock: 0, dailyWinners: 1, isActive: true });
+  const [zodiacStats, setZodiacStats] = useState<{ totalSpins: number; totalDailyWinners: number; todayWinners: number; winners: any[] }>({ totalSpins: 0, totalDailyWinners: 0, todayWinners: 0, winners: [] });
 
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [communityForm, setCommunityForm] = useState<Partial<any>>({ 
@@ -212,6 +221,20 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             
             const entries = await api.getShabbatEntries();
             if(entries) setShabbatParticipants(entries);
+        }
+
+        if (activeTab === 'zodiacWheel') {
+            const [zodiacItems, zodiacStatsData] = await Promise.all([
+                api.getAdminZodiacWheelPrizes().catch(() => []),
+                api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalDailyWinners: 0, todayWinners: 0, winners: [] }))
+            ]);
+            setZodiacPrizes(Array.isArray(zodiacItems) ? zodiacItems : []);
+            setZodiacStats({
+                totalSpins: Number(zodiacStatsData?.totalSpins) || 0,
+                totalDailyWinners: Number(zodiacStatsData?.totalDailyWinners) || 0,
+                todayWinners: Number(zodiacStatsData?.todayWinners) || 0,
+                winners: Array.isArray(zodiacStatsData?.winners) ? zodiacStatsData.winners : []
+            });
         }
 
         if (activeTab === 'personality') {
@@ -421,6 +444,87 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
       link.click();
   };
 
+  const exportUsersToExcel = () => {
+      const headers = ["שם", "דוא\"ל", "טלפון", "נקודות", "סטטוס", "תאריך הרשמה"];
+      const rows = apiUsers.map(u => [
+          `"${u.name || ''}"`,
+          `"${u.email || ''}"`,
+          `"${u.phone || ''}"`,
+          u.points || 0,
+          u.isMemberApproved ? "חברת מעגל" : "רשומה",
+          u.createdAt ? new Date(u.createdAt).toLocaleDateString('he-IL') : ''
+      ]);
+
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // BOM לשמירה על תצוגת עברית תקינה באקסל
+      csvContent += headers.join(",") + "\n";
+      rows.forEach(row => { csvContent += row.join(",") + "\n"; });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "registered_users.csv");
+      document.body.appendChild(link);
+      link.click();
+  };
+
+  const refreshZodiacWheelAdminData = async () => {
+      const [updatedPrizes, stats] = await Promise.all([
+          api.getAdminZodiacWheelPrizes().catch(() => []),
+          api.getAdminZodiacWheelStats().catch(() => ({ totalSpins: 0, totalDailyWinners: 0, todayWinners: 0, winners: [] }))
+      ]);
+      setZodiacPrizes(Array.isArray(updatedPrizes) ? updatedPrizes : []);
+      setZodiacStats({
+          totalSpins: Number(stats?.totalSpins) || 0,
+          totalDailyWinners: Number(stats?.totalDailyWinners) || 0,
+          todayWinners: Number(stats?.todayWinners) || 0,
+          winners: Array.isArray(stats?.winners) ? stats.winners : []
+      });
+  };
+
+  const saveZodiacPrize = async () => {
+      if (!zodiacPrizeForm.title.trim()) return alert('חובה להזין שם הטבה');
+      const payload = {
+          title: zodiacPrizeForm.title.trim(),
+          description: zodiacPrizeForm.description.trim(),
+          stock: Math.max(0, Number(zodiacPrizeForm.stock) || 0),
+          dailyWinners: Math.max(0, Math.floor(Number(zodiacPrizeForm.dailyWinners) || 0)),
+          isActive: zodiacPrizeForm.isActive
+      };
+
+      try {
+          if (zodiacPrizeForm._id) {
+              await api.updateZodiacWheelPrize(zodiacPrizeForm._id, payload);
+          } else {
+              await api.createZodiacWheelPrize(payload);
+          }
+          setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, dailyWinners: 1, isActive: true });
+          await refreshZodiacWheelAdminData();
+      } catch (e) {
+          alert('שגיאה בשמירת ההטבה');
+      }
+  };
+
+  const deleteZodiacPrize = async (id: string) => {
+      if (!window.confirm('למחוק את ההטבה מהגלגל?')) return;
+      try {
+          await api.deleteZodiacWheelPrize(id);
+          await refreshZodiacWheelAdminData();
+      } catch (e) {
+          alert('שגיאה במחיקת ההטבה');
+      }
+  };
+
+  const deleteAllZodiacPrizes = async () => {
+      if (!window.confirm('למחוק את כל ההטבות הקיימות בגלגל? פעולה זו אינה הפיכה.')) return;
+      try {
+          await api.deleteAllZodiacWheelPrizes();
+          setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, dailyWinners: 1, isActive: true });
+          await refreshZodiacWheelAdminData();
+      } catch (e) {
+          alert('שגיאה במחיקת כל ההטבות');
+      }
+  };
+
   // Broadcast Email Logic
   const handleSendBroadcast = async () => {
     if (!broadcastForm.subject || !broadcastForm.content) return alert("נא למלא נושא ותוכן להודעה");
@@ -513,6 +617,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             { id: 'events', label: 'אירועים', icon: <Calendar size={16} /> },
             { id: 'classes', label: 'חוגים', icon: <GraduationCap size={16} /> },
             { id: 'lotteries', label: 'הגרלות', icon: <Gift size={16} /> },
+            { id: 'zodiacWheel', label: 'גלגל המזלות', icon: <Sparkles size={16} /> },
             { id: 'community', label: 'קהילה', icon: <HeartHandshake size={16} /> },
             { id: 'forum', label: 'פורום נשי', icon: <MessageSquare size={16} /> },
             { id: 'inspirations', label: 'השראה יומית', icon: <Quote size={16} /> },
@@ -520,7 +625,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             { id: 'personality', label: 'אשת השבוע', icon: <Sparkles size={16} /> },
             { id: 'settings', label: 'הגדרות', icon: <Settings size={16} /> },
         ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-lg scale-105' : 'hover:bg-slate-50 text-slate-500'}`}>
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); setUsersPage(1); setEventsPage(1); setClassesPage(1); }} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-lg scale-105' : 'hover:bg-slate-50 text-slate-500'}`}>
               {tab.icon} {tab.label}
               {tab.id === 'stories' && pendingStories.length > 0 && <span className="bg-rose-500 text-white text-[10px] px-1.5 rounded-full">{pendingStories.length}</span>}
             </button>
@@ -536,7 +641,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             placeholder="חיפוש חופשי..." 
             className="w-full pr-12 pl-4 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-rose-200 text-right"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setUsersPage(1); }}
           />
         </div>
       )}
@@ -1119,76 +1224,121 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
 
         {/* טאב משתמשים */}
-        {activeTab === 'users' && (
-          <div className="bg-white rounded-[3rem] shadow-sm overflow-hidden border border-slate-100 animate-fade-in overflow-x-auto">
-            <table className="w-full text-right min-w-[500px]">
-              <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
-                <tr><th className="p-6 text-right">שם</th><th className="p-6 text-right">ניקוד</th><th className="p-6 text-right">סטטוס</th><th className="p-6 text-right">פעולות</th></tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {apiUsers.filter(u => (u.name || '').includes(searchTerm)).map(u => (
-                  <tr key={u._id || u.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-6 font-bold">{u.name}<br/><span className="text-[10px] text-slate-400">{u.email}</span></td>
-                    <td className="p-6 font-black text-rose-500">{u.points}</td>
-                    <td className="p-6 text-xs">{u.isMemberApproved ? 'חברת מעגל' : 'רשומה'}</td>
-                    <td className="p-6 flex gap-2">
-                        <button onClick={() => sendPersonalBenefit(u.email)} className="p-2 bg-yellow-50 text-yellow-600 rounded-xl hover:scale-110 transition-transform" title="שליחת לינק להטבה אישית"><Award size={18}/></button>
-                        <button onClick={() => handleDelete(u._id || u.id, 'user', u.name)} className="p-2 bg-red-50 text-red-600 rounded-xl hover:scale-110 transition-transform"><Trash2 size={18}/></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {activeTab === 'users' && (() => {
+          const filteredUsers = apiUsers.filter(u => (u.name || '').includes(searchTerm) || (u.email || '').includes(searchTerm));
+          const totalUsersPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
+          const pagedUsers = filteredUsers.slice((usersPage - 1) * ITEMS_PER_PAGE, usersPage * ITEMS_PER_PAGE);
+          return (
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex justify-between items-center bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+                <h3 className="font-black text-slate-800">ניהול משתמשות רשומות</h3>
+                <button
+                  onClick={exportUsersToExcel}
+                  className="flex items-center gap-2 bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-black hover:bg-emerald-600 transition-colors"
+                >
+                  <Download size={16} /> ייצוא משתמשות לאקסל
+                </button>
+              </div>
+              <div className="bg-white rounded-[3rem] shadow-sm overflow-hidden border border-slate-100 overflow-x-auto">
+                <table className="w-full text-right min-w-[500px]">
+                  <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
+                    <tr><th className="p-6 text-right">שם</th><th className="p-6 text-right">ניקוד</th><th className="p-6 text-right">סטטוס</th><th className="p-6 text-right">פעולות</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pagedUsers.map(u => (
+                      <tr key={u._id || u.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-6 font-bold">{u.name}<br/><span className="text-[10px] text-slate-400">{u.email}</span></td>
+                        <td className="p-6 font-black text-rose-500">{u.points}</td>
+                        <td className="p-6 text-xs">{u.isMemberApproved ? 'חברת מעגל' : 'רשומה'}</td>
+                        <td className="p-6 flex gap-2">
+                            <button onClick={() => sendPersonalBenefit(u.email)} className="p-2 bg-yellow-50 text-yellow-600 rounded-xl hover:scale-110 transition-transform" title="שליחת לינק להטבה אישית"><Award size={18}/></button>
+                            <button onClick={() => handleDelete(u._id || u.id, 'user', u.name)} className="p-2 bg-red-50 text-red-600 rounded-xl hover:scale-110 transition-transform"><Trash2 size={18}/></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {totalUsersPages > 1 && (
+                <div className="flex items-center justify-center gap-3 py-2">
+                  <button aria-label="עמוד קודם" onClick={() => setUsersPage(p => Math.max(1, p - 1))} disabled={usersPage === 1} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronRight size={18}/></button>
+                  <span className="text-sm font-bold text-slate-600">{usersPage} / {totalUsersPages}</span>
+                  <button aria-label="עמוד הבא" onClick={() => setUsersPage(p => Math.min(totalUsersPages, p + 1))} disabled={usersPage === totalUsersPages} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronLeft size={18}/></button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* טאב אירועים */}
-        {activeTab === 'events' && (
-          <div className="space-y-6 animate-fade-in">
-            <button onClick={() => { setEventForm({ title: '', location: '', category: 'מוזיקה', image: '', date: '', time: '', isHero: false, price: 0, earlyBirdPrice: 0, earlyBirdEndDate: '', sessions: [], notes: '', targetAges: '', hebrewDate: '', ticketLink: '', logo: '' }); setIsEventModalOpen(true); }} className="w-full md:w-auto bg-rose-600 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> אירוע חדש</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {apiEvents.map(ev => (
-                <div key={ev._id || ev.id} className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100 animate-fade-in-up">
-                  {ev.isHero && <Sparkles className="text-yellow-400 mb-2 animate-pulse" size={16}/>}
-                  <img src={ev.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-slate-800 text-right">{ev.title}</h4>
-                  <div className="flex justify-between items-center mt-4">
-                    <span className="text-[10px] text-slate-400">{ev.location}</span>
-                    <div className="flex gap-2">
-                      <button className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => { setEventForm(ev); setIsEventModalOpen(true); }}><Edit size={18}/></button>
-                      <button className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDelete(ev._id || ev.id, 'event', ev.title)}><Trash2 size={18}/></button>
+        {activeTab === 'events' && (() => {
+          const totalEventsPages = Math.max(1, Math.ceil(apiEvents.length / ITEMS_PER_PAGE));
+          const pagedEvents = apiEvents.slice((eventsPage - 1) * ITEMS_PER_PAGE, eventsPage * ITEMS_PER_PAGE);
+          return (
+            <div className="space-y-6 animate-fade-in">
+              <button onClick={() => { setEventForm({ title: '', location: '', category: 'מוזיקה', image: '', date: '', time: '', isHero: false, price: 0, earlyBirdPrice: 0, earlyBirdEndDate: '', sessions: [], notes: '', targetAges: '', hebrewDate: '', ticketLink: '', logo: '' }); setIsEventModalOpen(true); }} className="w-full md:w-auto bg-rose-600 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> אירוע חדש</button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pagedEvents.map(ev => (
+                  <div key={ev._id || ev.id} className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100 animate-fade-in-up">
+                    {ev.isHero && <Sparkles className="text-yellow-400 mb-2 animate-pulse" size={16}/>}
+                    <img src={ev.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
+                    <h4 className="font-black text-slate-800 text-right">{ev.title}</h4>
+                    <div className="flex justify-between items-center mt-4">
+                      <span className="text-[10px] text-slate-400">{ev.location}</span>
+                      <div className="flex gap-2">
+                        <button className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => { setEventForm(ev); setIsEventModalOpen(true); }}><Edit size={18}/></button>
+                        <button className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDelete(ev._id || ev.id, 'event', ev.title)}><Trash2 size={18}/></button>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+              {totalEventsPages > 1 && (
+                <div className="flex items-center justify-center gap-3 py-2">
+                  <button aria-label="עמוד קודם" onClick={() => setEventsPage(p => Math.max(1, p - 1))} disabled={eventsPage === 1} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronRight size={18}/></button>
+                  <span className="text-sm font-bold text-slate-600">{eventsPage} / {totalEventsPages}</span>
+                  <button aria-label="עמוד הבא" onClick={() => setEventsPage(p => Math.min(totalEventsPages, p + 1))} disabled={eventsPage === totalEventsPages} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronLeft size={18}/></button>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* טאב חוגים */}
-        {activeTab === 'classes' && (
-          <div className="space-y-6 animate-fade-in">
-            <button onClick={() => { setClassForm({ title: '', instructor: '', contactPhone: '', registrationPhone: '', day: 'ראשון', time: '', location: '', price: 0, ageGroup: '', gender: 'נשים', image: '' }); setIsClassModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> חוג חדש</button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
-              {apiClasses.map(c => (
-                <div key={c._id || c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up shadow-sm">
-                  <img src={c.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-lg">{c.title}</h4>
-                  <p className="text-xs text-slate-500 font-bold">{c.instructor} | {c.gender}</p>
-                  <p className="text-[10px] text-slate-400 mt-1">{c.day} ב-{c.time} | {c.location}</p>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-[10px] text-blue-500 font-black flex items-center gap-1"><Phone size={10}/> הרשמה: {c.registrationPhone}</p>
-                    <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Users size={10}/> מדריכה: {c.contactPhone}</p>
+        {activeTab === 'classes' && (() => {
+          const totalClassesPages = Math.max(1, Math.ceil(apiClasses.length / ITEMS_PER_PAGE));
+          const pagedClasses = apiClasses.slice((classesPage - 1) * ITEMS_PER_PAGE, classesPage * ITEMS_PER_PAGE);
+          return (
+            <div className="space-y-6 animate-fade-in">
+              <button onClick={() => { setClassForm({ title: '', instructor: '', contactPhone: '', registrationPhone: '', day: 'ראשון', time: '', location: '', price: 0, ageGroup: '', gender: 'נשים', image: '' }); setIsClassModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> חוג חדש</button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
+                {pagedClasses.map(c => (
+                  <div key={c._id || c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up shadow-sm">
+                    <img src={c.image} className="w-full h-32 md:h-40 object-cover rounded-2xl mb-4" />
+                    <h4 className="font-black text-lg">{c.title}</h4>
+                    <p className="text-xs text-slate-500 font-bold">{c.instructor} | {c.gender}</p>
+                    <p className="text-[10px] text-slate-400 mt-1">{c.day} ב-{c.time} | {c.location}</p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-[10px] text-blue-500 font-black flex items-center gap-1"><Phone size={10}/> הרשמה: {c.registrationPhone}</p>
+                      <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1"><Users size={10}/> מדריכה: {c.contactPhone}</p>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <button onClick={() => { setClassForm(c); setIsClassModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><Edit size={16}/></button>
+                      <button onClick={() => handleDelete(c._id || c.id, 'class', c.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                    </div>
                   </div>
-                  <div className="flex gap-2 mt-4">
-                    <button onClick={() => { setClassForm(c); setIsClassModalOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><Edit size={16}/></button>
-                    <button onClick={() => handleDelete(c._id || c.id, 'class', c.title)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
-                  </div>
+                ))}
+              </div>
+              {totalClassesPages > 1 && (
+                <div className="flex items-center justify-center gap-3 py-2">
+                  <button aria-label="עמוד קודם" onClick={() => setClassesPage(p => Math.max(1, p - 1))} disabled={classesPage === 1} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronRight size={18}/></button>
+                  <span className="text-sm font-bold text-slate-600">{classesPage} / {totalClassesPages}</span>
+                  <button aria-label="עמוד הבא" onClick={() => setClassesPage(p => Math.min(totalClassesPages, p + 1))} disabled={classesPage === totalClassesPages} className="p-2 rounded-xl bg-white border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"><ChevronLeft size={18}/></button>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* טאב הגרלות */}
         {activeTab === 'lotteries' && (
@@ -1342,6 +1492,180 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                     </div>
                   ))}
                 </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'zodiacWheel' && (
+          <div className="space-y-8 animate-fade-in">
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <p className="text-xs text-slate-500 font-bold mb-1">סך כל הסיבובים בגלגל</p>
+                <p className="text-3xl font-black text-slate-800">{zodiacStats.totalSpins}</p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-fuchsia-100 shadow-sm">
+                <p className="text-xs text-fuchsia-500 font-bold mb-1">מכסת זוכות יומית מוגדרת</p>
+                <p className="text-3xl font-black text-fuchsia-700">{zodiacStats.totalDailyWinners}</p>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
+                <p className="text-xs text-amber-600 font-bold mb-1">זוכות היום</p>
+                <p className="text-3xl font-black text-amber-700">{zodiacStats.todayWinners}</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-[3rem] border border-fuchsia-100 shadow-sm space-y-6">
+              <div className="flex items-center gap-3 border-b border-fuchsia-100 pb-4">
+                <div className="p-3 bg-fuchsia-600 text-white rounded-2xl shadow-lg"><Sparkles size={22} /></div>
+                <h3 className="text-2xl font-black text-fuchsia-900">ניהול גלגל המזלות</h3>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-black text-slate-700">שם ההטבה</label>
+                  <input
+                    placeholder="לדוגמה: שובר לבית קפה"
+                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                    value={zodiacPrizeForm.title}
+                    onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, title: e.target.value })}
+                  />
+                  <p className="text-xs text-slate-500">זה השם שיוצג לזוכה לאחר הסיבוב.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-black text-slate-700">תיאור ההטבה (אופציונלי)</label>
+                  <input
+                    placeholder="מה מקבלים בהטבה"
+                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                    value={zodiacPrizeForm.description}
+                    onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, description: e.target.value })}
+                  />
+                  <p className="text-xs text-slate-500">פירוט קצר שיופיע ברשימת ההטבות בגלגל.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-black text-slate-700">מלאי כולל</label>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="כמות פריטים זמינים"
+                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                    value={zodiacPrizeForm.stock}
+                    onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, stock: Number(e.target.value) })}
+                  />
+                  <p className="text-xs text-slate-500">כמה פעמים ניתן לחלק את ההטבה עד שהמלאי נגמר.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-black text-slate-700">כמות זוכות ביום</label>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="לדוגמה: 3 זוכות ביום"
+                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-200"
+                    value={zodiacPrizeForm.dailyWinners}
+                    onChange={e => setZodiacPrizeForm({ ...zodiacPrizeForm, dailyWinners: Number(e.target.value) })}
+                  />
+                  <p className="text-xs text-slate-500">המכסה היומית המקסימלית לזוכות בהטבה הזו.</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  onClick={saveZodiacPrize}
+                  className="bg-fuchsia-600 text-white px-6 py-3 rounded-2xl font-black shadow-lg hover:bg-fuchsia-700 transition-colors"
+                >
+                  {zodiacPrizeForm._id ? 'עדכון הטבה' : 'הוספת הטבה לגלגל'}
+                </button>
+                <button
+                  onClick={() => setZodiacPrizeForm({ _id: '', title: '', description: '', stock: 0, dailyWinners: 1, isActive: true })}
+                  className="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl font-black"
+                >
+                  איפוס טופס
+                </button>
+                <button
+                  onClick={deleteAllZodiacPrizes}
+                  className="bg-red-50 text-red-600 px-6 py-3 rounded-2xl font-black border border-red-200"
+                >
+                  מחיקת כל ההטבות הקיימות
+                </button>
+                <p className="text-sm text-slate-500 font-bold">הגלגל עובד לפי מכסת זוכות יומית לכל הטבה (לא לפי אחוזים).</p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-right min-w-[600px]">
+                  <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
+                    <tr>
+                      <th className="p-4">הטבה</th>
+                      <th className="p-4">מלאי</th>
+                      <th className="p-4">זוכות ביום</th>
+                      <th className="p-4">סטטוס</th>
+                      <th className="p-4">פעולות</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {zodiacPrizes.map((item: any) => (
+                      <tr key={item._id} className="hover:bg-slate-50">
+                        <td className="p-4 font-bold text-slate-700">
+                          {item.title}
+                          {item.description && <p className="text-xs text-slate-400 mt-1">{item.description}</p>}
+                        </td>
+                        <td className="p-4 font-black text-indigo-600">{item.stock}</td>
+                        <td className="p-4 font-black text-fuchsia-600">{item.dailyWinners ?? 0}</td>
+                        <td className="p-4 text-xs font-bold">{item.isActive ? 'פעיל' : 'כבוי'}</td>
+                        <td className="p-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setZodiacPrizeForm({
+                                _id: item._id || '',
+                                title: item.title || '',
+                                description: item.description || '',
+                                stock: item.stock || 0,
+                                dailyWinners: item.dailyWinners ?? 0,
+                                isActive: !!item.isActive
+                              })}
+                              className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button onClick={() => deleteZodiacPrize(item._id)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {zodiacPrizes.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-400 italic">אין עדיין הטבות בגלגל המזלות — אפשר להתחיל להזין חדשות</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm overflow-x-auto">
+              <h4 className="font-black text-xl text-slate-800 mb-4">רשימת זוכות בגלגל (כולל מייל)</h4>
+              <table className="w-full text-right min-w-[640px]">
+                <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase">
+                  <tr>
+                    <th className="p-4">שם</th>
+                    <th className="p-4">מייל</th>
+                    <th className="p-4">הפרס שזכתה</th>
+                    <th className="p-4">תאריך זכייה</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {zodiacStats.winners.map((winner: any) => (
+                    <tr key={winner._id} className="hover:bg-slate-50">
+                      <td className="p-4 font-bold text-slate-700">{winner.userName || '-'}</td>
+                      <td className="p-4 text-sm text-slate-600" dir="ltr">{winner.userEmail || '-'}</td>
+                      <td className="p-4 font-bold text-fuchsia-700">{winner.prizeTitle || 'הטבה מיוחדת'}</td>
+                      <td className="p-4 text-xs text-slate-500">{winner.createdAt ? new Date(winner.createdAt).toLocaleString('he-IL') : '-'}</td>
+                    </tr>
+                  ))}
+                  {zodiacStats.winners.length === 0 && (
+                    <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">עדיין אין זכיות רשומות בגלגל</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

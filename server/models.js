@@ -20,6 +20,8 @@ const UserSchema = new mongoose.Schema({
   // שדות לאיפוס סיסמה (חדש)
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
+  lastZodiacWheelSpinAt: { type: Date },
+  zodiacWheelSpinsCount: { type: Number, default: 0 },
   
   likedEventIds: [{ type: String }],
   createdAt: { type: Date, default: Date.now }
@@ -248,10 +250,31 @@ StorySchema.index({ approvedAt: 1 }, { expireAfterSeconds: 86400 });
 
 const Story = mongoose.model('Story', StorySchema);
 
+const ZodiacWheelPrizeSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  stock: { type: Number, default: 0, min: 0 },
+  dailyWinners: { type: Number, default: 0, min: 0 },
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const ZodiacWheelPrize = mongoose.model('ZodiacWheelPrize', ZodiacWheelPrizeSchema);
+
+const ZodiacWheelSpinSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  prizeId: { type: mongoose.Schema.Types.ObjectId, ref: 'ZodiacWheelPrize' },
+  prizeTitle: { type: String, default: '' },
+  won: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+const ZodiacWheelSpin = mongoose.model('ZodiacWheelSpin', ZodiacWheelSpinSchema);
+
 export { 
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
   Announcement, Challenge, ChallengeEntry, ContactMessage,
   Ticket,
-  Story // הוספת הסטורי לייצוא
+  Story, // הוספת הסטורי לייצוא
+  ZodiacWheelPrize,
+  ZodiacWheelSpin
 };

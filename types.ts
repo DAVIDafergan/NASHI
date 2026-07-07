@@ -33,6 +33,8 @@ export interface User {
   isMemberRequested: boolean; // האם הגישה בקשת הצטרפות
   isMemberApproved: boolean;  // האם אושרה ע"י המנהלת
   createdAt?: string;
+  lastZodiacWheelSpinAt?: string;
+  zodiacWheelSpinsCount?: number;
 }
 
 export interface Review {

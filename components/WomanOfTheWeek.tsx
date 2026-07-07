@@ -57,8 +57,8 @@ const WomanOfTheWeek = () => {
           <h3 className="text-xl font-bold text-slate-800 mb-1">{personality.name}</h3>
           
           {/* מציג מקצוע אם קיים בשרת */}
-          {personality.profession && (
-            <p className="text-purple-600 text-sm font-medium mb-3">{personality.profession}</p>
+          {personality.role && (
+            <p className="text-purple-600 text-sm font-medium mb-3">{personality.role}</p>
           )}
           
           <p className="text-slate-600 text-sm leading-relaxed mb-4 font-serif italic">
