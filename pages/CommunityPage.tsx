@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, Phone, MapPin, BookOpen, Heart, Store, 
+import {
+  Search, Phone, MapPin, BookOpen, Heart, Store,
   ArrowLeft, Info, ExternalLink, MessageCircle
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
+import ScrollReveal from '../components/ScrollReveal';
+
+const tabIcon = (category: string) => {
+  if (category === 'גמ"חים') return <Heart size={13} />;
+  if (category?.includes('עסק')) return <Store size={13} />;
+  return <BookOpen size={13} />;
+};
 
 const CommunityPage = () => {
   const navigate = useNavigate();
@@ -74,120 +81,109 @@ const CommunityPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8 pb-24">
-        
+    <div className="min-h-screen bg-[#FFFBF7]">
+      <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-5 md:space-y-6 pb-24">
+
         {/* כותרת וחזרה */}
-        <div className="flex items-center gap-4 bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm">
-          <button onClick={() => navigate(-1)} className="bg-slate-50 p-2.5 rounded-full text-slate-600 hover:bg-rose-50 hover:text-rose-500 transition-all active:scale-95 border border-slate-100">
-            <ArrowLeft size={22}/>
+        <ScrollReveal className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
+          <button onClick={() => navigate(-1)} className="w-11 h-11 shrink-0 flex items-center justify-center bg-[#F5F5F5] rounded-full text-[#1A202C] hover:bg-[#DCEEE5] hover:text-[#2D6A4F] transition-all active:scale-95">
+            <ArrowLeft size={20}/>
           </button>
           <div>
-            <h2 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">קהילה נשית</h2>
-            <p className="text-slate-400 text-sm font-medium mt-0.5">כל מה שקורה בעיר עבורך</p>
+            <h2 className="text-xl md:text-2xl font-bold text-[#1A202C] tracking-tight">קהילה נשית</h2>
+            <p className="text-[#718096] text-sm font-medium mt-0.5">כל מה שקורה בעיר עבורך</p>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* תפריט קטגוריות */}
-        <div className="relative">
-          <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 md:mx-0 md:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); }}
-                className={`flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${
-                  activeTab === tab.id 
-                  ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' 
-                  : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ScrollReveal delay={60} className="flex overflow-x-auto gap-2 pb-1 no-scrollbar">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); }}
+              className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl font-bold text-sm transition-all duration-300 active:scale-95 ${
+                activeTab === tab.id
+                ? 'bg-[#2D6A4F] text-white shadow-md shadow-[#2D6A4F]/20'
+                : 'bg-white text-[#718096] border border-slate-200 hover:border-[#2D6A4F]/40 hover:text-[#2D6A4F]'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </ScrollReveal>
 
         {/* שורת חיפוש */}
-        <div className="relative group max-w-2xl">
-          <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-500 transition-colors" size={18}/>
-          <input 
-            type="text" 
-            placeholder={`חפשי בתוך ${activeTab}...`} 
-            className="w-full pr-14 pl-6 py-3.5 bg-white border border-slate-200 rounded-2xl shadow-sm focus:ring-4 focus:ring-rose-500/10 focus:border-rose-300 outline-none transition-all text-slate-700 font-medium placeholder:font-normal placeholder:text-slate-400"
+        <ScrollReveal delay={100} className="relative group max-w-2xl">
+          <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2D6A4F] transition-colors" size={18}/>
+          <input
+            type="text"
+            placeholder={`חפשי בתוך ${activeTab}...`}
+            className="w-full pr-14 pl-6 py-3.5 min-h-[44px] bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-4 focus:ring-[#2D6A4F]/10 focus:border-[#2D6A4F]/40 outline-none transition-all text-[#1A202C] font-medium placeholder:font-normal placeholder:text-slate-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
+        </ScrollReveal>
 
         {/* גריד תוצאות */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-5 bg-white rounded-[3rem] border border-slate-100">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-100 border-t-rose-500"></div>
-            <p className="text-slate-400 font-bold animate-pulse">טוען נתונים מהקהילה...</p>
+          <div className="flex flex-col items-center justify-center py-32 space-y-5 bg-white rounded-2xl border border-slate-100">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-100 border-t-[#2D6A4F]"></div>
+            <p className="text-[#718096] font-bold animate-pulse">טוען נתונים מהקהילה...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-            {filteredItems.map(item => (
-              <div 
-                key={item._id} 
-                className="flex flex-col bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-400 group"
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {filteredItems.map((item, i) => (
+              <ScrollReveal
+                key={item._id}
+                delay={i < 8 ? i * 60 : 0}
+                className="flex flex-col bg-white rounded-lg overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)] hover:scale-[1.02] transition-all duration-300 group"
               >
                 {/* תמונה */}
-                <div className="h-52 relative overflow-hidden bg-slate-50">
-                  <img 
-                    src={item.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=500'} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                <div className="h-28 relative overflow-hidden bg-[#DCEEE5] shrink-0">
+                  <img
+                    src={item.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=500'}
+                    className="w-full h-full object-cover animate-float-slow group-hover:scale-105 transition-transform duration-700"
                     alt={item.title}
                   />
-                  <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-bold text-slate-700 shadow-sm border border-slate-100">
-                    {activeTab}
+                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-md w-6 h-6 rounded-full flex items-center justify-center text-[#2D6A4F] shadow-sm">
+                    {tabIcon(item.category)}
                   </div>
                 </div>
 
                 {/* תוכן הכרטיס */}
-                <div className="flex-1 flex flex-col p-5 space-y-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-black text-slate-800 mb-2 leading-tight">{item.title}</h3>
-                    <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">{item.description}</p>
-                  </div>
+                <div className="flex-1 flex flex-col p-3 gap-2">
+                  <h3 className="text-[15px] font-semibold text-[#1A202C] leading-snug">{item.title}</h3>
+                  <p className="text-[#4A5568] text-[13px] leading-[1.4] line-clamp-2">{item.description}</p>
 
-                  <div className="space-y-2.5 bg-slate-50 p-4 rounded-xl">
-                    <div className="flex items-center gap-2.5 text-sm text-slate-600 font-medium">
-                      <div className="text-rose-400">
-                        <MapPin size={15} />
-                      </div>
-                      <span className="truncate">{item.location || 'מיקום יפורסם בפרטי'}</span>
-                    </div>
-                    <div className="flex items-center gap-2.5 text-sm text-slate-600 font-medium">
-                      <div className="text-rose-400">
-                        <Phone size={15} />
-                      </div>
-                      <span>{item.phone}</span>
-                    </div>
-                  </div>
+                  {item.location && (
+                    <span className="inline-flex items-center gap-1 self-start bg-[#F5F5F5] text-[#718096] text-[12px] font-medium px-2 py-1 rounded-full">
+                      <MapPin size={11} className="text-[#2D6A4F]" />
+                      <span className="truncate max-w-[110px]">{item.location}</span>
+                    </span>
+                  )}
 
-                  <button 
+                  <button
                     onClick={() => handleContact(item.phone, item.title)}
-                    className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-rose-500 transition-all duration-300 active:scale-[0.98]"
+                    className="mt-auto min-h-[44px] w-full py-2.5 bg-[#2D6A4F] text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-[#245A41] hover:scale-[1.02] transition-all duration-200 active:scale-95"
                   >
-                    <MessageCircle size={16}/>
+                    <MessageCircle size={14}/>
                     צרי קשר עכשיו
                   </button>
                 </div>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         )}
 
         {/* מצב ריק */}
         {!loading && filteredItems.length === 0 && (
-          <div className="text-center py-24 bg-white rounded-[3rem] border border-dashed border-slate-200">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-5 text-slate-300">
+          <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-slate-200">
+            <div className="w-16 h-16 bg-[#F5F5F5] rounded-full flex items-center justify-center mx-auto mb-5 text-slate-300">
               <Search size={32}/>
             </div>
-            <h3 className="text-xl font-black text-slate-800 mb-2">לא מצאנו את מה שחיפשת</h3>
-            <p className="text-slate-400 font-medium max-w-sm mx-auto">נסי לשנות את מונח החיפוש או לעבור לקטגוריה אחרת למעלה.</p>
+            <h3 className="text-xl font-bold text-[#1A202C] mb-2">לא מצאנו את מה שחיפשת</h3>
+            <p className="text-[#718096] font-medium max-w-sm mx-auto">נסי לשנות את מונח החיפוש או לעבור לקטגוריה אחרת למעלה.</p>
           </div>
         )}
 
