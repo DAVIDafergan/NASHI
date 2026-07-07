@@ -193,13 +193,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                     className={`flex flex-col items-center justify-center gap-1 w-14 min-h-[44px] transition-all duration-300`}
                 >
                     <div className={`
-<<<<<<< HEAD
                         p-2 rounded-full transition-all duration-300
                         ${active ? 'bg-gradient-to-tr from-rose-50 to-pink-50 text-rose-500 -translate-y-1 shadow-sm' : 'text-slate-400 hover:text-rose-400'}
-=======
-                        p-1.5 rounded-full transition-all duration-300
-                        ${active ? 'bg-rose-50 text-rose-500 -translate-y-1' : 'text-slate-400 hover:text-rose-400'}
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
                     `}>
                         {link.icon}
                     </div>

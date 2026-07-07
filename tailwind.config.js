@@ -16,14 +16,19 @@ export default {
       colors: {
         // Summer 2026 watermelon palette — muted, professional tones (not candy-bright)
         watermelon: {
-          peach: '#F8A88F',     // primary background wash
+          peach: '#F8A88F',     // primary background wash / primary accent
           peachLight: '#FDEAE3',
           peachDark: '#E88B70',
-          flesh: '#E85C5C',     // watermelon red accent
+          flesh: '#E85C5C',     // watermelon red accent (decorative only)
           fleshDark: '#C94848',
-          rind: '#4E8F72',      // rind green accent
+          rind: '#4E8F72',      // rind green (decorative slices)
           rindLight: '#DCEEE5',
+          green: '#2D6A4F',     // primary watermelon green — buttons, focus states, badges
           cream: '#FFFBF7',
+          softGray: '#F5F5F5',  // secondary surfaces
+          danger: '#E53E3E',    // reserved for destructive actions only
+          ink: '#1A202C',       // primary text
+          muted: '#718096',     // secondary text
         },
       },
       spacing: {
@@ -73,6 +78,10 @@ export default {
           '0%': { transform: 'translateX(150%) skewX(-15deg)' },
           '100%': { transform: 'translateX(-150%) skewX(-15deg)' },
         },
+        'pulse-border': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(45,106,79,0.25)' },
+          '50%': { boxShadow: '0 0 0 6px rgba(45,106,79,0)' },
+        },
       },
       animation: {
         blob: "blob 7s infinite",
@@ -85,6 +94,7 @@ export default {
         'draw-wave': 'draw-wave 1.8s cubic-bezier(0.65, 0, 0.35, 1) both',
         'gradient-x': 'gradient-x 3s ease infinite',
         'shimmer-sweep': 'shimmer-sweep 2.5s infinite',
+        'pulse-border': 'pulse-border 2.8s ease-in-out infinite',
       },
     },
   },

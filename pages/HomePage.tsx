@@ -454,15 +454,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const currentStory = activeGroup ? activeGroup.stories[activeInnerIndex] : null;
 
   return (
-<<<<<<< HEAD
     <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#FFFBF7] scroll-smooth" dir="rtl">
 
       {/* Background Ambience - Summer 2026 watermelon wash */}
-=======
-    <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#fdfbfb] scroll-smooth" dir="rtl">
-      
-      {/* Background Ambience */}
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-b from-[#FDEAE3] via-[#FFFBF7] to-[#FFFBF7]"></div>
           <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-[#F8A88F]/25 rounded-full blur-[110px] opacity-80"></div>
@@ -553,7 +547,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* --- MOBILE VIEW START --- */}
         <div className="md:hidden space-y-10 mt-2">
           
-<<<<<<< HEAD
           {/* --- שי חוסן (נייד) --- עיצוב זוהר ומקצועי --- */}
           <section className="px-5">
             <div 
@@ -616,8 +609,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
           </section>
 
-=======
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
           {/* 1. Announcements */}
           {announcements.length > 0 && (
             <section className="px-5">
@@ -682,34 +673,19 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             
             <div className="grid grid-cols-2 gap-4 px-5">
               {classes.map((cls, i) => (
-<<<<<<< HEAD
                 <ScrollReveal key={i} delay={i * 70}>
                   <div
                     onClick={() => navigate('/classes')}
-                    className="bg-white/80 backdrop-blur-sm p-3.5 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-rose-50/50 hover:-translate-y-1 active:scale-95 transition-all cursor-pointer"
+                    className="bg-white p-3.5 rounded-[2rem] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-100/80 hover:-translate-y-1 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
                   >
                     <div className="relative h-32 mb-4 overflow-hidden rounded-[1.5rem]">
-                       <img src={cls.image} className="w-full h-full object-cover" alt={cls.title} loading="lazy" />
+                       <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={cls.title} loading="lazy" />
                        <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-slate-700 shadow-sm">{cls.day}</div>
                     </div>
                     <h4 className="font-black text-slate-800 text-sm px-1 leading-snug">{cls.title}</h4>
-                    <p className="text-[11px] text-slate-400 font-medium px-1 mt-1 truncate">{cls.instructor}</p>
+                    <p className="text-[11px] text-rose-400 font-semibold px-1 mt-1 truncate">{cls.instructor}</p>
                   </div>
                 </ScrollReveal>
-=======
-                <div 
-                  key={i} 
-                  onClick={() => navigate('/classes')}
-                  className="bg-white p-3.5 rounded-[2rem] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-100/80 hover:-translate-y-1 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
-                >
-                  <div className="relative h-32 mb-4 overflow-hidden rounded-[1.5rem]">
-                     <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={cls.title} loading="lazy" />
-                     <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-slate-700 shadow-sm">{cls.day}</div>
-                  </div>
-                  <h4 className="font-black text-slate-800 text-sm px-1 leading-snug">{cls.title}</h4>
-                  <p className="text-[11px] text-rose-400 font-semibold px-1 mt-1 truncate">{cls.instructor}</p>
-                </div>
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
               ))}
             </div>
           </section>
@@ -736,34 +712,20 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             
             <div className="grid grid-cols-2 gap-4 px-5 pb-2">
                {communityItems.slice(0, 4).map((item, i) => (
-<<<<<<< HEAD
                  <ScrollReveal key={i} delay={i * 70}>
                    <div
                       onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })}
-                      className="bg-white/70 backdrop-blur-sm rounded-[2rem] p-3.5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white flex flex-col gap-3 active:scale-95 transition-all cursor-pointer"
+                      className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-100 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
                    >
-                      <img src={item.image} className="w-full h-28 rounded-[1.5rem] object-cover bg-slate-50" alt={item.title} loading="lazy" />
-                      <div className="flex flex-col justify-center overflow-hidden px-1">
+                      <div className="relative h-28 overflow-hidden">
+                        <img src={item.image} className="w-full h-full object-cover bg-slate-50 group-hover:scale-105 transition-transform duration-500" alt={item.title} loading="lazy" />
+                      </div>
+                      <div className="p-3 flex flex-col gap-1">
                          <h4 className="font-black text-slate-800 text-sm truncate w-full">{item.title}</h4>
-                         <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed font-medium">{item.description || 'לפרטים נוספים ודרכי יצירת קשר'}</p>
+                         <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed font-medium">{item.description || 'לפרטים נוספים ודרכי יצירת קשר'}</p>
                       </div>
                    </div>
                  </ScrollReveal>
-=======
-                 <div 
-                    key={i} 
-                    onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })}
-                    className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-100 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
-                 >
-                    <div className="relative h-28 overflow-hidden">
-                      <img src={item.image} className="w-full h-full object-cover bg-slate-50 group-hover:scale-105 transition-transform duration-500" alt={item.title} loading="lazy" />
-                    </div>
-                    <div className="p-3 flex flex-col gap-1">
-                       <h4 className="font-black text-slate-800 text-sm truncate w-full">{item.title}</h4>
-                       <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed font-medium">{item.description || 'לפרטים נוספים ודרכי יצירת קשר'}</p>
-                    </div>
-                 </div>
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
                ))}
             </div>
             <div className="px-5">
@@ -773,14 +735,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
           {/* 6. Personality of the Week */}
           {personality && (
-<<<<<<< HEAD
-            <section className="px-5 pb-4">
+            <section className="px-5 pb-6">
              <ScrollReveal>
                <div
-=======
-            <section className="px-5 pb-6">
-               <div 
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
                  onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}
                  className="relative rounded-[2.5rem] overflow-hidden shadow-[0_12px_40px_rgba(244,63,94,0.14)] cursor-pointer group active:scale-[0.98] transition-all duration-300"
                >
@@ -836,7 +793,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             )}
            </ScrollReveal>
 
-<<<<<<< HEAD
            {/* --- שי חוסן (מחשב) --- באנר זוהר ענק לכולם --- */}
            <div className="mx-1 mt-6">
                <div 
@@ -897,11 +853,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
 
            {/* Hero Slider */}
-           <ScrollReveal as="section" className="relative h-[500px] w-full overflow-hidden rounded-[3rem] shadow-[0_20px_50px_rgb(0,0,0,0.1)] mt-8">
-=======
-           {/* Hero Slider */}
-           <section className="relative h-[520px] w-full overflow-hidden rounded-[3rem] shadow-[0_24px_60px_rgba(0,0,0,0.12)] mt-8">
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
+           <ScrollReveal as="section" className="relative h-[520px] w-full overflow-hidden rounded-[3rem] shadow-[0_24px_60px_rgba(0,0,0,0.12)] mt-8">
               {displayEvents.map((event, index) => (
                 <div key={index} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
@@ -935,24 +887,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </div>
               <div className="grid grid-cols-4 gap-6">
                  {classes.slice(0, 4).map((cls, i) => (
-<<<<<<< HEAD
-                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/classes')} className="bg-white/80 backdrop-blur-sm p-4 rounded-[2rem] border border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgb(244,63,94,0.06)] hover:-translate-y-1 transition-all cursor-pointer group text-center">
-=======
-                   <div key={i} onClick={() => navigate('/classes')} className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_rgba(244,63,94,0.08)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group text-center">
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
+                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/classes')} className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_rgba(244,63,94,0.08)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group text-center">
                       <div className="overflow-hidden rounded-[1.5rem] mb-4 h-40">
-                         <img src={cls.image} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700" loading="lazy" />
+                         <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                       </div>
-<<<<<<< HEAD
-                      <h4 className="font-black text-slate-800 text-lg">{cls.title}</h4>
-                      <p className="text-slate-400 text-sm mt-1.5 font-medium">{cls.instructor} <span className="mx-1">•</span> {cls.day}</p>
-                   </ScrollReveal>
-=======
                       <h4 className="font-black text-slate-800 text-base">{cls.title}</h4>
                       <p className="text-rose-400 text-xs mt-2 font-semibold">{cls.instructor}</p>
                       <p className="text-slate-400 text-xs mt-0.5 font-medium">{cls.day}</p>
-                   </div>
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
+                   </ScrollReveal>
                  ))}
               </div>
            </section>
@@ -967,11 +909,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </div>
               <div className="grid grid-cols-3 gap-8">
                  {communityItems.slice(0, 3).map((item, i) => (
-<<<<<<< HEAD
-                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white/80 backdrop-blur-sm rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgb(244,63,94,0.06)] hover:-translate-y-1 transition-all cursor-pointer border border-white group">
-=======
-                   <div key={i} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_36px_rgba(244,63,94,0.09)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer border border-slate-100 group">
->>>>>>> e85bad268b711f9d147da7f99f4ca27959be8411
+                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_36px_rgba(244,63,94,0.09)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer border border-slate-100 group">
                       <div className="overflow-hidden h-48">
                          <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                       </div>
