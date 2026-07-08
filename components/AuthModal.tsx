@@ -57,12 +57,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right" dir="rtl" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:p-4" dir="rtl" onClick={onClose}>
 
       {/* כרטיס הטופס */}
       {!showTerms ? (
-        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-md shadow-2xl overflow-hidden relative animate-slide-up max-h-[88vh] flex flex-col">
-          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0"></div>
+        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-md shadow-2xl overflow-hidden relative animate-slide-up max-h-[88vh] flex flex-col">
+          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0 md:hidden"></div>
 
           {/* כותרת */}
           <div className="bg-gradient-to-r from-purple-600 to-rose-500 p-8 text-white text-center relative shrink-0">

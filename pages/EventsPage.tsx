@@ -310,10 +310,11 @@ const EventsPage = () => {
       )}
 
       {/* --- Detailed Event Modal --- */}
+      {/* מובייל: bottom sheet (נפתח מלמטה). דסקטופ: מודל ממורכז במסך */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedEvent(null)}>
-            <div onClick={(e) => e.stopPropagation()} className="bg-white w-full md:max-w-[500px] rounded-t-2xl max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up relative border-t-4 border-[#2D6A4F] no-scrollbar">
-                <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 sticky top-0"></div>
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in md:p-4" onClick={() => setSelectedEvent(null)}>
+            <div onClick={(e) => e.stopPropagation()} className="bg-white w-full md:max-w-[500px] rounded-t-2xl md:rounded-2xl max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up relative border-t-4 border-[#2D6A4F] no-scrollbar">
+                <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 sticky top-0 md:hidden"></div>
 
                 {/* Close Button UI */}
                 <button onClick={() => setSelectedEvent(null)} className="absolute top-5 left-5 p-3 bg-white/95 backdrop-blur-md rounded-full hover:bg-rose-500 hover:text-white z-50 text-slate-800 transition-all shadow-xl active:scale-90 border border-white/50"><X size={22} /></button>

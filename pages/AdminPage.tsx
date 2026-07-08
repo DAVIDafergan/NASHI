@@ -14,9 +14,9 @@ import { api } from '../services/api';
 const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[150] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right" dir="rtl" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-lg shadow-2xl animate-slide-up relative overflow-hidden flex flex-col max-h-[88vh] border-t-4 border-[#2D6A4F]">
-        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0"></div>
+    <div className="fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:p-4" dir="rtl" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg shadow-2xl animate-slide-up relative overflow-hidden flex flex-col max-h-[88vh] border-t-4 border-[#2D6A4F]">
+        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0 md:hidden"></div>
         <div className="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
           <h3 className="text-xl font-black text-slate-800">{title}</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} /></button>
