@@ -241,7 +241,7 @@ const App: React.FC = () => {
             {/* נתיב סריקת ואימות כרטיסים (חדש!) */}
             <Route path="/verify/:code" element={<VerifyPage user={user} />} />
 
-            <Route path="/profile" element={user ? <ProfilePage user={user} events={events} onUpdateUser={handleUpdateUser} /> : <Navigate to="/" replace />} />
+            <Route path="/profile" element={user ? <ProfilePage user={user} events={events} onUpdateUser={handleUpdateUser} onLogout={handleLogout} /> : <Navigate to="/" replace />} />
             <Route path="/contact" element={<ContactPage />} />
             
             <Route 
