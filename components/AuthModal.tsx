@@ -214,8 +214,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
         </div>
       ) : (
         // --- מודאל התקנון (נפתח במקום הטופס) ---
-        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl w-full max-w-xl shadow-2xl relative flex flex-col max-h-[88vh] animate-slide-up border-t-4 border-[#2D6A4F]">
-           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0"></div>
+        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-xl shadow-2xl relative flex flex-col max-h-[88vh] animate-slide-up border-t-4 border-[#2D6A4F]">
+           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0 md:hidden"></div>
            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2"><ShieldCheck className="text-purple-500"/> תקנון ומדיניות האתר</h3>
               <button onClick={() => setShowTerms(false)} className="p-2 hover:bg-white rounded-full transition-colors"><X size={20}/></button>
