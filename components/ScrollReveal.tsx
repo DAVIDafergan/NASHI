@@ -6,6 +6,8 @@ interface ScrollRevealProps {
   /** stagger delay in ms */
   delay?: number;
   as?: keyof JSX.IntrinsicElements;
+  /** 'fade-in-up' (default, subtle upward slide) or 'fade-in-fast' (plain opacity fade, no movement, 200ms) */
+  animation?: 'fade-in-up' | 'fade-in-fast';
   [key: string]: any;
 }
 
@@ -17,7 +19,7 @@ interface ScrollRevealProps {
  * globally — the content still becomes visible immediately instead of
  * staying stuck invisible.
  */
-const ScrollReveal: React.FC<ScrollRevealProps> = ({ children, className = '', delay = 0, as = 'div', ...rest }) => {
+const ScrollReveal: React.FC<ScrollRevealProps> = ({ children, className = '', delay = 0, as = 'div', animation = 'fade-in-up', ...rest }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -42,12 +44,13 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({ children, className = '', d
   }, []);
 
   const Tag = as as any;
+  const hiddenStyle = animation === 'fade-in-fast' ? { opacity: 0 } : { opacity: 0, transform: 'translateY(16px)' };
 
   return (
     <Tag
       ref={ref}
-      className={`${visible ? 'animate-fade-in-up' : ''} ${className}`}
-      style={visible ? { animationDelay: `${delay}ms` } : { opacity: 0, transform: 'translateY(16px)' }}
+      className={`${visible ? `animate-${animation}` : ''} ${className}`}
+      style={visible ? { animationDelay: `${delay}ms` } : hiddenStyle}
       {...rest}
     >
       {children}

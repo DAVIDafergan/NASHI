@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
-  Users, Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2,
-  Gift, Trophy, MessageCircle, CheckCircle2
+  Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2,
+  Trophy, CheckCircle2
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
@@ -50,16 +50,12 @@ const categories = [
 
 const API_URL = 'https://nashi-production.up.railway.app/api';
 
-// פיצ'רי הפלטפורמה המוצגים בסקשן "מה זה נשי?" — אייקון, טקסט וצבע (מתחלף בין קורל לירוק אבטיח)
+// פיצ'רי הפלטפורמה המוצגים בסקשן "מה זה נשי?" — קומפקטי: 4 אייקונים עיקריים, אייקון וטקסט, צבע מתחלף
 const platformFeatures = [
-  { icon: Calendar, label: 'אירועים קהילתיים', color: 'green' as const },
-  { icon: Gift, label: 'גמחים והודעות', color: 'coral' as const },
-  { icon: Briefcase, label: 'עסקים בקהילה', color: 'green' as const },
-  { icon: GraduationCap, label: 'חוגים וקורסים', color: 'coral' as const },
-  { icon: Trophy, label: 'הגרלות וזכייה', color: 'green' as const },
-  { icon: Camera, label: 'סטוריז וזכרונות', color: 'coral' as const },
-  { icon: MessageCircle, label: 'פורום דיון', color: 'green' as const },
-  { icon: Users, label: 'קהילה וחברות', color: 'coral' as const },
+  { icon: Calendar, label: 'אירועים', color: 'green' as const },
+  { icon: GraduationCap, label: 'חוגים', color: 'coral' as const },
+  { icon: Camera, label: 'סטוריז', color: 'coral' as const },
+  { icon: Trophy, label: 'הגרלות', color: 'green' as const },
 ];
 
 // --- פונקציית עזר חכמה לזיהוי לינקים והצגתם נכון ---
@@ -236,6 +232,16 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     }
   }, [activeGroupIndex, activeInnerIndex, user]);
 
+  // "אירועים קרובים" — מציג רק אירועים שטרם עברו, ממוינים מהקרוב ביותר; אם אין אף אירוע עתידי, נופלים חזרה לרשימה המלאה כדי לא להציג סליידר ריק
+  // ממוין ב-useMemo (לא בכל רינדור) כדי שלא יאפס את אינטרוול הגלילה האוטומטית של הסליידר בכל עדכון state אחר בעמוד
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    const future = [...events]
+      .filter(e => new Date(e.date) >= now)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return future.length > 0 ? future : events;
+  }, [events]);
+
   // סליידר אירועים אוטומטי בנייד
   useEffect(() => {
     const slider = mobileSliderRef.current;
@@ -375,16 +381,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
   const heroEvents = events.filter(e => e.isHero);
   const displayEvents = heroEvents.length > 0 ? heroEvents : events.slice(0, 3);
-
-  // "אירועים קרובים" — מציג רק אירועים שטרם עברו, ממוינים מהקרוב ביותר; אם אין אף אירוע עתידי, נופלים חזרה לרשימה המלאה כדי לא להציג סליידר ריק
-  // ממוין ב-useMemo (לא בכל רינדור) כדי שלא יאפס את אינטרוול הגלילה האוטומטית של הסליידר בכל עדכון state אחר בעמוד
-  const upcomingEvents = useMemo(() => {
-    const now = new Date();
-    const future = [...events]
-      .filter(e => new Date(e.date) >= now)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return future.length > 0 ? future : events;
-  }, [events]);
 
   useEffect(() => {
     if (displayEvents && displayEvents.length > 0) {
@@ -541,36 +537,35 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </ScrollReveal>
         </section>
 
-        {/* מה זה נשי? — Animated feature showcase (icons + text, no video) */}
+        {/* מה זה נשי? — Compact feature showcase: 4 icons, single simultaneous fade-in (no video) */}
         <section className="w-full px-5 md:px-0">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] p-6 md:p-10">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] p-5 md:p-8">
             <ScrollReveal>
-              <h2 className="text-xl md:text-2xl font-bold text-[#1A202C] mb-2">מה זה נשי?</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-[#1A202C] mb-1.5">מה זה נשי?</h2>
             </ScrollReveal>
-            <ScrollReveal delay={100} className="block mb-7">
+            <ScrollReveal delay={80} className="block mb-5">
               <p className="text-[#4A5568] text-sm md:text-base leading-relaxed max-w-2xl">
                 פלטפורמה המחברת קהילה בנשים — אירועים, עסקים, חוגים, סטוריז ועוד
               </p>
             </ScrollReveal>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
-              {platformFeatures.map((feature, i) => {
+            <ScrollReveal animation="fade-in-fast" className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
+              {platformFeatures.map((feature) => {
                 const Icon = feature.icon;
                 const isGreen = feature.color === 'green';
                 return (
-                  <ScrollReveal
+                  <div
                     key={feature.label}
-                    delay={300 * (i + 1)}
-                    className="flex flex-row sm:flex-col items-center gap-3 sm:gap-2 sm:text-center"
+                    className="flex flex-col items-center text-center gap-2"
                   >
-                    <div className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center ${isGreen ? 'bg-[#DCEEE5] text-[#2D6A4F]' : 'bg-[#FDEAE3] text-[#E88B70]'}`}>
-                      <Icon size={26} strokeWidth={2} />
+                    <div className={`w-16 h-16 shrink-0 rounded-full flex items-center justify-center ${isGreen ? 'bg-[#DCEEE5] text-[#2D6A4F]' : 'bg-[#FDEAE3] text-[#E88B70]'}`}>
+                      <Icon size={30} strokeWidth={2} />
                     </div>
-                    <span className="text-[15px] font-medium text-[#1A202C]">{feature.label}</span>
-                  </ScrollReveal>
+                    <span className="text-sm font-medium text-[#1A202C]">{feature.label}</span>
+                  </div>
                 );
               })}
-            </div>
+            </ScrollReveal>
           </div>
         </section>
 
