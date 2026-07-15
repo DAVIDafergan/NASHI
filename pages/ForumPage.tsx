@@ -316,7 +316,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
 
       {/* מודאל פתיחת נושא חדש */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:p-4" onClick={() => setIsModalOpen(false)}>
+        <div className="fixed inset-0 z-[200] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setIsModalOpen(false)}>
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-6 md:p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[88vh] animate-slide-up border-t-4 border-[#2D6A4F]">
             <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-4 shrink-0 md:hidden"></div>
             <div className="flex justify-between items-center mb-6 shrink-0">

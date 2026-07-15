@@ -3,7 +3,7 @@ import {
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Clock, Sparkles,
   X, Send, MapPin, Phone, HeartHandshake, Quote, GraduationCap, ChevronLeft, ChevronRight, ExternalLink,
   Megaphone, Calendar, BookOpen, ArrowLeft, Plus, Image as ImageIcon, Camera, Type as TypeIcon, Trash2, Share2,
-  Trophy, CheckCircle2
+  Trophy
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
@@ -232,14 +232,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     }
   }, [activeGroupIndex, activeInnerIndex, user]);
 
-  // "אירועים קרובים" — מציג רק אירועים שטרם עברו, ממוינים מהקרוב ביותר; אם אין אף אירוע עתידי, נופלים חזרה לרשימה המלאה כדי לא להציג סליידר ריק
+  // "אירועים קרובים" — מציג רק אירועים שטרם עברו, ממוינים מהקרוב ביותר. אירוע שעבר התאריך שלו לא יופיע כאן יותר,
+  // גם אם המשמעות היא רשימה ריקה (הסקשן כולו מוסתר במקרה הזה)
   // ממוין ב-useMemo (לא בכל רינדור) כדי שלא יאפס את אינטרוול הגלילה האוטומטית של הסליידר בכל עדכון state אחר בעמוד
   const upcomingEvents = useMemo(() => {
     const now = new Date();
-    const future = [...events]
+    return [...events]
       .filter(e => new Date(e.date) >= now)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return future.length > 0 ? future : events;
   }, [events]);
 
   // סליידר אירועים אוטומטי בנייד
@@ -379,8 +379,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     reader.readAsDataURL(file);
   };
 
-  const heroEvents = events.filter(e => e.isHero);
-  const displayEvents = heroEvents.length > 0 ? heroEvents : events.slice(0, 3);
+  // רק אירועים עתידיים - אירוע שעבר התאריך שלו לא מוצג יותר בבאנר הראשי, גם אם סומן כ"hero" ע"י מנהלת
+  const heroEvents = events.filter(e => e.isHero && new Date(e.date) >= new Date());
+  const displayEvents = heroEvents.length > 0 ? heroEvents : upcomingEvents.slice(0, 3);
 
   useEffect(() => {
     if (displayEvents && displayEvents.length > 0) {
@@ -631,13 +632,15 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           )}
 
           {/* 2. Events Slider - Softer gradients, elegant text */}
+          {/* אירוע שעבר התאריך שלו לא מופיע כאן יותר; אם אין אף אירוע עתידי, הסקשן כולו מוסתר */}
+          {upcomingEvents.length > 0 && (
           <section className="space-y-5">
             <div className="flex items-center justify-between px-5">
               <h3 className="text-2xl font-black text-slate-800 tracking-tight">אירועים קרובים</h3>
               <Link to="/events" className="text-rose-400 text-xs font-bold hover:text-rose-500 transition-colors flex items-center gap-1">ללוח המלא <ChevronLeft size={14}/></Link>
             </div>
-            
-            <div 
+
+            <div
               ref={mobileSliderRef}
               className="-mx-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar pb-8"
             >
@@ -649,7 +652,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                       dateLabel={event.date ? new Date(event.date).toLocaleDateString('he-IL', { day: '2-digit', month: 'short' }) : ''}
                       location={event.location}
                       category={event.category}
-                      isPast={new Date(event.date) < new Date()}
                       ctaLabel="לפרטים והרשמה"
                       onClick={() => navigate('/events')}
                     />
@@ -657,6 +659,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                ))}
             </div>
           </section>
+          )}
 
           {/* 3. Classes - Elegant Grid */}
           <section className="bg-gradient-to-b from-rose-50/40 to-transparent py-10 -mx-0">
@@ -785,19 +788,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             )}
            </ScrollReveal>
 
-           {/* Hero Slider */}
+           {/* Hero Slider — רק אירועים עתידיים; אם אין אף אחד, הסקשן מוסתר */}
+           {displayEvents.length > 0 && (
            <ScrollReveal as="section" className="relative h-[520px] w-full overflow-hidden rounded-[3rem] shadow-[0_24px_60px_rgba(0,0,0,0.12)] mt-8">
-              {displayEvents.map((event, index) => {
-                const isPastHero = new Date(event.date) < new Date();
-                return (
+              {displayEvents.map((event, index) => (
                 <div key={index} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
-                   <div className={`absolute inset-0 bg-cover bg-center ${isPastHero ? 'grayscale-[0.5]' : ''}`} style={{ backgroundImage: `url(${event.image})` }}></div>
+                   <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
-                   {isPastHero && (
-                     <span className="absolute top-8 right-8 inline-flex items-center gap-1.5 bg-[#CBD5E0] text-[#1A202C] px-4 py-1.5 rounded-full text-xs font-bold shadow-sm">
-                       <CheckCircle2 size={14} /> האירוע הסתיים
-                     </span>
-                   )}
                    <div className="absolute bottom-12 left-12 right-12 flex justify-between items-end">
                       <div className="text-left max-w-2xl">
                          <div className="flex items-center gap-2 text-rose-300 text-sm font-medium uppercase tracking-widest mb-4">
@@ -806,7 +803,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                          <h2 className="text-5xl font-black text-white leading-tight drop-shadow-md">{event.title}</h2>
                       </div>
                       <Link to="/events" className="shrink-0 bg-white/15 backdrop-blur-md text-white border border-white/40 px-10 py-4 rounded-2xl font-bold text-base hover:bg-white hover:text-slate-900 transition-all duration-300 shadow-lg">
-                        {isPastHero ? 'צפי בסיכום האירוע' : 'לפרטים והרשמה'}
+                        לפרטים והרשמה
                       </Link>
                    </div>
                    {/* Slide indicator dots */}
@@ -816,9 +813,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                      ))}
                    </div>
                 </div>
-                );
-              })}
+              ))}
            </ScrollReveal>
+           )}
 
            {/* Classes Desktop */}
            <section className="space-y-8">
@@ -1013,7 +1010,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       {/* 2. מודל העלאת סטורי חדש */}
       {showAddStoryModal && (
-          <div className="fixed inset-0 z-[450] flex items-end md:items-center justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:p-4" onClick={() => setShowAddStoryModal(false)}>
+          <div className="fixed inset-0 z-[450] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowAddStoryModal(false)}>
              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-md p-8 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#2D6A4F]">
                  <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-5 md:hidden"></div>
                  <button onClick={() => setShowAddStoryModal(false)} className="absolute top-6 left-6 p-2 bg-slate-50 text-slate-400 rounded-full hover:bg-rose-50 hover:text-rose-400 transition-colors"><X size={20}/></button>
@@ -1081,7 +1078,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       {/* 3. מודל בקשת הצטרפות */}
       {showMembershipModal && (
-          <div className="fixed inset-0 z-[250] flex items-end md:items-center justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:p-4" onClick={() => setShowMembershipModal(false)}>
+          <div className="fixed inset-0 z-[250] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowMembershipModal(false)}>
               <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-8 md:p-10 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#2D6A4F]">
                   <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-4 mb-5 md:hidden"></div>
                   <button onClick={() => setShowMembershipModal(false)} className="absolute top-6 left-6 p-2 hover:bg-rose-50 rounded-full text-slate-400 transition-colors"><X size={20}/></button>
@@ -1111,7 +1108,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
       {/* 4. מודל תקנון */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-[300] flex items-end md:items-center justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:p-4" onClick={() => setShowTermsModal(false)}>
+        <div className="fixed inset-0 z-[300] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowTermsModal(false)}>
            <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-2xl p-8 shadow-2xl max-h-[88vh] overflow-hidden flex flex-col animate-slide-up border-t-4 border-[#2D6A4F]">
               <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-4 shrink-0 md:hidden"></div>
               <div className="flex justify-between items-center mb-6 shrink-0">

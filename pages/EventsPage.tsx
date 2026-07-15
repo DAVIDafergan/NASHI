@@ -145,11 +145,15 @@ const EventsPage = () => {
           // דואג שאירועי עבר יופיעו תמיד למטה, כדי לא להסתיר אירועים חדשים
           const isPastA = new Date(a.date) < new Date();
           const isPastB = new Date(b.date) < new Date();
-          
+
           if (isPastA && !isPastB) return 1;
           if (!isPastA && isPastB) return -1;
-          
-          // אם שניהם בעבר או שניהם בעתיד, סדר לפי תאריך
+
+          // שני האירועים עברו: החדש ביותר (הכי קרוב להיום) קודם, הישן ביותר למטה
+          if (isPastA && isPastB) {
+              return new Date(b.date).getTime() - new Date(a.date).getTime();
+          }
+          // שני האירועים עתידיים: הקרוב ביותר קודם
           return new Date(a.date).getTime() - new Date(b.date).getTime();
       }
       if (sortBy === 'price-low') return getDisplayPrice(a).value - getDisplayPrice(b).value;
@@ -312,7 +316,7 @@ const EventsPage = () => {
       {/* --- Detailed Event Modal --- */}
       {/* מובייל: bottom sheet (נפתח מלמטה). דסקטופ: מודל ממורכז במסך */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in md:p-4" onClick={() => setSelectedEvent(null)}>
+        <div className="fixed inset-0 z-[100] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in md:pt-24 md:px-4 md:pb-4" onClick={() => setSelectedEvent(null)}>
             <div onClick={(e) => e.stopPropagation()} className="bg-white w-full md:max-w-[500px] rounded-t-2xl md:rounded-2xl max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up relative border-t-4 border-[#2D6A4F] no-scrollbar">
                 <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 sticky top-0 md:hidden"></div>
 

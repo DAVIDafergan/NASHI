@@ -57,7 +57,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:p-4" dir="rtl" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" dir="rtl" onClick={onClose}>
 
       {/* כרטיס הטופס */}
       {!showTerms ? (
