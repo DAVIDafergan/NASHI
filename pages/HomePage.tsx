@@ -570,9 +570,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </div>
         </section>
 
-        {/* Banner Area */}
-        <div className="w-full px-4 md:px-0">{renderAdBanner()}</div>
-
         {/* --- אזור הסטוריז המקובץ --- */}
         <div className="relative w-full">
           <div className="w-full px-5 pb-4 pt-2 overflow-x-auto no-scrollbar flex gap-5 snap-x">
@@ -925,6 +922,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
              </ScrollReveal>
            )}
         </div>
+
+        {/* Banner Area — הוזז למטה, ממש לפני הפוטר */}
+        <div className="w-full px-4 md:px-0">{renderAdBanner()}</div>
 
         {/* Footer - Elegant */}
         <footer className="pt-8 pb-10 border-t border-rose-100/50 text-center space-y-5 px-4 mt-0 bg-transparent relative z-10">
