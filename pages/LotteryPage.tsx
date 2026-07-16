@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft, Medal, Target, Plus, Trash2, Minus, Edit } from 'lucide-react';
+import { Gift, Calendar, Award, Star, Trophy, Users, CheckCircle, CheckCircle2, Ticket, Loader2, X, Sparkles, Share2, Info, Lock, ClipboardList, Camera, Send, Settings, Eye, Image as ImageIcon, ArrowLeft, Medal, Target, Plus, Trash2, Minus, Edit, Clock } from 'lucide-react';
 import { LotteryItem, User } from '../types';
 import { useLocation } from 'react-router-dom';
 import { api } from '../services/api'; // ייבוא ה-API
+import ScrollReveal from '../components/ScrollReveal';
 
 interface LotteryPageProps {
     lotteries?: LotteryItem[];
@@ -16,6 +17,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   const [isDrawing, setIsDrawing] = useState(false);
   const [showWinner, setShowWinner] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [drawCountdown, setDrawCountdown] = useState('');
   const location = useLocation();
 
   // --- מצבים חדשים עבור מערכת האתגרים (החליף את שולחן השבת) ---
@@ -358,6 +360,80 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
   const filteredLotteries = lotteries.filter(l => !l.title.includes("שולחן השבת") && !l.title.includes("שולחן שבת"));
 
+  // ההגרלה הפעילה הראשונה מוצגת ככרטיס מוביל גדול; השאר (פעילות נוספות + שהסתיימו) ברשימה קטנה יותר מתחת
+  const activeLotteries = filteredLotteries.filter(l => l.isActive);
+  const endedLotteries = filteredLotteries.filter(l => !l.isActive);
+  const featuredLottery = activeLotteries[0] || null;
+  const otherLotteries = [...activeLotteries.slice(1), ...endedLotteries];
+  const featuredLotteryKey = featuredLottery ? (featuredLottery._id || featuredLottery.id) : null;
+
+  // ספירה לאחור בעברית עד מועד ההגרלה של הכרטיס המוביל
+  useEffect(() => {
+    if (!featuredLottery) { setDrawCountdown(''); return; }
+    const update = () => {
+      const diff = new Date(featuredLottery.drawDate).getTime() - Date.now();
+      if (diff <= 0) { setDrawCountdown('ההגרלה מתקיימת בקרוב'); return; }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      if (days > 0) setDrawCountdown(`עוד ${days} ימים ו-${hours} שעות`);
+      else if (hours > 0) setDrawCountdown(`עוד ${hours} שעות ו-${minutes} דקות`);
+      else setDrawCountdown(`עוד ${minutes} דקות ו-${seconds} שניות`);
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [featuredLotteryKey]);
+
+  // כפתור הפעולה של כרטיס הגרלה - זהה בין הכרטיס המוביל לכרטיסים הקטנים
+  const renderActionButton = (lottery: any) => {
+      const isRegistered = user && lottery.participants.includes(user.id || user._id);
+      const isMissionStarted = user && lottery.missionStarted?.includes(user.id || user._id);
+      const canParticipate = lottery.participationType === 'everyone' || (user && user.points >= (lottery.minPointsToEnter || 0)) || lottery.participationType === 'mission';
+
+      if (user?.isAdmin) {
+          return (
+              <button onClick={() => handleOpenDraw(lottery)} className="w-full py-4 min-h-[44px] rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 bg-slate-900 text-white shadow-xl hover:bg-[#245A41] active:scale-95">
+                  <Sparkles size={18} className="text-yellow-400" />
+                  {lottery.winnerId ? 'צפייה בתוצאות' : 'ניהול הגרלה (Live)'}
+              </button>
+          );
+      }
+      if (!lottery.isActive || lottery.winnerId) {
+          return (
+              <button onClick={() => handleOpenDraw(lottery)} className="w-full py-4 min-h-[44px] rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 bg-[#DCEEE5] text-[#2D6A4F] hover:bg-[#c9e5da]">
+                  <Trophy size={18} /> צפייה בזוכה המאושרת
+              </button>
+          );
+      }
+      if (isRegistered) {
+          return (
+              <div className="w-full py-4 min-h-[44px] rounded-xl font-black text-sm bg-emerald-50 text-emerald-600 flex items-center justify-center gap-2 border border-emerald-100">
+                  <CheckCircle2 size={18} /> את בפנים! בהצלחה
+              </div>
+          );
+      }
+      if (lottery.participationType === 'mission' && isMissionStarted) {
+          return (
+              <button onClick={() => handleCompleteMission(lottery)} className="w-full py-4 min-h-[44px] rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-xl bg-gradient-to-r from-orange-500 to-amber-600 text-white">
+                  <CheckCircle size={18} /> סיימתי את המשימה!
+              </button>
+          );
+      }
+      return (
+          <button
+              onClick={() => handleEnterLottery(lottery)}
+              className={`w-full py-4 min-h-[44px] rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 ${
+                  canParticipate ? 'bg-[#2D6A4F] text-white hover:bg-[#245A41]' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+              }`}
+          >
+              <Ticket size={18} />
+              {lottery.participationType === 'mission' ? 'התחילי משימה להגרלה' : canParticipate ? 'הירשמי להגרלה עכשיו' : 'חסרות לך נקודות'}
+          </button>
+      );
+  };
+
   const renderPrizeList = (lottery: any, isDark: boolean = false) => {
     const allPrizes = [
         lottery.prize,
@@ -372,15 +448,15 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
     const finalPrizes = (lottery.prizes && lottery.prizes.length > 0) ? lottery.prizes : allPrizes;
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
             {finalPrizes.map((p: string, idx: number) => (
-                <div key={idx} className={`flex items-center gap-2 p-2 rounded-xl transition-all ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white/60 border border-rose-100/50 shadow-sm'}`}>
+                <div key={idx} className={`flex items-center gap-2 p-2 rounded-xl transition-all ${isDark ? 'bg-white/5 border border-white/10' : 'bg-[#F5F5F5] border border-transparent'}`}>
                     <div className={`${idx === 0 ? 'text-amber-500' : 'text-slate-400'} shrink-0`}>
                         {idx === 0 ? <Trophy size={16} /> : <Medal size={14} />}
                     </div>
-                    <span className={`text-xs font-black ${isDark ? 'text-white' : 'text-slate-700'}`}>
+                    <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-[#1A202C]'}`}>
                         {idx === 0 ? 'פרס ראשון: ' : `פרס ${idx + 1}: `}
-                        <span className={idx === 0 ? 'text-rose-500' : ''}>{p}</span>
+                        <span className={idx === 0 ? 'text-[#2D6A4F]' : ''}>{p}</span>
                     </span>
                 </div>
             ))}
@@ -409,137 +485,110 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
     <div className="min-h-screen space-y-6 md:space-y-8 pb-10 text-right bg-slate-50/50" dir="rtl">
       {/* Tab Navigation - מוצג תמיד למעלה */}
       <div className="flex justify-center p-1 bg-slate-200/50 backdrop-blur-sm w-fit mx-auto rounded-full gap-1 shadow-inner mt-4 md:mt-8">
-          <button 
+          <button
             onClick={() => setActiveTab('regular')}
-            className={`px-5 py-2 md:px-8 md:py-3 rounded-full font-bold md:font-black text-xs md:text-sm transition-all ${activeTab === 'regular' ? 'bg-white text-rose-500 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`px-5 py-2 md:px-8 md:py-3 rounded-full font-bold md:font-black text-xs md:text-sm transition-all ${activeTab === 'regular' ? 'bg-white text-[#2D6A4F] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             הגרלות כלליות
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('challenges')}
             className={`px-5 py-2 md:px-8 md:py-3 rounded-full font-bold md:font-black text-xs md:text-sm transition-all flex items-center gap-1.5 ${activeTab === 'challenges' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            אתגרי החוסן 💪
+            אתגרי החוסן
           </button>
       </div>
 
       {activeTab === 'regular' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 px-4 animate-fade-in max-w-7xl mx-auto">
-            {filteredLotteries.map((lottery: any) => {
-                const isRegistered = user && lottery.participants.includes(user.id || user._id);
-                const isMissionStarted = user && lottery.missionStarted?.includes(user.id || user._id);
-                const canParticipate = lottery.participationType === 'everyone' || (user && user.points >= (lottery.minPointsToEnter || 0)) || lottery.participationType === 'mission';
-                
-                return (
-                    <div key={lottery.id || lottery._id} className={`bg-white rounded-[2.5rem] p-3 shadow-sm border border-slate-100 hover:shadow-2xl transition-all duration-500 flex flex-col group relative overflow-hidden ${!lottery.isActive ? 'opacity-80' : ''}`}>
-                        <div className="h-56 relative overflow-hidden rounded-[2rem] mb-5 shrink-0 shadow-inner bg-slate-50">
-                            <img src={lottery.image} alt={lottery.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                            <div className="absolute top-4 right-4 flex flex-col gap-2">
-                                <div className="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-rose-600 flex items-center gap-1.5 shadow-xl border border-rose-50">
+        <div className="max-w-6xl mx-auto px-4 space-y-8">
+
+            {/* --- כרטיס ההגרלה הפעילה המוביל --- */}
+            {featuredLottery && (
+              <ScrollReveal className="relative bg-white rounded-2xl p-5 md:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border-2 border-[#F8A88F]/50 animate-pulse-border overflow-hidden">
+                 <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+                    <div className="w-20 h-20 md:w-24 md:h-24 shrink-0 rounded-2xl bg-[#FDEAE3] flex items-center justify-center text-[#E88B70]">
+                       <Gift size={44} />
+                    </div>
+                    <div className="flex-1 text-center md:text-right space-y-3 w-full">
+                       <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#2D6A4F] bg-[#DCEEE5] px-3 py-1 rounded-full uppercase tracking-widest">
+                          <Star size={11} className="fill-[#2D6A4F]" /> ההגרלה הפעילה
+                       </span>
+                       <h2 className="text-2xl md:text-3xl font-bold text-[#1A202C]">{featuredLottery.title}</h2>
+                       {renderPrizeList(featuredLottery)}
+                       <div className="flex items-center justify-center md:justify-start gap-2 text-[#4A5568] text-sm font-bold pt-1">
+                          <Clock size={16} className="text-[#2D6A4F]" /> {drawCountdown}
+                       </div>
+                       <div className="flex items-center justify-center md:justify-start gap-2 text-[#718096] text-xs font-medium">
+                          <Users size={14} /> {featuredLottery.participants.length} משתתפות נרשמו
+                       </div>
+                    </div>
+                    <div className="w-full md:w-64 shrink-0">
+                       {renderActionButton(featuredLottery)}
+                    </div>
+                 </div>
+              </ScrollReveal>
+            )}
+
+            {/* --- הגרלות נוספות / שהסתיימו --- */}
+            {otherLotteries.length > 0 && (
+              <div className="space-y-4">
+                 <h3 className="text-lg font-bold text-[#1A202C] px-1">
+                    {featuredLottery ? 'הגרלות נוספות' : 'הגרלות'}
+                 </h3>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {otherLotteries.map((lottery: any, i) => (
+                        <ScrollReveal key={lottery.id || lottery._id} delay={i < 6 ? i * 60 : 0} className={`bg-white rounded-2xl p-3 shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-slate-100 hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] transition-all duration-300 flex flex-col group relative overflow-hidden ${!lottery.isActive ? 'opacity-90' : ''}`}>
+                            <div className="h-36 relative overflow-hidden rounded-xl mb-3 shrink-0 bg-slate-50">
+                                <img src={lottery.image} alt={lottery.title} className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${!lottery.isActive ? 'grayscale-[0.3]' : ''}`} />
+                                <div className="absolute top-2 right-2 flex flex-col gap-1.5 items-end">
                                     {lottery.participationType === 'mission' ? (
-                                        <>
-                                            <ClipboardList size={12} className="text-orange-500" />
-                                            <span className="text-orange-600">הגרלת משימה</span>
-                                        </>
+                                        <div className="bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-orange-600 flex items-center gap-1 shadow-sm">
+                                            <ClipboardList size={11} /> הגרלת משימה
+                                        </div>
                                     ) : (
-                                        <>
-                                            <Star size={12} className="fill-rose-500 text-rose-500" />
+                                        <div className="bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-[#2D6A4F] flex items-center gap-1 shadow-sm">
                                             {lottery.participationType === 'everyone' ? 'פתוח לכולן' : `${lottery.minPointsToEnter} נקודות`}
-                                        </>
+                                        </div>
+                                    )}
+                                    {!lottery.isActive && (
+                                        <div className="bg-[#CBD5E0] px-3 py-1 rounded-full text-[10px] font-bold text-[#1A202C] flex items-center gap-1">
+                                            <CheckCircle2 size={11} /> הגרלה הסתיימה
+                                        </div>
                                     )}
                                 </div>
-                                {!lottery.isActive && (
-                                    <div className="bg-slate-900/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-white flex items-center gap-1.5 shadow-xl">
-                                        <CheckCircle size={12} /> הגרלה הסתיימה
-                                    </div>
-                                )}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleShare(lottery); }}
+                                    className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md p-2 rounded-full text-[#2D6A4F] hover:bg-white transition-all shadow-sm"
+                                >
+                                    <Share2 size={14} />
+                                </button>
                             </div>
 
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); handleShare(lottery); }}
-                                className="absolute bottom-4 left-4 bg-white/20 backdrop-blur-xl p-3 rounded-2xl text-white hover:bg-white hover:text-rose-500 transition-all shadow-lg border border-white/20"
-                            >
-                                <Share2 size={18} />
-                            </button>
-                        </div>
-                        
-                        <div className="px-4 pb-4 flex-1 flex flex-col text-right">
-                            <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-xl font-black text-slate-800 leading-tight group-hover:text-rose-600 transition-colors">{lottery.title}</h3>
-                                {lottery.isActive && <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>}
-                            </div>
-
-                            <div className="space-y-3 mb-6 bg-rose-50/30 p-4 rounded-[2rem] border border-rose-100/50">
-                                <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-2">פירוט הפרסים:</p>
+                            <div className="px-1 pb-1 flex-1 flex flex-col text-right gap-2.5">
+                                <h4 className="font-bold text-[#1A202C] text-sm leading-snug">{lottery.title}</h4>
                                 {renderPrizeList(lottery)}
-                                
-                                {lottery.participationType === 'mission' && lottery.missionText && (
-                                    <div className="mt-3 pt-3 border-t border-rose-100/50">
-                                        <p className="text-[10px] font-black text-orange-600 uppercase mb-1">המשימה שלך:</p>
-                                        <p className="text-xs font-bold text-slate-600 leading-relaxed">{lottery.missionText}</p>
-                                    </div>
-                                )}
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-3 mb-6">
-                                <div className="flex flex-col items-center justify-center gap-1 text-[10px] text-slate-500 bg-slate-50 p-3 rounded-2xl border border-slate-100/50">
-                                    <Calendar size={16} className="text-rose-300" />
-                                    <span className="font-black text-slate-700">{new Date(lottery.drawDate).toLocaleDateString('he-IL')}</span>
-                                </div>
-                                <div className="flex flex-col items-center justify-center gap-1 text-[10px] text-slate-500 bg-slate-50 p-3 rounded-2xl border border-slate-100/50">
-                                    <Users size={16} className="text-rose-300" />
-                                    <span className="font-black text-slate-700">{lottery.participants.length} משתתפות</span>
-                                </div>
-                            </div>
 
-                            <div className="mt-auto">
-                                {user?.isAdmin ? (
-                                    <button 
-                                        onClick={() => handleOpenDraw(lottery)}
-                                        className="w-full py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 bg-slate-900 text-white shadow-xl hover:bg-rose-600 active:scale-95"
-                                    >
-                                        <Sparkles size={18} className="text-yellow-400" />
-                                        {lottery.winnerId ? 'צפייה בתוצאות' : 'ניהול הגרלה (Live)'}
-                                    </button>
-                                ) : (!lottery.isActive || lottery.winnerId) ? (
-                                    <button 
-                                        onClick={() => handleOpenDraw(lottery)}
-                                        className="w-full py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 bg-rose-50 text-rose-600 hover:bg-rose-100"
-                                    >
-                                        <Trophy size={18} />
-                                        צפייה בזוכה המאושרת
-                                    </button>
-                                ) : isRegistered ? (
-                                    <div className="w-full py-4 rounded-2xl font-black text-sm bg-emerald-50 text-emerald-600 flex items-center justify-center gap-2 border border-emerald-100">
-                                        <CheckCircle2 size={18} />
-                                        את בפנים! בהצלחה
-                                    </div>
-                                ) : (lottery.participationType === 'mission' && isMissionStarted) ? (
-                                    <button 
-                                        onClick={() => handleCompleteMission(lottery)}
-                                        className="w-full py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-xl bg-gradient-to-r from-orange-500 to-amber-600 text-white animate-pulse"
-                                    >
-                                        <CheckCircle size={18} />
-                                        סיימתי את המשימה!
-                                    </button>
-                                ) : (
-                                    <button 
-                                        onClick={() => handleEnterLottery(lottery)}
-                                        className={`w-full py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 ${
-                                            canParticipate 
-                                            ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white hover:shadow-rose-200' 
-                                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                        }`}
-                                    >
-                                        <Ticket size={18} />
-                                        {lottery.participationType === 'mission' ? 'התחילי משימה להגרלה' : canParticipate ? 'הירשמי להגרלה עכשיו' : `חסרות לך נקודות`}
-                                    </button>
-                                )}
+                                <div className="flex items-center gap-3 text-[11px] text-[#718096] font-medium">
+                                    <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(lottery.drawDate).toLocaleDateString('he-IL')}</span>
+                                    <span className="flex items-center gap-1"><Users size={12} /> {lottery.participants.length}</span>
+                                </div>
+
+                                <div className="mt-auto pt-1">
+                                    {renderActionButton(lottery)}
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                );
-            })}
+                        </ScrollReveal>
+                    ))}
+                 </div>
+              </div>
+            )}
+
+            {filteredLotteries.length === 0 && (
+              <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+                 <Gift size={36} className="text-slate-300 mx-auto mb-3" />
+                 <p className="text-slate-400 font-bold text-sm">אין הגרלות פעילות כרגע. חזרי לבדוק בקרוב!</p>
+              </div>
+            )}
         </div>
       ) : (
         /* --- ממשק אתגרים חדש - מעודן ומותאם לנייד --- */
@@ -929,13 +978,6 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           </div>
       )}
 
-      {(activeTab === 'regular' && filteredLotteries.length === 0) && (
-          <div className="text-center py-24 bg-white/50 rounded-3xl border border-dashed border-rose-200 mx-4">
-            <Gift size={36} className="text-rose-200 mx-auto mb-3" />
-            <p className="text-slate-400 font-medium text-sm">אין הגרלות כלליות כרגע.</p>
-            <button onClick={() => window.location.hash = '/'} className="mt-3 text-rose-500 text-xs font-bold hover:underline">חזרה לדף הבית</button>
-          </div>
-      )}
     </div>
   );
 };
