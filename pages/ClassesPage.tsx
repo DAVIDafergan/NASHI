@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Search, Clock, MapPin, Users, Heart, Phone, ArrowLeft, Info, Calendar, MessageCircle, Lock
+  Search, Clock, MapPin, Users, Heart, Phone, ArrowLeft, Info, Calendar, MessageCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScrollReveal from '../components/ScrollReveal';
@@ -34,58 +34,23 @@ const ClassesPage = () => {
   const [selectedDay, setSelectedDay] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // בדיקת התחברות
-  const token = localStorage.getItem('token');
-
   useEffect(() => {
-    // רק אם יש טוקן נבצע את הקריאה לשרת
-    if (token) {
-        fetch(`${API_URL}/classes`)
-          .then(res => res.json())
-          .then(data => {
-            const formattedClasses = data.map((item: any) => ({
-                ...item,
-                id: item._id || item.id,
-                image: item.image || 'https://via.placeholder.com/400x300',
-            }));
-            setClasses(formattedClasses);
-            setLoading(false);
-          })
-          .catch(err => {
-            console.error("Error fetching classes:", err);
-            setLoading(false);
-          });
-    } else {
+    fetch(`${API_URL}/classes`)
+      .then(res => res.json())
+      .then(data => {
+        const formattedClasses = data.map((item: any) => ({
+            ...item,
+            id: item._id || item.id,
+            image: item.image || 'https://via.placeholder.com/400x300',
+        }));
+        setClasses(formattedClasses);
         setLoading(false);
-    }
-  }, [token]);
-
-  // הגנה על הדף - אם אין טוקן, נציג מסך התחברות מעוצב
-  if (!token) {
-    return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[#FFFBF7]" dir="rtl">
-            <div className="w-20 h-20 bg-[#DCEEE5] rounded-3xl flex items-center justify-center text-[#2D6A4F] mb-6 shadow-inner">
-                <Lock size={32} />
-            </div>
-            <h1 className="text-2xl font-bold text-[#1A202C] mb-2">התוכן זמין לחברות בלבד</h1>
-            <p className="text-[#718096] mb-8 max-w-xs font-medium leading-relaxed">כדי לצפות במערכת החוגים וליהנות מפעילויות nashi, עלייך להיות מחוברת למערכת.</p>
-            <div className="flex flex-col gap-3 w-full max-w-xs">
-                <button
-                    onClick={() => navigate('/login')}
-                    className="w-full min-h-[44px] py-4 bg-[#2D6A4F] text-white rounded-xl font-bold shadow-lg shadow-[#2D6A4F]/15 hover:bg-[#245A41] active:scale-95 transition-all"
-                >
-                    התחברות למערכת
-                </button>
-                <button
-                    onClick={() => navigate('/register')}
-                    className="w-full min-h-[44px] py-4 bg-white text-[#718096] border border-slate-200 rounded-xl font-bold hover:text-[#2D6A4F] hover:border-[#2D6A4F]/40 transition-all"
-                >
-                    הרשמה מהירה
-                </button>
-            </div>
-        </div>
-    );
-  }
+      })
+      .catch(err => {
+        console.error("Error fetching classes:", err);
+        setLoading(false);
+      });
+  }, []);
 
   const categories = useMemo(() => {
     const unique = Array.from(new Set(classes.map(c => c.category).filter(Boolean)));

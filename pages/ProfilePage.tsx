@@ -311,20 +311,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                   </h3>
 
                   {user.isMemberApproved ? (
-                    /* תצוגה למאושרות */
-                    <ul className="space-y-3 flex-1">
-                        {[
-                        { text: '10% הנחה בחוגי העשרה', active: true },
-                        { text: 'כניסה חינם למוזיאון העיר', active: true },
-                        { text: 'קדימות ברכישת כרטיסים למופעים', active: user.level !== UserLevel.BEGINNER },
-                        { text: 'הזמנה לאירועי VIP', active: user.level === UserLevel.AMBASSADOR || user.level === UserLevel.LEADER },
-                        ].map((item, i) => (
-                        <li key={i} className="flex items-center gap-3 text-sm p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                            <div className={`w-2.5 h-2.5 rounded-full ${item.active ? 'bg-[#2D6A4F]' : 'bg-slate-300'}`}></div>
-                            <span className={`font-medium ${item.active ? 'text-slate-700' : 'text-slate-400 line-through'}`}>{item.text}</span>
-                        </li>
-                        ))}
-                    </ul>
+                    /* תצוגה למאושרות - ההטבות מוגדרות ע"י המנהלת בלבד */
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-[#F5F5F5] rounded-2xl border border-dashed border-slate-200">
+                        <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                          אין כרגע הטבות מוגדרות למעגל. המנהלת תעדכן כאן הטבות חדשות בקרוב.
+                        </p>
+                    </div>
                   ) : (
                     /* באנר הצטרפות למי שלא אושרה */
                     <div className="flex-1 flex flex-col items-center justify-center space-y-6 bg-[#F5F5F5] rounded-2xl p-8 border border-dashed border-slate-200 text-center">
