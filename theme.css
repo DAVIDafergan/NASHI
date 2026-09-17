@@ -13,8 +13,9 @@
 }
 
 :root {
-  --color-primary: #ff5722;
-  --color-secondary: #ffcc00;
+  /* Festive palette: warm gold + deep burgundy (most colors are set inline per-component, not from these tokens) */
+  --color-primary: #d4a017;
+  --color-secondary: #9b2242;
   --color-background: #ffffff;
   --color-text: #333333;
 

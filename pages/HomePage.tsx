@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
-import WatermelonSlice from '../components/decor/WatermelonSlice';
+import FestiveSpark from '../components/decor/FestiveSpark';
 import ScrollReveal from '../components/ScrollReveal';
 import EventCard from '../components/EventCard';
 
@@ -476,29 +476,29 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   return (
     <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#FFFBF7] scroll-smooth" dir="rtl">
 
-      {/* Background Ambience - Summer 2026 watermelon wash */}
+      {/* Background Ambience - festive gold & burgundy wash */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#FDEAE3] via-[#FFFBF7] to-[#FFFBF7]"></div>
-          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-[#F8A88F]/25 rounded-full blur-[110px] opacity-80"></div>
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#DCEEE5] rounded-full blur-[100px] opacity-60"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#FBEBC9] via-[#FFFBF7] to-[#FFFBF7]"></div>
+          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-[#E8871E]/20 rounded-full blur-[110px] opacity-80"></div>
+          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#9B2242]/15 rounded-full blur-[100px] opacity-60"></div>
 
-          {/* Decorative watermelon slices — subtle float + scroll parallax, corners of the screen */}
-          <WatermelonSlice className="absolute -top-5 -right-5 opacity-90" size={104} rotate={14} motion="float" parallax={16} />
-          <WatermelonSlice className="absolute top-28 -left-9 opacity-60" size={72} rotate={-18} flip motion="float-reverse" parallax={-12} />
-          <WatermelonSlice className="absolute bottom-16 -right-8 opacity-50" size={86} rotate={-10} motion="float-reverse" parallax={10} />
-          <WatermelonSlice className="absolute -bottom-5 -left-5 opacity-80" size={92} rotate={22} flip motion="float-reverse" parallax={-18} />
+          {/* Decorative festive sparkles — subtle float + scroll parallax, corners of the screen */}
+          <FestiveSpark className="absolute -top-5 -right-5 opacity-90" size={104} rotate={14} motion="float" parallax={16} />
+          <FestiveSpark className="absolute top-28 -left-9 opacity-60" size={72} rotate={-18} flip motion="float-reverse" parallax={-12} />
+          <FestiveSpark className="absolute bottom-16 -right-8 opacity-50" size={86} rotate={-10} motion="float-reverse" parallax={10} />
+          <FestiveSpark className="absolute -bottom-5 -left-5 opacity-80" size={92} rotate={22} flip motion="float-reverse" parallax={-18} />
       </div>
 
       {/* Main Content Container */}
       <div className="max-w-5xl mx-auto md:px-8 pt-0 md:pt-10 relative z-10 space-y-10 md:space-y-12">
 
-        {/* Hero — SUMMER 2026 */}
+        {/* Hero — Holiday greeting */}
         <section className="relative w-full px-5 md:px-0 pt-5 md:pt-6 pb-2 md:pb-4 overflow-hidden">
           {/* Small secondary wave accent, top-left of hero */}
           <svg width="90" height="14" viewBox="0 0 90 14" fill="none" className="absolute left-0 top-1 opacity-50 hidden md:block pointer-events-none" aria-hidden="true">
             <path
               d="M1 7 Q 12 -2, 23 7 T 45 7 T 67 7 T 89 7"
-              stroke="#F8A88F"
+              stroke="#E8871E"
               strokeWidth="2.5"
               strokeLinecap="round"
               fill="none"
@@ -514,14 +514,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <ScrollReveal delay={90}>
             <h1 className="text-[2.5rem] leading-[1.05] md:text-6xl lg:text-7xl font-black text-slate-800 tracking-tight">
               <span className="block">תרבות</span>
-              <span className="block bg-gradient-to-l from-[#E85C5C] to-[#F8A88F] bg-clip-text text-transparent">SUMMER 2026</span>
+              <span className="block bg-gradient-to-l from-[#9B2242] to-[#E8871E] bg-clip-text text-transparent">חג שמח!</span>
             </h1>
           </ScrollReveal>
           <ScrollReveal delay={180} className="mt-3 md:mt-4">
             <svg width="220" height="18" viewBox="0 0 220 18" fill="none" className="max-w-[220px]">
               <path
                 d="M2 9 Q 20 -3, 38 9 T 74 9 T 110 9 T 146 9 T 182 9 T 218 9"
-                stroke="#4E8F72"
+                stroke="#D4A017"
                 strokeWidth="3"
                 strokeLinecap="round"
                 fill="none"
@@ -533,7 +533,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </ScrollReveal>
           <ScrollReveal delay={270} className="mt-4 md:mt-5 max-w-xl">
             <p className="text-slate-500 text-sm md:text-lg font-medium leading-relaxed">
-              קיץ מלא באירועים, חוגים ורגעים ביחד. המרחב שלך להתחבר, ליהנות ולפרוח.
+              חג מלא באירועים, חוגים ורגעים ביחד. המרחב שלך להתחבר, לחגוג ולפרוח.
             </p>
           </ScrollReveal>
         </section>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-interface WatermelonSliceProps {
+interface FestiveSparkProps {
   className?: string;
   size?: number;
   rotate?: number;
@@ -13,11 +13,11 @@ interface WatermelonSliceProps {
 }
 
 /**
- * Flat, minimalist watermelon-slice SVG used purely as ambient decoration.
- * Motion is intentionally subtle (slow float + tiny rotation) and fully
- * disabled under prefers-reduced-motion.
+ * Flat, minimalist festive sparkle-and-confetti SVG used purely as ambient
+ * decoration. Motion is intentionally subtle (slow float + tiny rotation)
+ * and fully disabled under prefers-reduced-motion.
  */
-const WatermelonSlice: React.FC<WatermelonSliceProps> = ({
+const FestiveSpark: React.FC<FestiveSparkProps> = ({
   className = '',
   size = 120,
   rotate = 0,
@@ -70,21 +70,23 @@ const WatermelonSlice: React.FC<WatermelonSliceProps> = ({
       }}
     >
       <svg viewBox="0 0 200 200" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* rind (green) */}
-        <path d="M20 100 A80 80 0 0 1 180 100 Z" fill="#4E8F72" />
-        {/* white pith ring */}
-        <path d="M32 100 A68 68 0 0 1 168 100 Z" fill="#FFFBF7" />
-        {/* flesh (red) */}
-        <path d="M44 100 A56 56 0 0 1 156 100 Z" fill="#E85C5C" />
-        {/* seeds */}
-        <ellipse cx="80" cy="82" rx="4" ry="6" fill="#2E2E2E" transform="rotate(-20 80 82)" />
-        <ellipse cx="120" cy="82" rx="4" ry="6" fill="#2E2E2E" transform="rotate(20 120 82)" />
-        <ellipse cx="100" cy="60" rx="4" ry="6" fill="#2E2E2E" />
-        <ellipse cx="65" cy="60" rx="3.5" ry="5.5" fill="#2E2E2E" transform="rotate(-15 65 60)" />
-        <ellipse cx="135" cy="60" rx="3.5" ry="5.5" fill="#2E2E2E" transform="rotate(15 135 60)" />
+        {/* main sparkle burst */}
+        <path
+          d="M100 20 C104 70 108 92 158 100 C108 108 104 130 100 180 C96 130 92 108 42 100 C92 92 96 70 100 20 Z"
+          fill="#D4A017"
+        />
+        {/* small secondary sparkle */}
+        <path
+          d="M148 34 C150 50 152 58 168 62 C152 66 150 74 148 90 C146 74 144 66 128 62 C144 58 146 50 148 34 Z"
+          fill="#9B2242"
+        />
+        {/* confetti dots */}
+        <circle cx="46" cy="42" r="6" fill="#E8871E" />
+        <circle cx="162" cy="140" r="5" fill="#4E8F72" />
+        <circle cx="58" cy="152" r="4" fill="#9B2242" />
       </svg>
     </div>
   );
 };
 
-export default WatermelonSlice;
+export default FestiveSpark;
