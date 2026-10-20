@@ -39,11 +39,14 @@ const EventCard: React.FC<EventCardProps> = ({
       className={`group bg-white rounded-[1.75rem] overflow-hidden border border-rose-100/70 shadow-petal hover:shadow-lift hover:-translate-y-1 active:scale-[0.99] transition-all duration-500 cursor-pointer flex flex-col ${isPast ? 'opacity-[0.85]' : ''} ${className}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-rose-50 shrink-0 m-2 mb-0 rounded-[1.4rem]">
+        {/* event images are usually posters with text: show the whole poster over a soft copy of itself */}
+        <img src={image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-50" />
         <img
           src={image}
           alt={title}
           loading="lazy"
-          className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04] ${isPast ? 'grayscale-[0.35]' : ''}`}
+          decoding="async"
+          className={`relative w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.03] ${isPast ? 'grayscale-[0.35]' : ''}`}
         />
         {isPast ? (
           <span className="absolute top-3 right-3 inline-flex items-center gap-1.5 bg-white/90 text-slate-600 px-3 py-1.5 rounded-full text-[11px] font-semibold shadow-soft">

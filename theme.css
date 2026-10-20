@@ -110,3 +110,17 @@
     scroll-behavior: auto;
   }
 }
+
+
+/* ── Phones / reduced motion: keep it smooth ─────────────────────────────
+   Endless decorative animations and filter-based entrances cost a lot of GPU on phones
+   and make scrolling stutter. Keep the content animations, drop the decorative loops. */
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .animate-kenburns, .animate-mesh-drift, .animate-mesh-drift-slow,
+  .animate-float-y, .animate-float-y-slow, .animate-float-slow, .animate-spin-slow { animation: none !important; }
+  .animate-blur-in { animation-name: fade-in-up !important; }
+  .blur-2xl, .blur-3xl { --tw-blur: blur(24px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none !important; }
+}

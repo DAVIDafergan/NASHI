@@ -28,7 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const progressRef = useRef<HTMLSpanElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -42,16 +42,27 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
   // header: shrink after scrolling, hide while scrolling down on phones, reading progress line
   useEffect(() => {
     let last = window.scrollY;
-    const onScroll = () => {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
       const y = window.scrollY;
-      setScrolled(y > 10);
-      setHidden(y > 160 && y > last && window.innerWidth < 768);
-      last = y;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      setProgress(max > 0 ? Math.min(1, y / max) : 0);
+      const s = y > 10;
+      const dy = y - last;
+      setScrolled(prev => (prev === s ? prev : s));
+      if (Math.abs(dy) > 6) {
+        const h = y > 160 && dy > 0 && window.innerWidth < 768;
+        setHidden(prev => (prev === h ? prev : h));
+        last = y;
+      }
+      const bar = progressRef.current;
+      if (bar) {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        bar.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`;
+      }
     };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
   }, []);
 
   // close menus on navigation
@@ -159,10 +170,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
       
       {/* Ambient background — lives here (outside the animated main container) so it truly covers the viewport */}
       <div className="fixed inset-0 -z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 bg-gradient-to-b from-rose-50 via-[#FBF7F4] to-[#FBF7F4]" />
-        <div className="absolute -top-40 -left-40 w-[560px] h-[560px] bg-rose-200/40 rounded-full blur-[120px]" />
-        <div className="absolute top-1/3 -right-48 w-[520px] h-[520px] bg-plum-200/25 rounded-full blur-[130px]" />
-        <div className="absolute bottom-0 left-1/4 w-[420px] h-[420px] bg-champagne-100/50 rounded-full blur-[120px]" />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(60vmax 45vmax at 0% 0%, rgba(240,213,214,0.55), transparent 70%), radial-gradient(55vmax 45vmax at 100% 45%, rgba(233,221,230,0.45), transparent 70%), radial-gradient(45vmax 35vmax at 30% 100%, rgba(247,237,230,0.7), transparent 70%), linear-gradient(#FBF1F1, #FBF7F4 40%)' }} />
       </div>
 
       {/* --- Top ribbon --- */}
@@ -182,8 +190,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
       <header
         className={`fixed left-0 right-0 z-50 transition-all duration-500 ${headerTop} ${hidden && !menuOpen ? '-translate-y-[120%]' : 'translate-y-0'} ${
             scrolled
-              ? 'h-16 bg-[#FBF7F4]/85 backdrop-blur-xl shadow-[0_1px_0_rgba(189,122,129,0.18),0_10px_30px_-20px_rgba(61,47,55,0.25)]'
-              : 'h-[72px] md:h-20 bg-[#FBF7F4]/60 backdrop-blur-md'
+              ? 'h-16 bg-[#FBF7F4]/95 md:bg-[#FBF7F4]/85 md:backdrop-blur-xl shadow-[0_1px_0_rgba(189,122,129,0.18),0_10px_30px_-20px_rgba(61,47,55,0.25)]'
+              : 'h-[72px] md:h-20 bg-[#FBF7F4]/90 md:bg-[#FBF7F4]/60 md:backdrop-blur-md'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-full flex items-center justify-between gap-4">
@@ -300,7 +308,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
           </div>
         </div>
         {/* reading progress */}
-        <span className="absolute bottom-0 right-0 h-[2px] bg-gradient-to-l from-rose-400 to-rose-700 transition-[width] duration-150" style={{ width: `${progress * 100}%` }} aria-hidden="true" />
+        <span ref={progressRef} className="absolute bottom-0 inset-x-0 h-[2px] origin-right bg-gradient-to-l from-rose-400 to-rose-700 will-change-transform" style={{ transform: 'scaleX(0)' }} aria-hidden="true" />
       </header>
 
       {/* --- Mobile full-screen menu --- */}
@@ -368,7 +376,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
 
       {/* --- Mobile Bottom Navigation --- */}
       <nav aria-label="ניווט" className="md:hidden fixed bottom-3 left-3 right-3 z-40 pb-safe">
-        <div className="bg-white/90 backdrop-blur-xl border border-rose-100 rounded-[28px] shadow-lift flex justify-around items-center h-[64px] px-2">
+        <div className="bg-white/[0.97] border border-rose-100 rounded-[28px] shadow-lift flex justify-around items-center h-[64px] px-2">
          {mobileNavLinks.map((link) => {
              const active = isActive(link.path);
              const onClick = (link.path === '/profile' && !user) ? handleMobileProfileClick : undefined;

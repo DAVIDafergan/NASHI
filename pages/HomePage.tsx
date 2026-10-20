@@ -270,7 +270,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       {/* ============ HERO — full-bleed, animated ============ */}
       <section className="full-bleed relative -mt-4 overflow-hidden">
         {/* drifting colour mesh */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="absolute inset-0 pointer-events-none hidden md:block" aria-hidden="true">
           <div className="absolute -top-24 right-[8%] w-[46vw] max-w-[620px] aspect-square rounded-full bg-rose-200/60 blur-[90px] animate-mesh-drift" />
           <div className="absolute top-[30%] left-[4%] w-[40vw] max-w-[540px] aspect-square rounded-full bg-plum-200/50 blur-[100px] animate-mesh-drift-slow" />
           <div className="absolute bottom-[-10%] right-[35%] w-[30vw] max-w-[420px] aspect-square rounded-full bg-champagne-200/60 blur-[90px] animate-mesh-drift" style={{ animationDelay: '-8s' }} />
@@ -281,7 +281,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </svg>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8 pt-10 md:pt-16 pb-10 md:pb-20 grid lg:grid-cols-[1.15fr_1fr] gap-12 lg:gap-6 items-center">
+        <div className="relative max-w-7xl mx-auto px-5 md:px-8 pt-8 md:pt-16 pb-8 md:pb-20 grid lg:grid-cols-[1.15fr_1fr] gap-8 lg:gap-6 items-center">
           <div className="relative z-10">
             <p className="eyebrow animate-fade-in-up">קהילת נשים · תרבות · השראה</p>
             <AnimatedHeadline
@@ -308,8 +308,21 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
           </div>
 
-          {/* floating collage of what's coming up */}
-          <div className="relative h-[380px] sm:h-[460px] lg:h-[560px]">
+          {/* phones: one clear "next event" card instead of the floating collage */}
+          {upcomingEvents[0] && (
+            <Link to="/events" className="lg:hidden flex items-center gap-4 rounded-[1.75rem] bg-white/90 border border-rose-100 p-3 shadow-soft animate-fade-in-up" style={{ animationDelay: '1100ms' }}>
+              {upcomingEvents[0].image && <img src={upcomingEvents[0].image} alt="" className="h-24 w-20 shrink-0 rounded-2xl object-cover bg-rose-50" />}
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-semibold text-rose-600">האירוע הבא</span>
+                <span className="mt-0.5 block font-strong text-[15px] leading-snug text-ink line-clamp-2">{upcomingEvents[0].title}</span>
+                <span className="mt-1 flex items-center gap-1.5 text-xs text-slate-500"><Calendar size={12} /> {new Date(upcomingEvents[0].date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })}</span>
+              </span>
+              <ArrowLeft size={18} className="shrink-0 text-rose-400" />
+            </Link>
+          )}
+
+          {/* floating collage of what's coming up (tablet/desktop) */}
+          <div className="relative hidden lg:block h-[560px]">
             {(() => {
               const pics = upcomingEvents.filter(e => e.image).slice(0, 3);
               const fallback = classes.filter((c: any) => c.image).slice(0, 3 - pics.length).map((c: any) => ({ image: c.image, title: c.title, id: c._id }));
@@ -354,12 +367,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         </div>
 
         {/* marquee ribbon */}
-        <div className="relative border-y border-rose-200/70 bg-white/40 backdrop-blur-sm py-5 md:py-7">
+        <div className="relative border-y border-rose-200/70 bg-white/50 py-4 md:py-7">
           <Marquee items={['תרבות', 'קהילה', 'השראה', 'אירועים', 'חוגים', 'חסד', 'יצירה', 'ביחד']} />
         </div>
       </section>
 
-      <div className="relative z-10 space-y-20 md:space-y-28 pt-14 md:pt-20">
+      <div className="relative z-10 space-y-14 md:space-y-28 pt-10 md:pt-20">
 
         {/* ============ FLYERS ============ */}
         <ScrollReveal animation="blur-in" className="px-5 md:px-0">
@@ -375,8 +388,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <div className="mt-8 px-5 md:px-0 grid grid-cols-2 md:grid-cols-4 md:grid-rows-2 gap-3 md:gap-5 md:h-[520px]">
             <ScrollReveal animation="scale-in" className="col-span-2 md:row-span-2">
               <TiltCard onClick={() => navigate('/events')} className="group relative h-[260px] md:h-full rounded-[2rem] overflow-hidden cursor-pointer bg-rose-700 text-white">
-                {upcomingEvents[0]?.image && <img src={upcomingEvents[0].image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-55 transition-transform duration-[1.6s] group-hover:scale-110" />}
-                <div className="absolute inset-0 bg-gradient-to-t from-rose-950/85 via-rose-900/30 to-transparent" />
+                {upcomingEvents[0]?.image && <img src={upcomingEvents[0].image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30 transition-transform duration-[1.6s] group-hover:scale-110" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-rose-950/95 via-rose-900/60 to-rose-800/40" />
                 <div className="absolute inset-0 p-7 md:p-10 flex flex-col justify-between">
                   <Calendar size={30} strokeWidth={1.3} />
                   <div>
@@ -428,7 +441,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             <SectionHeader eyebrow="בקרוב" title="אירועים קרובים" to="/events" linkLabel="ללוח המלא" />
             <div ref={mobileSliderRef} className="mt-8 flex gap-5 overflow-x-auto snap-x snap-mandatory no-scrollbar px-5 md:px-0 pb-6">
               {upcomingEvents.map((event, i) => (
-                <ScrollReveal key={event.id || i} animation="scale-in" delay={i * 90} className="snap-start shrink-0 w-[82%] sm:w-[46%] lg:w-[31%]">
+                <ScrollReveal key={event.id || i} animation="scale-in" delay={i * 90} className={`snap-start shrink-0 ${upcomingEvents.length === 1 ? 'w-full' : 'w-[82%]'} sm:w-[46%] lg:w-[31%]`}>
                   <EventCard
                     title={event.title}
                     image={event.image}
@@ -454,7 +467,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <div className="relative max-w-5xl mx-auto px-6 py-20 md:py-28 text-center">
             <ScrollReveal animation="blur-in"><Quote className="mx-auto text-rose-200" size={34} strokeWidth={1.2} /></ScrollReveal>
             <ScrollReveal animation="blur-in" delay={150}>
-              <p className="mt-6 font-display font-light text-[1.9rem] leading-[1.25] md:text-[3.2rem] text-white">"{latestInspiration.text}"</p>
+              <p className="mt-6 font-display font-light text-[1.9rem] leading-[1.25] md:text-[3.2rem] text-white">"{String(latestInspiration.text).trim().replace(/^["״“”']+|["״“”']+$/g, '')}"</p>
             </ScrollReveal>
             <ScrollReveal delay={350}>
               <p className="mt-8 text-sm text-rose-100/80">השראה יומית · <span className="text-white font-medium">{latestInspiration.author}</span></p>

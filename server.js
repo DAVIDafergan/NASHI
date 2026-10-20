@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 // שינוי הנתיב ל-routes.js כדי להתאים למבנה שלך
 import apiRoutes from './server/routes.js'; 
 import shareRoutes from './server/share.js';
+import { mediaRouter, mediaRequests, mediaResponses } from './server/media.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -63,6 +64,10 @@ mongoose.connect(MONGO_URI)
 
 // Routes - API
 // כל הראוטים כולל הודעות הנהלה, הגרלות ומשתמשים מנוהלים בתוך apiRoutes
+// Images/videos are served as cached files instead of base64 inside JSON (see server/media.js)
+app.use('/api', mediaRouter);
+app.use('/api', mediaRequests);
+app.use('/api', mediaResponses);
 app.use('/api', apiRoutes);
 
 // Link previews for WhatsApp/Facebook (must come before the SPA fallback)
