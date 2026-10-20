@@ -25,8 +25,9 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Assistant', 'Heebo', 'Arial', 'sans-serif'],
-        display: ['Antidott', '"Frank Ruhl Libre"', 'Georgia', 'serif'],
-        serif: ['Antidott', '"Frank Ruhl Libre"', 'Georgia', 'serif'],
+        // Antidott-like: geometric, airy, softly rounded. Antidott itself is used if installed/added later.
+        display: ['Antidott', 'Rubik', 'Assistant', 'sans-serif'],
+        serif: ['Antidott', 'Rubik', 'Assistant', 'sans-serif'],
       },
       // Lighter, more refined weights site-wide (the old design leaned on font-black everywhere)
       fontWeight: {
@@ -117,6 +118,48 @@ export default {
           '0%': { transform: 'translateX(150%) skewX(-15deg)' },
           '100%': { transform: 'translateX(-150%) skewX(-15deg)' },
         },
+        'word-rise': {
+          '0%': { opacity: '0', transform: 'translateY(105%) rotate(3deg)', filter: 'blur(6px)' },
+          '100%': { opacity: '1', transform: 'translateY(0) rotate(0)', filter: 'blur(0)' },
+        },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(50%)' },
+        },
+        'mesh-drift': {
+          '0%': { transform: 'translate(0,0) scale(1)' },
+          '33%': { transform: 'translate(6%,-8%) scale(1.12)' },
+          '66%': { transform: 'translate(-5%,6%) scale(0.95)' },
+          '100%': { transform: 'translate(0,0) scale(1)' },
+        },
+        'float-y': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-12px)' },
+        },
+        kenburns: {
+          '0%': { transform: 'scale(1) translate(0,0)' },
+          '100%': { transform: 'scale(1.1) translate(-1.5%, -1.5%)' },
+        },
+        'blur-in': {
+          '0%': { opacity: '0', filter: 'blur(14px)', transform: 'scale(1.03)' },
+          '100%': { opacity: '1', filter: 'blur(0)', transform: 'scale(1)' },
+        },
+        'scale-in': {
+          '0%': { opacity: '0', transform: 'scale(0.92) translateY(18px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+        'clip-up': {
+          '0%': { clipPath: 'inset(100% 0 0 0 round 2rem)', opacity: '0.4' },
+          '100%': { clipPath: 'inset(0 0 0 0 round 2rem)', opacity: '1' },
+        },
+        'line-grow': {
+          '0%': { transform: 'scaleX(0)' },
+          '100%': { transform: 'scaleX(1)' },
+        },
+        'spin-slow': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
         'pulse-border': {
           '0%, 100%': { boxShadow: '0 0 0 0 rgba(189,122,129,0.30)' },
           '50%': { boxShadow: '0 0 0 6px rgba(189,122,129,0)' },
@@ -135,6 +178,18 @@ export default {
         'gradient-x': 'gradient-x 3s ease infinite',
         'shimmer-sweep': 'shimmer-sweep 2.5s infinite',
         'pulse-border': 'pulse-border 2.8s ease-in-out infinite',
+        'word-rise': 'word-rise 1100ms cubic-bezier(0.16, 1, 0.3, 1) both',
+        marquee: 'marquee 38s linear infinite',
+        'mesh-drift': 'mesh-drift 22s ease-in-out infinite',
+        'mesh-drift-slow': 'mesh-drift 34s ease-in-out infinite reverse',
+        'float-y': 'float-y 7s ease-in-out infinite',
+        'float-y-slow': 'float-y 10s ease-in-out infinite',
+        kenburns: 'kenburns 14s ease-out both',
+        'blur-in': 'blur-in 1000ms cubic-bezier(0.16, 1, 0.3, 1) both',
+        'scale-in': 'scale-in 900ms cubic-bezier(0.16, 1, 0.3, 1) both',
+        'clip-up': 'clip-up 1200ms cubic-bezier(0.77, 0, 0.18, 1) both',
+        'line-grow': 'line-grow 1200ms cubic-bezier(0.77, 0, 0.18, 1) both',
+        'spin-slow': 'spin-slow 40s linear infinite',
       },
     },
   },

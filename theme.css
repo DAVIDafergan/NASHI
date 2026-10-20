@@ -7,7 +7,7 @@
    Headings already ask for 'Antidott' first (see tailwind.config.js → fontFamily.display).
    To activate it: put the licensed files in /public/fonts/ and replace the src below with
      src: url('/fonts/Antidott.woff2') format('woff2'), url('/fonts/Antidott.woff') format('woff');
-   Until then it uses a locally installed copy if there is one, else Frank Ruhl Libre. */
+   Until then it uses a locally installed copy if there is one, else Rubik (closest free match). */
 @font-face {
   font-family: 'Antidott';
   src: local('Antidott'), local('Antidott Regular');
@@ -28,13 +28,15 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
+  html, body { overflow-x: clip; }
   h1, h2, h3, .font-display {
-    font-family: 'Antidott', 'Frank Ruhl Libre', Georgia, serif;
-    letter-spacing: -0.01em;
+    font-family: 'Antidott', 'Rubik', 'Assistant', sans-serif;
+    letter-spacing: -0.02em;
     color: var(--color-ink);
   }
-  h1 { font-weight: 500; }
-  h2, h3 { font-weight: 500; }
+  h1 { font-weight: 300; }
+  h2 { font-weight: 300; }
+  h3 { font-weight: 400; }
   ::selection { background: #F0D5D6; color: #3D2F37; }
   :focus-visible { outline: 2px solid #BD7A81; outline-offset: 3px; border-radius: 10px; }
   input, textarea, select { accent-color: #A5636B; }
@@ -86,6 +88,8 @@
   .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-white/80 px-5 py-2.5 text-sm font-semibold text-rose-700 transition-all duration-300 hover:bg-rose-50; }
   .eyebrow { @apply text-[12px] font-semibold tracking-[0.06em] text-rose-600; }
   .section-title { @apply font-display text-[1.65rem] md:text-[2.1rem] leading-tight text-ink; }
+  /* Break out of the page container to the full viewport width */
+  .full-bleed { width: 100vw; margin-inline: calc(50% - 50vw); }
   .hairline { @apply h-px w-full bg-gradient-to-l from-transparent via-rose-200 to-transparent; }
 }
 

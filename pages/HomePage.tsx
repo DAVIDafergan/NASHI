@@ -8,6 +8,7 @@ import {
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import FlyerCarousel from '../components/FlyerCarousel';
+import { AnimatedHeadline, Marquee, SectionHeader, TiltCard } from '../components/home/HomeParts';
 import ScrollReveal from '../components/ScrollReveal';
 import EventCard from '../components/EventCard';
 
@@ -474,459 +475,330 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const currentStory = activeGroup ? activeGroup.stories[activeInnerIndex] : null;
 
   return (
-    <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right scroll-smooth" dir="rtl">
+    <div className="min-h-screen pb-12 relative font-sans text-right" dir="rtl">
 
-      {/* Main Content Container */}
-      <div className="max-w-6xl mx-auto md:px-8 pt-2 md:pt-8 relative z-10 space-y-12 md:space-y-16">
-
-        {/* Hero */}
-        <section className="relative w-full px-5 md:px-0 pt-6 md:pt-10">
-          <div className="grid md:grid-cols-[1.25fr_1fr] gap-8 md:gap-14 items-end">
-            <div>
-              <ScrollReveal>
-                <p className="eyebrow">קהילת נשים · תרבות · השראה</p>
-              </ScrollReveal>
-              <ScrollReveal delay={90}>
-                <h1 className="mt-4 text-[2.9rem] leading-[1.02] md:text-[4.6rem] lg:text-[5.2rem] text-ink">
-                  המקום שלך
-                  <span className="block italic text-rose-600">לפרוח.</span>
-                </h1>
-              </ScrollReveal>
-              <ScrollReveal delay={180} className="mt-5 md:mt-6 max-w-lg">
-                <p className="text-slate-600 text-base md:text-lg leading-relaxed font-light">
-                  אירועים, חוגים, קהילה ורגעים קטנים של השראה — מרחב אחד, עדין ומחבק, שנבנה בשבילך.
-                </p>
-              </ScrollReveal>
-              <ScrollReveal delay={260} className="mt-7 flex flex-wrap gap-3">
-                <Link to="/events" className="btn-primary">לאירועים הקרובים <ArrowLeft size={16} /></Link>
-                {!user && <button onClick={onOpenLogin} className="btn-ghost">הצטרפי לקהילה</button>}
-              </ScrollReveal>
-            </div>
-            <ScrollReveal delay={200} className="hidden md:block">
-              <div className="relative">
-                <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-to-br from-rose-100 via-white to-plum-100 rotate-2" aria-hidden="true" />
-                <div className="relative card-soft p-8">
-                  <Quote className="text-rose-300" size={26} strokeWidth={1.5} />
-                  <p className="mt-4 font-display text-[1.45rem] leading-snug text-ink">"{(inspirations[0] && inspirations[0].text) || 'הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך.'}"</p>
-                  <div className="hairline my-5" />
-                  <p className="text-xs text-slate-400">השראה יומית · <span className="text-rose-600 tracking-normal">{(inspirations[0] && inspirations[0].author) || 'נ.ש'}</span></p>
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* Flyers — managed in Admin → "פליירים בדף הבית" */}
-        <div className="px-5 md:px-0">
-          <FlyerCarousel />
+      {/* ============ HERO — full-bleed, animated ============ */}
+      <section className="full-bleed relative -mt-4 overflow-hidden">
+        {/* drifting colour mesh */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute -top-24 right-[8%] w-[46vw] max-w-[620px] aspect-square rounded-full bg-rose-200/60 blur-[90px] animate-mesh-drift" />
+          <div className="absolute top-[30%] left-[4%] w-[40vw] max-w-[540px] aspect-square rounded-full bg-plum-200/50 blur-[100px] animate-mesh-drift-slow" />
+          <div className="absolute bottom-[-10%] right-[35%] w-[30vw] max-w-[420px] aspect-square rounded-full bg-champagne-200/60 blur-[90px] animate-mesh-drift" style={{ animationDelay: '-8s' }} />
+          {/* fine rotating ring */}
+          <svg className="absolute -left-40 top-10 w-[520px] h-[520px] text-rose-300/40 animate-spin-slow hidden md:block" viewBox="0 0 200 200" fill="none">
+            <circle cx="100" cy="100" r="96" stroke="currentColor" strokeWidth="0.4" strokeDasharray="1 5" />
+            <circle cx="100" cy="100" r="74" stroke="currentColor" strokeWidth="0.3" />
+          </svg>
         </div>
 
-        {/* מה זה נשי? */}
-        <section className="w-full px-5 md:px-0">
-          <div className="card-soft p-6 md:p-10">
-            <div className="md:flex md:items-end md:justify-between gap-8">
-              <div>
-                <ScrollReveal><p className="eyebrow">מה זה נשי</p></ScrollReveal>
-                <ScrollReveal delay={60}><h2 className="section-title mt-2">פלטפורמה שמחברת בין נשים</h2></ScrollReveal>
-              </div>
-              <ScrollReveal delay={120} className="block mt-3 md:mt-0 max-w-md">
-                <p className="text-slate-500 text-sm md:text-base leading-relaxed">אירועים, עסקים, חוגים, סטוריז ועוד — הכול במקום אחד, בקצב שלך.</p>
-              </ScrollReveal>
+        <div className="relative max-w-7xl mx-auto px-5 md:px-8 pt-10 md:pt-16 pb-10 md:pb-20 grid lg:grid-cols-[1.15fr_1fr] gap-12 lg:gap-6 items-center">
+          <div className="relative z-10">
+            <p className="eyebrow animate-fade-in-up">קהילת נשים · תרבות · השראה</p>
+            <AnimatedHeadline
+              className="mt-5 text-[3.4rem] leading-[0.98] sm:text-[4.6rem] lg:text-[6.2rem] text-ink"
+              lines={[{ text: 'המקום שלך' }, { text: 'לפרוח,', className: 'text-rose-600' }, { text: 'להתחבר ולהשפיע.' , className: 'text-[0.55em] leading-[1.25] mt-3 text-slate-500 font-light' }]}
+            />
+            <p className="mt-7 max-w-md text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '900ms' }}>
+              אירועים, חוגים, קהילה ורגעים קטנים של השראה — מרחב אחד, עדין ומחבק, שנבנה בשבילך.
+            </p>
+            <div className="mt-9 flex flex-wrap items-center gap-3 animate-fade-in-up" style={{ animationDelay: '1050ms' }}>
+              <Link to="/events" className="btn-primary group !px-7 !py-3.5">
+                לאירועים הקרובים
+                <ArrowLeft size={16} className="transition-transform duration-500 group-hover:-translate-x-1.5" />
+              </Link>
+              {user?.isMemberApproved ? (
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur border border-rose-100 px-5 py-3 text-sm text-slate-600">
+                  <Star size={15} className="text-champagne-500" fill="currentColor" /> {(user?.points || 0).toLocaleString()} נקודות במעגל
+                </span>
+              ) : !user?.isMemberRequested ? (
+                <button onClick={() => (user ? setShowMembershipModal(true) : onOpenLogin())} className="btn-ghost !px-6 !py-3.5">הצטרפי למעגל</button>
+              ) : (
+                <span className="text-sm text-slate-500">בקשת ההצטרפות שלך בטיפול ✨</span>
+              )}
             </div>
+          </div>
 
-            <ScrollReveal animation="fade-in-fast" className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
-              {platformFeatures.map((feature, i) => {
-                const Icon = feature.icon;
-                const to = ['/events', '/classes', '/', '/lottery'][i] || '/';
+          {/* floating collage of what's coming up */}
+          <div className="relative h-[380px] sm:h-[460px] lg:h-[560px]">
+            {(() => {
+              const pics = upcomingEvents.filter(e => e.image).slice(0, 3);
+              const fallback = classes.filter((c: any) => c.image).slice(0, 3 - pics.length).map((c: any) => ({ image: c.image, title: c.title, id: c._id }));
+              const items: any[] = [...pics, ...fallback];
+              const spots = [
+                'right-[6%] top-[4%] w-[52%] h-[64%] rotate-[-4deg] animate-float-y',
+                'left-[4%] top-[18%] w-[44%] h-[52%] rotate-[5deg] animate-float-y-slow',
+                'right-[30%] bottom-[2%] w-[40%] h-[40%] rotate-[2deg] animate-float-y',
+              ];
+              if (items.length === 0) {
                 return (
-                  <Link
-                    key={feature.label}
-                    to={to}
-                    className="group flex flex-col items-center text-center gap-3 rounded-3xl p-4 hover:bg-rose-50/70 transition-colors"
-                  >
-                    <div className={`w-16 h-16 shrink-0 rounded-full flex items-center justify-center ring-1 ring-inset transition-transform duration-500 group-hover:-translate-y-1 ${i % 2 === 0 ? 'bg-rose-50 text-rose-600 ring-rose-100' : 'bg-plum-50 text-plum-600 ring-plum-100'}`}>
-                      <Icon size={26} strokeWidth={1.5} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative w-[78%] aspect-square">
+                      <div className="absolute inset-0 rounded-[45%_55%_60%_40%/50%_45%_55%_50%] bg-gradient-to-br from-rose-200 via-rose-100 to-plum-200 animate-mesh-drift" />
+                      <div className="absolute inset-[12%] rounded-[55%_45%_40%_60%/45%_55%_45%_55%] bg-white/50 backdrop-blur-xl border border-white/70 flex items-center justify-center">
+                        <span className="font-display text-7xl text-rose-700/80">נשי</span>
+                      </div>
                     </div>
-                    <span className="text-[15px] font-medium text-slate-700">{feature.label}</span>
-                  </Link>
+                  </div>
                 );
-              })}
+              }
+              return items.map((it, i) => (
+                <div key={i} className={`absolute ${spots[i]}`} style={{ animationDelay: `${i * -2.3}s` }}>
+                  <div className="w-full h-full animate-clip-up" style={{ animationDelay: `${500 + i * 220}ms` }}>
+                    <div className="w-full h-full rounded-[2rem] overflow-hidden shadow-lift ring-8 ring-white/70 bg-rose-100">
+                      <img src={it.image} alt={it.title || ''} className="w-full h-full object-cover animate-kenburns" />
+                    </div>
+                  </div>
+                </div>
+              ));
+            })()}
+            {upcomingEvents[0] && (
+              <Link to="/events" className="absolute left-[2%] bottom-[8%] z-10 animate-scale-in" style={{ animationDelay: '1300ms' }}>
+                <div className="rounded-3xl bg-white/85 backdrop-blur-xl border border-white shadow-lift px-5 py-4 max-w-[230px] hover:-translate-y-1 transition-transform duration-500">
+                  <p className="text-[11px] text-rose-600 font-semibold">האירוע הבא</p>
+                  <p className="mt-1 text-[15px] font-semibold text-ink leading-snug line-clamp-2">{upcomingEvents[0].title}</p>
+                  <p className="mt-1.5 text-xs text-slate-500 flex items-center gap-1.5"><Calendar size={12} /> {new Date(upcomingEvents[0].date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })}</p>
+                </div>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* marquee ribbon */}
+        <div className="relative border-y border-rose-200/70 bg-white/40 backdrop-blur-sm py-5 md:py-7">
+          <Marquee items={['תרבות', 'קהילה', 'השראה', 'אירועים', 'חוגים', 'חסד', 'יצירה', 'ביחד']} />
+        </div>
+      </section>
+
+      <div className="relative z-10 space-y-20 md:space-y-28 pt-14 md:pt-20">
+
+        {/* ============ FLYERS ============ */}
+        <ScrollReveal animation="blur-in" className="px-5 md:px-0">
+          <FlyerCarousel />
+        </ScrollReveal>
+
+        {/* ============ STORIES ============ */}
+        <section>
+          <div className="px-5 md:px-0 flex items-center justify-between mb-4">
+            <p className="eyebrow">רגעים מהקהילה</p>
+            <span className="text-xs text-slate-400">נעלמים אחרי 24 שעות</span>
+          </div>
+          <div className="w-full px-5 md:px-0 pb-2 pt-1 overflow-x-auto no-scrollbar flex gap-5 snap-x">
+            <button type="button" className="flex flex-col items-center gap-2 shrink-0 snap-center group" onClick={() => user ? setShowAddStoryModal(true) : onOpenLogin()}>
+              <div className="relative w-[76px] h-[76px] rounded-full p-1 flex items-center justify-center bg-white cursor-pointer transition-all duration-500 group-hover:scale-[1.07] active:scale-95 shadow-petal border border-dashed border-rose-300">
+                 {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="w-full h-full rounded-full bg-rose-50 flex items-center justify-center text-rose-400"><Camera size={22} strokeWidth={1.5} /></span>}
+                 <span className="absolute -bottom-0.5 -right-0.5 bg-rose-600 text-white rounded-full p-[5px] border-2 border-white shadow-md group-hover:rotate-90 transition-transform duration-500"><Plus size={12} strokeWidth={3} /></span>
+              </div>
+              <span className="text-[12px] font-medium text-slate-600">הוסיפי רגע</span>
+            </button>
+            {groupedStories.map((group, idx) => (
+              <button type="button" key={group.userId} className="flex flex-col items-center gap-2 shrink-0 snap-center animate-scale-in" style={{ animationDelay: `${idx * 70}ms` }} onClick={() => { setActiveGroupIndex(idx); setActiveInnerIndex(0); setStoryProgress(0); }}>
+                <div className="relative w-[76px] h-[76px] p-[3px] flex items-center justify-center transform active:scale-95 hover:scale-[1.07] transition-all duration-500">
+                  <StoryRing count={group.stories.length} />
+                  <img src={group.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${group.user?.name || 'user'}`} className="w-full h-full rounded-full object-cover border-[3px] border-white bg-white relative z-10" alt="" />
+                </div>
+                <span className="text-[12px] text-slate-600 w-[76px] truncate text-center">{group.user?.name || 'משתמשת'}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* ============ BENTO — what is NASHI ============ */}
+        <section>
+          <SectionHeader eyebrow="מה זה נשי" title="הכול במקום אחד" />
+          <div className="mt-8 px-5 md:px-0 grid grid-cols-2 md:grid-cols-4 md:grid-rows-2 gap-3 md:gap-5 md:h-[520px]">
+            <ScrollReveal animation="scale-in" className="col-span-2 md:row-span-2">
+              <TiltCard onClick={() => navigate('/events')} className="group relative h-[260px] md:h-full rounded-[2rem] overflow-hidden cursor-pointer bg-rose-700 text-white">
+                {upcomingEvents[0]?.image && <img src={upcomingEvents[0].image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-55 transition-transform duration-[1.6s] group-hover:scale-110" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-rose-950/85 via-rose-900/30 to-transparent" />
+                <div className="absolute inset-0 p-7 md:p-10 flex flex-col justify-between">
+                  <Calendar size={30} strokeWidth={1.3} />
+                  <div>
+                    <p className="text-white/70 text-sm">{upcomingEvents.length > 0 ? `${upcomingEvents.length} אירועים קרובים` : 'לוח האירועים'}</p>
+                    <h3 className="mt-1 font-display text-4xl md:text-6xl text-white">אירועים</h3>
+                    <span className="mt-4 inline-flex items-center gap-2 text-sm text-white/90">לגלות מה קורה <ArrowLeft size={15} className="transition-transform duration-500 group-hover:-translate-x-2" /></span>
+                  </div>
+                </div>
+              </TiltCard>
+            </ScrollReveal>
+            <ScrollReveal animation="scale-in" delay={100} className="col-span-1">
+              <TiltCard onClick={() => navigate('/classes')} className="group relative h-[190px] md:h-full rounded-[2rem] overflow-hidden cursor-pointer bg-plum-100 p-6 flex flex-col justify-between">
+                <GraduationCap size={28} strokeWidth={1.3} className="text-plum-600 transition-transform duration-500 group-hover:-rotate-12" />
+                <div>
+                  <h3 className="font-display text-2xl md:text-3xl text-plum-800">חוגים</h3>
+                  <p className="text-xs text-plum-600 mt-1">{classes.length > 0 ? `${classes.length} חוגים פעילים` : 'סדנאות והעשרה'}</p>
+                </div>
+              </TiltCard>
+            </ScrollReveal>
+            <ScrollReveal animation="scale-in" delay={180} className="col-span-1">
+              <TiltCard onClick={() => navigate('/lottery')} className="group relative h-[190px] md:h-full rounded-[2rem] overflow-hidden cursor-pointer bg-champagne-100 p-6 flex flex-col justify-between">
+                <Trophy size={28} strokeWidth={1.3} className="text-champagne-600 transition-transform duration-500 group-hover:scale-110" />
+                <div>
+                  <h3 className="font-display text-2xl md:text-3xl text-champagne-800">הגרלות</h3>
+                  <p className="text-xs text-champagne-700 mt-1 tabular-nums">{upcomingLottery ? `ההגרלה בעוד ${timeLeft}` : 'פרסים לחברות המעגל'}</p>
+                </div>
+              </TiltCard>
+            </ScrollReveal>
+            <ScrollReveal animation="scale-in" delay={260} className="col-span-2">
+              <TiltCard onClick={() => navigate('/community')} className="group relative h-[190px] md:h-full rounded-[2rem] overflow-hidden cursor-pointer bg-white border border-rose-100 p-6 md:p-8 flex items-center justify-between gap-6">
+                <div>
+                  <HeartHandshake size={28} strokeWidth={1.3} className="text-rose-500" />
+                  <h3 className="mt-3 font-display text-2xl md:text-3xl text-ink">קהילה וחסד</h3>
+                  <p className="text-sm text-slate-500 mt-1 max-w-[16rem]">עסקים, שירותים ויד מושטת — מנשים לנשים.</p>
+                </div>
+                <div className="hidden sm:flex -space-x-4 space-x-reverse">
+                  {communityItems.filter((c: any) => c.image).slice(0, 3).map((c: any, i: number) => (
+                    <img key={i} src={c.image} alt="" className="h-16 w-16 md:h-20 md:w-20 rounded-full object-cover ring-4 ring-white transition-transform duration-500 group-hover:-translate-y-1" style={{ transitionDelay: `${i * 60}ms` }} />
+                  ))}
+                </div>
+              </TiltCard>
             </ScrollReveal>
           </div>
         </section>
 
-        {/* --- אזור הסטוריז המקובץ --- */}
-        <div className="relative w-full">
-          <div className="w-full px-5 pb-4 pt-2 overflow-x-auto no-scrollbar flex gap-5 snap-x">
-            
-           {/* כפתור הוספת סטורי */}
-           <div className="flex flex-col items-center gap-2 shrink-0 snap-center group" onClick={() => user ? setShowAddStoryModal(true) : onOpenLogin()}>
-              <div className="relative w-[72px] h-[72px] rounded-full p-1 flex items-center justify-center bg-white/80 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.07] active:scale-95 shadow-[0_4px_20px_rgba(189,122,129,0.1)] border-2 border-rose-100/80">
-                 {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" /> : <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${user?.name || 'new'}`} className="w-full h-full rounded-full object-cover opacity-80" />}
-                 <div className="absolute bottom-0 right-0 bg-gradient-to-br from-rose-400 to-pink-500 text-white rounded-full p-[5px] border-2 border-white shadow-md group-hover:rotate-90 transition-transform duration-300 z-10">
-                    <Plus size={12} strokeWidth={3}/>
-                 </div>
-              </div>
-              <span className="text-[11px] font-bold text-slate-600 tracking-wide">הוספי רגע</span>
-           </div>
-
-           {/* רשימת המשתמשות שהעלו סטורי */}
-           {groupedStories.map((group, idx) => (
-              <div key={group.userId} className="flex flex-col items-center gap-2 shrink-0 snap-center cursor-pointer" onClick={() => { setActiveGroupIndex(idx); setActiveInnerIndex(0); setStoryProgress(0); }}>
-                 <div className="relative w-[72px] h-[72px] p-[3px] flex items-center justify-center transform active:scale-95 hover:scale-[1.07] transition-all duration-300">
-                    <StoryRing count={group.stories.length} />
-                    <img src={group.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${group.user?.name || 'user'}`} className="w-full h-full rounded-full object-cover border-[3px] border-white bg-white relative z-10 shadow-md" />
-                 </div>
-                 <span className="text-[11px] text-slate-600 font-semibold w-[72px] truncate text-center">{group.user?.name || 'משתמשת'}</span>
-              </div>
-           ))}
-          </div>
-        </div>
-
-        {/* --- MOBILE VIEW START --- */}
-        <div className="md:hidden space-y-10 mt-2">
-          
-          {/* 1. Announcements */}
-          {announcements.length > 0 && (
-            <section className="px-5">
-               <div className="flex items-center gap-2 mb-4">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-300 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-400"></span>
-                  </span>
-                  <h4 className="text-xs font-bold text-slate-500 tracking-wide uppercase">הודעות המערכת</h4>
-               </div>
-               
-               <div className="-mx-5 px-5 flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory no-scrollbar">
-                  {announcements.map((ann, i) => (
-                    <div key={i} className="min-w-[85vw] bg-white/80 backdrop-blur-md p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-rose-50/50 snap-center flex items-start gap-4">
-                       <div className="p-3 bg-rose-50/80 text-rose-400 rounded-2xl shrink-0">
-                          <Megaphone size={18} />
-                       </div>
-                       <div className="w-full pt-1">
-                          <h4 className="font-black text-slate-800 text-sm mb-1.5">{ann.title}</h4>
-                          <p className="text-xs text-slate-500 leading-relaxed font-medium">{ann.content}</p>
-                       </div>
-                    </div>
-                  ))}
-               </div>
-            </section>
-          )}
-
-          {/* 2. Events Slider - Softer gradients, elegant text */}
-          {/* אירוע שעבר התאריך שלו לא מופיע כאן יותר; אם אין אף אירוע עתידי, הסקשן כולו מוסתר */}
-          {upcomingEvents.length > 0 && (
-          <section className="space-y-5">
-            <div className="flex items-center justify-between px-5">
-              <h3 className="section-title">אירועים קרובים</h3>
-              <Link to="/events" className="text-rose-600 text-[13px] font-semibold hover:text-rose-800 transition-colors flex items-center gap-1">ללוח המלא <ChevronLeft size={14}/></Link>
-            </div>
-
-            <div
-              ref={mobileSliderRef}
-              className="-mx-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar pb-8"
-            >
-               {upcomingEvents.map((event, i) => (
-                 <div key={i} className="min-w-[100vw] px-5 snap-center">
-                    <EventCard
-                      title={event.title}
-                      image={event.image}
-                      dateLabel={event.date ? new Date(event.date).toLocaleDateString('he-IL', { day: '2-digit', month: 'short' }) : ''}
-                      location={event.location}
-                      category={event.category}
-                      ctaLabel="לפרטים והרשמה"
-                      onClick={() => navigate('/events')}
-                    />
-                 </div>
-               ))}
-            </div>
-          </section>
-          )}
-
-          {/* 3. Classes - Elegant Grid */}
-          <section className="bg-gradient-to-b from-rose-50/40 to-transparent py-10 -mx-0">
-            <div className="px-5 mb-6 flex items-center justify-between">
-               <h3 className="section-title flex items-center gap-2">
-                 <GraduationCap className="text-[#BD7A81]" size={22}/> חוגים וסדנאות
-               </h3>
-               <Link to="/classes" className="btn-ghost !px-3.5 !py-1.5 !text-xs">כל החוגים <ChevronLeft size={14}/></Link>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 px-5">
-              {classes.map((cls, i) => (
-                <ScrollReveal key={i} delay={i * 70}>
-                  <div
-                    onClick={() => navigate('/classes')}
-                    className="bg-white p-3.5 rounded-[1.75rem] shadow-petal border border-rose-100/70 hover:-translate-y-1 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
-                  >
-                    <div className="relative h-32 mb-4 overflow-hidden rounded-[1.5rem]">
-                       <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={cls.title} loading="lazy" />
-                       <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-slate-700 shadow-sm">{cls.day}</div>
-                    </div>
-                    <h4 className="font-display text-[1.05rem] text-ink px-1 leading-snug">{cls.title}</h4>
-                    <p className="text-[11px] text-rose-400 font-semibold px-1 mt-1 truncate">{cls.instructor}</p>
-                  </div>
+        {/* ============ EVENTS RAIL ============ */}
+        {upcomingEvents.length > 0 && (
+          <section>
+            <SectionHeader eyebrow="בקרוב" title="אירועים קרובים" to="/events" linkLabel="ללוח המלא" />
+            <div ref={mobileSliderRef} className="mt-8 flex gap-5 overflow-x-auto snap-x snap-mandatory no-scrollbar px-5 md:px-0 pb-6">
+              {upcomingEvents.map((event, i) => (
+                <ScrollReveal key={event.id || i} animation="scale-in" delay={i * 90} className="snap-start shrink-0 w-[82%] sm:w-[46%] lg:w-[31%]">
+                  <EventCard
+                    title={event.title}
+                    image={event.image}
+                    dateLabel={event.date ? new Date(event.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' }) : ''}
+                    location={event.location}
+                    category={event.category}
+                    ctaLabel="לפרטים והרשמה"
+                    onClick={() => navigate('/events')}
+                    className="h-full"
+                  />
                 </ScrollReveal>
               ))}
             </div>
           </section>
+        )}
 
-          {/* 4. Daily Inspiration - Soft Quote Card */}
-          <section className="px-5">
-            <div className="bg-gradient-to-br from-rose-50 via-white to-pink-50/80 rounded-[2.5rem] p-8 relative overflow-hidden shadow-[0_8px_32px_rgba(189,122,129,0.07)] border border-rose-100/50">
-               <div className="absolute -top-6 -right-6 text-rose-100 opacity-50"><Quote size={80} /></div>
-               <Quote className="text-rose-300 mb-5" size={28} />
-               <p className="text-xl font-serif leading-relaxed relative z-10 text-slate-700 font-medium">"{latestInspiration.text}"</p>
-               <div className="mt-8 pt-5 border-t border-rose-100/60 flex justify-between items-center">
-                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">השראה יומית</span>
-                  <span className="text-sm font-black text-[#BD7A81]">{latestInspiration.author}</span>
-               </div>
-            </div>
-          </section>
+        {/* ============ INSPIRATION BAND ============ */}
+        <section className="full-bleed relative overflow-hidden bg-rose-800 text-white">
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div className="absolute -top-1/2 right-0 w-[60vw] aspect-square rounded-full bg-rose-500/40 blur-[120px] animate-mesh-drift" />
+            <div className="absolute -bottom-1/2 left-0 w-[50vw] aspect-square rounded-full bg-plum-500/40 blur-[120px] animate-mesh-drift-slow" />
+          </div>
+          <div className="relative max-w-5xl mx-auto px-6 py-20 md:py-28 text-center">
+            <ScrollReveal animation="blur-in"><Quote className="mx-auto text-rose-200" size={34} strokeWidth={1.2} /></ScrollReveal>
+            <ScrollReveal animation="blur-in" delay={150}>
+              <p className="mt-6 font-display font-light text-[1.9rem] leading-[1.25] md:text-[3.2rem] text-white">"{latestInspiration.text}"</p>
+            </ScrollReveal>
+            <ScrollReveal delay={350}>
+              <p className="mt-8 text-sm text-rose-100/80">השראה יומית · <span className="text-white font-medium">{latestInspiration.author}</span></p>
+            </ScrollReveal>
+          </div>
+        </section>
 
-          {/* 5. Community Services */}
-          <section className="space-y-5 pt-4">
-            <div className="flex items-center justify-between px-5">
-              <h3 className="section-title">קהילה וחסד</h3>
-              <Link to="/community" className="btn-ghost !px-3.5 !py-1.5 !text-xs">לכל השירותים <ChevronLeft size={14}/></Link>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 px-5 pb-2">
-               {communityItems.slice(0, 4).map((item, i) => (
-                 <ScrollReveal key={i} delay={i * 70}>
-                   <div
-                      onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })}
-                      className="bg-white rounded-[1.75rem] overflow-hidden shadow-petal border border-rose-100/70 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
-                   >
-                      <div className="relative h-28 overflow-hidden">
-                        <img src={item.image} className="w-full h-full object-cover bg-slate-50 group-hover:scale-105 transition-transform duration-500" alt={item.title} loading="lazy" />
-                      </div>
-                      <div className="p-3 flex flex-col gap-1">
-                         <h4 className="font-display text-[1.05rem] text-ink truncate w-full">{item.title}</h4>
-                         <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed font-medium">{item.description || 'לפרטים נוספים ודרכי יצירת קשר'}</p>
-                      </div>
-                   </div>
-                 </ScrollReveal>
-               ))}
-            </div>
-            <div className="px-5">
-              <Link to="/community" className="block w-full text-center py-4 bg-white border border-rose-100 hover:bg-rose-50 text-rose-500 rounded-2xl text-sm font-bold shadow-sm transition-all duration-300 hover:shadow-md">לכל השירותים בקהילה</Link>
-            </div>
-          </section>
-
-          {/* 6. Personality of the Week */}
-          {personality && (
-            <section className="px-5 pb-6">
-             <ScrollReveal>
-               <div
-                 onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}
-                 className="bg-white rounded-[1.75rem] border border-rose-100/70 shadow-petal p-5 flex items-center gap-4 cursor-pointer hover:shadow-[0_8px_28px_rgba(61,47,55,0.1)] hover:scale-[1.01] transition-all duration-300 active:scale-[0.98]"
-               >
-                  <div className="relative shrink-0 w-[120px] h-[120px] rounded-2xl overflow-hidden border-2 border-[#F8EAEA]">
-                     <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} loading="lazy" />
-                  </div>
-                  <div className="flex-1 min-w-0 text-right">
-                     <span className="inline-block text-[10px] font-bold text-[#8A5058] bg-[#F8EAEA] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2">אשת השבוע</span>
-                     <h3 className="text-base font-semibold text-[#2B2027] leading-snug truncate">{personality.name}</h3>
-                     {personality.role && <p className="text-[#6A5960] text-sm mt-1 line-clamp-2 leading-[1.4]">{personality.role}</p>}
-                     <span className="inline-flex items-center gap-1.5 mt-3 bg-[#8A5058] text-white text-xs font-bold px-4 py-2.5 min-h-[36px] rounded-lg hover:bg-[#6F4148] transition-colors">
-                        צפה בפרופיל <ArrowLeft size={13}/>
-                     </span>
-                  </div>
-               </div>
-             </ScrollReveal>
-            </section>
-          )}
-
-        </div>
-        {/* --- MOBILE VIEW END --- */}
-
-        {/* --- DESKTOP VIEW START --- */}
-        <div className="hidden md:block space-y-16">
-           {/* Welcome / Points Card */}
-           <ScrollReveal className="mx-1">
-            {user?.isMemberApproved ? (
-               <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-[0_8px_32px_rgba(0,0,0,0.05)] flex items-center justify-between">
-                 <div className="flex items-center gap-5">
-                     <div className="p-4 bg-gradient-to-br from-rose-400 to-pink-500 rounded-[1.2rem] shadow-lg text-white"><Star fill="currentColor" size={20} /></div>
-                     <div>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">הניקוד שצברת בקהילה</p>
-                       <span className="font-black text-slate-800 text-3xl tracking-tight">{(user?.points || 0).toLocaleString()} <small className="text-sm opacity-50 font-medium">נק'</small></span>
-                     </div>
-                 </div>
-               </div>
-            ) : (
-              <div className="bg-white p-10 rounded-[2.5rem] text-slate-800 flex items-center justify-between gap-6 shadow-[0_8px_32px_rgba(0,0,0,0.05)] border border-slate-100">
-                 <div className="text-right space-y-3">
-                     <h3 className="text-3xl font-black flex items-center gap-3 text-slate-800">
-                        <Sparkles size={24} className="text-rose-400" /> {user?.isMemberRequested ? 'בקשתך בטיפול, איזה התרגשות!' : 'ברוכה הבאה למעגל הנשי'}
-                     </h3>
-                     <p className="text-base text-slate-500 font-medium max-w-lg leading-relaxed">המרחב הבטוח שלך להכיר נשות עשייה, לשתף, ללמוד וליהנות מהטבות ייחודיות.</p>
-                 </div>
-                 {!user?.isMemberRequested && (
-                   <button onClick={() => user ? setShowMembershipModal(true) : onOpenLogin()} className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-10 py-4 rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">הצטרפי למעגל</button>
-                 )}
-              </div>
-            )}
-           </ScrollReveal>
-
-           {/* Hero Slider — רק אירועים עתידיים; אם אין אף אחד, הסקשן מוסתר */}
-           {displayEvents.length > 0 && (
-           <ScrollReveal as="section" className="relative h-[520px] w-full overflow-hidden rounded-[3rem] shadow-[0_24px_60px_rgba(0,0,0,0.12)] mt-8">
-              {displayEvents.map((event, index) => (
-                <div key={index} className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}>
-                   <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${event.image})` }}></div>
-                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/40 to-transparent"></div>
-                   <div className="absolute bottom-12 left-12 right-12 flex justify-between items-end">
-                      <div className="text-left max-w-2xl">
-                         <div className="flex items-center gap-2 text-rose-300 text-sm font-medium uppercase tracking-widest mb-4">
-                            <MapPin size={14} /> {event.location}
-                         </div>
-                         <h2 className="text-5xl font-black text-white leading-tight drop-shadow-md">{event.title}</h2>
-                      </div>
-                      <Link to="/events" className="shrink-0 bg-white/15 backdrop-blur-md text-white border border-white/40 px-10 py-4 rounded-2xl font-bold text-base hover:bg-white hover:text-slate-900 transition-all duration-300 shadow-lg">
-                        לפרטים והרשמה
-                      </Link>
-                   </div>
-                   {/* Slide indicator dots */}
-                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-                     {displayEvents.map((_, di) => (
-                       <div key={di} className={`rounded-full transition-all duration-500 ${di === currentSlide ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/40'}`}></div>
-                     ))}
-                   </div>
-                </div>
+        {/* ============ CLASSES — editorial grid ============ */}
+        {classes.length > 0 && (
+          <section>
+            <SectionHeader eyebrow="ללמוד וליצור" title="חוגים וסדנאות" to="/classes" linkLabel="לכל החוגים" />
+            <div className="mt-8 px-5 md:px-0 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              {classes.slice(0, 4).map((cls: any, i: number) => (
+                <ScrollReveal key={cls._id || i} animation="clip-up" delay={i * 120} className={i % 2 === 1 ? 'lg:mt-14' : ''}>
+                  <button type="button" onClick={() => navigate('/classes')} className="group relative block w-full text-right aspect-[3/4] rounded-[2rem] overflow-hidden bg-rose-100">
+                    <img src={cls.image} alt={cls.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.4s] ease-out group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 text-white">
+                      {cls.day && <span className="inline-block rounded-full bg-white/20 backdrop-blur px-2.5 py-1 text-[11px] mb-2">{cls.day}</span>}
+                      <h3 className="font-display text-lg md:text-2xl leading-tight text-white">{cls.title}</h3>
+                      <p className="mt-1 text-xs md:text-sm text-white/75 max-h-0 opacity-0 group-hover:max-h-10 group-hover:opacity-100 transition-all duration-500">{cls.instructor}</p>
+                    </div>
+                  </button>
+                </ScrollReveal>
               ))}
-           </ScrollReveal>
-           )}
-
-           {/* Classes Desktop */}
-           <section className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-                  <GraduationCap className="text-[#BD7A81]" size={28}/> חוגי המעגל
-                </h3>
-                <Link to="/classes" className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-rose-100 hover:shadow-md">לכל החוגים <ChevronLeft size={14}/></Link>
-              </div>
-              <div className="grid grid-cols-4 gap-6">
-                 {classes.slice(0, 4).map((cls, i) => (
-                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/classes')} className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_rgba(189,122,129,0.08)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group text-center">
-                      <div className="overflow-hidden rounded-[1.5rem] mb-4 h-40">
-                         <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
-                      </div>
-                      <h4 className="font-black text-slate-800 text-base">{cls.title}</h4>
-                      <p className="text-rose-400 text-xs mt-2 font-semibold">{cls.instructor}</p>
-                      <p className="text-slate-400 text-xs mt-0.5 font-medium">{cls.day}</p>
-                   </ScrollReveal>
-                 ))}
-              </div>
-           </section>
-
-           {/* Community Desktop */}
-           <section className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-                  <HeartHandshake className="text-rose-400" size={28}/> קהילה וחסד
-                </h3>
-                <Link to="/community" className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-rose-100 hover:shadow-md">לכל השירותים <ChevronLeft size={14}/></Link>
-              </div>
-              <div className="grid grid-cols-3 gap-8">
-                 {communityItems.slice(0, 3).map((item, i) => (
-                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_36px_rgba(189,122,129,0.09)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer border border-slate-100 group">
-                      <div className="overflow-hidden h-48">
-                         <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
-                      </div>
-                      <div className="p-6 text-center">
-                        <h4 className="font-black text-slate-800 text-xl">{item.title}</h4>
-                        <p className="text-slate-400 text-sm mt-2 flex items-center justify-center gap-1.5"><MapPin size={14}/> {item.location}</p>
-                      </div>
-                   </ScrollReveal>
-                 ))}
-              </div>
-           </section>
-
-           {/* Personality & Grid Desktop */}
-           {personality ? (
-             <ScrollReveal className="grid grid-cols-3 gap-10">
-                <div className="col-span-2 space-y-10">
-                   <section className="bg-white rounded-2xl p-8 shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100 flex items-center gap-8 cursor-pointer hover:shadow-[0_8px_28px_rgba(61,47,55,0.1)] hover:scale-[1.01] transition-all duration-300" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}>
-                      <div className="shrink-0 w-[140px] h-[140px] rounded-2xl overflow-hidden border-2 border-[#F8EAEA]">
-                         <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} loading="lazy" />
-                      </div>
-                      <div className="text-right">
-                         <span className="inline-block text-[10px] font-bold text-[#8A5058] bg-[#F8EAEA] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2.5">אשת השבוע במעגל</span>
-                         <h3 className="text-xl font-semibold text-[#2B2027]">{personality.name}</h3>
-                         {personality.role && <p className="text-[#6A5960] text-sm mt-1.5 line-clamp-2 leading-[1.4] max-w-md">{personality.role}</p>}
-                         <span className="inline-flex items-center gap-1.5 mt-4 bg-[#8A5058] text-white text-sm font-bold px-5 py-2.5 min-h-[44px] rounded-lg hover:bg-[#6F4148] transition-colors">
-                            צפה בפרופיל <ArrowLeft size={14}/>
-                         </span>
-                      </div>
-                   </section>
-                </div>
-                <div className="space-y-8">
-                   {/* Inspiration Desktop */}
-                   <div className="bg-gradient-to-br from-rose-100 to-[#D2959A] rounded-[2.5rem] p-8 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
-                      <div className="absolute -top-10 -right-10 text-white/20"><Quote size={120} /></div>
-                      <div className="relative z-10">
-                         <Quote className="text-white mb-6" size={28} />
-                         <p className="font-serif leading-relaxed text-xl text-slate-800 font-medium">"{latestInspiration.text}"</p>
-                         <p className="mt-6 text-sm font-black text-slate-700 opacity-80">{latestInspiration.author}</p>
-                      </div>
-                   </div>
-                   {/* Announcements Desktop */}
-                   <div className="space-y-4">
-                      <h4 className="font-bold text-slate-400 text-sm px-2 uppercase tracking-widest">לוח מודעות</h4>
-                      {announcements.slice(0, 2).map((ann, i) => (
-                        <div key={i} className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-r-4 border-rose-300 shadow-sm hover:shadow-md transition-all">
-                           <h4 className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2"><Bell className="text-rose-300" size={16}/> {ann.title}</h4>
-                           <p className="text-sm text-slate-500 leading-relaxed font-medium">{ann.content}</p>
-                        </div>
-                      ))}
-                   </div>
-                </div>
-             </ScrollReveal>
-           ) : (
-             /* אין כרגע "אשת השבוע" פעילה — לא שומרים מקום ריק, ההשראה וההודעות תופסות את כל הרוחב */
-             <ScrollReveal className="grid grid-cols-2 gap-8">
-                <div className="bg-gradient-to-br from-rose-100 to-[#D2959A] rounded-[2.5rem] p-10 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
-                   <div className="absolute -top-10 -right-10 text-white/20"><Quote size={120} /></div>
-                   <div className="relative z-10">
-                      <Quote className="text-white mb-6" size={28} />
-                      <p className="font-serif leading-relaxed text-2xl text-slate-800 font-medium">"{latestInspiration.text}"</p>
-                      <p className="mt-6 text-sm font-black text-slate-700 opacity-80">{latestInspiration.author}</p>
-                   </div>
-                </div>
-                <div className="space-y-4">
-                   <h4 className="font-bold text-slate-400 text-sm px-2 uppercase tracking-widest">לוח מודעות</h4>
-                   {announcements.slice(0, 2).map((ann, i) => (
-                     <div key={i} className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-r-4 border-rose-300 shadow-sm hover:shadow-md transition-all">
-                        <h4 className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2"><Bell className="text-rose-300" size={16}/> {ann.title}</h4>
-                        <p className="text-sm text-slate-500 leading-relaxed font-medium">{ann.content}</p>
-                     </div>
-                   ))}
-                </div>
-             </ScrollReveal>
-           )}
-        </div>
-
-        {/* Banner Area — הוזז למטה, ממש לפני הפוטר */}
-        <div className="w-full px-4 md:px-0">{renderAdBanner()}</div>
-
-        {/* Footer - Elegant */}
-        <footer className="pt-8 pb-10 border-t border-rose-100/50 text-center space-y-5 px-4 mt-0 bg-transparent relative z-10">
-            <div className="flex justify-center items-center gap-8 text-xs font-bold text-slate-400">
-                <button onClick={() => setShowTermsModal(true)} className="hover:text-rose-400 transition-colors">תקנון האתר ומדיניות</button>
-                <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                <Link to="/contact" className="hover:text-rose-400 transition-colors">צרי קשר</Link>
             </div>
-            <p className="text-xs font-medium text-slate-400 tracking-wide">
-                כל הזכויות שמורות לקהילת נשי &copy; {new Date().getFullYear()} <br className="md:hidden" />
-                <span className="hidden md:inline"> | </span>
-                בנייה ופיתוח ע"י 
-                <a href="https://wa.me/message/WZKLTKH4KELMD1" target="_blank" rel="noopener noreferrer" className="text-[#BD7A81] font-black mr-1.5 hover:text-rose-500 transition-colors">
-                  DA פרויקטים ויזמות
-                </a>
-            </p>
-        </footer>
+          </section>
+        )}
+
+        {/* ============ WOMAN OF THE WEEK — spotlight ============ */}
+        {personality && (
+          <section className="px-5 md:px-0">
+            <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+              <ScrollReveal animation="clip-up" className="relative mx-auto w-full max-w-[420px]">
+                <div className="absolute -inset-5 rounded-t-full rounded-b-[3rem] border border-rose-200 animate-float-y-slow" aria-hidden="true" />
+                <div className="relative aspect-[4/5] rounded-t-full rounded-b-[2.5rem] overflow-hidden bg-rose-100 shadow-lift">
+                  <img src={personality.image} alt={personality.name} className="w-full h-full object-cover animate-kenburns" loading="lazy" />
+                </div>
+              </ScrollReveal>
+              <div>
+                <ScrollReveal><p className="eyebrow">אשת השבוע</p></ScrollReveal>
+                <ScrollReveal animation="blur-in" delay={120}><h2 className="mt-3 font-display text-[2.6rem] md:text-[4rem] leading-[1.02] text-ink">{personality.name}</h2></ScrollReveal>
+                {personality.role && <ScrollReveal delay={240}><p className="mt-5 text-lg text-slate-600 leading-relaxed max-w-md">{personality.role}</p></ScrollReveal>}
+                <ScrollReveal delay={360}>
+                  <button type="button" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')} className="btn-primary group mt-8">
+                    לקריאת הראיון <ArrowLeft size={16} className="transition-transform duration-500 group-hover:-translate-x-1.5" />
+                  </button>
+                </ScrollReveal>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ============ COMMUNITY ============ */}
+        {communityItems.length > 0 && (
+          <section>
+            <SectionHeader eyebrow="מנשים לנשים" title="קהילה וחסד" to="/community" linkLabel="לכל השירותים" />
+            <div className="mt-8 px-5 md:px-0 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              {communityItems.slice(0, 4).map((item: any, i: number) => (
+                <ScrollReveal key={item._id || i} animation="scale-in" delay={i * 90}>
+                  <button type="button" onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="group w-full text-right card-soft overflow-hidden hover:shadow-lift hover:-translate-y-1 transition-all duration-500">
+                    <div className="m-2 mb-0 aspect-[4/3] rounded-[1.4rem] overflow-hidden bg-rose-50">
+                      <img src={item.image} alt={item.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-[1.2s] group-hover:scale-110" />
+                    </div>
+                    <div className="p-4 md:p-5">
+                      <h3 className="text-[1.05rem] md:text-lg text-ink truncate">{item.title}</h3>
+                      <p className="mt-1 text-xs md:text-[13px] text-slate-500 line-clamp-2 leading-relaxed">{item.description || item.location || 'לפרטים ודרכי יצירת קשר'}</p>
+                    </div>
+                  </button>
+                </ScrollReveal>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ============ ANNOUNCEMENTS ============ */}
+        {announcements.length > 0 && (
+          <section className="px-5 md:px-0">
+            <ScrollReveal animation="scale-in" className="card-soft p-6 md:p-10 grid md:grid-cols-[220px_1fr] gap-6 md:gap-10">
+              <div>
+                <span className="relative inline-flex h-3 w-3"><span className="absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-60 animate-ping" /><span className="relative inline-flex h-3 w-3 rounded-full bg-rose-500" /></span>
+                <h2 className="mt-3 font-display text-3xl text-ink">לוח מודעות</h2>
+                <p className="mt-1 text-sm text-slate-500">עדכונים מהנהלת הקהילה</p>
+              </div>
+              <div className="divide-y divide-rose-100">
+                {announcements.slice(0, 3).map((ann: any, i: number) => (
+                  <ScrollReveal key={ann._id || i} delay={i * 120} className="py-4 first:pt-0 last:pb-0">
+                    <h3 className="text-lg text-ink flex items-center gap-2"><Megaphone size={16} className="text-rose-400 shrink-0" strokeWidth={1.6} /> {ann.title}</h3>
+                    <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">{ann.content}</p>
+                  </ScrollReveal>
+                ))}
+              </div>
+            </ScrollReveal>
+          </section>
+        )}
+
+        {/* Ads strip */}
+        <div className="w-full px-5 md:px-0">{renderAdBanner()}</div>
+
+        {/* small credits (the site-wide footer lives in Layout) */}
+        <div className="pb-6 text-center text-xs text-slate-400 space-y-2">
+          <div className="flex justify-center items-center gap-5">
+            <button onClick={() => setShowTermsModal(true)} className="hover:text-rose-600 transition-colors">תקנון האתר ומדיניות</button>
+            <span className="w-1 h-1 bg-rose-200 rounded-full" />
+            <Link to="/contact" className="hover:text-rose-600 transition-colors">צרי קשר</Link>
+          </div>
+          <p>
+            כל הזכויות שמורות לקהילת נשי &copy; {new Date().getFullYear()} · בנייה ופיתוח ע"י
+            <a href="https://wa.me/message/WZKLTKH4KELMD1" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-semibold mr-1.5 hover:text-rose-800 transition-colors">DA פרויקטים ויזמות</a>
+          </p>
+        </div>
       </div>
 
       {/* --- מודלים --- */}

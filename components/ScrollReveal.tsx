@@ -7,7 +7,7 @@ interface ScrollRevealProps {
   delay?: number;
   as?: keyof JSX.IntrinsicElements;
   /** 'fade-in-up' (default, subtle upward slide) or 'fade-in-fast' (plain opacity fade, no movement, 200ms) */
-  animation?: 'fade-in-up' | 'fade-in-fast';
+  animation?: 'fade-in-up' | 'fade-in-fast' | 'blur-in' | 'scale-in' | 'clip-up' | 'word-rise';
   [key: string]: any;
 }
 
@@ -44,7 +44,11 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({ children, className = '', d
   }, []);
 
   const Tag = as as any;
-  const hiddenStyle = animation === 'fade-in-fast' ? { opacity: 0 } : { opacity: 0, transform: 'translateY(16px)' };
+  const hiddenStyle: React.CSSProperties =
+    animation === 'fade-in-fast' || animation === 'blur-in' ? { opacity: 0 }
+    : animation === 'clip-up' ? { opacity: 0 } // clip-path here would hide it from IntersectionObserver
+    : animation === 'scale-in' ? { opacity: 0, transform: 'scale(0.94)' }
+    : { opacity: 0, transform: 'translateY(16px)' };
 
   return (
     <Tag
