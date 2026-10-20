@@ -15,7 +15,9 @@ import { AdsAdmin, AnnouncementsAdmin, InspirationsAdmin } from '../components/a
 import { BroadcastAdmin, ForumAdmin, SettingsAdmin, TicketsAdmin } from '../components/admin/MiscAdmin';
 import FlyersAdmin from '../components/admin/FlyersAdmin';
 import PersonalityAdmin from '../components/admin/PersonalityAdmin';
-import { ToastHost } from '../components/admin/ui';
+import { ToastHost, AdminScopeContext, regionOfItem } from '../components/admin/ui';
+import RegionDashboard from '../components/admin/RegionDashboard';
+import { regionName } from '../shared/regions';
 
 const TABS = NAV.flatMap(g => g.items.map(i => i.id));
 const PRIMARY: Partial<Record<AdminTab, string>> = {
@@ -26,13 +28,20 @@ const WITH_REGION: AdminTab[] = ['events', 'classes', 'community', 'lotteries', 
 const WITH_SEARCH: AdminTab[] = ['events', 'classes', 'community', 'lotteries', 'users', 'messages', 'forum', 'inspirations'];
 
 const arr = (x: any) => (Array.isArray(x) ? x : []);
+const REGION_TABS: AdminTab[] = ['dashboard', 'events', 'classes', 'community', 'lotteries'];
 
 const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> = ({ user }) => {
   const [params, setParams] = useSearchParams();
+  // main admin = everything; regional manager = her region's events, classes, community and lotteries
+  const isMain = !!user?.isAdmin;
+  const lockRegion = !isMain && user?.role === 'regionAdmin' && user?.adminRegion ? user.adminRegion : '';
+  const canEnter = isMain || !!lockRegion;
+  const allowedTabs = lockRegion ? REGION_TABS : TABS;
   const tabParam = params.get('tab') as AdminTab | null;
-  const active: AdminTab = tabParam && TABS.includes(tabParam) ? tabParam : 'dashboard';
+  const active: AdminTab = tabParam && allowedTabs.includes(tabParam) ? tabParam : 'dashboard';
 
-  const [region, setRegion] = useState('all');
+  const [regionState, setRegion] = useState('all');
+  const region = lockRegion || regionState;
   const [search, setSearch] = useState('');
   // a "new item" request is tied to the tab it was made for, so it never leaks into another section
   const [createReq, setCreateReq] = useState<{ tab: AdminTab | null; n: number }>({ tab: null, n: 0 });
@@ -58,21 +67,24 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
   const [settings, setSettings] = useState<any>({ pointsPerRegister: 50, pointsPerEventJoin: 10, pointsPerShare: 5 });
 
   const loadCore = useCallback(async () => {
+    const mainOnly = <T,>(p: () => Promise<T>, empty: any) => (lockRegion ? Promise.resolve(empty) : p().catch(() => empty));
     const [u, ap, ev, cl, lo, co, ps, as, ms] = await Promise.all([
-      api.getUsers().catch(() => []),
-      api.getAdminApprovals().catch(() => null),
+      mainOnly(() => api.getUsers(), []),
+      mainOnly(() => api.getAdminApprovals(), null),
       api.getEvents().catch(() => []),
       api.getClasses().catch(() => []),
       api.getLotteries().catch(() => []),
       api.getCommunityItems().catch(() => []),
-      api.getPendingStories().catch(() => []),
-      api.getActiveStoriesAdmin().catch(() => []),
-      api.getContactMessages().catch(() => []),
+      mainOnly(() => api.getPendingStories(), []),
+      mainOnly(() => api.getActiveStoriesAdmin(), []),
+      mainOnly(() => api.getContactMessages(), []),
     ]);
-    setUsers(arr(u)); setEvents(arr(ev)); setClasses(arr(cl)); setLotteries(arr(lo)); setCommunity(arr(co));
+    // a regional manager sees (and can edit) only the local items of her region
+    const own = (list: any) => (lockRegion ? arr(list).filter((x: any) => (x.scope || 'local') === 'local' && regionOfItem(x) === lockRegion) : arr(list));
+    setUsers(arr(u)); setEvents(own(ev)); setClasses(own(cl)); setLotteries(own(lo)); setCommunity(own(co));
     setPendingUsers(arr(ap?.pendingUsers)); setPendingPosts(arr(ap?.pendingPosts));
     setPendingStories(arr(ps)); setActiveStories(arr(as)); setMessages(arr(ms));
-  }, []);
+  }, [lockRegion]);
 
   const loadSection = useCallback(async (tab: AdminTab) => {
     if (tab === 'forum') setForumPosts(arr(await api.getForumPosts().catch(() => [])));
@@ -88,8 +100,8 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
     try { await Promise.all([loadCore(), loadSection(active)]); } finally { setLoading(false); }
   }, [loadCore, loadSection, active]);
 
-  useEffect(() => { if (user?.isAdmin) reload(); }, [user?.isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (user?.isAdmin) loadSection(active); }, [active, user?.isAdmin, loadSection]);
+  useEffect(() => { if (canEnter) reload(); }, [canEnter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (isMain) loadSection(active); }, [active, isMain, loadSection]);
 
   const go = (t: AdminTab) => {
     setSearch('');
@@ -107,7 +119,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
     forum: pendingPosts.length,
   }), [pendingUsers, pendingPosts, pendingStories, messages]);
 
-  if (!user || !user.isAdmin) {
+  if (!user || !canEnter) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center px-6 py-24 text-center" dir="rtl">
         <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-500"><ShieldCheck size={30} /></span>
@@ -127,8 +139,13 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
         primary={primaryLabel ? { label: primaryLabel, onClick: () => requestCreate(active) } : null}
         region={region} setRegion={setRegion} search={search} setSearch={setSearch}
         showRegion={WITH_REGION.includes(active)} showSearch={WITH_SEARCH.includes(active)} loading={loading}
+        allowed={lockRegion ? REGION_TABS : undefined} lockedRegionName={lockRegion ? regionName(lockRegion) : undefined}
       >
-        {active === 'dashboard' && (
+        <AdminScopeContext.Provider value={{ lockRegion: lockRegion || undefined }}>
+        {active === 'dashboard' && lockRegion && (
+          <RegionDashboard region={lockRegion} name={firstName} go={go} create={create} data={{ events, classes, lotteries, community }} />
+        )}
+        {active === 'dashboard' && !lockRegion && (
           <Dashboard go={go} create={create} data={{ users, events, classes, lotteries, community, pendingUsers, pendingPosts, pendingStories, activeStories, messages }} />
         )}
         {active === 'approvals' && <ApprovalsAdmin pendingUsers={pendingUsers} pendingPosts={pendingPosts} reload={reload} />}
@@ -148,6 +165,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
         {active === 'tickets' && <TicketsAdmin tickets={tickets} events={events} reload={reload} />}
         {active === 'broadcast' && <BroadcastAdmin recipients={users.length} />}
         {active === 'settings' && <SettingsAdmin settings={settings} setSettings={setSettings} />}
+        </AdminScopeContext.Provider>
       </AdminShell>
       <ToastHost />
     </>

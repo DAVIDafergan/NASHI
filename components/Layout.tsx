@@ -291,7 +291,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                       </div>
                       <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><UserIcon size={16} strokeWidth={1.75} />האזור האישי</Link>
                       <button onClick={() => { setIsProfileMenuOpen(false); invite(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><Heart size={16} strokeWidth={1.75} />הזמנת חברה</button>
-                      {user.isAdmin && <Link to="/admin" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><ShieldCheck size={16} strokeWidth={1.75} />ניהול מערכת</Link>}
+                      {(user.isAdmin || (user as any).role === 'regionAdmin') && <Link to="/admin" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><ShieldCheck size={16} strokeWidth={1.75} />{user.isAdmin ? 'ניהול מערכת' : 'ניהול האזור שלי'}</Link>}
                       <div className="hairline my-1.5" />
                       <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors rounded-2xl"><LogOut size={16} strokeWidth={1.75} />התנתקות</button>
                     </div>
@@ -331,6 +331,9 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
             ))}
           </nav>
           <div className="relative space-y-2 p-5 pb-[max(20px,env(safe-area-inset-bottom))]">
+            {user && (user.isAdmin || (user as any).role === 'regionAdmin') && (
+              <Link to="/admin" className="btn-ghost w-full !py-3.5"><ShieldCheck size={17} /> {user.isAdmin ? 'ניהול מערכת' : 'ניהול האזור שלי'}</Link>
+            )}
             {user ? (
               <button onClick={() => { setMenuOpen(false); invite(); }} className="btn-primary w-full !py-3.5"><Heart size={17} /> הזמיני חברה לנשי</button>
             ) : (

@@ -29,6 +29,8 @@ export interface User {
   level: UserLevel;
   upcomingEvents: number;
   isAdmin?: boolean;
+  role?: 'member' | 'regionAdmin';
+  adminRegion?: string;
   likedEventIds?: string[];
   avatar?: string;
   

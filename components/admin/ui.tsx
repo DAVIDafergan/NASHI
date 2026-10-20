@@ -125,6 +125,10 @@ export const ImagePicker: React.FC<{ value?: string; onChange: (dataUrl: string)
 
 /* ---------------- location & audience ---------------- */
 
+/** Set by AdminPage for a regional manager: forms only offer her region and local scope. */
+export const AdminScopeContext = React.createContext<{ lockRegion?: string }>({});
+
+
 /** Searchable city picker grouped by region. */
 export const CityPicker: React.FC<{ value?: string; onChange: (city: string) => void }> = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
@@ -136,7 +140,8 @@ export const CityPicker: React.FC<{ value?: string; onChange: (city: string) => 
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
-  const groups = useMemo(() => REGIONS.map(r => ({ ...r, cities: (CITIES as any)[r.id].filter((c: string) => !q.trim() || c.includes(q.trim())) })).filter(g => g.cities.length), [q]);
+  const { lockRegion } = React.useContext(AdminScopeContext);
+  const groups = useMemo(() => REGIONS.filter(r => !lockRegion || r.id === lockRegion).map(r => ({ ...r, cities: (CITIES as any)[r.id].filter((c: string) => !q.trim() || c.includes(q.trim())) })).filter(g => g.cities.length), [q, lockRegion]);
   return (
     <div ref={ref} className="relative">
       <button type="button" onClick={() => setOpen(o => !o)} className={`${inputCls} flex items-center justify-between text-right`}>
@@ -176,7 +181,10 @@ type LocationValue = { scope?: string; city?: string; onlineLink?: string; audie
 
 /** "מיקום וקהל" form section used by events, classes, community and lotteries. */
 export const LocationFields: React.FC<{ value: LocationValue; onChange: (patch: Partial<LocationValue>) => void; withAudience?: boolean; withOnline?: boolean }> = ({ value, onChange, withAudience, withOnline = true }) => {
-  const scope = (value.scope || 'local') as 'local' | 'national' | 'online';
+  const { lockRegion } = React.useContext(AdminScopeContext);
+  const scope = (lockRegion ? 'local' : (value.scope || 'local')) as 'local' | 'national' | 'online';
+  // regional managers publish local items only
+  useEffect(() => { if (lockRegion && value.scope && value.scope !== 'local') onChange({ scope: 'local' }); }, [lockRegion, value.scope]); // eslint-disable-line react-hooks/exhaustive-deps
   const opts = SCOPES.filter(s => withOnline || s.id !== 'online').map(s => ({
     id: s.id,
     label: s.id === 'local' ? 'מקומי' : s.id === 'national' ? 'ארצי' : 'מקוון',
@@ -184,9 +192,13 @@ export const LocationFields: React.FC<{ value: LocationValue; onChange: (patch: 
   }));
   return (
     <FormSection title="מיקום וקהל" subtitle="קובע למי זה יוצג באתר" icon={<MapPin size={17} />}>
+      {lockRegion ? (
+        <p className="rounded-2xl bg-rose-50/70 px-4 py-3 text-sm text-rose-800">את מנהלת את אזור <b>{regionName(lockRegion)}</b>. התוכן יוצג לנשים באזור, ובנוסף בסינון של כל הארץ.</p>
+      ) : (
       <Field label="היקף" hint={scope === 'local' ? 'יוצג קודם לנשים מהאזור של העיר שבחרת.' : scope === 'national' ? 'יוצג לכל הנשים בכל הארץ.' : 'מתקיים באונליין — יוצג לכולן, עם קישור הצטרפות.'}>
         <Segmented value={scope} onChange={(v) => onChange({ scope: v })} options={opts as any} />
       </Field>
+      )}
       {scope === 'local' && (
         <Field label="עיר" required hint="האזור נקבע אוטומטית לפי העיר.">
           <CityPicker value={value.city} onChange={(city) => onChange({ city })} />

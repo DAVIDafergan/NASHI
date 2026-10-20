@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto'; // תוספת עבור ייצור טוקנים מאובטחים
 import mongoose from 'mongoose';
-import { regionOfCity } from '../shared/regions.js';
+import { regionOfCity, REGIONS } from '../shared/regions.js';
+const REGION_IDS = REGIONS.map(r => r.id);
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
     Announcement, // הוספת המודל החדש לייבוא
@@ -102,6 +103,54 @@ const createSimpleRateLimiter = (limit, windowMs) => {
 };
 
 const zodiacWheelRateLimit = createSimpleRateLimiter(10, 60 * 1000);
+
+
+// ---- מנהלות אזור ----
+// A regional manager (role 'regionAdmin' + adminRegion) may create, edit and delete events, classes,
+// community items and lotteries — only local items in her own region. Main admins (isAdmin) can do everything.
+const canManage = (Model) => async (req, res, next) => {
+    try {
+        if (req.user?.isAdmin) return next();
+        const me = await User.findById(req.user?.id).select('role adminRegion isAdmin');
+        if (me?.isAdmin) return next();
+        if (me?.role !== 'regionAdmin' || !me.adminRegion) return res.status(403).json({ error: 'Admin access required' });
+        req.regionAdmin = { id: me._id, region: me.adminRegion };
+        if (req.params.id) {
+            if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'not found' });
+            const doc = await Model.findById(req.params.id).select('region scope');
+            if (!doc) return res.status(404).json({ error: 'not found' });
+            if ((doc.region || 'north') !== me.adminRegion || (doc.scope && doc.scope !== 'local')) {
+                return res.status(403).json({ error: 'אפשר לערוך רק תוכן מקומי באזור שלך' });
+            }
+        }
+        if (['POST', 'PUT'].includes(req.method) && req.body && typeof req.body === 'object' && !req.path.includes('/run')) {
+            const body = req.body;
+            if (req.method === 'POST' || body.city !== undefined) {
+                if (regionOfCity(body.city) !== me.adminRegion) return res.status(403).json({ error: 'בחרי עיר מהאזור שלך' });
+            }
+            body.scope = 'local';
+            body.region = me.adminRegion;
+            delete body.isHero; // the homepage banner stays with the main admin
+            delete body.createdBy;
+            if (req.method === 'POST') body.createdBy = me._id;
+        }
+        next();
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+// הגדרת מנהלת אזור (מנהלת ראשית בלבד)
+router.put('/admin/users/:id/role', authenticate, isAdmin, async (req, res) => {
+    try {
+        const { role, adminRegion } = req.body || {};
+        if (!['member', 'regionAdmin'].includes(role)) return res.status(400).json({ error: 'role' });
+        if (role === 'regionAdmin' && !REGION_IDS.includes(adminRegion)) return res.status(400).json({ error: 'בחרי אזור' });
+        const user = await User.findByIdAndUpdate(req.params.id,
+            role === 'regionAdmin' ? { role, adminRegion } : { role: 'member', $unset: { adminRegion: 1 } },
+            { new: true }).select('-password -resetPasswordToken -resetPasswordExpires');
+        if (!user) return res.status(404).json({ error: 'not found' });
+        res.json(user);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 // ================= 1. אישורים (APPROVALS) =================
 
@@ -231,7 +280,7 @@ router.put('/users/:id', authenticate, async (req, res) => {
         }
         // משתמשת רגילה יכולה לעדכן רק פרטים אישיים, לא הרשאות, נקודות או סיסמה
         const PROTECTED = ['_id', 'id', 'isAdmin', 'isMemberApproved', 'isMemberRequested', 'points', 'password', 'email',
-            'resetPasswordToken', 'resetPasswordExpires', 'referredBy', 'referralsCount', 'createdAt', 'lastZodiacWheelSpinAt', 'zodiacWheelSpinsCount'];
+            'resetPasswordToken', 'resetPasswordExpires', 'referredBy', 'referralsCount', 'createdAt', 'lastZodiacWheelSpinAt', 'zodiacWheelSpinsCount', 'role', 'adminRegion'];
         const update = { ...req.body };
         if (!req.user.isAdmin) PROTECTED.forEach(k => delete update[k]);
         if (typeof update.city === 'string') { update.city = update.city.trim().slice(0, 60); update.region = regionOfCity(update.city) || update.region; }
@@ -255,7 +304,7 @@ router.get('/events', async (req, res) => {
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/events', authenticate, isAdmin, async (req, res) => {
+router.post('/events', authenticate, canManage(Event), async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
@@ -264,12 +313,12 @@ router.post('/events', authenticate, isAdmin, async (req, res) => {
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/events/:id', authenticate, isAdmin, async (req, res) => {
+router.put('/events/:id', authenticate, canManage(Event), async (req, res) => {
     try { res.json(await Event.findByIdAndUpdate(req.params.id, req.body, { new: true })); } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/events/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/events/:id', authenticate, canManage(Event), async (req, res) => {
     try { await Event.findByIdAndDelete(req.params.id); res.json({ success: true }); } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -280,7 +329,7 @@ router.get('/classes', async (req, res) => {
     try { res.json(await Class.find()); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/classes', authenticate, isAdmin, async (req, res) => {
+router.post('/classes', authenticate, canManage(Class), async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
@@ -288,11 +337,11 @@ router.post('/classes', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/classes/:id', authenticate, isAdmin, async (req, res) => {
+router.put('/classes/:id', authenticate, canManage(Class), async (req, res) => {
     try { res.json(await Class.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/classes/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/classes/:id', authenticate, canManage(Class), async (req, res) => {
     try { await Class.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -302,7 +351,7 @@ router.get('/lotteries', async (req, res) => {
     try { res.json(await Lottery.find()); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/lotteries', authenticate, isAdmin, async (req, res) => {
+router.post('/lotteries', authenticate, canManage(Lottery), async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
@@ -311,14 +360,14 @@ router.post('/lotteries', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/lotteries/:id', authenticate, isAdmin, async (req, res) => {
+router.put('/lotteries/:id', authenticate, canManage(Lottery), async (req, res) => {
     try { 
         // הקוד כאן מעדכן את כל ה-body, כולל prizes (המערך) ו-prize2-7
         res.json(await Lottery.findByIdAndUpdate(req.params.id, req.body, { new: true })); 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/admin/lotteries/:id/run', authenticate, isAdmin, async (req, res) => {
+router.post('/admin/lotteries/:id/run', authenticate, canManage(Lottery), async (req, res) => {
     try {
         const lottery = await Lottery.findById(req.params.id);
         if (!lottery) return res.status(404).json({ error: 'Lottery not found' });
@@ -333,11 +382,11 @@ router.post('/admin/lotteries/:id/run', authenticate, isAdmin, async (req, res) 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/lotteries/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/lotteries/:id', authenticate, canManage(Lottery), async (req, res) => {
     try { await Lottery.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/admin/lotteries/:id/participants', authenticate, isAdmin, async (req, res) => {
+router.get('/admin/lotteries/:id/participants', authenticate, canManage(Lottery), async (req, res) => {
     try {
         const lottery = await Lottery.findById(req.params.id).populate('participants', 'name phone email');
         if (!lottery) return res.status(404).json({ error: 'Lottery not found' });
@@ -581,7 +630,7 @@ router.get('/community', async (req, res) => {
     try { res.json(await Community.find().sort({ createdAt: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/community', authenticate, isAdmin, async (req, res) => {
+router.post('/community', authenticate, canManage(Community), async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
@@ -589,11 +638,11 @@ router.post('/community', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/community/:id', authenticate, isAdmin, async (req, res) => {
+router.put('/community/:id', authenticate, canManage(Community), async (req, res) => {
     try { res.json(await Community.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/community/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/community/:id', authenticate, canManage(Community), async (req, res) => {
     try { await Community.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

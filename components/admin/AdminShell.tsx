@@ -60,8 +60,11 @@ const AdminShell: React.FC<{
   search: string; setSearch: (s: string) => void;
   showRegion?: boolean; showSearch?: boolean;
   loading?: boolean;
+  /** regional manager: only these tabs, and her region instead of the region chips */
+  allowed?: AdminTab[];
+  lockedRegionName?: string;
   children: React.ReactNode;
-}> = ({ active, onNavigate, counts, adminName, primary, region, setRegion, search, setSearch, showRegion, showSearch, loading, children }) => {
+}> = ({ active, onNavigate, counts, adminName, primary, region, setRegion, search, setSearch, showRegion, showSearch, loading, allowed, lockedRegionName, children }) => {
   const [drawer, setDrawer] = useState(false);
   const item = navItem(active);
   useEffect(() => { setDrawer(false); }, [active]);
@@ -72,7 +75,7 @@ const AdminShell: React.FC<{
 
   const nav = (
     <nav className="space-y-4" aria-label="ניווט ניהול">
-      {NAV.map((g, gi) => (
+      {NAV.map(g => ({ ...g, items: g.items.filter(i => !allowed || allowed.includes(i.id)) })).filter(g => g.items.length).map((g, gi) => (
         <div key={gi}>
           {g.group && <p className="mb-1.5 px-3 text-[11px] font-semibold tracking-wide text-rose-500/80">{g.group}</p>}
           <ul className="space-y-0.5">
@@ -104,7 +107,7 @@ const AdminShell: React.FC<{
           <div className="mb-5 flex items-center justify-between px-2">
             <div>
               <p className="font-accent text-3xl leading-none text-ink">נשי</p>
-              <p className="text-[11px] text-slate-400">מערכת ניהול</p>
+              <p className="text-[11px] text-slate-400">{lockedRegionName ? `ניהול אזור ${lockedRegionName}` : 'מערכת ניהול'}</p>
             </div>
             <Link to="/" className="flex items-center gap-1 rounded-full border border-rose-100 px-2.5 py-1 text-[11px] text-slate-500 hover:text-rose-700"><ExternalLink size={12} /> לאתר</Link>
           </div>
@@ -138,7 +141,10 @@ const AdminShell: React.FC<{
                     {search && <button onClick={() => setSearch('')} className="text-slate-400 hover:text-rose-600" aria-label="ניקוי"><X size={15} /></button>}
                   </div>
                 )}
-                {showRegion && (
+                {showRegion && lockedRegionName && (
+                  <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-rose-700 px-3.5 py-2 text-[13px] text-white"><MapPin size={13} /> האזור שלך: {lockedRegionName}</span>
+                )}
+                {showRegion && !lockedRegionName && (
                   <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1">
                     <button onClick={() => setRegion('all')} className={`flex shrink-0 items-center gap-1 rounded-full border px-3.5 py-2 text-[13px] transition ${region === 'all' ? 'border-rose-700 bg-rose-700 text-white' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>
                       <MapPin size={13} /> כל הארץ

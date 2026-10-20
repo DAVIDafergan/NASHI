@@ -3,8 +3,7 @@ import { Calendar, Clock, Copy, Info, Pencil, Plus, Sparkles, Star, Ticket, Tras
 import { api } from '../../services/api';
 import {
   Badge, DeleteButton, EmptyState, Field, FormSection, IconButton, ImagePicker, ItemCard, LocationBadges, LocationFields,
-  Pager, SaveBar, Segmented, Sheet, Toggle, fmtDate, idOf, inputCls, matchesRegion, matchesSearch, withSave, useOnCreate,
-} from './ui';
+  Pager, SaveBar, Segmented, Sheet, Toggle, fmtDate, idOf, inputCls, matchesRegion, matchesSearch, withSave, useOnCreate, AdminScopeContext } from './ui';
 
 const CATEGORIES = ['מוזיקה', 'העשרה', 'סדנאות', 'קהילה', 'בידור', 'אופנה', 'תורה ויהדות', 'אחר'];
 const PAGE = 18;
@@ -18,6 +17,7 @@ const blank = () => ({
 const dateOnly = (d?: string) => (d ? String(d).split('T')[0] : '');
 
 const EventsAdmin: React.FC<{ events: any[]; region: string; search: string; createTick: number; reload: () => void }> = ({ events, region, search, createTick, reload }) => {
+  const { lockRegion } = React.useContext(AdminScopeContext);
   const [when, setWhen] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
@@ -146,9 +146,9 @@ const EventsAdmin: React.FC<{ events: any[]; region: string; search: string; cre
             </div>
             <Field label="קישור לרכישת כרטיסים" hint="אם יש מערכת כרטיסים חיצונית"><input dir="ltr" className={`${inputCls} text-left`} value={form.ticketLink || ''} onChange={e => set({ ticketLink: e.target.value })} placeholder="https://…" /></Field>
             <Field label="הערות לנרשמות"><input className={inputCls} value={form.notes || ''} onChange={e => set({ notes: e.target.value })} placeholder="למשל: יש להביא תעודה מזהה" /></Field>
-            <Toggle checked={!!form.isHero} onChange={isHero => set({ isHero })} label="להציג בבאנר הראשי בדף הבית" hint="מומלץ לאירוע אחד או שניים בכל פעם" />
+            {!lockRegion && <Toggle checked={!!form.isHero} onChange={isHero => set({ isHero })} label="להציג בבאנר הראשי בדף הבית" hint="מומלץ לאירוע אחד או שניים בכל פעם" />}
           </FormSection>
-          <p className="flex items-center gap-1.5 px-1 text-xs text-slate-400"><Ticket size={13} /> כרטיסי כניסה עם ברקוד מפיקים בלשונית "כרטיסים".</p>
+          {!lockRegion && <p className="flex items-center gap-1.5 px-1 text-xs text-slate-400"><Ticket size={13} /> כרטיסי כניסה עם ברקוד מפיקים בלשונית "כרטיסים".</p>}
         </form>
       </Sheet>
     </div>

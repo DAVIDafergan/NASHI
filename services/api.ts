@@ -895,6 +895,13 @@ export const api = {
         return json;
     },
 
+    async setUserRole(id: string, role: 'member' | 'regionAdmin', adminRegion?: string) {
+        const res = await safeFetch(`${API_URL}/admin/users/${id}/role`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify({ role, adminRegion }) });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || 'השמירה נכשלה');
+        return json;
+    },
+
     async getPublicStats(): Promise<{ members: number } | null> {
         const res = await safeFetch(`${API_URL}/stats/public`).catch(() => null);
         if (!res || !res.ok) return null;

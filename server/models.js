@@ -7,6 +7,7 @@ const locationFields = {
   city: { type: String, default: DEFAULT_CITY },
   region: { type: String, default: DEFAULT_REGION },
   scope: { type: String, enum: ['local', 'national', 'online'], default: 'local' },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 };
 // keep region in sync with city on create and on admin updates
 function locationPlugin(schema) {
@@ -21,6 +22,8 @@ function locationPlugin(schema) {
 
 // --- סכמת משתמש מעודכנת ---
 const UserSchema = new mongoose.Schema({
+  role: { type: String, enum: ['member', 'regionAdmin'], default: 'member' }, // regionAdmin = מנהלת אזור
+  adminRegion: { type: String },
   city: { type: String },
   region: { type: String },
   name: { type: String, required: true },
