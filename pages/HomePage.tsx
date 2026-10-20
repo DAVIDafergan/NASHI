@@ -1,3 +1,4 @@
+import { placeLabel } from '../utils/share';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Clock, Sparkles,
@@ -462,7 +463,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     title={event.title}
                     image={event.image}
                     dateLabel={event.date ? new Date(event.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' }) : ''}
-                    location={event.location}
+                    location={placeLabel(event as any)}
                     category={event.category}
                     ctaLabel="לפרטים והרשמה"
                     onClick={() => navigate('/events')}

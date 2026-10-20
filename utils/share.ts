@@ -37,3 +37,13 @@ export function downloadBlob(blob: Blob, filename: string) {
   a.remove();
   window.setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
+
+/** "המקום, העיר" / "מקוון" for an event or class. */
+export function placeLabel(item: { location?: string; city?: string; scope?: string } | null | undefined): string {
+  if (!item) return '';
+  if (item.scope === 'online') return item.location ? `מקוון · ${item.location}` : 'מקוון (זום)';
+  const loc = (item.location || '').trim();
+  const city = (item.city || '').trim();
+  if (!city || loc.includes(city)) return loc || city;
+  return loc ? `${loc}, ${city}` : city;
+}

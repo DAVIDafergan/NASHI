@@ -1,3 +1,4 @@
+import { placeLabel } from '../utils/share';
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2, ExternalLink } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -249,7 +250,7 @@ const EventsPage = () => {
                       image={event.image}
                       dateLabel={event.hebrewDate || new Date(event.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}
                       time={formatEventTime(event)}
-                      location={event.location}
+                      location={placeLabel(event as any)}
                       category={event.category}
                       isPast={isPast}
                       ctaLabel={isPast ? 'לסיכום' : 'לפרטים והרשמה'}
