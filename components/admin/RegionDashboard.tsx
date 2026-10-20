@@ -31,7 +31,7 @@ const RegionDashboard: React.FC<Props> = ({ region, name, go, create, data }) =>
           <div key={c.tab} className="rounded-[1.6rem] border border-rose-100 bg-white p-4 shadow-soft">
             <button onClick={() => go(c.tab)} className="w-full text-right">
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">{c.icon}</span>
-              <p className="mt-3 font-accent text-5xl leading-none text-ink">{c.n}</p>
+              <p className="mt-3 font-strong text-4xl leading-none text-ink tabular-nums">{c.n}</p>
               <p className="mt-1 text-sm text-slate-500">{c.label}</p>
             </button>
             <button onClick={() => create(c.tab)} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-rose-100 py-2 text-[13px] text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"><Plus size={14} /> {c.add}</button>
