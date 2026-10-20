@@ -1,3 +1,4 @@
+import AdSlot from '../components/AdSlot';
 import React, { useState, useEffect } from 'react';
 import {
   Search, Phone, MapPin, BookOpen, Heart, Store,
@@ -127,6 +128,8 @@ const CommunityPage = () => {
         <SearchField value={searchTerm} onChange={setSearchTerm} placeholder={`חפשי בתוך ${activeTab}…`} />
         <p className="mt-2 px-1 text-[13px] text-slate-500">{tabBlurb[activeTab]}</p>
       </FilterBar>
+
+      <AdSlot placement="community" className="!px-0 mb-6" />
 
       {/* גריד תוצאות */}
       {loading ? (

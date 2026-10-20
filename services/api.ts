@@ -616,6 +616,16 @@ export const api = {
         return res.json();
     },
 
+    async getAdminAds(): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/admin/ads`, { headers: getHeaders() });
+        if (!res.ok) return [];
+        return res.json();
+    },
+
+    trackAd(id: string, kind: 'view' | 'click') {
+        try { fetch(`${API_URL}/ads/${id}/${kind}`, { method: 'POST', keepalive: true }).catch(() => {}); } catch { /* ignore */ }
+    },
+
     async getAds() {
         const res = await safeFetch(`${API_URL}/ads`);
         return res.json();

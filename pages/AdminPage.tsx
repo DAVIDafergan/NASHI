@@ -11,7 +11,8 @@ import CommunityAdmin from '../components/admin/CommunityAdmin';
 import LotteriesAdmin from '../components/admin/LotteriesAdmin';
 import UsersAdmin from '../components/admin/UsersAdmin';
 import { ApprovalsAdmin, MessagesAdmin, StoriesAdmin } from '../components/admin/QueueAdmin';
-import { AdsAdmin, AnnouncementsAdmin, InspirationsAdmin } from '../components/admin/SimpleContentAdmin';
+import { AnnouncementsAdmin, InspirationsAdmin } from '../components/admin/SimpleContentAdmin';
+import AdsAdmin from '../components/admin/AdsAdmin';
 import { BroadcastAdmin, ForumAdmin, SettingsAdmin, TicketsAdmin } from '../components/admin/MiscAdmin';
 import FlyersAdmin from '../components/admin/FlyersAdmin';
 import PersonalityAdmin from '../components/admin/PersonalityAdmin';
@@ -28,7 +29,7 @@ const WITH_REGION: AdminTab[] = ['events', 'classes', 'community', 'lotteries', 
 const WITH_SEARCH: AdminTab[] = ['events', 'classes', 'community', 'lotteries', 'users', 'messages', 'forum', 'inspirations'];
 
 const arr = (x: any) => (Array.isArray(x) ? x : []);
-const REGION_TABS: AdminTab[] = ['dashboard', 'events', 'classes', 'community', 'lotteries'];
+const REGION_TABS: AdminTab[] = ['dashboard', 'events', 'classes', 'community', 'lotteries', 'tickets'];
 
 const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> = ({ user }) => {
   const [params, setParams] = useSearchParams();
@@ -89,7 +90,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
   const loadSection = useCallback(async (tab: AdminTab) => {
     if (tab === 'forum') setForumPosts(arr(await api.getForumPosts().catch(() => [])));
     else if (tab === 'inspirations') setInspirations(arr(await api.getInspirations().catch(() => [])));
-    else if (tab === 'ads') setAds(arr(await api.getAds().catch(() => [])));
+    else if (tab === 'ads') setAds(arr(await api.getAdminAds().catch(() => [])));
     else if (tab === 'announcements') setAnnouncements(arr(await api.getAnnouncements().catch(() => [])));
     else if (tab === 'tickets') setTickets(arr(await api.getTickets().catch(() => [])));
     else if (tab === 'settings') { const s = await api.getSettings().catch(() => null); if (s) setSettings((x: any) => ({ ...x, ...s })); }
@@ -101,7 +102,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
   }, [loadCore, loadSection, active]);
 
   useEffect(() => { if (canEnter) reload(); }, [canEnter]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (isMain) loadSection(active); }, [active, isMain, loadSection]);
+  useEffect(() => { if (isMain || (lockRegion && active === 'tickets')) loadSection(active); }, [active, isMain, lockRegion, loadSection]);
 
   const go = (t: AdminTab) => {
     setSearch('');

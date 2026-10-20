@@ -24,6 +24,7 @@ const RegionDashboard: React.FC<Props> = ({ region, name, go, create, data }) =>
         <p className="flex items-center gap-1.5 text-sm text-rose-200"><MapPin size={14} /> מנהלת אזור</p>
         <h2 className="mt-2 text-3xl !text-white md:text-4xl">שלום{name ? ` ${name}` : ''}, האזור שלך: {regionName(region)}</h2>
         <p className="mt-2 max-w-xl text-white/70">מה שתעלי כאן יופיע לנשים באזור שלך, ובסינון של כל הארץ. הערים באזור: {(CITIES as any)[region]?.slice(0, 6).join(', ')}{(CITIES as any)[region]?.length > 6 ? ' ועוד' : ''}.</p>
+        <button onClick={() => go('tickets')} className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 font-strong text-sm text-rose-800 shadow-lift order-last">🎟️ הנפקת כרטיסים לאירוע</button>
       </section>
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">

@@ -1,3 +1,4 @@
+import AdSlot from '../components/AdSlot';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search, Clock, MapPin, Users, Heart, Phone, ArrowLeft, Info, Calendar, MessageCircle
@@ -116,6 +117,8 @@ const ClassesPage = () => {
           </ChipRow>
         )}
       </FilterBar>
+
+      <AdSlot placement="classes" className="!px-0 mb-6" />
 
       {filteredClasses.length > 0 && (
         <p className="mb-4 text-[14px] text-slate-500">

@@ -13,6 +13,7 @@ import { AnimatedHeadline, Marquee, SectionHeader, TiltCard } from '../component
 import ScrollReveal from '../components/ScrollReveal';
 import StoriesSection from '../components/stories/StoriesSection';
 import InviteBand from '../components/home/InviteBand';
+import AdSlot from '../components/AdSlot';
 import HebrewDayLine from '../components/home/HebrewDayLine';
 import { useMyPlace, isNear } from '../hooks/useMyPlace';
 import { regionName } from '../shared/regions';
@@ -83,11 +84,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [lotteries, setLotteries] = useState<LotteryItem[]>([]);
   const [personality, setPersonality] = useState<any>(null);
   const [communityItems, setCommunityItems] = useState<any[]>([]);
-  const [ads, setAds] = useState<AdItem[]>([]);
   const [inspirations, setInspirations] = useState<any[]>([]); 
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [currentAdIndex, setCurrentAdIndex] = useState(0); 
   const [upcomingLottery, setUpcomingLottery] = useState<LotteryItem | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
   const [showMembershipModal, setShowMembershipModal] = useState(false);
@@ -101,10 +100,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     const loadAllData = async () => {
       try {
         setIsLoading(true);
-        const [evRes, lotRes, adsRes, persDataRaw, commData, inspData, annData, classRes] = await Promise.all([
+        const [evRes, lotRes, persDataRaw, commData, inspData, annData, classRes] = await Promise.all([
           fetch(`${API_URL}/events`).then(res => res.json()).catch(() => []),
           fetch(`${API_URL}/lotteries`).then(res => res.json()).catch(() => []),
-          fetch(`${API_URL}/ads`).then(res => res.json()).catch(() => []),
           api.getPersonality().catch(() => null),
           api.getCommunityItems().catch(() => []),
           api.getInspirations().catch(() => []),
@@ -114,7 +112,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         setEvents(Array.isArray(evRes) ? evRes.map((e: any) => ({...e, id: e._id || e.id})) : []);
         setLotteries(Array.isArray(lotRes) ? lotRes.map((l: any) => ({...l, id: l._id || l.id})) : []);
-        setAds(Array.isArray(adsRes) ? adsRes : []);
         
         const persData = Array.isArray(persDataRaw) ? persDataRaw[0] : persDataRaw;
         setPersonality(persData);
@@ -179,14 +176,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     return () => clearInterval(interval);
   }, [upcomingEvents]);
 
-  useEffect(() => {
-    if (ads && ads.length > 1 && ads[currentAdIndex]?.type === 'image') {
-      const adTimer = setInterval(() => {
-        setCurrentAdIndex((prev) => (prev + 1) % ads.length);
-      }, 3000);
-      return () => clearInterval(adTimer);
-    }
-  }, [ads, currentAdIndex]);
 
   // רק אירועים עתידיים - אירוע שעבר התאריך שלו לא מוצג יותר בבאנר הראשי, גם אם סומן כ"hero" ע"י מנהלת
   const heroEvents = events.filter(e => e.isHero && new Date(e.date) >= new Date());
@@ -236,32 +225,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               alert("הבקשה נשלחה בהצלחה! המתיני לאישור המנהלת.");
           }
       } catch (err) { alert("שגיאה בשליחה"); }
-  };
-
-  const renderAdBanner = () => {
-    if (!ads || ads.length === 0) return null;
-    const ad = ads[currentAdIndex]; 
-    if (!ad) return null;
-
-    return (
-      <div className="md:mx-0 animate-fade-in transition-all duration-700 w-full hover:opacity-95 cursor-pointer">
-        <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden md:rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(189,122,129,0.08)] transition-all duration-300 border border-rose-50/50">
-          {ad.type === 'image' ? (
-            <img src={ad.content} alt={ad.title || 'Ad'} loading="lazy" className="w-full h-24 md:h-28 object-cover transition-transform duration-700 group-hover:scale-105" />
-          ) : (
-            <div className="w-full h-24 md:h-28 bg-slate-900 flex items-center justify-center overflow-hidden">
-                <video src={ad.content} autoPlay muted playsInline onEnded={() => setCurrentAdIndex((prev) => (prev + 1) % ads.length)} className="w-full h-full object-cover" />
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-l from-black/50 to-transparent flex items-center justify-end px-8 text-right text-white">
-             <div>
-                <p className="text-[10px] font-bold opacity-90 uppercase tracking-widest mb-1 text-rose-200">בשיתוף</p>
-                <h4 className="text-base font-black leading-tight tracking-wide">{ad.title || ''}</h4>
-             </div>
-          </div>
-        </a>
-      </div>
-    );
   };
 
   if (isLoading) {
@@ -399,6 +362,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* ============ STORIES ============ */}
         <StoriesSection user={user} onOpenLogin={onOpenLogin} />
 
+        <AdSlot placement="home-top" />
+
         {/* ============ BENTO — what is NASHI ============ */}
         <section>
           <SectionHeader eyebrow="מה זה נשי" title="הכול במקום אחד" />
@@ -474,6 +439,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
           </section>
         )}
+
+        <AdSlot placement="home-middle" />
 
         {/* ============ INSPIRATION BAND ============ */}
         <section className="full-bleed relative overflow-hidden bg-rose-800 text-white">
@@ -609,7 +576,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         )}
 
         {/* Ads strip */}
-        <div className="w-full px-5 md:px-0">{renderAdBanner()}</div>
+        <AdSlot placement="home-bottom" />
 
         {/* small credits (the site-wide footer lives in Layout) */}
         <div className="pb-6 text-center text-xs text-slate-400 space-y-2">

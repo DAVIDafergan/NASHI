@@ -209,10 +209,27 @@ const Inspiration = mongoose.model('Inspiration', InspirationSchema);
 const AdSchema = new mongoose.Schema({
   title: { type: String },
   type: { type: String, enum: ['image', 'video'], default: 'image' },
-  content: { type: String, required: true }, 
-  link: { type: String }, 
+  content: { type: String, required: true }, // התמונה / הסרטון (במחשב)
+  mobileContent: { type: String },           // גרסה לנייד (לא חובה)
+  link: { type: String },
+  ctaText: { type: String, default: 'לפרטים' },
+  advertiser: { type: String },              // שם המפרסם (מוצג כ"בשיתוף …")
+  advertiserPhone: { type: String },         // לשימוש פנימי של המנהלת
+  // where on the site the ad appears
+  placements: { type: [String], default: ['home-middle'] }, // home-top | home-middle | home-bottom | events | classes | community
+  isActive: { type: Boolean, default: true },
+  startsAt: { type: Date },
+  endsAt: { type: Date },
+  order: { type: Number, default: 0 },
+  // targeting: national by default, or local to a region
+  city: { type: String },
+  region: { type: String },
+  scope: { type: String, enum: ['local', 'national', 'online'], default: 'national' },
+  views: { type: Number, default: 0 },
+  clicks: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
+AdSchema.plugin(locationPlugin);
 const Ad = mongoose.model('Ad', AdSchema);
 
 const AnnouncementSchema = new mongoose.Schema({

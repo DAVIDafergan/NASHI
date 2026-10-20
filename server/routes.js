@@ -958,29 +958,62 @@ router.delete('/inspirations/:id', authenticate, isAdmin, async (req, res) => {
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ---- פרסומות ----
+const AD_PLACEMENTS = ['home-top', 'home-middle', 'home-bottom', 'events', 'classes', 'community'];
+const cleanAd = (body) => {
+    const d = { ...body };
+    delete d._id; delete d.views; delete d.clicks; delete d.createdAt;
+    if (Array.isArray(d.placements)) d.placements = d.placements.filter(x => AD_PLACEMENTS.includes(x));
+    if (d.startsAt === '') d.startsAt = null;
+    if (d.endsAt === '') d.endsAt = null;
+    if (d.scope !== 'local') { d.city = undefined; d.region = undefined; }
+    return d;
+};
+
+// public: only ads that are switched on and inside their dates
 router.get('/ads', async (req, res) => {
-    try { res.json(await Ad.find().sort({ createdAt: -1 })); } 
+    try {
+        const now = new Date();
+        const ads = await Ad.find({
+            isActive: { $ne: false },
+            $and: [
+                { $or: [{ startsAt: null }, { startsAt: { $exists: false } }, { startsAt: { $lte: now } }] },
+                { $or: [{ endsAt: null }, { endsAt: { $exists: false } }, { endsAt: { $gte: now } }] },
+            ],
+        }).select('-advertiserPhone').sort({ order: 1, createdAt: -1 });
+        res.set('Cache-Control', 'public, max-age=60');
+        res.json(ads);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// admin: everything, with stats
+router.get('/admin/ads', authenticate, isAdmin, async (req, res) => {
+    try { res.json(await Ad.find().sort({ order: 1, createdAt: -1 })); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/ads', authenticate, isAdmin, async (req, res) => {
-    try {
-        const data = { ...req.body };
-        if (data._id === '') delete data._id;
-        const resObj = await new Ad(data).save();
-        res.json(resObj);
-    } 
+    try { res.json(await new Ad(cleanAd(req.body)).save()); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.put('/ads/:id', authenticate, isAdmin, async (req, res) => {
-    try { res.json(await Ad.findByIdAndUpdate(req.params.id, req.body, { new: true })); } 
+    try { res.json(await Ad.findByIdAndUpdate(req.params.id, cleanAd(req.body), { new: true })); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.delete('/ads/:id', authenticate, isAdmin, async (req, res) => {
-    try { await Ad.findByIdAndDelete(req.params.id); res.json({ success: true }); } 
+    try { await Ad.findByIdAndDelete(req.params.id); res.json({ success: true }); }
     catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// view / click counters (anonymous; one view per ad per visit is enforced in the browser)
+router.post('/ads/:id/:kind(view|click)', async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).end();
+        await Ad.updateOne({ _id: req.params.id }, { $inc: { [req.params.kind === 'view' ? 'views' : 'clicks']: 1 } });
+        res.json({ ok: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ================= פליירים לדף הבית (FLYERS) =================
@@ -1338,33 +1371,53 @@ router.put('/admin/messages/:id/read', authenticate, isAdmin, async (req, res) =
 
 // ================= 16. כרטיסים וברקודים (TICKETS) =================
 
-router.get('/admin/tickets', authenticate, isAdmin, async (req, res) => {
+// main admin: all tickets · regional manager: tickets of local events in her region
+const ticketManager = async (req, res, next) => {
     try {
-        const tickets = await Ticket.find().populate('eventId', 'title date location').sort({ createdAt: -1 });
-        res.json(tickets);
+        if (req.user?.isAdmin) { req.ticketScope = null; return next(); }
+        const me = await User.findById(req.user?.id).select('role adminRegion isAdmin');
+        if (me?.isAdmin) { req.ticketScope = null; return next(); }
+        if (me?.role === 'regionAdmin' && me.adminRegion) { req.ticketScope = me.adminRegion; return next(); }
+        res.status(403).json({ error: 'Admin access required' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+const eventInScope = (ev, region) => !region || (ev && (ev.region || 'north') === region && (ev.scope || 'local') === 'local');
+
+router.get('/admin/tickets', authenticate, ticketManager, async (req, res) => {
+    try {
+        const tickets = await Ticket.find().populate('eventId', 'title date location region scope city').sort({ createdAt: -1 });
+        res.json(tickets.filter(t => eventInScope(t.eventId, req.ticketScope)));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/admin/tickets', authenticate, isAdmin, async (req, res) => {
+router.post('/admin/tickets', authenticate, ticketManager, async (req, res) => {
     try {
+        if (req.ticketScope) {
+            const ev = await Event.findById(req.body.eventId).select('region scope');
+            if (!eventInScope(ev, req.ticketScope)) return res.status(403).json({ error: 'אפשר להנפיק כרטיסים רק לאירועים באזור שלך' });
+        }
         const ticket = new Ticket(req.body);
         await ticket.save();
         res.status(201).json(ticket);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/admin/tickets/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/admin/tickets/:id', authenticate, ticketManager, async (req, res) => {
     try {
-        await Ticket.findByIdAndDelete(req.params.id);
+        const t = await Ticket.findById(req.params.id).populate('eventId', 'region scope');
+        if (!t) return res.status(404).json({ error: 'not found' });
+        if (!eventInScope(t.eventId, req.ticketScope)) return res.status(403).json({ error: 'not allowed' });
+        await t.deleteOne();
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // סריקת הברקוד (Scanner endpoint)
-router.post('/admin/tickets/verify/:code', authenticate, isAdmin, async (req, res) => {
+router.post('/admin/tickets/verify/:code', authenticate, ticketManager, async (req, res) => {
     try {
-        const ticket = await Ticket.findOne({ code: req.params.code }).populate('eventId', 'title');
+        const ticket = await Ticket.findOne({ code: req.params.code }).populate('eventId', 'title region scope');
         if (!ticket) return res.status(404).json({ error: 'כרטיס מזויף או לא קיים במערכת!' });
+        if (!eventInScope(ticket.eventId, req.ticketScope)) return res.status(403).json({ error: 'הכרטיס שייך לאירוע באזור אחר' });
 
         if (ticket.isUsed) {
             return res.status(400).json({ 

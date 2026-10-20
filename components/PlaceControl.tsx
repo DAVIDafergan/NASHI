@@ -48,7 +48,7 @@ export const CityPrompt: React.FC<Props> = ({ user, onUpdateUser }) => {
     if (!user || user.city) { setShow(false); return; }
     let skipped = false;
     try { skipped = sessionStorage.getItem('nashi-city-skip') === '1'; } catch { /* ignore */ }
-    if (!skipped) { const t = window.setTimeout(() => setShow(true), 2500); return () => window.clearTimeout(t); }
+    if (!skipped) { const t = window.setTimeout(() => setShow(true), 9000); return () => window.clearTimeout(t); }
   }, [user]);
   if (!show || !user) return null;
   const skip = () => { try { sessionStorage.setItem('nashi-city-skip', '1'); } catch { /* ignore */ } setShow(false); };
@@ -63,6 +63,42 @@ export const CityPrompt: React.FC<Props> = ({ user, onUpdateUser }) => {
         <button onClick={save} disabled={!city} className="btn-primary mt-4 w-full disabled:opacity-50">שמירה</button>
         <button onClick={skip} className="mt-2 w-full py-2 text-sm text-slate-400 hover:text-slate-600">אחר כך</button>
       </div>
+    </div>,
+    document.body
+  );
+};
+
+/**
+ * Automatic location: on a first visit with no city chosen, ask the browser once for the position and
+ * set the nearest city (members without a city get it saved to their profile). A short note says what
+ * was detected and how to change it. If the visitor declines, we never ask again.
+ */
+export const AutoLocate: React.FC<Props> = ({ user, onUpdateUser }) => {
+  const { city } = useMyPlace(user);
+  const [note, setNote] = useState('');
+  useEffect(() => {
+    if (city) return;
+    let asked = false;
+    try { asked = localStorage.getItem('nashi-geo-asked') === '1'; } catch { /* ignore */ }
+    if (asked) return;
+    const t = window.setTimeout(async () => {
+      try { localStorage.setItem('nashi-geo-asked', '1'); } catch { /* ignore */ }
+      const { locateCity } = await import('../utils/locate');
+      const r = await locateCity();
+      if (!r) return;
+      setGuestCity(r.city);
+      if (user && !user.city && onUpdateUser) onUpdateUser({ ...user, city: r.city });
+      setNote(r.city);
+      window.setTimeout(() => setNote(''), 6000);
+    }, 3500);
+    return () => window.clearTimeout(t);
+  }, [city, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!note) return null;
+  return createPortal(
+    <div className="fixed inset-x-3 top-24 z-[250] mx-auto flex max-w-sm items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-sm text-white shadow-lift animate-fade-in-up" dir="rtl" role="status">
+      <MapPin size={16} className="shrink-0 text-rose-300" />
+      <span className="flex-1">זיהינו שאת באזור <b>{note}</b>. מעכשיו נציג לך קודם את מה שקרוב אלייך.</span>
+      <button onClick={() => setNote('')} aria-label="סגירה" className="text-white/60 hover:text-white"><X size={15} /></button>
     </div>,
     document.body
   );

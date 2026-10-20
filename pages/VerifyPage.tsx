@@ -14,7 +14,7 @@ const VerifyPage: React.FC<{ user: User | null }> = ({ user }) => {
 
   useEffect(() => {
     // 1. קודם כל נוודא שמי שסורק הוא מנהל בלבד
-    if (!user || !user.isAdmin) {
+    if (!user || !(user.isAdmin || (user as any).role === 'regionAdmin')) {
       setStatus('error');
       setMessage('גישה למנהלים בלבד! אנא התחברי למערכת הניהול קודם.');
       return;

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { shareLink } from '../utils/share';
 import InstallPrompt from './InstallPrompt';
-import { PlaceChip, CityPrompt } from './PlaceControl';
+import { PlaceChip, CityPrompt, AutoLocate } from './PlaceControl';
 import { User } from '../types';
 
 interface LayoutProps {
@@ -380,6 +380,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
 
       <InstallPrompt />
       <CityPrompt user={user} onUpdateUser={onUpdateUser} />
+      <AutoLocate user={user} onUpdateUser={onUpdateUser} />
 
       {/* --- Mobile Bottom Navigation --- */}
       <nav aria-label="ניווט" className="md:hidden fixed bottom-3 left-3 right-3 z-40 pb-safe">

@@ -1,3 +1,4 @@
+import AdSlot from '../components/AdSlot';
 import { placeLabel } from '../utils/share';
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2, ExternalLink } from 'lucide-react';
@@ -237,6 +238,8 @@ const EventsPage = () => {
           )}
         </div>
       </FilterBar>
+
+      <AdSlot placement="events" className="!px-0 mb-6" />
 
       {/* --- Events Grid --- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7">
