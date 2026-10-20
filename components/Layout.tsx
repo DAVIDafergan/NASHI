@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { shareLink } from '../utils/share';
 import InstallPrompt from './InstallPrompt';
+import { PlaceChip, CityPrompt } from './PlaceControl';
 import { User } from '../types';
 
 interface LayoutProps {
@@ -15,16 +16,16 @@ interface LayoutProps {
   onOpenLogin: () => void;
   searchTerm: string;      // הוספה: מצב החיפוש
   setSearchTerm: (term: string) => void; // הוספה: פונקציית עדכון חיפוש
+  onUpdateUser?: (u: any) => void;
 }
 
 const MORE_LINKS = [
   { label: 'נשות השבוע', path: '/personality-archive', hint: 'ראיונות מעוררי השראה' },
   { label: 'הגרלות', path: '/lottery', hint: 'פרסים לחברות הקהילה' },
-  { label: 'גלגל המזל', path: '/zodiac-wheel', hint: 'סיבוב יומי ומתנות' },
   { label: 'צור קשר', path: '/contact', hint: 'נשמח לשמוע ממך' },
 ];
 
-const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, searchTerm, setSearchTerm }) => {
+const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, searchTerm, setSearchTerm, onUpdateUser }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -250,6 +251,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
 
           {/* actions */}
           <div className="flex items-center gap-2">
+            <PlaceChip user={user} onUpdateUser={onUpdateUser} className="hidden sm:flex" />
             <button onClick={() => setSearchOpen(true)} aria-label="חיפוש" className="flex h-10 w-10 items-center justify-center rounded-full border border-rose-100 bg-white/70 text-slate-500 transition hover:border-rose-300 hover:text-rose-700">
               <Search size={17} strokeWidth={1.8} />
             </button>
@@ -319,7 +321,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
             <span className="font-accent text-[2.4rem] leading-none text-ink">נשי</span>
             <button onClick={() => setMenuOpen(false)} aria-label="סגירה" className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-soft"><X size={20} /></button>
           </div>
-          <nav className="relative flex-1 overflow-y-auto px-6 pt-4">
+          <div className="relative px-6"><PlaceChip user={user} onUpdateUser={onUpdateUser} className="w-full justify-center !h-12 !text-[15px]" /></div>
+          <nav className="relative flex-1 overflow-y-auto px-6 pt-2">
             {[...primaryLinks, ...MORE_LINKS].map((l, i) => (
               <Link key={l.path} to={l.path} className="group flex items-center justify-between border-b border-rose-100/80 py-4 animate-fade-in-up" style={{ animationDelay: `${i * 45}ms` }}>
                 <span className={`font-display text-[2rem] leading-none ${isActive(l.path) ? 'text-rose-700' : 'text-ink'}`}>{l.label}</span>
@@ -373,6 +376,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
       </main>
 
       <InstallPrompt />
+      <CityPrompt user={user} onUpdateUser={onUpdateUser} />
 
       {/* --- Mobile Bottom Navigation --- */}
       <nav aria-label="ניווט" className="md:hidden fixed bottom-3 left-3 right-3 z-40 pb-safe">
@@ -408,7 +412,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
         <div className="max-w-7xl mx-auto px-8 py-14 grid grid-cols-3 items-start gap-10 text-right">
           <div>
             <p className="font-accent text-5xl text-ink leading-none">נשי</p>
-            <p className="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">פלטפורמה עירונית לקידום תרבות נשים — אירועים, חוגים, קהילה והשראה, במקום אחד.</p>
+            <p className="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">קהילה ארצית לנשים דתיות: אירועים, חוגים, שיעורים, גמ"חים והשראה, מכל הארץ ובמקום אחד.</p>
           </div>
           <div className="flex flex-col gap-2.5 text-sm">
             <p className="eyebrow mb-1">ניווט</p>

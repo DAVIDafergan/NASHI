@@ -1,7 +1,28 @@
 import mongoose from 'mongoose';
+import { DEFAULT_CITY, DEFAULT_REGION, regionOfCity } from '../shared/regions.js';
+
+// Location fields for anything that belongs to a place. Older documents (from the Migdal HaEmek days)
+// have no fields and read as Migdal HaEmek / local — no data migration needed.
+const locationFields = {
+  city: { type: String, default: DEFAULT_CITY },
+  region: { type: String, default: DEFAULT_REGION },
+  scope: { type: String, enum: ['local', 'national', 'online'], default: 'local' },
+};
+// keep region in sync with city on create and on admin updates
+function locationPlugin(schema) {
+  schema.pre('save', function (next) { if (this.city && this.isModified('city')) this.region = regionOfCity(this.city) || this.region; next(); });
+  schema.pre(['findOneAndUpdate', 'updateOne'], function (next) {
+    const u = this.getUpdate() || {};
+    const city = u.city ?? u.$set?.city;
+    if (city) { const r = regionOfCity(city); if (r) { if (u.$set) u.$set.region = r; else u.region = r; } }
+    next();
+  });
+}
 
 // --- סכמת משתמש מעודכנת ---
 const UserSchema = new mongoose.Schema({
+  city: { type: String },
+  region: { type: String },
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -51,6 +72,7 @@ const ForumPost = mongoose.model('ForumPost', ForumPostSchema);
 
 // --- סכמת קהילה מעודכנת ---
 const CommunitySchema = new mongoose.Schema({
+  ...locationFields,
   // הוספתי את "עסקים" לרשימה כדי לכסות את כל האפשרויות
   category: { type: String, enum: ['שיעורי תורה', 'גמ"חים', 'עסקים מקומיים', 'עסק מקומי', 'עסקים'], required: true },
   title: { type: String, required: true },
@@ -64,10 +86,14 @@ const CommunitySchema = new mongoose.Schema({
   price: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
+CommunitySchema.plugin(locationPlugin);
 const Community = mongoose.model('Community', CommunitySchema);
 
 // --- סכמת אירוע מעודכנת ---
 const EventSchema = new mongoose.Schema({
+  ...locationFields,
+  audience: { type: [String], default: [] },
+  onlineLink: { type: String },
   title: { type: String, required: true },
   date: { type: Date, required: true },
   time: { type: String }, 
@@ -89,9 +115,13 @@ const EventSchema = new mongoose.Schema({
   attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   createdAt: { type: Date, default: Date.now }
 });
+EventSchema.plugin(locationPlugin);
 const Event = mongoose.model('Event', EventSchema);
 
 const ClassSchema = new mongoose.Schema({
+  ...locationFields,
+  audience: { type: [String], default: [] },
+  onlineLink: { type: String },
   title: { type: String, required: true },
   instructor: { type: String },
   contactPhone: { type: String },
@@ -106,9 +136,11 @@ const ClassSchema = new mongoose.Schema({
   image: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
+ClassSchema.plugin(locationPlugin);
 const Class = mongoose.model('Class', ClassSchema);
 
 const LotterySchema = new mongoose.Schema({
+  ...locationFields,
   title: { type: String, required: true },
   prize: { type: String }, 
   prizes: { type: [String], default: [] },
@@ -128,6 +160,7 @@ const LotterySchema = new mongoose.Schema({
   minPointsToEnter: { type: Number, default: 0 },
   winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
+LotterySchema.plugin(locationPlugin);
 const Lottery = mongoose.model('Lottery', LotterySchema);
 
 const SettingsSchema = new mongoose.Schema({

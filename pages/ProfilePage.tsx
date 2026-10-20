@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Award, Star, Settings, QrCode, TrendingUp, Heart, Calendar, Edit2, Save, X, Camera, HeartHandshake, Lock, ClipboardList, CheckCircle2, Target, Clock, LogOut, Bookmark, Activity, Sparkles } from 'lucide-react'; // נוספו אייקונים
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { shareLink } from '../utils/share';
 import { UserLevel, EventItem, LotteryItem } from '../types'; // הוספת LotteryItem
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api'; // ייבוא ה-API לסנכרון משימות
@@ -16,13 +16,6 @@ interface ProfilePageProps {
     onLogout?: () => void;
 }
 
-const mockData = [
-  { name: 'ינו', points: 20 },
-  { name: 'פבר', points: 45 },
-  { name: 'מרץ', points: 30 },
-  { name: 'אפר', points: 80 },
-  { name: 'מאי', points: 55 },
-];
 
 const predefinedAvatars = [
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie',
@@ -345,7 +338,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                           <p className="text-[14.5px] leading-relaxed text-slate-500">
                             {user.isMemberRequested
                               ? "בקשתך בטיפול. מיד לאחר אישור המנהלת, כל ההטבות והנקודות יופיעו כאן עבורך!"
-                              : "הצטרפי למעגל הנשי של העיר כדי להתחיל לצבור נקודות וליהנות מהטבות בלעדיות."}
+                              : "הצטרפי למעגל של נשי כדי להתחיל לצבור נקודות וליהנות מהטבות בלעדיות."}
                           </p>
                         </div>
                         {!user.isMemberRequested && (
@@ -357,32 +350,17 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                   )}
               </ScrollReveal>
 
-              {/* גרף צבירה - מופיע רק למאושרות */}
-              {user.isMemberApproved && (
-                <ScrollReveal delay={150} className="rounded-[1.75rem] border border-rose-100/70 bg-white p-6 shadow-petal">
-                    <h3 className="mb-6 flex items-center gap-2 text-[1.15rem]">
-                        <TrendingUp size={20} className="text-plum-500" />
-                        צבירת נקודות שנתית
-                    </h3>
-                    <div className="h-48 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={mockData}>
-                            <XAxis dataKey="name" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
-                            <YAxis hide />
-                            <Tooltip
-                                cursor={{fill: '#FBF2F2'}}
-                                contentStyle={{borderRadius: '14px', border: 'none', boxShadow: '0 10px 30px -10px rgba(61,47,55,.25)'}}
-                            />
-                            <Bar dataKey="points" radius={[8, 8, 8, 8]}>
-                                {mockData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={index === mockData.length - 1 ? '#A5636B' : '#F0DDDE'} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </ScrollReveal>
-              )}
+              {/* הזמנת חברות — נתון אמיתי במקום גרף לדוגמה */}
+              <ScrollReveal delay={150} className="rounded-[1.75rem] border border-rose-100/70 bg-white p-6 shadow-petal">
+                  <h3 className="flex items-center gap-2 text-[1.15rem]"><TrendingUp size={20} className="text-plum-500" /> חברות שהזמנת</h3>
+                  <p className="mt-2 font-accent text-6xl leading-none text-rose-700">{(user as any).referralsCount || 0}</p>
+                  <p className="mt-2 text-sm text-slate-500">על כל חברה שמצטרפת דרך הקישור שלך מקבלים 30 נקודות.</p>
+                  <button
+                    type="button"
+                    onClick={() => shareLink({ title: 'הצטרפי אליי לקהילת נשי', text: 'מצאתי מקום מקסים לנשים: אירועים, חוגים, הגרלות, קהילה והשראה. ההצטרפות חינם 💗', path: `/s/join?ref=${(user as any)._id || user.id}` })}
+                    className="btn-primary mt-5 w-full"
+                  >הזמיני חברה</button>
+              </ScrollReveal>
           </div>
         </div>
       ) : (

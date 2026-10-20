@@ -19,6 +19,9 @@ export interface User {
   email: string;
   phone?: string;
   address?: string;
+  city?: string;
+  region?: string;
+  referralsCount?: number;
   age?: number;
   occupation?: string;
   communicationPref?: CommunicationPreference;

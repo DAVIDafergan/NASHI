@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User, Phone, ArrowRight, CheckCircle, ShieldCheck } from 'lucide-react';
+import CityPicker from './CityPicker';
 import { api } from '../services/api';
 import { useNavigate } from 'react-router-dom'; // תוספת לייבוא
 
@@ -21,6 +22,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     email: '',
     password: '',
     phone: '',
+    city: '',
     agreedToTerms: false
   });
 
@@ -32,6 +34,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     // בדיקת תקנון בהרשמה
     if (isRegister && !formData.agreedToTerms) {
       alert('יש לאשר את תקנון האתר כדי להירשם.');
+      return;
+    }
+    if (isRegister && !formData.city) {
+      alert('בחרי עיר, כדי שנוכל להראות לך מה קורה קרוב אלייך.');
       return;
     }
 
@@ -50,7 +56,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
       onLogin(res.user);
       onClose();
     } catch (err: any) {
-      alert(isRegister ? "שגיאה בהרשמה (אולי המייל תפוס?)" : "שגיאה בהתחברות (בדקי פרטים)");
+      alert(isRegister ? (err?.message || "שגיאה בהרשמה") : "שגיאה בהתחברות (בדקי פרטים)");
     } finally {
       setLoading(false);
     }
@@ -126,6 +132,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                   onChange={e => setFormData({...formData, email: e.target.value})}
                 />
               </label>
+
+              {isRegister && (
+                <div className="animate-fade-in-up">
+                  <CityPicker value={formData.city} onChange={city => setFormData({ ...formData, city })} />
+                </div>
+              )}
 
               {isRegister && (
                 <label className="relative block animate-fade-in-up">

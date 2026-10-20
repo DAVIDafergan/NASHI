@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto'; // תוספת עבור ייצור טוקנים מאובטחים
 import mongoose from 'mongoose';
+import { regionOfCity } from '../shared/regions.js';
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
     Announcement, // הוספת המודל החדש לייבוא
@@ -138,11 +139,13 @@ router.get('/users', authenticate, isAdmin, async (req, res) => {
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
+        const city = typeof req.body.city === 'string' ? req.body.city.trim().slice(0, 60) : '';
         if (await User.findOne({ email })) return res.status(400).json({ error: 'Email exists' });
         const config = await getPointsConfig();
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({
             name, email, password: hashedPassword, phone,
+            city: city || undefined, region: regionOfCity(city) || undefined,
             // אוואטרים חמודים לנשים - מודל lorelei עם פילטרים לחיוך, הבעות מתוקות וצבעי רקע נעימים
             avatar: `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(name)}&backgroundColor=ffd5dc,ffdfbf,c0aede,d1d4f9,ffc0cb&mouth=smile,happy,cute&eyes=happy,open,wink`,
             points: config.pointsPerRegister || 50
@@ -231,6 +234,7 @@ router.put('/users/:id', authenticate, async (req, res) => {
             'resetPasswordToken', 'resetPasswordExpires', 'referredBy', 'referralsCount', 'createdAt', 'lastZodiacWheelSpinAt', 'zodiacWheelSpinsCount'];
         const update = { ...req.body };
         if (!req.user.isAdmin) PROTECTED.forEach(k => delete update[k]);
+        if (typeof update.city === 'string') { update.city = update.city.trim().slice(0, 60); update.region = regionOfCity(update.city) || update.region; }
         else { delete update.password; delete update._id; }
         const updated = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select('-password -resetPasswordToken -resetPasswordExpires');
         res.json(updated);
@@ -1129,7 +1133,7 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
           <div style="font-size: 16px; line-height: 1.8; color: #334155; white-space: pre-wrap;">${content}</div>
         </div>
         <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #eee;">
-          נשלח באהבה מקהילת "נשי - תרבות נשים עירונית"
+          נשלח באהבה מ"נשי" · קהילת נשים דתיות מכל הארץ
         </div>
       </div>
     `;
@@ -1334,8 +1338,9 @@ router.post('/admin/tickets/verify/:code', authenticate, isAdmin, async (req, re
 router.get('/stats/public', async (req, res) => {
     try {
         const members = await User.countDocuments({});
+        const cities = (await User.distinct('city')).filter(Boolean).length;
         res.set('Cache-Control', 'public, max-age=600');
-        res.json({ members });
+        res.json({ members, cities: Math.max(cities, 1) });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

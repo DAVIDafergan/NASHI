@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import apiRoutes from './server/routes.js'; 
 import shareRoutes from './server/share.js';
 import { mediaRouter, mediaRequests, mediaResponses } from './server/media.js';
+import { calendarRouter, restGuard } from './server/calendar.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -65,6 +66,9 @@ mongoose.connect(MONGO_URI)
 // Routes - API
 // כל הראוטים כולל הודעות הנהלה, הגרלות ומשתמשים מנוהלים בתוך apiRoutes
 // Images/videos are served as cached files instead of base64 inside JSON (see server/media.js)
+// Shabbat & Yom Tov: calendar info + no writes while the site rests (server/calendar.js)
+app.use('/api', calendarRouter);
+app.use('/api', restGuard);
 app.use('/api', mediaRouter);
 app.use('/api', mediaRequests);
 app.use('/api', mediaResponses);

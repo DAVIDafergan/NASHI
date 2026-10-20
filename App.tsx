@@ -8,7 +8,6 @@ import ProfilePage from './pages/ProfilePage';
 import ContactPage from './pages/ContactPage';
 import AdminPage from './pages/AdminPage';
 import LotteryPage from './pages/LotteryPage';
-import ZodiacWheelPage from './pages/ZodiacWheelPage';
 import ForumPage from './pages/ForumPage'; 
 import CommunityPage from './pages/CommunityPage'; 
 import InterviewPage from './pages/InterviewPage';
@@ -16,12 +15,13 @@ import PersonalityArchivePage from './pages/PersonalityArchivePage';
 import ForgotPassword from './pages/ForgotPassword'; // ייבוא דף שכחתי סיסמה
 import ResetPassword from './pages/ResetPassword'; // ייבוא דף איפוס סיסמה
 import VerifyPage from './pages/VerifyPage'; // ייבוא דף אימות כרטיסים (חדש!)
-import { GeminiAssistant } from './components/GeminiAssistant';
 import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, CommunicationPreference } from './types';
 import { Loader2 } from 'lucide-react'; // X and AlertCircle removed as they are now in AuthModal
 import { api } from './services/api';
 import AuthModal from './components/AuthModal'; // ייבוא המודל החדש
-import ErrorBoundary from './components/ErrorBoundary'; // ייבוא מגן השגיאות
+import ErrorBoundary from './components/ErrorBoundary';
+import { setGuestCity } from './hooks/useMyPlace';
+import ShabbatGate from './components/ShabbatGate'; // ייבוא מגן השגיאות
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -84,6 +84,9 @@ const App: React.FC = () => {
     localStorage.removeItem('user');
   };
   
+  // keep the "my area" setting in sync with the member's saved city
+  useEffect(() => { if (user?.city) setGuestCity(user.city); }, [user?.city]);
+
   const handleOpenAuth = () => {
     setIsAuthModalOpen(true);
   };
@@ -201,6 +204,7 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
+      <ShabbatGate />
       <div className="min-h-screen text-slate-800 bg-slate-50 font-sans w-full overflow-x-hidden flex flex-col">
         <Layout 
             user={user} 
@@ -208,6 +212,7 @@ const App: React.FC = () => {
             onOpenLogin={handleOpenAuth}
             searchTerm={globalSearchTerm}
             setSearchTerm={setGlobalSearchTerm}
+            onUpdateUser={handleUpdateUser}
         >
           <Routes>
             <Route path="/" element={<HomePage user={user} onOpenLogin={handleOpenAuth} onUpdateUser={handleUpdateUser} />} />
@@ -223,7 +228,6 @@ const App: React.FC = () => {
               path="/lottery" 
               element={<LotteryPage lotteries={lotteries} user={user} onUpdateUser={handleUpdateUser} onUpdateLottery={(l) => setLotteries(lotteries.map(item => item.id === l.id ? l : item))} />} 
             />
-            <Route path="/zodiac-wheel" element={<ZodiacWheelPage user={user} onOpenLogin={handleOpenAuth} />} />
 
             <Route path="/forum" element={<ForumPage user={user} searchTerm={globalSearchTerm} />} />
             <Route path="/community" element={<CommunityPage searchTerm={globalSearchTerm} />} />
@@ -258,11 +262,6 @@ const App: React.FC = () => {
           </Routes>
         </Layout>
         
-        {user && !user.isAdmin && (
-          <ErrorBoundary>
-            <GeminiAssistant />
-          </ErrorBoundary>
-        )}
 
         {/* השימוש ברכיב AuthModal החדש במקום הקוד הישן */}
         <AuthModal 

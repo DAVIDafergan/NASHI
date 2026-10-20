@@ -5,6 +5,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ScrollReveal from '../components/ScrollReveal';
 import { TiltCard } from '../components/home/HomeParts';
+import { useArea, AreaChips } from '../components/pages/AreaFilter';
 import { PageShell, PageHero, FilterBar, SearchField, Chip, ChipRow, EmptyState, PageLoading } from '../components/pages/PageKit';
 
 // הגדרת המבנה של חוג (כולל השדות החדשים)
@@ -59,7 +60,9 @@ const ClassesPage = () => {
     return ['all', ...unique];
   }, [classes]);
 
+  const { area, setArea, match: matchesArea, myRegion } = useArea();
   const filteredClasses = classes.filter(cls => {
+    if (!matchesArea(cls)) return false;
     const matchesSearch = cls.title.includes(filter) || cls.category.includes(filter) || cls.instructor.includes(filter);
     const matchesDay = selectedDay === 'all' || cls.day === selectedDay;
     const matchesCategory = selectedCategory === 'all' || cls.category === selectedCategory;
@@ -89,10 +92,11 @@ const ClassesPage = () => {
         eyebrow="חוגים ופעילויות"
         title="זמן קבוע"
         accent="רק בשבילך"
-        subtitle="מערכת השעות של העיר: ריקוד, יצירה, כושר, לימוד והעשרה. בחרי יום, מצאי חוג והירשמי בוואטסאפ בלחיצה."
+        subtitle="חוגים, שיעורים וסדנאות לנשים ולבנות, בעיר שלך ובזום: ריקוד, יצירה, כושר, לימוד והעשרה. בחרי יום, מצאי חוג והירשמי בוואטסאפ בלחיצה."
       />
 
       <FilterBar>
+        <AreaChips area={area} setArea={setArea} myRegion={myRegion} className="mb-3" />
         <SearchField value={filter} onChange={setFilter} placeholder="חפשי חוג או מדריכה…" />
         <ChipRow className="mt-3">
           {days.map(day => (

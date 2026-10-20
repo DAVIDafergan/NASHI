@@ -12,6 +12,9 @@ import { AnimatedHeadline, Marquee, SectionHeader, TiltCard } from '../component
 import ScrollReveal from '../components/ScrollReveal';
 import StoriesSection from '../components/stories/StoriesSection';
 import InviteBand from '../components/home/InviteBand';
+import HebrewDayLine from '../components/home/HebrewDayLine';
+import { useMyPlace, isNear } from '../hooks/useMyPlace';
+import { regionName } from '../shared/regions';
 import EventCard from '../components/EventCard';
 
 // --- Interfaces ---
@@ -137,12 +140,24 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   // "אירועים קרובים" — מציג רק אירועים שטרם עברו, ממוינים מהקרוב ביותר. אירוע שעבר התאריך שלו לא יופיע כאן יותר,
   // גם אם המשמעות היא רשימה ריקה (הסקשן כולו מוסתר במקרה הזה)
   // ממוין ב-useMemo (לא בכל רינדור) כדי שלא יאפס את אינטרוול הגלילה האוטומטית של הסליידר בכל עדכון state אחר בעמוד
+  // national site: show the visitor's area first (local items of her region + all national/online items).
+  // If her area has nothing yet, fall back to the whole country so the page is never empty.
+  const place = useMyPlace(user);
+  const pickNear = <T,>(list: T[]): T[] => {
+    if (!place.region) return list;
+    const near = list.filter((i: any) => isNear(i, place.region));
+    return near.length ? near : list;
+  };
+  const areaLabel = place.city ? `באזור שלך · ${regionName(place.region) || place.city}` : 'מכל הארץ';
+  const shownClasses = useMemo(() => pickNear(classes as any[]), [classes, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
+  const shownCommunity = useMemo(() => pickNear(communityItems as any[]), [communityItems, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const upcomingEvents = useMemo(() => {
     const now = new Date();
-    return [...events]
+    return [...pickNear(events)]
       .filter(e => new Date(e.date) >= now)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [events]);
+  }, [events, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // סליידר אירועים אוטומטי בנייד
   useEffect(() => {
@@ -283,13 +298,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         <div className="relative max-w-7xl mx-auto px-5 md:px-8 pt-8 md:pt-16 pb-8 md:pb-20 grid lg:grid-cols-[1.15fr_1fr] gap-8 lg:gap-6 items-center">
           <div className="relative z-10">
-            <p className="eyebrow animate-fade-in-up">קהילת נשים · תרבות · השראה</p>
+            <p className="eyebrow animate-fade-in-up">קהילת נשים דתיות · מכל הארץ</p>
+            <HebrewDayLine className="mt-2 animate-fade-in-up" />
             <AnimatedHeadline
               className="mt-5 text-[3.4rem] leading-[0.98] sm:text-[4.6rem] lg:text-[6.2rem] text-ink"
               lines={[{ text: 'המקום שלך' }, { text: 'לפרוח,', className: 'font-accent text-[1.45em] leading-[0.82] text-rose-600' }, { text: 'להתחבר ולהשפיע.' , className: 'text-[0.55em] leading-[1.25] mt-3 text-slate-500 font-light' }]}
             />
             <p className="mt-7 max-w-md text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
-              אירועים, חוגים, קהילה ורגעים קטנים של השראה — מרחב אחד, עדין ומחבק, שנבנה בשבילך.
+              אירועים, שיעורים, חוגים, גמ"חים ורגעים של השראה. מקום אחד, עדין ומחבק, לנשים מכל הארץ.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3 animate-fade-in-up" style={{ animationDelay: '550ms' }}>
               <Link to="/events" className="btn-primary group !px-7 !py-3.5">
@@ -325,7 +341,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <div className="relative hidden lg:block h-[560px]">
             {(() => {
               const pics = upcomingEvents.filter(e => e.image).slice(0, 3);
-              const fallback = classes.filter((c: any) => c.image).slice(0, 3 - pics.length).map((c: any) => ({ image: c.image, title: c.title, id: c._id }));
+              const fallback = shownClasses.filter((c: any) => c.image).slice(0, 3 - pics.length).map((c: any) => ({ image: c.image, title: c.title, id: c._id }));
               const items: any[] = [...pics, ...fallback];
               const spots = [
                 'right-[6%] top-[4%] w-[52%] h-[64%] rotate-[-4deg] animate-float-y',
@@ -368,7 +384,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         {/* marquee ribbon */}
         <div className="relative border-y border-rose-200/70 bg-white/50 py-4 md:py-7">
-          <Marquee items={['תרבות', 'קהילה', 'השראה', 'אירועים', 'חוגים', 'חסד', 'יצירה', 'ביחד']} />
+          <Marquee items={['תורה', 'קהילה', 'השראה', 'אירועים', 'חוגים', 'חסד', 'יצירה', 'ביחד', 'מכל הארץ']} />
         </div>
       </section>
 
@@ -405,7 +421,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <GraduationCap size={28} strokeWidth={1.3} className="text-plum-600 transition-transform duration-500 group-hover:-rotate-12" />
                 <div>
                   <h3 className="font-accent text-5xl md:text-6xl leading-none text-plum-800">חוגים</h3>
-                  <p className="text-xs text-plum-600 mt-1">{classes.length > 0 ? `${classes.length} חוגים פעילים` : 'סדנאות והעשרה'}</p>
+                  <p className="text-xs text-plum-600 mt-1">{shownClasses.length > 0 ? `${shownClasses.length} חוגים פעילים` : 'סדנאות והעשרה'}</p>
                 </div>
               </TiltCard>
             </ScrollReveal>
@@ -426,7 +442,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   <p className="text-sm text-slate-500 mt-1 max-w-[16rem]">עסקים, שירותים ויד מושטת — מנשים לנשים.</p>
                 </div>
                 <div className="hidden sm:flex -space-x-4 space-x-reverse">
-                  {communityItems.filter((c: any) => c.image).slice(0, 3).map((c: any, i: number) => (
+                  {shownCommunity.filter((c: any) => c.image).slice(0, 3).map((c: any, i: number) => (
                     <img key={i} src={c.image} alt="" className="h-16 w-16 md:h-20 md:w-20 rounded-full object-cover ring-4 ring-white transition-transform duration-500 group-hover:-translate-y-1" style={{ transitionDelay: `${i * 60}ms` }} />
                   ))}
                 </div>
@@ -438,7 +454,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* ============ EVENTS RAIL ============ */}
         {upcomingEvents.length > 0 && (
           <section>
-            <SectionHeader eyebrow="בקרוב" title="אירועים קרובים" to="/events" linkLabel="ללוח המלא" />
+            <SectionHeader eyebrow={areaLabel} title="אירועים קרובים" to="/events" linkLabel="ללוח המלא" />
             <div ref={mobileSliderRef} className="mt-8 flex gap-5 overflow-x-auto snap-x snap-mandatory no-scrollbar px-5 md:px-0 pb-6">
               {upcomingEvents.map((event, i) => (
                 <ScrollReveal key={event.id || i} animation="scale-in" delay={i * 90} className={`snap-start shrink-0 ${upcomingEvents.length === 1 ? 'w-full' : 'w-[82%]'} sm:w-[46%] lg:w-[31%]`}>
@@ -476,11 +492,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         </section>
 
         {/* ============ CLASSES — editorial grid ============ */}
-        {classes.length > 0 && (
+        {shownClasses.length > 0 && (
           <section>
-            <SectionHeader eyebrow="ללמוד וליצור" title="חוגים וסדנאות" to="/classes" linkLabel="לכל החוגים" />
+            <SectionHeader eyebrow={areaLabel} title="חוגים, שיעורים וסדנאות" to="/classes" linkLabel="לכל החוגים" />
             <div className="mt-8 px-5 md:px-0 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              {classes.slice(0, 4).map((cls: any, i: number) => (
+              {shownClasses.slice(0, 4).map((cls: any, i: number) => (
                 <ScrollReveal key={cls._id || i} animation="clip-up" delay={i * 120} className={i % 2 === 1 ? 'lg:mt-14' : ''}>
                   <button type="button" onClick={() => navigate('/classes')} className="group relative block w-full text-right aspect-[3/4] rounded-[2rem] overflow-hidden bg-rose-100">
                     <img src={cls.image} alt={cls.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.4s] ease-out group-hover:scale-110" />
@@ -546,11 +562,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         })()}
 
         {/* ============ COMMUNITY ============ */}
-        {communityItems.length > 0 && (
+        {shownCommunity.length > 0 && (
           <section>
-            <SectionHeader eyebrow="מנשים לנשים" title="קהילה וחסד" to="/community" linkLabel="לכל השירותים" />
+            <SectionHeader eyebrow={areaLabel} title="קהילה וחסד" to="/community" linkLabel="לכל השירותים" />
             <div className="mt-8 px-5 md:px-0 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              {communityItems.slice(0, 4).map((item: any, i: number) => (
+              {shownCommunity.slice(0, 4).map((item: any, i: number) => (
                 <ScrollReveal key={item._id || i} animation="scale-in" delay={i * 90}>
                   <button type="button" onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="group w-full text-right card-soft overflow-hidden hover:shadow-lift hover:-translate-y-1 transition-all duration-500">
                     <div className="m-2 mb-0 aspect-[4/3] rounded-[1.4rem] overflow-hidden bg-rose-50">

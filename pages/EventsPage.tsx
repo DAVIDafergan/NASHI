@@ -3,6 +3,7 @@ import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, T
 import { useLocation, useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
 import ScrollReveal from '../components/ScrollReveal';
+import { useArea, AreaChips } from '../components/pages/AreaFilter';
 import { PageShell, PageHero, FilterBar, SearchField, Chip, ChipRow, EmptyState, PageLoading, Sheet, IconButton } from '../components/pages/PageKit';
 
 // --- Types ---
@@ -98,7 +99,9 @@ const EventsPage = () => {
     return { value: event.price, isEarly: false };
   };
 
+  const { area, setArea, match: matchesArea, myRegion } = useArea();
   const filteredEvents = events.filter(event => {
+    if (!matchesArea(event)) return false;
     const matchesSearch = event.title.toLowerCase().includes(filter.toLowerCase()) || event.location.toLowerCase().includes(filter.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
     const matchesFree = onlyFree ? getDisplayPrice(event).value === 0 : true;
@@ -199,6 +202,7 @@ const EventsPage = () => {
 
       {/* --- Filter Bar --- */}
       <FilterBar>
+        <AreaChips area={area} setArea={setArea} myRegion={myRegion} className="mb-3" />
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <SearchField value={filter} onChange={setFilter} placeholder="חפשי אירוע או מקום…" className="lg:w-80 shrink-0" />
           <ChipRow className="flex-1">

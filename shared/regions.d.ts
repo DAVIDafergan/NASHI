@@ -1,0 +1,10 @@
+export type RegionId = 'north' | 'haifa' | 'sharon' | 'center' | 'jerusalem' | 'shomron' | 'south';
+export declare const REGIONS: { id: RegionId; name: string }[];
+export declare const CITIES: Record<RegionId, string[]>;
+export declare const DEFAULT_CITY: string;
+export declare const DEFAULT_REGION: RegionId;
+export declare const SCOPES: { id: 'local' | 'national' | 'online'; name: string }[];
+export declare const AUDIENCES: string[];
+export declare function regionName(id?: string): string;
+export declare function regionOfCity(city?: string): RegionId | '';
+export declare const ALL_CITIES: { city: string; region: RegionId }[];

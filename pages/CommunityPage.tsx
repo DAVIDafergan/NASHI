@@ -6,6 +6,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import ScrollReveal from '../components/ScrollReveal';
+import { useArea, AreaChips } from '../components/pages/AreaFilter';
 import { PageShell, PageHero, FilterBar, SearchField, EmptyState, CardSkeletonGrid } from '../components/pages/PageKit';
 
 const tabIcon = (category: string) => {
@@ -56,7 +57,9 @@ const CommunityPage = () => {
   };
 
   // סינון פריטים לפי טאב פעיל וחיפוש חופשי (תוקן כדי לתמוך בכל הווריאציות של עסקים מהשרת)
+  const { area, setArea, match: matchesArea, myRegion } = useArea();
   const filteredItems = items.filter(item => {
+    if (!matchesArea(item)) return false;
     const isBusinessCategory = activeTab === 'עסקים מקומיים' && 
       ['עסקים', 'עסק מקומי', 'עסקים מקומיים'].includes(item.category);
       
@@ -120,6 +123,7 @@ const CommunityPage = () => {
       </div>
 
       <FilterBar>
+        <AreaChips area={area} setArea={setArea} myRegion={myRegion} className="mb-3" />
         <SearchField value={searchTerm} onChange={setSearchTerm} placeholder={`חפשי בתוך ${activeTab}…`} />
         <p className="mt-2 px-1 text-[13px] text-slate-500">{tabBlurb[activeTab]}</p>
       </FilterBar>
