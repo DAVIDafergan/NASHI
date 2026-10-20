@@ -81,17 +81,17 @@ const CommunityPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFBF7]">
+    <div className="min-h-screen bg-[#FBF7F4]">
       <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-5 md:space-y-6 pb-24">
 
         {/* כותרת וחזרה */}
-        <ScrollReveal className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
-          <button onClick={() => navigate(-1)} className="w-11 h-11 shrink-0 flex items-center justify-center bg-[#F5F5F5] rounded-full text-[#1A202C] hover:bg-[#DCEEE5] hover:text-[#2D6A4F] transition-all active:scale-95">
+        <ScrollReveal className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(61,47,55,0.06)]">
+          <button onClick={() => navigate(-1)} className="w-11 h-11 shrink-0 flex items-center justify-center bg-[#F7F2F0] rounded-full text-[#2B2027] hover:bg-[#F8EAEA] hover:text-[#8A5058] transition-all active:scale-95">
             <ArrowLeft size={20}/>
           </button>
           <div>
-            <h2 className="text-xl md:text-2xl font-bold text-[#1A202C] tracking-tight">קהילה נשית</h2>
-            <p className="text-[#718096] text-sm font-medium mt-0.5">כל מה שקורה בעיר עבורך</p>
+            <h2 className="text-xl md:text-2xl font-bold text-[#2B2027] tracking-tight">קהילה נשית</h2>
+            <p className="text-[#85757A] text-sm font-medium mt-0.5">כל מה שקורה בעיר עבורך</p>
           </div>
         </ScrollReveal>
 
@@ -103,8 +103,8 @@ const CommunityPage = () => {
               onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); }}
               className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl font-bold text-sm transition-all duration-300 active:scale-95 ${
                 activeTab === tab.id
-                ? 'bg-[#2D6A4F] text-white shadow-md shadow-[#2D6A4F]/20'
-                : 'bg-white text-[#718096] border border-slate-200 hover:border-[#2D6A4F]/40 hover:text-[#2D6A4F]'
+                ? 'bg-[#8A5058] text-white shadow-md shadow-[#8A5058]/20'
+                : 'bg-white text-[#85757A] border border-slate-200 hover:border-[#8A5058]/40 hover:text-[#8A5058]'
               }`}
             >
               {tab.icon}
@@ -115,11 +115,11 @@ const CommunityPage = () => {
 
         {/* שורת חיפוש */}
         <ScrollReveal delay={100} className="relative group max-w-2xl">
-          <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2D6A4F] transition-colors" size={18}/>
+          <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#8A5058] transition-colors" size={18}/>
           <input
             type="text"
             placeholder={`חפשי בתוך ${activeTab}...`}
-            className="w-full pr-14 pl-6 py-3.5 min-h-[44px] bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-4 focus:ring-[#2D6A4F]/10 focus:border-[#2D6A4F]/40 outline-none transition-all text-[#1A202C] font-medium placeholder:font-normal placeholder:text-slate-400"
+            className="w-full pr-14 pl-6 py-3.5 min-h-[44px] bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-4 focus:ring-[#8A5058]/10 focus:border-[#8A5058]/40 outline-none transition-all text-[#2B2027] font-medium placeholder:font-normal placeholder:text-slate-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -128,8 +128,8 @@ const CommunityPage = () => {
         {/* גריד תוצאות */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-5 bg-white rounded-2xl border border-slate-100">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-100 border-t-[#2D6A4F]"></div>
-            <p className="text-[#718096] font-bold animate-pulse">טוען נתונים מהקהילה...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-100 border-t-[#8A5058]"></div>
+            <p className="text-[#85757A] font-bold animate-pulse">טוען נתונים מהקהילה...</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -140,32 +140,32 @@ const CommunityPage = () => {
                 className="flex flex-col bg-white rounded-lg overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)] hover:scale-[1.02] transition-all duration-300 group"
               >
                 {/* תמונה */}
-                <div className="h-28 relative overflow-hidden bg-[#DCEEE5] shrink-0">
+                <div className="h-28 relative overflow-hidden bg-[#F8EAEA] shrink-0">
                   <img
                     src={item.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=500'}
                     className="w-full h-full object-cover animate-float-slow group-hover:scale-105 transition-transform duration-700"
                     alt={item.title}
                   />
-                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-md w-6 h-6 rounded-full flex items-center justify-center text-[#2D6A4F] shadow-sm">
+                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-md w-6 h-6 rounded-full flex items-center justify-center text-[#8A5058] shadow-sm">
                     {tabIcon(item.category)}
                   </div>
                 </div>
 
                 {/* תוכן הכרטיס */}
                 <div className="flex-1 flex flex-col p-3 gap-2">
-                  <h3 className="text-[15px] font-semibold text-[#1A202C] leading-snug">{item.title}</h3>
-                  <p className="text-[#4A5568] text-[13px] leading-[1.4] line-clamp-2">{item.description}</p>
+                  <h3 className="text-[15px] font-semibold text-[#2B2027] leading-snug">{item.title}</h3>
+                  <p className="text-[#6A5960] text-[13px] leading-[1.4] line-clamp-2">{item.description}</p>
 
                   {item.location && (
-                    <span className="inline-flex items-center gap-1 self-start bg-[#F5F5F5] text-[#718096] text-[12px] font-medium px-2 py-1 rounded-full">
-                      <MapPin size={11} className="text-[#2D6A4F]" />
+                    <span className="inline-flex items-center gap-1 self-start bg-[#F7F2F0] text-[#85757A] text-[12px] font-medium px-2 py-1 rounded-full">
+                      <MapPin size={11} className="text-[#8A5058]" />
                       <span className="truncate max-w-[110px]">{item.location}</span>
                     </span>
                   )}
 
                   <button
                     onClick={() => handleContact(item.phone, item.title)}
-                    className="mt-auto min-h-[44px] w-full py-2.5 bg-[#2D6A4F] text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-[#245A41] hover:scale-[1.02] transition-all duration-200 active:scale-95"
+                    className="mt-auto min-h-[44px] w-full py-2.5 bg-[#8A5058] text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-[#6F4148] hover:scale-[1.02] transition-all duration-200 active:scale-95"
                   >
                     <MessageCircle size={14}/>
                     צרי קשר עכשיו
@@ -179,11 +179,11 @@ const CommunityPage = () => {
         {/* מצב ריק */}
         {!loading && filteredItems.length === 0 && (
           <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-slate-200">
-            <div className="w-16 h-16 bg-[#F5F5F5] rounded-full flex items-center justify-center mx-auto mb-5 text-slate-300">
+            <div className="w-16 h-16 bg-[#F7F2F0] rounded-full flex items-center justify-center mx-auto mb-5 text-slate-300">
               <Search size={32}/>
             </div>
-            <h3 className="text-xl font-bold text-[#1A202C] mb-2">לא מצאנו את מה שחיפשת</h3>
-            <p className="text-[#718096] font-medium max-w-sm mx-auto">נסי לשנות את מונח החיפוש או לעבור לקטגוריה אחרת למעלה.</p>
+            <h3 className="text-xl font-bold text-[#2B2027] mb-2">לא מצאנו את מה שחיפשת</h3>
+            <p className="text-[#85757A] font-medium max-w-sm mx-auto">נסי לשנות את מונח החיפוש או לעבור לקטגוריה אחרת למעלה.</p>
           </div>
         )}
 

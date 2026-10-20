@@ -1,5 +1,30 @@
 import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, ForumPost, CommunityItem } from '../types';
 
+export interface FlyerItem {
+    _id: string;
+    title?: string;
+    link?: string;
+    openInNewTab?: boolean;
+    isActive: boolean;
+    order: number;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    imageUrl: string;
+    mobileImageUrl?: string | null;
+}
+
+export interface FlyerInput {
+    title?: string;
+    image?: string;
+    mobileImage?: string;
+    link?: string;
+    openInNewTab?: boolean;
+    isActive?: boolean;
+    order?: number;
+    startsAt?: string | null;
+    endsAt?: string | null;
+}
+
 const API_URL = import.meta.env.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
 
 interface ZodiacWheelWinner {
@@ -499,6 +524,57 @@ export const api = {
 
     async deleteInspiration(id: string) {
         return safeFetch(`${API_URL}/inspirations/${id}`, { method: 'DELETE', headers: getHeaders() }).then(r => r.json());
+    },
+
+    // ================= FLYERS (homepage carousel) =================
+    flyerImageSrc(path?: string | null) {
+        return path ? `${API_URL}${path}` : '';
+    },
+
+    async getFlyers(): Promise<FlyerItem[]> {
+        const res = await safeFetch(`${API_URL}/flyers`);
+        if (!res.ok) return [];
+        return res.json();
+    },
+
+    async getAdminFlyers(): Promise<FlyerItem[]> {
+        const res = await safeFetch(`${API_URL}/admin/flyers`, { headers: getHeaders() });
+        if (!res.ok) throw new Error('טעינת הפליירים נכשלה');
+        return res.json();
+    },
+
+    async saveFlyer(data: FlyerInput, id?: string): Promise<FlyerItem> {
+        for (const field of ['image', 'mobileImage'] as const) {
+            const v = data[field];
+            if (v && v.startsWith('data:')) {
+                const bytes = ((v.length - v.indexOf(',') - 1) * 3) / 4;
+                if (bytes > 6 * 1024 * 1024) throw new Error('התמונה גדולה מדי (מקסימום 6MB). נסי לשמור אותה כ-JPG.');
+            }
+        }
+        const res = await safeFetch(id ? `${API_URL}/admin/flyers/${id}` : `${API_URL}/admin/flyers`, {
+            method: id ? 'PUT' : 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || 'שמירת הפלייר נכשלה');
+        }
+        return res.json();
+    },
+
+    async reorderFlyers(ids: string[]) {
+        const res = await safeFetch(`${API_URL}/admin/flyers-order`, {
+            method: 'PUT', headers: getHeaders(), body: JSON.stringify({ ids }),
+        });
+        if (!res.ok) throw new Error('שמירת הסדר נכשלה');
+        return res.json();
+    },
+
+    async deleteFlyer(id: string) {
+        const res = await safeFetch(`${API_URL}/admin/flyers/${id}`, { method: 'DELETE', headers: getHeaders() });
+        if (!res.ok) throw new Error('מחיקת הפלייר נכשלה');
+        return res.json();
     },
 
     async getAds() {

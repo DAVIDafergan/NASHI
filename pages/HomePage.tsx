@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
-import FestiveSpark from '../components/decor/FestiveSpark';
+import FlyerCarousel from '../components/FlyerCarousel';
 import ScrollReveal from '../components/ScrollReveal';
 import EventCard from '../components/EventCard';
 
@@ -86,7 +86,7 @@ const renderTextWithLinks = (text: string) => {
 // --- קומפוננטה עזר: מציירת את הפסים הצבעוניים סביב האוואטר לפי מספר הסטוריז ---
 const StoryRing = ({ count }: { count: number }) => {
   if (count <= 1) {
-    return <div className="absolute inset-0 rounded-full border-[2.5px] border-[#e8a5b2] shadow-[0_0_8px_rgba(232,165,178,0.4)]"></div>;
+    return <div className="absolute inset-0 rounded-full border-[2.5px] border-[#D2959A] shadow-[0_0_8px_rgba(232,165,178,0.4)]"></div>;
   }
   const radius = 32.5;
   const circumference = 2 * Math.PI * radius;
@@ -103,8 +103,8 @@ const StoryRing = ({ count }: { count: number }) => {
       />
       <defs>
         <linearGradient id="story-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#f43f5e" />
-          <stop offset="100%" stopColor="#e8a5b2" />
+          <stop offset="0%" stopColor="#A5636B" />
+          <stop offset="100%" stopColor="#D2959A" />
         </linearGradient>
       </defs>
     </svg>
@@ -436,7 +436,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
     return (
       <div className="md:mx-0 animate-fade-in transition-all duration-700 w-full hover:opacity-95 cursor-pointer">
-        <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden md:rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(244,63,94,0.08)] transition-all duration-300 border border-rose-50/50">
+        <a href={ad.link || '#'} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden md:rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(189,122,129,0.08)] transition-all duration-300 border border-rose-50/50">
           {ad.type === 'image' ? (
             <img src={ad.content} alt={ad.title || 'Ad'} loading="lazy" className="w-full h-24 md:h-28 object-cover transition-transform duration-700 group-hover:scale-105" />
           ) : (
@@ -457,13 +457,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fdfbfb]" dir="rtl">
-        <div className="text-center space-y-6">
-          <div className="relative w-16 h-16 mx-auto">
-             <div className="absolute inset-0 border-[3px] border-rose-50 rounded-full"></div>
-             <div className="absolute inset-0 border-[3px] border-[#e8a5b2] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-[70vh] flex items-center justify-center" dir="rtl">
+        <div className="text-center space-y-5">
+          <p className="font-display text-5xl text-ink leading-none animate-pulse">נשי</p>
+          <div className="mx-auto h-px w-24 overflow-hidden bg-rose-100">
+            <div className="h-full w-1/2 bg-rose-400 animate-[shimmer-sweep_1.6s_ease-in-out_infinite]" />
           </div>
-          <p className="text-[#d88a99] text-sm font-bold tracking-widest animate-pulse uppercase font-serif">מכינים עבורך את הקסם...</p>
+          <p className="text-sm text-slate-500">רגע, אנחנו מכינות לך את הבית…</p>
         </div>
       </div>
     );
@@ -474,96 +474,81 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const currentStory = activeGroup ? activeGroup.stories[activeInnerIndex] : null;
 
   return (
-    <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right bg-[#FFFBF7] scroll-smooth" dir="rtl">
-
-      {/* Background Ambience - festive gold & burgundy wash */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#FBEBC9] via-[#FFFBF7] to-[#FFFBF7]"></div>
-          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-[#E8871E]/20 rounded-full blur-[110px] opacity-80"></div>
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#9B2242]/15 rounded-full blur-[100px] opacity-60"></div>
-
-          {/* Decorative festive sparkles — subtle float + scroll parallax, corners of the screen */}
-          <FestiveSpark className="absolute -top-5 -right-5 opacity-90" size={104} rotate={14} motion="float" parallax={16} />
-          <FestiveSpark className="absolute top-28 -left-9 opacity-60" size={72} rotate={-18} flip motion="float-reverse" parallax={-12} />
-          <FestiveSpark className="absolute bottom-16 -right-8 opacity-50" size={86} rotate={-10} motion="float-reverse" parallax={10} />
-          <FestiveSpark className="absolute -bottom-5 -left-5 opacity-80" size={92} rotate={22} flip motion="float-reverse" parallax={-18} />
-      </div>
+    <div className="min-h-screen pb-12 relative overflow-x-hidden font-sans text-right scroll-smooth" dir="rtl">
 
       {/* Main Content Container */}
-      <div className="max-w-5xl mx-auto md:px-8 pt-0 md:pt-10 relative z-10 space-y-10 md:space-y-12">
+      <div className="max-w-6xl mx-auto md:px-8 pt-2 md:pt-8 relative z-10 space-y-12 md:space-y-16">
 
-        {/* Hero — Holiday greeting */}
-        <section className="relative w-full px-5 md:px-0 pt-5 md:pt-6 pb-2 md:pb-4 overflow-hidden">
-          {/* Small secondary wave accent, top-left of hero */}
-          <svg width="90" height="14" viewBox="0 0 90 14" fill="none" className="absolute left-0 top-1 opacity-50 hidden md:block pointer-events-none" aria-hidden="true">
-            <path
-              d="M1 7 Q 12 -2, 23 7 T 45 7 T 67 7 T 89 7"
-              stroke="#E8871E"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              fill="none"
-              pathLength="1"
-              strokeDasharray="1"
-              className="animate-draw-wave"
-              style={{ animationDelay: '450ms' }}
-            />
-          </svg>
-          <ScrollReveal>
-            <p className="text-[11px] md:text-xs font-bold tracking-[0.25em] text-[#C94848] uppercase mb-3">קהילת נשי מציגה</p>
-          </ScrollReveal>
-          <ScrollReveal delay={90}>
-            <h1 className="text-[2.5rem] leading-[1.05] md:text-6xl lg:text-7xl font-black text-slate-800 tracking-tight">
-              <span className="block">תרבות</span>
-              <span className="block bg-gradient-to-l from-[#9B2242] to-[#E8871E] bg-clip-text text-transparent">חג שמח!</span>
-            </h1>
-          </ScrollReveal>
-          <ScrollReveal delay={180} className="mt-3 md:mt-4">
-            <svg width="220" height="18" viewBox="0 0 220 18" fill="none" className="max-w-[220px]">
-              <path
-                d="M2 9 Q 20 -3, 38 9 T 74 9 T 110 9 T 146 9 T 182 9 T 218 9"
-                stroke="#D4A017"
-                strokeWidth="3"
-                strokeLinecap="round"
-                fill="none"
-                pathLength="1"
-                strokeDasharray="1"
-                className="animate-draw-wave"
-              />
-            </svg>
-          </ScrollReveal>
-          <ScrollReveal delay={270} className="mt-4 md:mt-5 max-w-xl">
-            <p className="text-slate-500 text-sm md:text-lg font-medium leading-relaxed">
-              חג מלא באירועים, חוגים ורגעים ביחד. המרחב שלך להתחבר, לחגוג ולפרוח.
-            </p>
-          </ScrollReveal>
+        {/* Hero */}
+        <section className="relative w-full px-5 md:px-0 pt-6 md:pt-10">
+          <div className="grid md:grid-cols-[1.25fr_1fr] gap-8 md:gap-14 items-end">
+            <div>
+              <ScrollReveal>
+                <p className="eyebrow">קהילת נשים · תרבות · השראה</p>
+              </ScrollReveal>
+              <ScrollReveal delay={90}>
+                <h1 className="mt-4 text-[2.9rem] leading-[1.02] md:text-[4.6rem] lg:text-[5.2rem] text-ink">
+                  המקום שלך
+                  <span className="block italic text-rose-600">לפרוח.</span>
+                </h1>
+              </ScrollReveal>
+              <ScrollReveal delay={180} className="mt-5 md:mt-6 max-w-lg">
+                <p className="text-slate-600 text-base md:text-lg leading-relaxed font-light">
+                  אירועים, חוגים, קהילה ורגעים קטנים של השראה — מרחב אחד, עדין ומחבק, שנבנה בשבילך.
+                </p>
+              </ScrollReveal>
+              <ScrollReveal delay={260} className="mt-7 flex flex-wrap gap-3">
+                <Link to="/events" className="btn-primary">לאירועים הקרובים <ArrowLeft size={16} /></Link>
+                {!user && <button onClick={onOpenLogin} className="btn-ghost">הצטרפי לקהילה</button>}
+              </ScrollReveal>
+            </div>
+            <ScrollReveal delay={200} className="hidden md:block">
+              <div className="relative">
+                <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-to-br from-rose-100 via-white to-plum-100 rotate-2" aria-hidden="true" />
+                <div className="relative card-soft p-8">
+                  <Quote className="text-rose-300" size={26} strokeWidth={1.5} />
+                  <p className="mt-4 font-display text-[1.45rem] leading-snug text-ink">"{(inspirations[0] && inspirations[0].text) || 'הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך.'}"</p>
+                  <div className="hairline my-5" />
+                  <p className="text-xs text-slate-400">השראה יומית · <span className="text-rose-600 tracking-normal">{(inspirations[0] && inspirations[0].author) || 'נ.ש'}</span></p>
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
         </section>
 
-        {/* מה זה נשי? — Compact feature showcase: 4 icons, single simultaneous fade-in (no video) */}
-        <section className="w-full px-5 md:px-0">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] p-5 md:p-8">
-            <ScrollReveal>
-              <h2 className="text-xl md:text-2xl font-bold text-[#1A202C] mb-1.5">מה זה נשי?</h2>
-            </ScrollReveal>
-            <ScrollReveal delay={80} className="block mb-5">
-              <p className="text-[#4A5568] text-sm md:text-base leading-relaxed max-w-2xl">
-                פלטפורמה המחברת קהילה בנשים — אירועים, עסקים, חוגים, סטוריז ועוד
-              </p>
-            </ScrollReveal>
+        {/* Flyers — managed in Admin → "פליירים בדף הבית" */}
+        <div className="px-5 md:px-0">
+          <FlyerCarousel />
+        </div>
 
-            <ScrollReveal animation="fade-in-fast" className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
-              {platformFeatures.map((feature) => {
+        {/* מה זה נשי? */}
+        <section className="w-full px-5 md:px-0">
+          <div className="card-soft p-6 md:p-10">
+            <div className="md:flex md:items-end md:justify-between gap-8">
+              <div>
+                <ScrollReveal><p className="eyebrow">מה זה נשי</p></ScrollReveal>
+                <ScrollReveal delay={60}><h2 className="section-title mt-2">פלטפורמה שמחברת בין נשים</h2></ScrollReveal>
+              </div>
+              <ScrollReveal delay={120} className="block mt-3 md:mt-0 max-w-md">
+                <p className="text-slate-500 text-sm md:text-base leading-relaxed">אירועים, עסקים, חוגים, סטוריז ועוד — הכול במקום אחד, בקצב שלך.</p>
+              </ScrollReveal>
+            </div>
+
+            <ScrollReveal animation="fade-in-fast" className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
+              {platformFeatures.map((feature, i) => {
                 const Icon = feature.icon;
-                const isGreen = feature.color === 'green';
+                const to = ['/events', '/classes', '/', '/lottery'][i] || '/';
                 return (
-                  <div
+                  <Link
                     key={feature.label}
-                    className="flex flex-col items-center text-center gap-2"
+                    to={to}
+                    className="group flex flex-col items-center text-center gap-3 rounded-3xl p-4 hover:bg-rose-50/70 transition-colors"
                   >
-                    <div className={`w-16 h-16 shrink-0 rounded-full flex items-center justify-center ${isGreen ? 'bg-[#DCEEE5] text-[#2D6A4F]' : 'bg-[#FDEAE3] text-[#E88B70]'}`}>
-                      <Icon size={30} strokeWidth={2} />
+                    <div className={`w-16 h-16 shrink-0 rounded-full flex items-center justify-center ring-1 ring-inset transition-transform duration-500 group-hover:-translate-y-1 ${i % 2 === 0 ? 'bg-rose-50 text-rose-600 ring-rose-100' : 'bg-plum-50 text-plum-600 ring-plum-100'}`}>
+                      <Icon size={26} strokeWidth={1.5} />
                     </div>
-                    <span className="text-sm font-medium text-[#1A202C]">{feature.label}</span>
-                  </div>
+                    <span className="text-[15px] font-medium text-slate-700">{feature.label}</span>
+                  </Link>
                 );
               })}
             </ScrollReveal>
@@ -576,7 +561,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             
            {/* כפתור הוספת סטורי */}
            <div className="flex flex-col items-center gap-2 shrink-0 snap-center group" onClick={() => user ? setShowAddStoryModal(true) : onOpenLogin()}>
-              <div className="relative w-[72px] h-[72px] rounded-full p-1 flex items-center justify-center bg-white/80 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.07] active:scale-95 shadow-[0_4px_20px_rgba(244,63,94,0.1)] border-2 border-rose-100/80">
+              <div className="relative w-[72px] h-[72px] rounded-full p-1 flex items-center justify-center bg-white/80 backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-[1.07] active:scale-95 shadow-[0_4px_20px_rgba(189,122,129,0.1)] border-2 border-rose-100/80">
                  {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" /> : <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${user?.name || 'new'}`} className="w-full h-full rounded-full object-cover opacity-80" />}
                  <div className="absolute bottom-0 right-0 bg-gradient-to-br from-rose-400 to-pink-500 text-white rounded-full p-[5px] border-2 border-white shadow-md group-hover:rotate-90 transition-transform duration-300 z-10">
                     <Plus size={12} strokeWidth={3}/>
@@ -633,8 +618,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           {upcomingEvents.length > 0 && (
           <section className="space-y-5">
             <div className="flex items-center justify-between px-5">
-              <h3 className="text-2xl font-black text-slate-800 tracking-tight">אירועים קרובים</h3>
-              <Link to="/events" className="text-rose-400 text-xs font-bold hover:text-rose-500 transition-colors flex items-center gap-1">ללוח המלא <ChevronLeft size={14}/></Link>
+              <h3 className="section-title">אירועים קרובים</h3>
+              <Link to="/events" className="text-rose-600 text-[13px] font-semibold hover:text-rose-800 transition-colors flex items-center gap-1">ללוח המלא <ChevronLeft size={14}/></Link>
             </div>
 
             <div
@@ -661,10 +646,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           {/* 3. Classes - Elegant Grid */}
           <section className="bg-gradient-to-b from-rose-50/40 to-transparent py-10 -mx-0">
             <div className="px-5 mb-6 flex items-center justify-between">
-               <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                 <GraduationCap className="text-[#d88a99]" size={22}/> חוגים וסדנאות
+               <h3 className="section-title flex items-center gap-2">
+                 <GraduationCap className="text-[#BD7A81]" size={22}/> חוגים וסדנאות
                </h3>
-               <Link to="/classes" className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors bg-white px-3 py-1.5 rounded-full shadow-sm border border-rose-100">כל החוגים <ChevronLeft size={14}/></Link>
+               <Link to="/classes" className="btn-ghost !px-3.5 !py-1.5 !text-xs">כל החוגים <ChevronLeft size={14}/></Link>
             </div>
             
             <div className="grid grid-cols-2 gap-4 px-5">
@@ -672,13 +657,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <ScrollReveal key={i} delay={i * 70}>
                   <div
                     onClick={() => navigate('/classes')}
-                    className="bg-white p-3.5 rounded-[2rem] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-100/80 hover:-translate-y-1 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
+                    className="bg-white p-3.5 rounded-[1.75rem] shadow-petal border border-rose-100/70 hover:-translate-y-1 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
                   >
                     <div className="relative h-32 mb-4 overflow-hidden rounded-[1.5rem]">
                        <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={cls.title} loading="lazy" />
                        <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-slate-700 shadow-sm">{cls.day}</div>
                     </div>
-                    <h4 className="font-black text-slate-800 text-sm px-1 leading-snug">{cls.title}</h4>
+                    <h4 className="font-display text-[1.05rem] text-ink px-1 leading-snug">{cls.title}</h4>
                     <p className="text-[11px] text-rose-400 font-semibold px-1 mt-1 truncate">{cls.instructor}</p>
                   </div>
                 </ScrollReveal>
@@ -688,13 +673,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
           {/* 4. Daily Inspiration - Soft Quote Card */}
           <section className="px-5">
-            <div className="bg-gradient-to-br from-rose-50 via-white to-pink-50/80 rounded-[2.5rem] p-8 relative overflow-hidden shadow-[0_8px_32px_rgba(244,63,94,0.07)] border border-rose-100/50">
+            <div className="bg-gradient-to-br from-rose-50 via-white to-pink-50/80 rounded-[2.5rem] p-8 relative overflow-hidden shadow-[0_8px_32px_rgba(189,122,129,0.07)] border border-rose-100/50">
                <div className="absolute -top-6 -right-6 text-rose-100 opacity-50"><Quote size={80} /></div>
                <Quote className="text-rose-300 mb-5" size={28} />
                <p className="text-xl font-serif leading-relaxed relative z-10 text-slate-700 font-medium">"{latestInspiration.text}"</p>
                <div className="mt-8 pt-5 border-t border-rose-100/60 flex justify-between items-center">
                   <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">השראה יומית</span>
-                  <span className="text-sm font-black text-[#d88a99]">{latestInspiration.author}</span>
+                  <span className="text-sm font-black text-[#BD7A81]">{latestInspiration.author}</span>
                </div>
             </div>
           </section>
@@ -702,8 +687,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           {/* 5. Community Services */}
           <section className="space-y-5 pt-4">
             <div className="flex items-center justify-between px-5">
-              <h3 className="text-xl font-black text-slate-800">קהילה וחסד</h3>
-              <Link to="/community" className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors bg-white px-3 py-1.5 rounded-full shadow-sm border border-rose-100">לכל השירותים <ChevronLeft size={14}/></Link>
+              <h3 className="section-title">קהילה וחסד</h3>
+              <Link to="/community" className="btn-ghost !px-3.5 !py-1.5 !text-xs">לכל השירותים <ChevronLeft size={14}/></Link>
             </div>
             
             <div className="grid grid-cols-2 gap-4 px-5 pb-2">
@@ -711,13 +696,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  <ScrollReveal key={i} delay={i * 70}>
                    <div
                       onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })}
-                      className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-100 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
+                      className="bg-white rounded-[1.75rem] overflow-hidden shadow-petal border border-rose-100/70 active:scale-[0.97] transition-all duration-300 cursor-pointer group"
                    >
                       <div className="relative h-28 overflow-hidden">
                         <img src={item.image} className="w-full h-full object-cover bg-slate-50 group-hover:scale-105 transition-transform duration-500" alt={item.title} loading="lazy" />
                       </div>
                       <div className="p-3 flex flex-col gap-1">
-                         <h4 className="font-black text-slate-800 text-sm truncate w-full">{item.title}</h4>
+                         <h4 className="font-display text-[1.05rem] text-ink truncate w-full">{item.title}</h4>
                          <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed font-medium">{item.description || 'לפרטים נוספים ודרכי יצירת קשר'}</p>
                       </div>
                    </div>
@@ -735,16 +720,16 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
              <ScrollReveal>
                <div
                  onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}
-                 className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] p-5 flex items-center gap-4 cursor-pointer hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] hover:scale-[1.01] transition-all duration-300 active:scale-[0.98]"
+                 className="bg-white rounded-[1.75rem] border border-rose-100/70 shadow-petal p-5 flex items-center gap-4 cursor-pointer hover:shadow-[0_8px_28px_rgba(61,47,55,0.1)] hover:scale-[1.01] transition-all duration-300 active:scale-[0.98]"
                >
-                  <div className="relative shrink-0 w-[120px] h-[120px] rounded-2xl overflow-hidden border-2 border-[#DCEEE5]">
+                  <div className="relative shrink-0 w-[120px] h-[120px] rounded-2xl overflow-hidden border-2 border-[#F8EAEA]">
                      <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} loading="lazy" />
                   </div>
                   <div className="flex-1 min-w-0 text-right">
-                     <span className="inline-block text-[10px] font-bold text-[#2D6A4F] bg-[#DCEEE5] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2">אשת השבוע</span>
-                     <h3 className="text-base font-semibold text-[#1A202C] leading-snug truncate">{personality.name}</h3>
-                     {personality.role && <p className="text-[#4A5568] text-sm mt-1 line-clamp-2 leading-[1.4]">{personality.role}</p>}
-                     <span className="inline-flex items-center gap-1.5 mt-3 bg-[#2D6A4F] text-white text-xs font-bold px-4 py-2.5 min-h-[36px] rounded-lg hover:bg-[#245A41] transition-colors">
+                     <span className="inline-block text-[10px] font-bold text-[#8A5058] bg-[#F8EAEA] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2">אשת השבוע</span>
+                     <h3 className="text-base font-semibold text-[#2B2027] leading-snug truncate">{personality.name}</h3>
+                     {personality.role && <p className="text-[#6A5960] text-sm mt-1 line-clamp-2 leading-[1.4]">{personality.role}</p>}
+                     <span className="inline-flex items-center gap-1.5 mt-3 bg-[#8A5058] text-white text-xs font-bold px-4 py-2.5 min-h-[36px] rounded-lg hover:bg-[#6F4148] transition-colors">
                         צפה בפרופיל <ArrowLeft size={13}/>
                      </span>
                   </div>
@@ -818,13 +803,13 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            <section className="space-y-8">
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-                  <GraduationCap className="text-[#d88a99]" size={28}/> חוגי המעגל
+                  <GraduationCap className="text-[#BD7A81]" size={28}/> חוגי המעגל
                 </h3>
                 <Link to="/classes" className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-600 transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-rose-100 hover:shadow-md">לכל החוגים <ChevronLeft size={14}/></Link>
               </div>
               <div className="grid grid-cols-4 gap-6">
                  {classes.slice(0, 4).map((cls, i) => (
-                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/classes')} className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_rgba(244,63,94,0.08)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group text-center">
+                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/classes')} className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_rgba(189,122,129,0.08)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group text-center">
                       <div className="overflow-hidden rounded-[1.5rem] mb-4 h-40">
                          <img src={cls.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                       </div>
@@ -846,7 +831,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               </div>
               <div className="grid grid-cols-3 gap-8">
                  {communityItems.slice(0, 3).map((item, i) => (
-                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_36px_rgba(244,63,94,0.09)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer border border-slate-100 group">
+                   <ScrollReveal key={i} delay={i * 80} onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_36px_rgba(189,122,129,0.09)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer border border-slate-100 group">
                       <div className="overflow-hidden h-48">
                          <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
                       </div>
@@ -863,15 +848,15 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            {personality ? (
              <ScrollReveal className="grid grid-cols-3 gap-10">
                 <div className="col-span-2 space-y-10">
-                   <section className="bg-white rounded-2xl p-8 shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-slate-100 flex items-center gap-8 cursor-pointer hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] hover:scale-[1.01] transition-all duration-300" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}>
-                      <div className="shrink-0 w-[140px] h-[140px] rounded-2xl overflow-hidden border-2 border-[#DCEEE5]">
+                   <section className="bg-white rounded-2xl p-8 shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100 flex items-center gap-8 cursor-pointer hover:shadow-[0_8px_28px_rgba(61,47,55,0.1)] hover:scale-[1.01] transition-all duration-300" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}>
+                      <div className="shrink-0 w-[140px] h-[140px] rounded-2xl overflow-hidden border-2 border-[#F8EAEA]">
                          <img src={personality.image} className="w-full h-full object-cover" alt={personality.name} loading="lazy" />
                       </div>
                       <div className="text-right">
-                         <span className="inline-block text-[10px] font-bold text-[#2D6A4F] bg-[#DCEEE5] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2.5">אשת השבוע במעגל</span>
-                         <h3 className="text-xl font-semibold text-[#1A202C]">{personality.name}</h3>
-                         {personality.role && <p className="text-[#4A5568] text-sm mt-1.5 line-clamp-2 leading-[1.4] max-w-md">{personality.role}</p>}
-                         <span className="inline-flex items-center gap-1.5 mt-4 bg-[#2D6A4F] text-white text-sm font-bold px-5 py-2.5 min-h-[44px] rounded-lg hover:bg-[#245A41] transition-colors">
+                         <span className="inline-block text-[10px] font-bold text-[#8A5058] bg-[#F8EAEA] px-2.5 py-1 rounded-full uppercase tracking-widest mb-2.5">אשת השבוע במעגל</span>
+                         <h3 className="text-xl font-semibold text-[#2B2027]">{personality.name}</h3>
+                         {personality.role && <p className="text-[#6A5960] text-sm mt-1.5 line-clamp-2 leading-[1.4] max-w-md">{personality.role}</p>}
+                         <span className="inline-flex items-center gap-1.5 mt-4 bg-[#8A5058] text-white text-sm font-bold px-5 py-2.5 min-h-[44px] rounded-lg hover:bg-[#6F4148] transition-colors">
                             צפה בפרופיל <ArrowLeft size={14}/>
                          </span>
                       </div>
@@ -879,7 +864,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 </div>
                 <div className="space-y-8">
                    {/* Inspiration Desktop */}
-                   <div className="bg-gradient-to-br from-rose-100 to-[#e8a5b2] rounded-[2.5rem] p-8 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
+                   <div className="bg-gradient-to-br from-rose-100 to-[#D2959A] rounded-[2.5rem] p-8 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
                       <div className="absolute -top-10 -right-10 text-white/20"><Quote size={120} /></div>
                       <div className="relative z-10">
                          <Quote className="text-white mb-6" size={28} />
@@ -902,7 +887,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
            ) : (
              /* אין כרגע "אשת השבוע" פעילה — לא שומרים מקום ריק, ההשראה וההודעות תופסות את כל הרוחב */
              <ScrollReveal className="grid grid-cols-2 gap-8">
-                <div className="bg-gradient-to-br from-rose-100 to-[#e8a5b2] rounded-[2.5rem] p-10 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
+                <div className="bg-gradient-to-br from-rose-100 to-[#D2959A] rounded-[2.5rem] p-10 text-slate-800 shadow-[0_10px_30px_rgba(232,165,178,0.25)] relative overflow-hidden">
                    <div className="absolute -top-10 -right-10 text-white/20"><Quote size={120} /></div>
                    <div className="relative z-10">
                       <Quote className="text-white mb-6" size={28} />
@@ -937,7 +922,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 כל הזכויות שמורות לקהילת נשי &copy; {new Date().getFullYear()} <br className="md:hidden" />
                 <span className="hidden md:inline"> | </span>
                 בנייה ופיתוח ע"י 
-                <a href="https://wa.me/message/WZKLTKH4KELMD1" target="_blank" rel="noopener noreferrer" className="text-[#d88a99] font-black mr-1.5 hover:text-rose-500 transition-colors">
+                <a href="https://wa.me/message/WZKLTKH4KELMD1" target="_blank" rel="noopener noreferrer" className="text-[#BD7A81] font-black mr-1.5 hover:text-rose-500 transition-colors">
                   DA פרויקטים ויזמות
                 </a>
             </p>
@@ -994,7 +979,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                      )}
                    </>
                ) : (
-                   <div className="w-full h-full bg-gradient-to-br from-rose-300 via-pink-400 to-[#d88a99] flex items-center justify-center p-8 text-center pointer-events-none">
+                   <div className="w-full h-full bg-gradient-to-br from-rose-300 via-pink-400 to-[#BD7A81] flex items-center justify-center p-8 text-center pointer-events-none">
                       <p className="text-white text-3xl md:text-5xl font-black leading-snug drop-shadow-lg font-serif max-w-2xl relative z-[60]">
                          {renderTextWithLinks(currentStory.content)}
                       </p>
@@ -1011,10 +996,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       {/* 2. מודל העלאת סטורי חדש */}
       {showAddStoryModal && (
           <div className="fixed inset-0 z-[450] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowAddStoryModal(false)}>
-             <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-md p-8 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#2D6A4F]">
+             <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-md p-8 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#8A5058]">
                  <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-5 md:hidden"></div>
                  <button onClick={() => setShowAddStoryModal(false)} className="absolute top-6 left-6 p-2 bg-slate-50 text-slate-400 rounded-full hover:bg-rose-50 hover:text-rose-400 transition-colors"><X size={20}/></button>
-                 <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Sparkles className="text-[#d88a99]" size={20}/> שתפי רגע למעגל</h2>
+                 <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Sparkles className="text-[#BD7A81]" size={20}/> שתפי רגע למעגל</h2>
                  
                  <div className="flex gap-4 mb-6">
                     <button 
@@ -1067,7 +1052,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  <button 
                     onClick={submitNewStory} 
                     disabled={isUploadingStory || !newStory.content}
-                    className="w-full mt-8 bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-rose-500 transition-all active:scale-95"
+                    className="w-full mt-8 bg-rose-700 text-white font-bold py-4 rounded-2xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-rose-500 transition-all active:scale-95"
                  >
                     {isUploadingStory ? 'מעלה...' : 'שליחה לאישור'} <Send size={16} />
                  </button>
@@ -1079,7 +1064,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       {/* 3. מודל בקשת הצטרפות */}
       {showMembershipModal && (
           <div className="fixed inset-0 z-[250] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowMembershipModal(false)}>
-              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-8 md:p-10 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#2D6A4F]">
+              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-8 md:p-10 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#8A5058]">
                   <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-4 mb-5 md:hidden"></div>
                   <button onClick={() => setShowMembershipModal(false)} className="absolute top-6 left-6 p-2 hover:bg-rose-50 rounded-full text-slate-400 transition-colors"><X size={20}/></button>
                   <div className="text-right space-y-6">
@@ -1099,7 +1084,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                              <input id="terms" type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="w-5 h-5 text-rose-500 border-slate-300 rounded focus:ring-rose-500 cursor-pointer" />
                              <label htmlFor="terms" className="text-sm font-medium text-slate-600 cursor-pointer">אני מאשרת את התקנון</label>
                           </div>
-                          <button type="submit" className="w-full mt-4 py-4 bg-slate-900 hover:bg-rose-500 text-white rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl transition-all active:scale-95">שליחת בקשה</button>
+                          <button type="submit" className="w-full mt-4 py-4 bg-rose-700 hover:bg-rose-500 text-white rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl transition-all active:scale-95">שליחת בקשה</button>
                       </form>
                   </div>
               </div>
@@ -1109,7 +1094,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       {/* 4. מודל תקנון */}
       {showTermsModal && (
         <div className="fixed inset-0 z-[300] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowTermsModal(false)}>
-           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-2xl p-8 shadow-2xl max-h-[88vh] overflow-hidden flex flex-col animate-slide-up border-t-4 border-[#2D6A4F]">
+           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-2xl p-8 shadow-2xl max-h-[88vh] overflow-hidden flex flex-col animate-slide-up border-t-4 border-[#8A5058]">
               <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-4 shrink-0 md:hidden"></div>
               <div className="flex justify-between items-center mb-6 shrink-0">
                 <h3 className="text-2xl font-black text-slate-800">תקנון ומדיניות</h3>
@@ -1119,7 +1104,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  <p className="text-slate-600 text-sm leading-relaxed font-medium">כאן מופיע התקנון המלא של האתר...</p>
               </div>
               <div className="pt-6 shrink-0 border-t border-slate-100 mt-4">
-                 <button onClick={() => setShowTermsModal(false)} className="w-full py-4 bg-slate-900 hover:bg-rose-500 text-white font-bold rounded-2xl transition-colors shadow-lg">סגירה והמשך</button>
+                 <button onClick={() => setShowTermsModal(false)} className="w-full py-4 bg-rose-700 hover:bg-rose-500 text-white font-bold rounded-2xl transition-colors shadow-lg">סגירה והמשך</button>
               </div>
            </div>
         </div>

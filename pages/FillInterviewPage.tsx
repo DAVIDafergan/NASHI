@@ -122,7 +122,7 @@ const FillInterviewPage = () => {
                     <button 
                         type="submit" 
                         disabled={submitting}
-                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-rose-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full py-5 bg-rose-700 text-white rounded-2xl font-black text-lg shadow-xl hover:bg-rose-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {submitting ? <Loader2 className="animate-spin" /> : <Send size={20} />}
                         שליחת השאלון לאתר

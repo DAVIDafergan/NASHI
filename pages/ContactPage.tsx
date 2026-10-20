@@ -195,7 +195,7 @@ const ContactPage: React.FC = () => {
             </div>
 
             <div className="pt-4 flex justify-end">
-              <button type="submit" className="w-full md:w-auto px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+              <button type="submit" className="w-full md:w-auto px-8 py-3 bg-rose-700 text-white rounded-xl font-bold hover:bg-rose-800 transition-all flex items-center justify-center gap-2">
                 <Send size={18} />
                 שליחת פנייה
               </button>

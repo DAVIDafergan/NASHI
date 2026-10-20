@@ -9,13 +9,14 @@ import {
 } from 'lucide-react';
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
+import FlyersAdmin from '../components/admin/FlyersAdmin';
 
 // קומפוננטת מודאל פנימית
 const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[150] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" dir="rtl" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg shadow-2xl animate-slide-up relative overflow-hidden flex flex-col max-h-[88vh] border-t-4 border-[#2D6A4F]">
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg shadow-2xl animate-slide-up relative overflow-hidden flex flex-col max-h-[88vh] border-t-4 border-[#8A5058]">
         <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0 md:hidden"></div>
         <div className="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
           <h3 className="text-xl font-black text-slate-800">{title}</h3>
@@ -48,7 +49,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, v
 );
 
 const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> = ({ user }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'stories' | 'users' | 'events' | 'classes' | 'lotteries' | 'zodiacWheel' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'announcements' | 'broadcast' | 'messages' | 'tickets'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'approvals' | 'stories' | 'users' | 'events' | 'classes' | 'lotteries' | 'zodiacWheel' | 'community' | 'personality' | 'settings' | 'forum' | 'inspirations' | 'ads' | 'flyers' | 'announcements' | 'broadcast' | 'messages' | 'tickets'>('summary');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -602,10 +603,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
   if (!user || !user.isAdmin) return <div className="p-20 text-center font-black text-rose-500 text-2xl animate-fade-in">גישה למנהלות בלבד.</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 pt-6 px-4 md:px-8 space-y-8 overflow-x-hidden text-right" dir="rtl">
+    <div className="min-h-screen bg-[#FBF7F4] pb-20 pt-6 px-4 md:px-8 space-y-8 overflow-x-hidden text-right" dir="rtl">
       
       {/* תפריט טאבים רספונסיבי - משופר */}
-      <div className="max-w-7xl mx-auto flex overflow-x-auto md:flex-wrap no-scrollbar gap-2 bg-white p-2 rounded-[2.5rem] shadow-sm border border-slate-100 justify-start md:justify-center">
+      <div className="max-w-7xl mx-auto flex overflow-x-auto md:flex-wrap no-scrollbar gap-1.5 bg-white p-2 rounded-[2rem] shadow-petal border border-rose-100 justify-start md:justify-center">
         {[
             { id: 'summary', label: 'סיכום חודשי', icon: <BarChart3 size={16} /> },
             { id: 'approvals', label: 'אישורים', icon: <CheckCircle size={16} /> },
@@ -622,11 +623,12 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
             { id: 'community', label: 'קהילה', icon: <HeartHandshake size={16} /> },
             { id: 'forum', label: 'פורום נשי', icon: <MessageSquare size={16} /> },
             { id: 'inspirations', label: 'השראה יומית', icon: <Quote size={16} /> },
+            { id: 'flyers', label: 'פליירים בדף הבית', icon: <ImageIcon size={16} /> },
             { id: 'ads', label: 'פרסומים', icon: <Megaphone size={16} /> },
             { id: 'personality', label: 'אשת השבוע', icon: <Sparkles size={16} /> },
             { id: 'settings', label: 'הגדרות', icon: <Settings size={16} /> },
         ].map(tab => (
-            <button key={tab.id} onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); setUsersPage(1); setEventsPage(1); setClassesPage(1); }} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-lg scale-105' : 'hover:bg-slate-50 text-slate-500'}`}>
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); setUsersPage(1); setEventsPage(1); setClassesPage(1); }} className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-semibold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-rose-700 text-white shadow-lift' : 'hover:bg-rose-50 text-slate-500'}`}>
               {tab.icon} {tab.label}
               {tab.id === 'stories' && pendingStories.length > 0 && <span className="bg-rose-500 text-white text-[10px] px-1.5 rounded-full">{pendingStories.length}</span>}
             </button>
@@ -1067,7 +1069,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב הודעות הנהלה */}
         {activeTab === 'announcements' && (
           <div className="space-y-6 animate-fade-in">
-             <button onClick={() => { setAnnForm({ _id: '', title: '', content: '' }); setIsAnnModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Bell size={20}/> הודעה חדשה</button>
+             <button onClick={() => { setAnnForm({ _id: '', title: '', content: '' }); setIsAnnModalOpen(true); }} className="w-full md:w-auto bg-rose-700 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Bell size={20}/> הודעה חדשה</button>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {apiAnnouncements.map(ann => (
                   <div key={ann._id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-between group">
@@ -1158,7 +1160,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         {/* טאב השראה יומית */}
         {activeTab === 'inspirations' && (
           <div className="space-y-6 animate-fade-in">
-            <button onClick={() => { setInspirationForm({ _id: '', text: '', author: '', scheduledAt: '' }); setIsInspirationModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> השראה חדשה</button>
+            <button onClick={() => { setInspirationForm({ _id: '', text: '', author: '', scheduledAt: '' }); setIsInspirationModalOpen(true); }} className="w-full md:w-auto bg-rose-700 text-white px-8 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:shadow-lg transition-all"><Plus/> השראה חדשה</button>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {apiInspirations.map(insp => (
                 <div key={insp._id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border-r-4 border-rose-400 flex flex-col justify-between">
@@ -1181,6 +1183,10 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         )}
 
         {/* טאב פרסומים */}
+        {activeTab === 'flyers' && (
+          <div className="max-w-7xl mx-auto"><FlyersAdmin /></div>
+        )}
+
         {activeTab === 'ads' && (
           <div className="space-y-8 animate-fade-in">
             <div className="bg-blue-50 p-6 rounded-[2rem] border border-blue-100 flex items-start gap-4">
@@ -1203,7 +1209,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                   {ad.type === 'image' ? (
                     <img src={ad.content} className="w-full h-48 object-cover rounded-2xl mb-4" />
                   ) : (
-                    <div className="w-full h-48 bg-slate-900 rounded-2xl mb-4 flex items-center justify-center text-white flex-col gap-2">
+                    <div className="w-full h-48 bg-rose-700 rounded-2xl mb-4 flex items-center justify-center text-white flex-col gap-2">
                       <Video size={40}/>
                       <span className="text-xs font-mono">{ad.content?.substring(0,30)}...</span>
                     </div>
@@ -1311,7 +1317,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           const pagedClasses = apiClasses.slice((classesPage - 1) * ITEMS_PER_PAGE, classesPage * ITEMS_PER_PAGE);
           return (
             <div className="space-y-6 animate-fade-in">
-              <button onClick={() => { setClassForm({ title: '', instructor: '', contactPhone: '', registrationPhone: '', day: 'ראשון', time: '', location: '', price: 0, ageGroup: '', gender: 'נשים', image: '' }); setIsClassModalOpen(true); }} className="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> חוג חדש</button>
+              <button onClick={() => { setClassForm({ title: '', instructor: '', contactPhone: '', registrationPhone: '', day: 'ראשון', time: '', location: '', price: 0, ageGroup: '', gender: 'נשים', image: '' }); setIsClassModalOpen(true); }} className="w-full md:w-auto bg-rose-700 text-white px-8 py-3 rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"><Plus/> חוג חדש</button>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-right">
                 {pagedClasses.map(c => (
                   <div key={c._id || c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 animate-fade-in-up shadow-sm">
@@ -1394,7 +1400,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                                     } catch(e: any) { alert(e.response?.data?.error || "שגיאה בהפעלה"); }
                                 }
                             }}
-                            className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black shadow-lg hover:bg-rose-600 transition-all flex items-center gap-2"
+                            className="bg-rose-700 text-white px-8 py-3 rounded-2xl font-black shadow-lg hover:bg-rose-600 transition-all flex items-center gap-2"
                         >
                             <PlayCircle size={18}/> הפעלת הגרלה לייב (שבת)
                         </button>
@@ -1482,7 +1488,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                         <button onClick={() => viewParticipants(l._id || l.id)} className="w-full bg-slate-100 text-slate-600 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2">
                             <Users size={16}/> צפייה במשתתפות
                         </button>
-                        <button onClick={() => runLiveLottery(l._id || l.id)} className="w-full bg-slate-900 text-white py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2 hover:bg-rose-600 transition-colors">
+                        <button onClick={() => runLiveLottery(l._id || l.id)} className="w-full bg-rose-700 text-white py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2 hover:bg-rose-600 transition-colors">
                             <PlayCircle size={16}/> הפעלת הגרלה בלייב
                         </button>
                         <div className="flex gap-2">
@@ -1815,7 +1821,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
                 <label className="text-xs font-black text-slate-400">נקודות על הרשמה לאירוע</label>
                 <input type="number" className="w-full p-4 bg-slate-50 rounded-2xl font-black outline-none text-right" value={pointsSettings.pointsPerEventJoin} onChange={e=>setPointsSettings({...pointsSettings, pointsPerEventJoin: Number(e.target.value)})}/>
               </div>
-              <button onClick={() => api.updateSettings(pointsSettings).then(() => alert('הגדרות נשמרו!'))} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-xl hover:scale-[1.02] transition-transform">עדכון הגדרות</button>
+              <button onClick={() => api.updateSettings(pointsSettings).then(() => alert('הגדרות נשמרו!'))} className="w-full py-5 bg-rose-700 text-white rounded-[2rem] font-black shadow-xl hover:scale-[1.02] transition-transform">עדכון הגדרות</button>
             </div>
           </div>
         )}
@@ -1837,7 +1843,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         }} className="space-y-4">
           <input required placeholder="כותרת ההודעה" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={annForm.title} onChange={e => setAnnForm({ ...annForm, title: e.target.value })} />
           <textarea required placeholder="תוכן ההודעה..." className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right h-32" value={annForm.content} onChange={e => setAnnForm({ ...annForm, content: e.target.value })} />
-          <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמירת הודעה</button>
+          <button className="w-full py-4 bg-rose-700 text-white rounded-2xl font-black shadow-lg">שמירת הודעה</button>
         </form>
       </Modal>
 
@@ -1987,7 +1993,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               <input type="datetime-local" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right" value={inspirationForm.scheduledAt} onChange={e => setInspirationForm({ ...inspirationForm, scheduledAt: e.target.value })} />
               <p className="text-[10px] text-slate-400 pr-2">השאירי ריק לפרסום מיידי</p>
           </div>
-          <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמירת השראה</button>
+          <button className="w-full py-4 bg-rose-700 text-white rounded-2xl font-black shadow-lg">שמירת השראה</button>
         </form>
       </Modal>
 
@@ -2095,7 +2101,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
              <div className="flex justify-between items-center">
                 <h4 className="font-black text-sm text-slate-700">מפגשים נוספים באירוע</h4>
-                <button type="button" onClick={addEventSession} className="text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg flex items-center gap-1"><Plus size={14}/> הוספת מפגש</button>
+                <button type="button" onClick={addEventSession} className="text-xs bg-rose-700 text-white px-3 py-1.5 rounded-lg flex items-center gap-1"><Plus size={14}/> הוספת מפגש</button>
              </div>
              {eventForm.sessions?.map((session, idx) => (
                 <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded-xl border border-slate-200">
@@ -2148,7 +2154,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
               <input type="file" onChange={e => handleFileUpload(e, setClassForm)} className="absolute inset-0 opacity-0 cursor-pointer" />
               {classForm.image ? <img src={classForm.image} className="h-20 mx-auto rounded-lg shadow-sm" /> : <p className="text-xs font-bold text-slate-400">העלאת תמונה / החלפת קיימת</p>}
           </div>
-          <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמירה</button>
+          <button className="w-full py-4 bg-rose-700 text-white rounded-2xl font-black shadow-lg">שמירה</button>
         </form>
       </Modal>
 

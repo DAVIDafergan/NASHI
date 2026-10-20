@@ -11,7 +11,8 @@ import {
     ContactMessage, // הוספת מודל פניות הציבור לייבוא
     Ticket, // התווסף מודל הכרטיסים!
     Story, // <--- תוספת: מודל הסטוריז
-    ZodiacWheelPrize, ZodiacWheelSpin
+    ZodiacWheelPrize, ZodiacWheelSpin,
+    Flyer // פליירים לקרוסלת דף הבית
 } from './models.js';
 
 const router = express.Router();
@@ -818,6 +819,114 @@ router.put('/ads/:id', authenticate, isAdmin, async (req, res) => {
 
 router.delete('/ads/:id', authenticate, isAdmin, async (req, res) => {
     try { await Ad.findByIdAndDelete(req.params.id); res.json({ success: true }); } 
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= פליירים לדף הבית (FLYERS) =================
+// The list never carries the (large, base64) images — each image is served from its own
+// cacheable URL, so the homepage stays light no matter how many flyers there are.
+
+const FLYER_LIST_FIELDS = '-image -mobileImage';
+const flyerVersion = (f) => new Date(f.updatedAt || f.createdAt || 0).getTime();
+const toPublicFlyer = (f) => ({
+    _id: f._id,
+    title: f.title,
+    link: f.link,
+    openInNewTab: f.openInNewTab,
+    isActive: f.isActive,
+    order: f.order,
+    startsAt: f.startsAt,
+    endsAt: f.endsAt,
+    imageUrl: `/flyers/${f._id}/image?v=${flyerVersion(f)}`,
+    mobileImageUrl: f.hasMobileImage ? `/flyers/${f._id}/image?variant=mobile&v=${flyerVersion(f)}` : null,
+});
+const withHasMobile = async (filter) => {
+    const rows = await Flyer.aggregate([
+        { $match: filter },
+        { $addFields: { hasMobileImage: { $gt: [{ $strLenCP: { $ifNull: ['$mobileImage', ''] } }, 0] } } },
+        { $project: { image: 0, mobileImage: 0 } },
+        { $sort: { order: 1, createdAt: -1 } },
+    ]);
+    return rows;
+};
+const cleanFlyerInput = (body) => {
+    const data = {};
+    for (const k of ['title', 'image', 'mobileImage', 'link', 'openInNewTab', 'isActive', 'order', 'startsAt', 'endsAt']) {
+        if (body[k] !== undefined) data[k] = body[k];
+    }
+    if (data.startsAt === '') data.startsAt = null;
+    if (data.endsAt === '') data.endsAt = null;
+    if (data.order !== undefined) data.order = Number(data.order) || 0;
+    data.updatedAt = new Date();
+    return data;
+};
+
+// Public: only active flyers inside their date window
+router.get('/flyers', async (req, res) => {
+    try {
+        const now = new Date();
+        const rows = await withHasMobile({
+            isActive: true,
+            $and: [
+                { $or: [{ startsAt: null }, { startsAt: { $lte: now } }] },
+                { $or: [{ endsAt: null }, { endsAt: { $gte: now } }] },
+            ],
+        });
+        res.set('Cache-Control', 'public, max-age=60');
+        res.json(rows.map(toPublicFlyer));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/flyers/:id/image', requireValidObjectId('id'), async (req, res) => {
+    try {
+        const f = await Flyer.findById(req.params.id).select('image mobileImage').lean();
+        if (!f) return res.status(404).end();
+        const src = (req.query.variant === 'mobile' && f.mobileImage) ? f.mobileImage : f.image;
+        const m = /^data:([^;]+);base64,(.+)$/.exec(src || '');
+        if (!m) return res.redirect(src); // stored as a plain URL
+        res.set('Content-Type', m[1]);
+        res.set('Cache-Control', 'public, max-age=31536000, immutable'); // URL carries ?v=<updatedAt>
+        res.send(Buffer.from(m[2], 'base64'));
+    } catch (err) { res.status(500).end(); }
+});
+
+// Admin: all flyers (including inactive / scheduled)
+router.get('/admin/flyers', authenticate, isAdmin, async (req, res) => {
+    try { res.json((await withHasMobile({})).map(toPublicFlyer)); }
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/flyers', authenticate, isAdmin, async (req, res) => {
+    try {
+        const data = cleanFlyerInput(req.body);
+        if (!data.image) return res.status(400).json({ error: 'חסרה תמונה לפלייר' });
+        if (data.order === undefined) data.order = await Flyer.countDocuments();
+        const saved = await new Flyer(data).save();
+        res.status(201).json(toPublicFlyer({ ...saved.toObject(), hasMobileImage: !!saved.mobileImage }));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+router.put('/admin/flyers/:id', authenticate, isAdmin, requireValidObjectId('id'), async (req, res) => {
+    try {
+        const data = cleanFlyerInput(req.body);
+        // Empty image string from the editor means "keep the current one"
+        if (!data.image) delete data.image;
+        const saved = await Flyer.findByIdAndUpdate(req.params.id, data, { new: true });
+        if (!saved) return res.status(404).json({ error: 'not found' });
+        res.json(toPublicFlyer({ ...saved.toObject(), hasMobileImage: !!saved.mobileImage }));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+router.put('/admin/flyers-order', authenticate, isAdmin, async (req, res) => {
+    try {
+        const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
+        await Promise.all(ids.map((id, i) => mongoose.isValidObjectId(id) ? Flyer.updateOne({ _id: id }, { order: i }) : null));
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+router.delete('/admin/flyers/:id', authenticate, isAdmin, requireValidObjectId('id'), async (req, res) => {
+    try { await Flyer.findByIdAndDelete(req.params.id); res.json({ success: true }); }
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 

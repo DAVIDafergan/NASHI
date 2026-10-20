@@ -269,7 +269,25 @@ const ZodiacWheelSpinSchema = new mongoose.Schema({
 });
 const ZodiacWheelSpin = mongoose.model('ZodiacWheelSpin', ZodiacWheelSpinSchema);
 
+
+// --- פליירים לדף הבית (קרוסלה) ---
+const FlyerSchema = new mongoose.Schema({
+  title: { type: String, default: '' },
+  image: { type: String, required: true },      // data URL (base64) — served separately via /flyers/:id/image
+  mobileImage: { type: String, default: '' },   // optional portrait version for phones
+  link: { type: String, default: '' },
+  openInNewTab: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
+  order: { type: Number, default: 0 },
+  startsAt: { type: Date, default: null },
+  endsAt: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+const Flyer = mongoose.model('Flyer', FlyerSchema);
+
 export { 
+  Flyer,
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
   Announcement, Challenge, ChallengeEntry, ContactMessage,

@@ -41,7 +41,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fffcfc] via-[#fdf6ff] to-[#fffcfc] p-4 text-right" dir="rtl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FBF7F4] via-[#fdf6ff] to-[#FBF7F4] p-4 text-right" dir="rtl">
       <div className="bg-white/80 backdrop-blur-xl p-8 md:p-12 rounded-[3rem] shadow-2xl border border-white w-full max-w-md relative overflow-hidden">
         
         {/* קישוט עיצובי */}
@@ -84,7 +84,7 @@ const ForgotPassword = () => {
             <button
               disabled={loading || status.type === 'success'}
               type="submit"
-              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl shadow-slate-200 hover:bg-rose-500 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-slate-400"
+              className="w-full py-4 bg-rose-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-slate-200 hover:bg-rose-500 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-slate-400"
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : (
                 <>שלחי לי לינק לאיפוס <ArrowRight size={18} /></>

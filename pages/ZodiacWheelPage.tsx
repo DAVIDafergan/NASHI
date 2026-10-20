@@ -200,7 +200,7 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
             </div>
 
             {!user ? (
-              <button onClick={onOpenLogin} className="w-full py-3 rounded-xl bg-slate-900 text-white font-black flex items-center justify-center gap-2">
+              <button onClick={onOpenLogin} className="w-full py-3 rounded-xl bg-rose-700 text-white font-black flex items-center justify-center gap-2">
                 <Lock size={16} /> התחברי כדי לסובב
               </button>
             ) : (

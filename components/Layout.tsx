@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LogOut, User as UserIcon, ShieldCheck, ChevronDown, Home, 
-  Calendar, Gift, Heart, MessageSquare, Users, Search, X, Send // נוספו X, Send
+  Calendar, Gift, MessageSquare, Users, Search, X, Send // נוספו X, Send
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -40,11 +40,11 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
 
   // עדכון רשימת הקישורים (Mobile)
   const mobileNavLinks = [
-      { label: 'בית', path: '/', icon: <Home size={20} strokeWidth={1.5} /> },
-      { label: 'אירועים', path: '/events', icon: <Calendar size={20} strokeWidth={1.5} /> },
-      { label: 'פורום', path: '/forum', icon: <MessageSquare size={20} strokeWidth={1.5} /> }, // חדש
-      { label: 'קהילה', path: '/community', icon: <Users size={20} strokeWidth={1.5} /> }, // חדש
-      { label: 'פרופיל', path: '/profile', icon: <UserIcon size={20} strokeWidth={1.5} /> },
+      { label: 'בית', path: '/', icon: <Home size={20} strokeWidth={1.6} /> },
+      { label: 'אירועים', path: '/events', icon: <Calendar size={20} strokeWidth={1.6} /> },
+      { label: 'פורום', path: '/forum', icon: <MessageSquare size={20} strokeWidth={1.6} /> }, // חדש
+      { label: 'קהילה', path: '/community', icon: <Users size={20} strokeWidth={1.6} /> }, // חדש
+      { label: 'פרופיל', path: '/profile', icon: <UserIcon size={20} strokeWidth={1.6} /> },
   ];
 
   const handleLogout = () => {
@@ -64,102 +64,97 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full font-sans text-slate-600">
+    <div className="flex flex-col min-h-screen w-full font-sans text-slate-600 bg-[#FBF7F4]">
       
+      {/* Ambient background — lives here (outside the animated main container) so it truly covers the viewport */}
+      <div className="fixed inset-0 -z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div className="absolute inset-0 bg-gradient-to-b from-rose-50 via-[#FBF7F4] to-[#FBF7F4]" />
+        <div className="absolute -top-40 -left-40 w-[560px] h-[560px] bg-rose-200/40 rounded-full blur-[120px]" />
+        <div className="absolute top-1/3 -right-48 w-[520px] h-[520px] bg-plum-200/25 rounded-full blur-[130px]" />
+        <div className="absolute bottom-0 left-1/4 w-[420px] h-[420px] bg-champagne-100/50 rounded-full blur-[120px]" />
+      </div>
+
       {/* --- Header --- */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white ${
-            scrolled ? 'h-16 shadow-[0_1px_3px_rgba(0,0,0,0.1)]' : 'h-20 shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+            scrolled
+              ? 'h-16 bg-[#FBF7F4]/85 backdrop-blur-xl shadow-[0_1px_0_rgba(189,122,129,0.18),0_10px_30px_-20px_rgba(61,47,55,0.25)]'
+              : 'h-20 bg-[#FBF7F4]/60 backdrop-blur-md'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1">
-            <Link to="/" className="flex items-center gap-2 group z-50 shrink-0">
-              <div className="bg-gradient-to-tr from-rose-400 to-pink-500 p-1.5 rounded-full text-white shadow-lg shadow-rose-200 group-hover:scale-105 transition-transform duration-500">
-                <Heart className="fill-current" size={14} />
-              </div>
-              <span className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
-                נשי<span className="text-rose-500">.</span>
-              </span>
+        <div className="max-w-7xl mx-auto px-5 md:px-8 h-full flex items-center justify-between gap-6">
+          <div className="flex items-center gap-6 flex-1 min-w-0">
+            <Link to="/" className="flex items-baseline gap-1.5 group z-50 shrink-0" aria-label="נשי — לדף הבית">
+              <span className="font-display text-[1.85rem] md:text-[2.1rem] leading-none text-ink tracking-tight">נשי</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-400 group-hover:scale-150 transition-transform duration-500" />
             </Link>
 
             {/* שורת חיפוש חופשי (Desktop) */}
-            <div className="hidden lg:flex items-center relative group flex-1 max-w-xs">
-                <Search className="absolute right-3 text-slate-400 group-focus-within:text-[#2D6A4F] transition-colors" size={16} />
+            <div className="hidden lg:flex items-center relative group flex-1 max-w-[260px]">
+                <Search className="absolute right-4 text-rose-300 group-focus-within:text-rose-600 transition-colors" size={15} strokeWidth={1.75} />
                 <input
                     type="text"
-                    placeholder="חיפוש חופשי באתר..."
-                    className="w-full pr-10 pl-4 py-2 bg-[#F5F5F5] border border-transparent rounded-full outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F]/30 text-xs transition-all"
+                    placeholder="חיפוש באתר…"
+                    className="w-full pr-10 pl-4 py-2.5 bg-white/70 border border-rose-100 rounded-full outline-none focus:ring-4 focus:ring-rose-100 focus:border-rose-300 text-[13px] text-slate-700 placeholder:text-slate-400 transition-all"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
           </div>
 
-            {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-5">
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-1" aria-label="ניווט ראשי">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className="relative py-2 text-[13px] font-bold text-slate-600 hover:text-[#2D6A4F] transition-colors duration-300 group/link"
+                className={`relative px-3.5 py-2 rounded-full text-[14px] font-medium transition-all duration-300 ${
+                  isActive(link.path) ? 'text-rose-800 bg-rose-100/70' : 'text-slate-600 hover:text-rose-700 hover:bg-white/70'
+                }`}
               >
                 {link.label}
-                <span className={`absolute -bottom-0.5 right-0 h-[2px] bg-[#2D6A4F] transition-all duration-300 ease-out ${
-                    isActive(link.path) ? 'w-full' : 'w-0 group-hover/link:w-full'
-                }`}></span>
               </Link>
             ))}
           </nav>
 
           {/* User Profile / Login Section */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {user ? (
               <div className="relative">
                 <button
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center gap-2 pl-1 pr-1 py-1 rounded-full bg-[#F5F5F5] border border-transparent hover:border-[#2D6A4F]/25 hover:bg-[#DCEEE5]/60 transition-all group"
+                  className="flex items-center gap-2 p-1 md:pl-3 rounded-full bg-white/80 border border-rose-100 hover:border-rose-200 hover:shadow-soft transition-all group"
+                  aria-haspopup="menu"
+                  aria-expanded={isProfileMenuOpen}
                 >
-                  <div className="text-right hidden md:block pl-2">
-                    <p className="text-xs font-bold text-slate-700 group-hover:text-[#2D6A4F] transition-colors">{user.name.split(' ')[0]}</p>
-                    {/* הצגת נקודות מותנית */}
-                    {user.isMemberApproved && (
-                      <p className="text-[10px] text-[#2D6A4F] font-medium">{user.points} נק'</p>
-                    )}
+                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-rose-100 overflow-hidden ring-2 ring-white">
+                    <img src={user.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${user.name}`} alt={user.name} className="w-full h-full object-cover" />
                   </div>
-
-                  {/* Mobile Only Points display */}
+                  <div className="text-right hidden md:block leading-tight">
+                    <p className="text-[13px] font-semibold text-slate-800">{user.name.split(' ')[0]}</p>
+                    {user.isMemberApproved && <p className="text-[11px] text-rose-600">{user.points} נקודות</p>}
+                  </div>
                   {user.isMemberApproved && (
-                    <div className="md:hidden flex flex-col items-end pr-2 pl-1">
-                        <span className="text-[10px] font-bold text-[#2D6A4F]">{user.points} נק'</span>
-                    </div>
+                    <span className="md:hidden text-[11px] font-semibold text-rose-700 pl-2">{user.points} נק'</span>
                   )}
-
-                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#DCEEE5] overflow-hidden border-2 border-white shadow-sm ring-1 ring-[#DCEEE5]">
-                    <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} alt={user.name} className="w-full h-full object-cover" />
-                  </div>
-                  <ChevronDown size={12} className="text-slate-400 ml-0.5 group-hover:text-[#2D6A4F] hidden md:block" />
+                  <ChevronDown size={13} className="text-slate-400 hidden md:block group-hover:text-rose-600 transition-colors" />
                 </button>
 
                 {isProfileMenuOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.12)] border border-slate-100 py-2 animate-fade-in-up origin-top-left z-[60]">
-                    <div className="md:hidden px-4 py-3 border-b border-slate-50 mb-1">
-                        <p className="text-sm font-bold text-slate-800">{user.name}</p>
-                        <p className="text-xs text-slate-400">{user.email}</p>
+                  <div role="menu" className="absolute top-full left-0 mt-3 w-60 bg-white rounded-3xl shadow-lift border border-rose-100 p-2 animate-fade-in-up origin-top-left z-[60]">
+                    <div className="px-4 py-3 mb-1 rounded-2xl bg-rose-50/70">
+                        <p className="text-sm font-semibold text-slate-800">{user.name}</p>
+                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
                     </div>
-                    <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-[#DCEEE5]/50 hover:text-[#2D6A4F] transition-colors rounded-lg mx-1"><UserIcon size={15} />האזור האישי</Link>
-                    {user.isAdmin && <Link to="/admin" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-[#DCEEE5]/50 hover:text-[#2D6A4F] transition-colors rounded-lg mx-1"><ShieldCheck size={15} />ניהול מערכת</Link>}
-                    <div className="border-t border-slate-50 mt-1 pt-1">
-                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-5 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors rounded-lg mx-1"><LogOut size={15} />התנתקות</button>
-                    </div>
+                    <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><UserIcon size={16} strokeWidth={1.75} />האזור האישי</Link>
+                    {user.isAdmin && <Link to="/admin" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><ShieldCheck size={16} strokeWidth={1.75} />ניהול מערכת</Link>}
+                    <div className="hairline my-1.5" />
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors rounded-2xl"><LogOut size={16} strokeWidth={1.75} />התנתקות</button>
                   </div>
                 )}
               </div>
             ) : (
-              <button
-                onClick={onOpenLogin}
-                className="bg-[#2D6A4F] text-white px-6 py-2.5 min-h-[44px] rounded-lg font-bold text-xs hover:bg-[#245A41] hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-sm"
-              >
+              <button onClick={onOpenLogin} className="btn-primary !px-6 !py-2.5 min-h-[44px]">
                 כניסה
               </button>
             )}
@@ -169,56 +164,68 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
       </header>
 
       {/* --- Main Content --- */}
-      <main className="flex-1 pt-20 pb-24 md:pb-10 w-full min-h-screen">
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 py-4 animate-fade-in-up">
+      <main className="relative z-10 flex-1 pt-20 pb-28 md:pb-12 w-full min-h-screen">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-4 animate-fade-in-up">
           {children}
         </div>
       </main>
-      
+
       {/* --- Mobile Bottom Navigation --- */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-100 pb-safe pt-1 px-4 z-40 flex justify-between items-center h-[65px] shadow-[0_-8px_30px_rgba(0,0,0,0.06)] rounded-t-[24px]">
+      <nav aria-label="ניווט" className="md:hidden fixed bottom-3 left-3 right-3 z-40 pb-safe">
+        <div className="bg-white/90 backdrop-blur-xl border border-rose-100 rounded-[28px] shadow-lift flex justify-around items-center h-[64px] px-2">
          {mobileNavLinks.map((link) => {
              const active = isActive(link.path);
              const onClick = (link.path === '/profile' && !user) ? handleMobileProfileClick : undefined;
-             const linkProps = onClick ? { as: 'button', onClick } : { to: link.path };
-             
-             const Wrapper = onClick ? 'button' : Link;
+             const linkProps = onClick ? { onClick, type: 'button' } : { to: link.path };
+             const Wrapper: any = onClick ? 'button' : Link;
 
              return (
                 <Wrapper
                     key={link.path}
-                    {...linkProps as any}
-                    className={`flex flex-col items-center justify-center gap-1 w-14 min-h-[44px] transition-all duration-300`}
+                    {...(linkProps as any)}
+                    aria-current={active ? 'page' : undefined}
+                    className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px]"
                 >
-                    <div className={`
-                        p-2 rounded-full transition-all duration-300
-                        ${active ? 'bg-[#DCEEE5] text-[#2D6A4F] -translate-y-1 shadow-sm' : 'text-slate-400 hover:text-[#2D6A4F]'}
-                    `}>
+                    <span className={`flex items-center justify-center w-10 h-8 rounded-full transition-all duration-300 ${
+                      active ? 'bg-rose-100 text-rose-700' : 'text-slate-400'
+                    }`}>
                         {link.icon}
-                    </div>
-                    <span className={`text-[9px] font-bold transition-all ${active ? 'text-[#2D6A4F]' : 'text-slate-400'}`}>
+                    </span>
+                    <span className={`text-[10px] transition-colors ${active ? 'text-rose-700 font-semibold' : 'text-slate-500'}`}>
                         {link.label}
                     </span>
                 </Wrapper>
              );
          })}
-      </div>
+        </div>
+      </nav>
 
-      <footer className="hidden md:block bg-white/40 border-t border-rose-100/50 py-10 mt-auto backdrop-blur-sm">
-            <div className="max-w-7xl mx-auto px-6 text-center text-slate-400 text-sm">
-              <div className="flex justify-center items-center gap-2 mb-3 text-rose-300"><Heart size={14} className="fill-current" /></div>
-              <p className="mb-3 font-light text-xs text-slate-500">נשי - פלטפורמה עירונית לקידום תרבות נשים</p>
-              <div className="flex justify-center gap-6 text-[11px] font-bold text-slate-400">
-                 <Link to="/contact" className="hover:text-rose-500 transition-colors">צור קשר</Link>
-                 <button onClick={() => setShowTermsModal(true)} className="hover:text-rose-500 transition-colors">תנאי שימוש</button>
-              </div>
-            </div>
+      <footer className="relative z-10 hidden md:block mt-auto border-t border-rose-100/70 bg-gradient-to-b from-transparent to-rose-50/60">
+        <div className="max-w-7xl mx-auto px-8 py-14 grid grid-cols-3 items-start gap-10 text-right">
+          <div>
+            <p className="font-display text-3xl text-ink leading-none">נשי</p>
+            <p className="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">פלטפורמה עירונית לקידום תרבות נשים — אירועים, חוגים, קהילה והשראה, במקום אחד.</p>
+          </div>
+          <div className="flex flex-col gap-2.5 text-sm">
+            <p className="eyebrow mb-1">ניווט</p>
+            {navLinks.slice(0, 5).map((l) => (
+              <Link key={l.path} to={l.path} className="text-slate-600 hover:text-rose-700 transition-colors w-fit">{l.label}</Link>
+            ))}
+          </div>
+          <div className="flex flex-col gap-2.5 text-sm">
+            <p className="eyebrow mb-1">מידע</p>
+            <Link to="/contact" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">צור קשר</Link>
+            <button onClick={() => setShowTermsModal(true)} className="text-slate-600 hover:text-rose-700 transition-colors w-fit text-right">תקנון ותנאי שימוש</button>
+          </div>
+        </div>
+        <div className="hairline" />
+        <p className="text-center text-[12px] text-slate-400 py-5">© {new Date().getFullYear()} נשי · נבנה באהבה לקהילה</p>
       </footer>
 
       {/* מודל תקנון גלובלי - זמין לכל האתר */}
       {showTermsModal && (
-          <div className="fixed inset-0 z-[100] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowTermsModal(false)}>
-              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-2xl p-6 md:p-10 relative shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-slide-up border-t-4 border-[#2D6A4F]">
+          <div className="fixed inset-0 z-[100] flex items-end md:items-start justify-center bg-[#2B2027]/40 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowTermsModal(false)}>
+              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-[2rem] md:rounded-[2rem] w-full max-w-2xl p-6 md:p-10 relative shadow-lift overflow-hidden flex flex-col max-h-[88vh] animate-slide-up border border-rose-100">
                   <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-4 shrink-0 md:hidden"></div>
                   <div className="flex items-center justify-between mb-6 shrink-0">
                       <h2 className="text-xl font-black text-slate-800 flex items-center gap-2"><ShieldCheck className="text-rose-500"/> תקנון ומדיניות שימוש</h2>
@@ -250,7 +257,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                       <p className="font-black text-slate-800 underline">סמכות שיפוט</p>
                       <p>על תקנון זה ועל השימוש באתר יחולו דיני מדינת ישראל בלבד, וסמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים בישראל.</p>
                   </div>
-                  <button onClick={() => setShowTermsModal(false)} className="mt-6 w-full py-4 bg-slate-900 text-white rounded-xl font-black text-xs shrink-0">סגור ואישור</button>
+                  <button onClick={() => setShowTermsModal(false)} className="btn-primary mt-6 w-full shrink-0">סגור ואישור</button>
               </div>
           </div>
       )}

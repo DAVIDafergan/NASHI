@@ -108,14 +108,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
     <div className="space-y-6 w-full max-w-5xl mx-auto pb-10 text-right" dir="rtl">
 
       {/* כרטיס פרופיל עליון */}
-      <ScrollReveal className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-slate-100 relative overflow-visible">
+      <ScrollReveal className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100 relative overflow-visible">
         <div className="flex flex-col md:flex-row gap-8 items-center md:items-start relative z-10">
 
           {/* Avatar Section */}
           <div className="relative group">
-            <div className={`w-32 h-32 md:w-36 md:h-36 rounded-full border-4 border-white shadow-xl overflow-hidden ${isEditing ? 'cursor-pointer ring-4 ring-[#DCEEE5]' : ''}`}
+            <div className={`w-32 h-32 md:w-36 md:h-36 rounded-full border-4 border-white shadow-xl overflow-hidden ${isEditing ? 'cursor-pointer ring-4 ring-[#F8EAEA]' : ''}`}
                  onClick={() => isEditing && setShowAvatarPicker(!showAvatarPicker)}>
-               <img src={isEditing ? editForm.avatar : user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie'} alt="Profile" className="w-full h-full object-cover bg-[#F5F5F5]" />
+               <img src={isEditing ? editForm.avatar : user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie'} alt="Profile" className="w-full h-full object-cover bg-[#F7F2F0]" />
                {isEditing && (
                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
                        <Camera size={24} />
@@ -140,43 +140,43 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
              {isEditing ? (
                  <div className="grid md:grid-cols-2 gap-4 animate-fade-in-up">
                      <div className="space-y-1 text-right">
-                         <label className="text-xs font-bold text-[#718096]">שם מלא</label>
-                         <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F5F5F5] text-right outline-none focus:ring-2 focus:ring-[#2D6A4F]/25 focus:border-[#2D6A4F]/40 transition-all" />
+                         <label className="text-xs font-bold text-[#85757A]">שם מלא</label>
+                         <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F7F2F0] text-right outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all" />
                      </div>
                      <div className="space-y-1 text-right">
-                         <label className="text-xs font-bold text-[#718096]">טלפון</label>
-                         <input type="text" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F5F5F5] text-right outline-none focus:ring-2 focus:ring-[#2D6A4F]/25 focus:border-[#2D6A4F]/40 transition-all" />
+                         <label className="text-xs font-bold text-[#85757A]">טלפון</label>
+                         <input type="text" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F7F2F0] text-right outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all" />
                      </div>
                      <div className="space-y-1 text-right">
-                         <label className="text-xs font-bold text-[#718096]">אימייל</label>
-                         <input type="text" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F5F5F5] text-right outline-none focus:ring-2 focus:ring-[#2D6A4F]/25 focus:border-[#2D6A4F]/40 transition-all" />
+                         <label className="text-xs font-bold text-[#85757A]">אימייל</label>
+                         <input type="text" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F7F2F0] text-right outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all" />
                      </div>
                      <div className="space-y-1 text-right">
-                         <label className="text-xs font-bold text-[#718096]">כתובת</label>
-                         <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F5F5F5] text-right outline-none focus:ring-2 focus:ring-[#2D6A4F]/25 focus:border-[#2D6A4F]/40 transition-all" />
+                         <label className="text-xs font-bold text-[#85757A]">כתובת</label>
+                         <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F7F2F0] text-right outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all" />
                      </div>
                  </div>
              ) : (
                 <>
                     <div className="flex flex-col md:flex-row items-center gap-3 justify-center md:justify-start">
-                        <h2 className="text-2xl md:text-3xl font-bold text-[#1A202C]">{user.name}</h2>
+                        <h2 className="text-2xl md:text-3xl font-bold text-[#2B2027]">{user.name}</h2>
                         <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-md ${getLevelStyle(user.level)}`}>
                             {user.level}
                         </span>
                     </div>
-                    <p className="text-[#4A5568] text-sm">{user.occupation || user.email}</p>
+                    <p className="text-[#6A5960] text-sm">{user.occupation || user.email}</p>
 
                     {/* 3 Badges: נקודות / אירועים שאהבתי / חברה מאז */}
                     <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                        <span className="inline-flex items-center gap-1.5 bg-[#F5F5F5] text-[#1A202C] text-xs font-bold px-3 py-1.5 rounded-full">
-                            <Star size={13} className="text-[#2D6A4F]" /> {user.points} נקודות
+                        <span className="inline-flex items-center gap-1.5 bg-[#F7F2F0] text-[#2B2027] text-xs font-bold px-3 py-1.5 rounded-full">
+                            <Star size={13} className="text-[#8A5058]" /> {user.points} נקודות
                         </span>
-                        <span className="inline-flex items-center gap-1.5 bg-[#F5F5F5] text-[#1A202C] text-xs font-bold px-3 py-1.5 rounded-full">
-                            <Heart size={13} className="text-[#E85C5C]" /> {likedEvents.length} אירועים שמורים
+                        <span className="inline-flex items-center gap-1.5 bg-[#F7F2F0] text-[#2B2027] text-xs font-bold px-3 py-1.5 rounded-full">
+                            <Heart size={13} className="text-[#BD7A81]" /> {likedEvents.length} אירועים שמורים
                         </span>
                         {memberSinceLabel && (
-                          <span className="inline-flex items-center gap-1.5 bg-[#F5F5F5] text-[#1A202C] text-xs font-bold px-3 py-1.5 rounded-full">
-                              <Calendar size={13} className="text-[#718096]" /> חברה מאז {memberSinceLabel}
+                          <span className="inline-flex items-center gap-1.5 bg-[#F7F2F0] text-[#2B2027] text-xs font-bold px-3 py-1.5 rounded-full">
+                              <Calendar size={13} className="text-[#85757A]" /> חברה מאז {memberSinceLabel}
                           </span>
                         )}
                     </div>
@@ -186,12 +186,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
              {/* מדד התקדמות - מופיע רק למאושרות */}
              {!isEditing && user.isMemberApproved && (
                 <div className="mt-4 max-w-md w-full mx-auto md:mx-0">
-                    <div className="flex justify-between text-xs font-bold text-[#718096] mb-1">
+                    <div className="flex justify-between text-xs font-bold text-[#85757A] mb-1">
                     <span>{user.points} נקודות</span>
                     <span>{nextLevelPoints} ליעד הבא</span>
                     </div>
                     <div className="h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                    <div className="h-full bg-gradient-to-r from-[#2D6A4F] to-[#4E8F72] transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                    <div className="h-full bg-gradient-to-r from-[#8A5058] to-[#86A98C] transition-all duration-1000" style={{ width: `${progress}%` }}></div>
                     </div>
                 </div>
              )}
@@ -199,7 +199,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
              {/* כפתורי פעולה: עריכה (outline) + התנתקות (danger) */}
              {!isEditing && (
                <div className="flex gap-2 justify-center md:justify-start pt-1">
-                  <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] text-[#1A202C] bg-white border border-slate-200 hover:border-[#2D6A4F]/40 hover:text-[#2D6A4F] rounded-xl transition-colors font-bold text-sm">
+                  <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] text-[#2B2027] bg-white border border-slate-200 hover:border-[#8A5058]/40 hover:text-[#8A5058] rounded-xl transition-colors font-bold text-sm">
                       <Edit2 size={16} /> עריכת פרטים
                   </button>
                   {onLogout && (
@@ -215,7 +215,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
             <div className="flex gap-2 self-start absolute top-0 left-0 md:relative">
                 <div className="flex gap-2">
                     <button onClick={() => setIsEditing(false)} className="p-3 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors"><X size={20} /></button>
-                    <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[#2D6A4F] text-white rounded-xl font-bold hover:bg-[#245A41] transition-colors"><Save size={18} /> שמירה</button>
+                    <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[#8A5058] text-white rounded-xl font-bold hover:bg-[#6F4148] transition-colors"><Save size={18} /> שמירה</button>
                 </div>
             </div>
           )}
@@ -235,8 +235,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-bold transition-all ${
                 activeTab === tab.key
-                  ? 'bg-[#2D6A4F] text-white shadow-md shadow-[#2D6A4F]/20'
-                  : 'bg-white text-[#718096] border border-slate-200 hover:border-[#2D6A4F]/40 hover:text-[#2D6A4F]'
+                  ? 'bg-[#8A5058] text-white shadow-md shadow-[#8A5058]/20'
+                  : 'bg-white text-[#85757A] border border-slate-200 hover:border-[#8A5058]/40 hover:text-[#8A5058]'
               }`}
             >
               <TabIcon size={16} /> {tab.label}
@@ -271,7 +271,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
 
               {/* Missions Section - המשימות הפעילות שלי */}
               {user.isMemberApproved && activeMissions.length > 0 && (
-                  <ScrollReveal delay={150} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-orange-100">
+                  <ScrollReveal delay={150} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-orange-100">
                       <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-orange-600">
                           <Target size={20} />
                           משימות בביצוע ({activeMissions.length})
@@ -304,7 +304,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
 
           {/* Benefits & History */}
           <div className="space-y-6">
-               <ScrollReveal delay={100} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-slate-100 h-full flex flex-col">
+               <ScrollReveal delay={100} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100 h-full flex flex-col">
                   <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-slate-800">
                       <Award size={20} className="text-yellow-500" />
                       ההטבות שלי
@@ -312,15 +312,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
 
                   {user.isMemberApproved ? (
                     /* תצוגה למאושרות - ההטבות מוגדרות ע"י המנהלת בלבד */
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-[#F5F5F5] rounded-2xl border border-dashed border-slate-200">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-[#F7F2F0] rounded-2xl border border-dashed border-slate-200">
                         <p className="text-sm text-slate-500 font-medium leading-relaxed">
                           אין כרגע הטבות מוגדרות למעגל. המנהלת תעדכן כאן הטבות חדשות בקרוב.
                         </p>
                     </div>
                   ) : (
                     /* באנר הצטרפות למי שלא אושרה */
-                    <div className="flex-1 flex flex-col items-center justify-center space-y-6 bg-[#F5F5F5] rounded-2xl p-8 border border-dashed border-slate-200 text-center">
-                        <div className="w-16 h-16 bg-[#DCEEE5] rounded-full flex items-center justify-center text-[#2D6A4F]">
+                    <div className="flex-1 flex flex-col items-center justify-center space-y-6 bg-[#F7F2F0] rounded-2xl p-8 border border-dashed border-slate-200 text-center">
+                        <div className="w-16 h-16 bg-[#F8EAEA] rounded-full flex items-center justify-center text-[#8A5058]">
                           <Lock size={32} />
                         </div>
                         <div className="space-y-2">
@@ -332,7 +332,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                           </p>
                         </div>
                         {!user.isMemberRequested && (
-                          <Link to="/" className="bg-[#2D6A4F] text-white px-8 py-3 min-h-[44px] rounded-xl font-black text-sm shadow-lg hover:bg-[#245A41] transition-all flex items-center gap-2">
+                          <Link to="/" className="bg-[#8A5058] text-white px-8 py-3 min-h-[44px] rounded-xl font-black text-sm shadow-lg hover:bg-[#6F4148] transition-all flex items-center gap-2">
                             <HeartHandshake size={18} /> הצטרפי למעגל עכשיו
                           </Link>
                         )}
@@ -342,7 +342,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
 
               {/* גרף צבירה - מופיע רק למאושרות */}
               {user.isMemberApproved && (
-                <ScrollReveal delay={150} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-slate-100">
+                <ScrollReveal delay={150} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100">
                     <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
                         <TrendingUp size={20} className="text-purple-500" />
                         צבירת נקודות שנתית
@@ -358,7 +358,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                             />
                             <Bar dataKey="points" radius={[6, 6, 6, 6]}>
                                 {mockData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={index === mockData.length - 1 ? '#2D6A4F' : '#e2e8f0'} />
+                                <Cell key={`cell-${index}`} fill={index === mockData.length - 1 ? '#8A5058' : '#e2e8f0'} />
                                 ))}
                             </Bar>
                         </BarChart>
@@ -370,18 +370,18 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
         </div>
       ) : (
         /* הסימניות שלי — אירועים שנשמרו/סומנו כאהובים */
-        <ScrollReveal delay={100} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(15,23,42,0.06)] border border-slate-100 min-h-[300px]">
+        <ScrollReveal delay={100} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100 min-h-[300px]">
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-slate-800">
-                <Heart size={20} className="text-[#E85C5C] fill-current" />
+                <Heart size={20} className="text-[#BD7A81] fill-current" />
                 אירועים שאהבתי ({likedEvents.length})
             </h3>
             {likedEvents.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {likedEvents.map(event => (
-                        <div key={event.id} className="flex items-center gap-3 bg-[#F5F5F5] p-3 rounded-2xl border border-transparent hover:border-[#2D6A4F]/20 transition-colors group">
+                        <div key={event.id} className="flex items-center gap-3 bg-[#F7F2F0] p-3 rounded-2xl border border-transparent hover:border-[#8A5058]/20 transition-colors group">
                             <img src={event.image} className="w-16 h-16 rounded-xl object-cover shadow-sm shrink-0" />
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-[#2D6A4F] transition-colors">{event.title}</h4>
+                                <h4 className="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-[#8A5058] transition-colors">{event.title}</h4>
                                 <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
                                     <Calendar size={12} />
                                     <span>{new Date(event.date).toLocaleDateString()}</span>
@@ -391,7 +391,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                     ))}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400 text-sm bg-[#F5F5F5] rounded-2xl border border-dashed border-slate-200 h-full">
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400 text-sm bg-[#F7F2F0] rounded-2xl border border-dashed border-slate-200 h-full">
                     <Heart size={32} className="mb-2 opacity-20" />
                     <p>לא סימנת אירועים עדיין</p>
                 </div>

@@ -42,7 +42,7 @@ export const GeminiAssistant: React.FC = () => {
           onClick={() => setIsOpen(!isOpen)}
           className={`
             p-4 rounded-full shadow-2xl transition-all duration-300 flex items-center gap-2
-            ${isOpen ? 'bg-slate-800 text-white rotate-90' : 'bg-gradient-to-r from-rose-500 to-purple-600 text-white hover:scale-105 shadow-rose-300/50'}
+            ${isOpen ? 'bg-rose-700 text-white rotate-90' : 'bg-gradient-to-r from-rose-500 to-purple-600 text-white hover:scale-105 shadow-rose-300/50'}
           `}
         >
           {isOpen ? <X size={24} /> : <Sparkles size={24} />}

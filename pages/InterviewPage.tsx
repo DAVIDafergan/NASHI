@@ -91,7 +91,7 @@ const InterviewPage = () => {
                 <p className="text-xl text-slate-500 font-bold leading-relaxed">
                     תודה רבה על השיתוף. התשובות והתמונה שלך הועברו למנהלת האתר לאישור סופי לפני הפרסום.
                 </p>
-                <button onClick={() => navigate('/')} className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-rose-600 transition-all shadow-lg">חזרה לדף הבית</button>
+                <button onClick={() => navigate('/')} className="bg-rose-700 text-white px-10 py-4 rounded-2xl font-black hover:bg-rose-600 transition-all shadow-lg">חזרה לדף הבית</button>
             </div>
         </div>
     );
@@ -191,7 +191,7 @@ const InterviewPage = () => {
 
                     {/* כפתור שליחה */}
                     <div className="pt-6">
-                        <button type="submit" className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-2xl shadow-xl hover:bg-rose-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-4 group">
+                        <button type="submit" className="w-full py-6 bg-rose-700 text-white rounded-[2rem] font-black text-2xl shadow-xl hover:bg-rose-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-4 group">
                             <Send size={28} className="group-hover:translate-x-[-8px] transition-transform rotate-180" /> שליחת הראיון לאישור המנהלת
                         </button>
                         <p className="text-center text-slate-400 text-sm font-bold mt-6 tracking-wide">בלחיצה על שליחה, את מאשרת את פרסום התשובות והתמונה באתר.</p>

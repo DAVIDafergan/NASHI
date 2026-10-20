@@ -187,7 +187,7 @@ const EventsPage = () => {
   );
 
   return (
-    <div className="space-y-6 w-full pb-20 p-4 md:p-12 text-right bg-[#fffcfc]" dir="rtl">
+    <div className="space-y-6 w-full pb-20 p-4 md:p-12 text-right bg-[#FBF7F4]" dir="rtl">
       
       {/* Header with Back Button */}
       <div className="flex items-center gap-4 mb-8 justify-start">
@@ -280,7 +280,7 @@ const EventsPage = () => {
       {/* מובייל: bottom sheet (נפתח מלמטה). דסקטופ: מודל ממורכז במסך */}
       {selectedEvent && (
         <div className="fixed inset-0 z-[100] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in md:pt-24 md:px-4 md:pb-4" onClick={() => setSelectedEvent(null)}>
-            <div onClick={(e) => e.stopPropagation()} className="bg-white w-full md:max-w-[500px] rounded-t-2xl md:rounded-2xl max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up relative border-t-4 border-[#2D6A4F] no-scrollbar">
+            <div onClick={(e) => e.stopPropagation()} className="bg-white w-full md:max-w-[500px] rounded-t-2xl md:rounded-2xl max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up relative border-t-4 border-[#8A5058] no-scrollbar">
                 <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 sticky top-0 md:hidden"></div>
 
                 {/* Close Button UI */}
@@ -377,7 +377,7 @@ const EventsPage = () => {
                       </div>
 
                       <div className="flex gap-4 mb-10">
-                          <button onClick={handleShare} className="w-full py-5 rounded-[2rem] bg-slate-900 text-white font-black text-sm flex items-center justify-center gap-3 shadow-xl hover:bg-rose-600 transition-all active:scale-95">
+                          <button onClick={handleShare} className="w-full py-5 rounded-[2rem] bg-rose-700 text-white font-black text-sm flex items-center justify-center gap-3 shadow-xl hover:bg-rose-600 transition-all active:scale-95">
                               <Share2 size={20} /> שתפי עם חברות
                           </button>
                       </div>

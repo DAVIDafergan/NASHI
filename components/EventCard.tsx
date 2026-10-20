@@ -36,36 +36,36 @@ const EventCard: React.FC<EventCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-[0_2px_16px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_28px_rgba(15,23,42,0.1)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-pointer flex flex-col ${isPast ? 'opacity-[0.85]' : ''} ${className}`}
+      className={`group bg-white rounded-[1.75rem] overflow-hidden border border-rose-100/70 shadow-petal hover:shadow-lift hover:-translate-y-1 active:scale-[0.99] transition-all duration-500 cursor-pointer flex flex-col ${isPast ? 'opacity-[0.85]' : ''} ${className}`}
     >
-      <div className="relative h-44 sm:h-48 overflow-hidden bg-slate-50 shrink-0">
+      <div className="relative aspect-[4/3] overflow-hidden bg-rose-50 shrink-0 m-2 mb-0 rounded-[1.4rem]">
         <img
           src={image}
           alt={title}
           loading="lazy"
-          className={`w-full h-full object-cover transition-transform duration-700 hover:scale-105 ${isPast ? 'grayscale-[0.35]' : ''}`}
+          className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04] ${isPast ? 'grayscale-[0.35]' : ''}`}
         />
         {isPast ? (
-          <span className="absolute top-3 right-3 inline-flex items-center gap-1.5 bg-[#CBD5E0] text-[#1A202C] px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm">
+          <span className="absolute top-3 right-3 inline-flex items-center gap-1.5 bg-white/90 text-slate-600 px-3 py-1.5 rounded-full text-[11px] font-semibold shadow-soft">
             <CheckCircle2 size={13} /> האירוע הסתיים
           </span>
         ) : category && (
-          <span className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-bold text-slate-700 shadow-sm">
+          <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide text-rose-700 shadow-soft">
             {category}
           </span>
         )}
       </div>
 
-      <div className="p-4 flex flex-col flex-1 text-right gap-3">
-        <h3 className="font-bold text-slate-800 text-base leading-snug line-clamp-2">{title}</h3>
+      <div className="p-5 pt-4 flex flex-col flex-1 text-right gap-3">
+        <h3 className="text-[1.2rem] leading-snug text-ink line-clamp-2">{title}</h3>
 
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-            <Calendar size={14} className="text-[#E85C5C] shrink-0" />
+          <div className="flex items-center gap-1.5 text-[13px] text-slate-500">
+            <Calendar size={14} className="text-[#BD7A81] shrink-0" />
             <span>{dateLabel}{time ? ` • ${time}` : ''}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-            <MapPin size={14} className="text-[#E85C5C] shrink-0" />
+          <div className="flex items-center gap-1.5 text-[13px] text-slate-500">
+            <MapPin size={14} className="text-[#BD7A81] shrink-0" />
             <span className="truncate">{location}</span>
           </div>
         </div>
@@ -73,10 +73,10 @@ const EventCard: React.FC<EventCardProps> = ({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onClick?.(); }}
-          className={`mt-1 w-full py-3 rounded-xl text-sm font-bold active:scale-95 transition-all min-h-[44px] ${
+          className={`mt-auto w-full py-3 rounded-full text-sm font-semibold active:scale-[0.98] transition-all min-h-[44px] ${
             isPast
-              ? 'bg-[#F5F5F5] text-[#718096] hover:bg-[#EDEDED]'
-              : 'bg-slate-900 text-white hover:bg-[#E85C5C]'
+              ? 'bg-slate-100 text-slate-500'
+              : 'bg-rose-50 text-rose-700 group-hover:bg-rose-700 group-hover:text-white'
           }`}
         >
           {isPast ? 'הסתיים' : ctaLabel}

@@ -3,21 +3,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Antidott (display font) ───────────────────────────────────────────────
+   Headings already ask for 'Antidott' first (see tailwind.config.js → fontFamily.display).
+   To activate it: put the licensed files in /public/fonts/ and replace the src below with
+     src: url('/fonts/Antidott.woff2') format('woff2'), url('/fonts/Antidott.woff') format('woff');
+   Until then it uses a locally installed copy if there is one, else Frank Ruhl Libre. */
+@font-face {
+  font-family: 'Antidott';
+  src: local('Antidott'), local('Antidott Regular');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
-    font-family: 'Heebo', 'Assistant', Arial, sans-serif;
+    font-family: 'Assistant', 'Heebo', Arial, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+  h1, h2, h3, .font-display {
+    font-family: 'Antidott', 'Frank Ruhl Libre', Georgia, serif;
+    letter-spacing: -0.01em;
+    color: var(--color-ink);
+  }
+  h1 { font-weight: 500; }
+  h2, h3 { font-weight: 500; }
+  ::selection { background: #F0D5D6; color: #3D2F37; }
+  :focus-visible { outline: 2px solid #BD7A81; outline-offset: 3px; border-radius: 10px; }
+  input, textarea, select { accent-color: #A5636B; }
+  input:focus, textarea:focus, select:focus { --tw-ring-color: rgba(189,122,129,0.35); }
 }
 
 :root {
-  /* Festive palette: warm gold + deep burgundy (most colors are set inline per-component, not from these tokens) */
-  --color-primary: #d4a017;
-  --color-secondary: #9b2242;
-  --color-background: #ffffff;
-  --color-text: #333333;
+  /* NASHI refined palette — see tailwind.config.js for the full scales */
+  --color-primary: #A5636B;      /* dusty rose — actions */
+  --color-secondary: #B8894B;    /* champagne — small accents */
+  --color-background: #FBF7F4;   /* warm cream */
+  --color-surface: #FFFFFF;
+  --color-blush: #F8EAEA;
+  --color-ink: #2B2027;          /* headings */
+  --color-text: #54444C;         /* body copy */
+  --color-muted: #85757A;
 
   /* Dark Mode Variables */
   --color-background-dark: #121212;
@@ -44,6 +77,16 @@
   --z-index-dropdown: 1000;
   --z-index-modal: 2000;
   --z-index-tooltip: 3000;
+}
+
+@layer components {
+  /* Reusable building blocks for the new look */
+  .card-soft { @apply bg-white rounded-[1.75rem] border border-rose-100/70 shadow-petal; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-full bg-rose-700 px-6 py-3 text-sm font-semibold text-white shadow-lift transition-all duration-300 hover:bg-rose-800 active:scale-[0.98]; }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-white/80 px-5 py-2.5 text-sm font-semibold text-rose-700 transition-all duration-300 hover:bg-rose-50; }
+  .eyebrow { @apply text-[12px] font-semibold tracking-[0.06em] text-rose-600; }
+  .section-title { @apply font-display text-[1.65rem] md:text-[2.1rem] leading-tight text-ink; }
+  .hairline { @apply h-px w-full bg-gradient-to-l from-transparent via-rose-200 to-transparent; }
 }
 
 @layer utilities {

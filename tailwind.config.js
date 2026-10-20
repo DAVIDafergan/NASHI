@@ -1,3 +1,16 @@
+
+// ── NASHI design system: refined, soft-feminine palette ─────────────────────
+// The default Tailwind scales used across the site are re-pointed here so every page
+// picks up the new look at once: slate → warm mauve-grey, rose/pink → dusty rose,
+// indigo/purple/violet/fuchsia → plum, emerald/green/teal → sage, amber/yellow/orange →
+// champagne, blue/sky → dusty blue. red stays Tailwind's default (destructive actions).
+const mauve = { 50:'#FAF7F6',100:'#F3EEEC',200:'#E7DFDC',300:'#D4C8C4',400:'#A99A97',500:'#85757A',600:'#6A5960',700:'#54444C',800:'#3D2F37',900:'#2B2027',950:'#1C1419' };
+const dustyRose = { 50:'#FCF6F6',100:'#F8EAEA',200:'#F0D5D6',300:'#E4B6B9',400:'#D2959A',500:'#BD7A81',600:'#A5636B',700:'#8A5058',800:'#6F4148',900:'#5A363C',950:'#3A2226' };
+const plum = { 50:'#F8F4F7',100:'#EFE6EC',200:'#DECBD8',300:'#C7A8BE',400:'#A9809F',500:'#8E6384',600:'#77506E',700:'#62425B',800:'#4F364A',900:'#3F2C3B',950:'#2A1D27' };
+const sage = { 50:'#F4F7F4',100:'#E6EEE7',200:'#CDDDCF',300:'#ABC5AF',400:'#86A98C',500:'#6A8E71',600:'#55735B',700:'#465E4B',800:'#3A4C3E',900:'#303F34',950:'#1F2A22' };
+const champagne = { 50:'#FBF7F0',100:'#F5ECDB',200:'#EBD8B6',300:'#DDBF8A',400:'#CDA466',500:'#B8894B',600:'#9C703D',700:'#7E5934',800:'#66482E',900:'#533B28',950:'#2F2116' };
+const dustyBlue = { 50:'#F4F6F9',100:'#E6ECF2',200:'#CDD8E4',300:'#A9BCCF',400:'#849DB6',500:'#69829C',600:'#546A82',700:'#46576A',800:'#3A4858',900:'#313C49',950:'#1F2630' };
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -11,24 +24,46 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Heebo', 'Assistant', 'Arial', 'sans-serif'],
+        sans: ['Assistant', 'Heebo', 'Arial', 'sans-serif'],
+        display: ['Antidott', '"Frank Ruhl Libre"', 'Georgia', 'serif'],
+        serif: ['Antidott', '"Frank Ruhl Libre"', 'Georgia', 'serif'],
+      },
+      // Lighter, more refined weights site-wide (the old design leaned on font-black everywhere)
+      fontWeight: {
+        black: '700',
+        extrabold: '700',
+      },
+      boxShadow: {
+        soft: '0 2px 20px -6px rgba(61, 47, 55, 0.10)',
+        lift: '0 18px 40px -18px rgba(138, 80, 88, 0.28)',
+        petal: '0 1px 2px rgba(61,47,55,0.04), 0 8px 28px -10px rgba(189,122,129,0.22)',
       },
       colors: {
+        slate: mauve, gray: mauve, stone: mauve, zinc: mauve, neutral: mauve,
+        rose: dustyRose, pink: dustyRose,
+        indigo: plum, purple: plum, violet: plum, fuchsia: plum,
+        emerald: sage, green: sage, teal: sage,
+        amber: champagne, yellow: champagne, orange: champagne,
+        blue: dustyBlue, sky: dustyBlue, cyan: dustyBlue,
+        mauve, plum, sage, champagne, blush: dustyRose,
+        ink: '#2B2027',
+        cream: '#FBF7F4',
+        // Legacy "watermelon" tokens — kept as names, re-pointed to the new palette
         // Summer 2026 watermelon palette — muted, professional tones (not candy-bright)
         watermelon: {
-          peach: '#F8A88F',     // primary background wash / primary accent
-          peachLight: '#FDEAE3',
-          peachDark: '#E88B70',
-          flesh: '#E85C5C',     // watermelon red accent (decorative only)
-          fleshDark: '#C94848',
-          rind: '#4E8F72',      // rind green (decorative slices)
-          rindLight: '#DCEEE5',
-          green: '#2D6A4F',     // primary watermelon green — buttons, focus states, badges
-          cream: '#FFFBF7',
-          softGray: '#F5F5F5',  // secondary surfaces
-          danger: '#E53E3E',    // reserved for destructive actions only
-          ink: '#1A202C',       // primary text
-          muted: '#718096',     // secondary text
+          peach: '#D2959A',     // primary background wash / primary accent
+          peachLight: '#F8EAEA',
+          peachDark: '#BD7A81',
+          flesh: '#BD7A81',     // watermelon red accent (decorative only)
+          fleshDark: '#A5636B',
+          rind: '#86A98C',      // rind green (decorative slices)
+          rindLight: '#F8EAEA',
+          green: '#8A5058',     // primary watermelon green — buttons, focus states, badges
+          cream: '#FBF7F4',
+          softGray: '#F7F2F0',  // secondary surfaces
+          danger: '#C8574F',    // reserved for destructive actions only
+          ink: '#2B2027',       // primary text
+          muted: '#85757A',     // secondary text
         },
       },
       spacing: {
@@ -83,8 +118,8 @@ export default {
           '100%': { transform: 'translateX(-150%) skewX(-15deg)' },
         },
         'pulse-border': {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(45,106,79,0.25)' },
-          '50%': { boxShadow: '0 0 0 6px rgba(45,106,79,0)' },
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(189,122,129,0.30)' },
+          '50%': { boxShadow: '0 0 0 6px rgba(189,122,129,0)' },
         },
       },
       animation: {

@@ -37,7 +37,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fffcfc] via-[#fdf6ff] to-[#fffcfc] p-4 text-right" dir="rtl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FBF7F4] via-[#fdf6ff] to-[#FBF7F4] p-4 text-right" dir="rtl">
       <div className="bg-white/80 backdrop-blur-xl p-8 md:p-12 rounded-[3rem] shadow-2xl border border-white w-full max-w-md relative">
         <div className="relative z-10 space-y-6">
           <div className="text-center space-y-2">
@@ -54,7 +54,7 @@ const ResetPassword = () => {
               <input required type="password" placeholder="סיסמה חדשה" className="w-full p-4 bg-slate-50 border border-transparent focus:border-rose-200 rounded-2xl outline-none font-bold text-sm" value={password} onChange={(e) => setPassword(e.target.value)} />
               <input required type="password" placeholder="אימות סיסמה" className="w-full p-4 bg-slate-50 border border-transparent focus:border-rose-200 rounded-2xl outline-none font-bold text-sm" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               {status.type === 'error' && <p className="text-rose-500 text-xs font-black text-center">{status.message}</p>}
-              <button disabled={loading} type="submit" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl hover:bg-rose-500 transition-all">
+              <button disabled={loading} type="submit" className="w-full py-4 bg-rose-700 text-white rounded-2xl font-black text-sm shadow-xl hover:bg-rose-500 transition-all">
                 {loading ? 'מעדכן...' : 'עדכני סיסמה וכנסי'}
               </button>
             </form>

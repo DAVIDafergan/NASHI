@@ -73,17 +73,17 @@ const FestiveSpark: React.FC<FestiveSparkProps> = ({
         {/* main sparkle burst */}
         <path
           d="M100 20 C104 70 108 92 158 100 C108 108 104 130 100 180 C96 130 92 108 42 100 C92 92 96 70 100 20 Z"
-          fill="#D4A017"
+          fill="#B8894B"
         />
         {/* small secondary sparkle */}
         <path
           d="M148 34 C150 50 152 58 168 62 C152 66 150 74 148 90 C146 74 144 66 128 62 C144 58 146 50 148 34 Z"
-          fill="#9B2242"
+          fill="#8A5058"
         />
         {/* confetti dots */}
-        <circle cx="46" cy="42" r="6" fill="#E8871E" />
-        <circle cx="162" cy="140" r="5" fill="#4E8F72" />
-        <circle cx="58" cy="152" r="4" fill="#9B2242" />
+        <circle cx="46" cy="42" r="6" fill="#CDA466" />
+        <circle cx="162" cy="140" r="5" fill="#86A98C" />
+        <circle cx="58" cy="152" r="4" fill="#8A5058" />
       </svg>
     </div>
   );
