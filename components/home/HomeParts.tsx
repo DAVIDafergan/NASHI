@@ -5,12 +5,15 @@ import { ArrowLeft } from 'lucide-react';
 /** Headline whose words rise into place one after another. */
 export const AnimatedHeadline: React.FC<{ lines: { text: string; className?: string }[]; className?: string; startDelay?: number }> = ({ lines, className = '', startDelay = 120 }) => {
   let wordIndex = 0;
+  const phone = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches;
+  const step = phone ? 55 : 110;
+  if (phone) startDelay = Math.min(startDelay, 40);
   return (
     <h1 className={className}>
       {lines.map((line, li) => (
         <span key={li} className={`block ${line.className || ''}`}>
           {line.text.split(' ').map((word, wi) => {
-            const delay = startDelay + wordIndex++ * 110;
+            const delay = startDelay + wordIndex++ * step;
             return (
               <span key={wi} className="inline-block overflow-hidden align-bottom pb-[0.12em] -mb-[0.12em]">
                 <span className="inline-block animate-word-rise" style={{ animationDelay: `${delay}ms` }}>
@@ -54,7 +57,8 @@ export const SectionHeader: React.FC<{ eyebrow: string; title: string; to?: stri
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect(); } }, { threshold: 0.4 });
+    const phone = window.matchMedia?.('(max-width: 767px)').matches;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect(); } }, phone ? { threshold: 0, rootMargin: '0px 0px 20% 0px' } : { threshold: 0.4 });
     io.observe(el);
     return () => io.disconnect();
   }, []);

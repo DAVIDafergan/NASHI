@@ -119,6 +119,9 @@
   .animate-kenburns, .animate-mesh-drift, .animate-mesh-drift-slow,
   .animate-float-y, .animate-float-y-slow, .animate-float-slow, .animate-spin-slow { animation: none !important; }
   .animate-blur-in { animation-name: fade-in-up !important; }
+  /* faster, smaller motion on phones */
+  .animate-fade-in-up, .animate-blur-in, .animate-scale-in, .animate-clip-up { animation-duration: 420ms !important; }
+  .animate-word-rise { animation-duration: 520ms !important; }
   .blur-2xl, .blur-3xl { --tw-blur: blur(24px); }
 }
 @media (prefers-reduced-motion: reduce) {

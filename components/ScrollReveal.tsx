@@ -23,9 +23,19 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({ children, className = '', d
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
+  // Phones: one short opacity fade that starts *before* the element scrolls into view,
+  // so content never "jumps" or arrives late while the finger is still scrolling.
+  const [isPhone] = useState(() => typeof window !== 'undefined' && (window.matchMedia?.('(max-width: 767px)').matches || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches));
+
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
+
+    if (isPhone) {
+      // already on screen at load → show immediately, no animation at all
+      const r = node.getBoundingClientRect();
+      if (r.top < window.innerHeight && r.bottom > 0) { setVisible(true); return; }
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -36,7 +46,7 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({ children, className = '', d
           }
         });
       },
-      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+      isPhone ? { threshold: 0, rootMargin: '0px 0px 25% 0px' } : { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
     );
 
     observer.observe(node);
@@ -44,6 +54,13 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({ children, className = '', d
   }, []);
 
   const Tag = as as any;
+  if (isPhone) {
+    return (
+      <Tag ref={ref} className={`${visible ? 'animate-fade-in-fast' : ''} ${className}`} style={visible ? { animationDelay: `${Math.min(delay, 160) / 2}ms` } : { opacity: 0 }} {...rest}>
+        {children}
+      </Tag>
+    );
+  }
   const hiddenStyle: React.CSSProperties =
     animation === 'fade-in-fast' || animation === 'blur-in' ? { opacity: 0 }
     : animation === 'clip-up' ? { opacity: 0 } // clip-path here would hide it from IntersectionObserver

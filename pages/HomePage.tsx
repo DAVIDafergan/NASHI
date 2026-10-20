@@ -288,10 +288,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               className="mt-5 text-[3.4rem] leading-[0.98] sm:text-[4.6rem] lg:text-[6.2rem] text-ink"
               lines={[{ text: 'המקום שלך' }, { text: 'לפרוח,', className: 'font-accent text-[1.45em] leading-[0.82] text-rose-600' }, { text: 'להתחבר ולהשפיע.' , className: 'text-[0.55em] leading-[1.25] mt-3 text-slate-500 font-light' }]}
             />
-            <p className="mt-7 max-w-md text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '900ms' }}>
+            <p className="mt-7 max-w-md text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
               אירועים, חוגים, קהילה ורגעים קטנים של השראה — מרחב אחד, עדין ומחבק, שנבנה בשבילך.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3 animate-fade-in-up" style={{ animationDelay: '1050ms' }}>
+            <div className="mt-9 flex flex-wrap items-center gap-3 animate-fade-in-up" style={{ animationDelay: '550ms' }}>
               <Link to="/events" className="btn-primary group !px-7 !py-3.5">
                 לאירועים הקרובים
                 <ArrowLeft size={16} className="transition-transform duration-500 group-hover:-translate-x-1.5" />
@@ -310,7 +310,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
           {/* phones: one clear "next event" card instead of the floating collage */}
           {upcomingEvents[0] && (
-            <Link to="/events" className="lg:hidden flex items-center gap-4 rounded-[1.75rem] bg-white/90 border border-rose-100 p-3 shadow-soft animate-fade-in-up" style={{ animationDelay: '1100ms' }}>
+            <Link to="/events" className="lg:hidden flex items-center gap-4 rounded-[1.75rem] bg-white/90 border border-rose-100 p-3 shadow-soft animate-fade-in-up" style={{ animationDelay: '650ms' }}>
               {upcomingEvents[0].image && <img src={upcomingEvents[0].image} alt="" className="h-24 w-20 shrink-0 rounded-2xl object-cover bg-rose-50" />}
               <span className="min-w-0 flex-1">
                 <span className="block text-[11px] font-semibold text-rose-600">האירוע הבא</span>
