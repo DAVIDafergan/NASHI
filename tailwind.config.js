@@ -25,9 +25,11 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Assistant', 'Heebo', 'Arial', 'sans-serif'],
-        // Antidott-like: geometric, airy, softly rounded. Antidott itself is used if installed/added later.
-        display: ['Antidott', 'Rubik', 'Assistant', 'sans-serif'],
-        serif: ['Antidott', 'Rubik', 'Assistant', 'sans-serif'],
+        // Type system: thin serif for headlines, tall condensed accent, rounded bold for buttons/card titles
+        display: ['"Noto Serif Hebrew"', 'Georgia', 'serif'],
+        serif: ['"Noto Serif Hebrew"', 'Georgia', 'serif'],
+        accent: ['Karantina', '"Noto Serif Hebrew"', 'sans-serif'],
+        strong: ['"Secular One"', 'Assistant', 'sans-serif'],
       },
       // Lighter, more refined weights site-wide (the old design leaned on font-black everywhere)
       fontWeight: {

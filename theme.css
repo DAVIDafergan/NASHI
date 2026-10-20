@@ -3,17 +3,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Antidott (display font) ───────────────────────────────────────────────
-   Headings already ask for 'Antidott' first (see tailwind.config.js → fontFamily.display).
-   To activate it: put the licensed files in /public/fonts/ and replace the src below with
-     src: url('/fonts/Antidott.woff2') format('woff2'), url('/fonts/Antidott.woff') format('woff');
-   Until then it uses a locally installed copy if there is one, else Rubik (closest free match). */
-@font-face {
-  font-family: 'Antidott';
-  src: local('Antidott'), local('Antidott Regular');
-  font-weight: 100 900;
-  font-display: swap;
-}
+/* ── Type system ──────────────────────────────────────────────────────────
+   Headlines  → Noto Serif Hebrew (thin)      : h1, h2, .font-display
+   Accents    → Karantina (tall, condensed)   : .font-accent, .eyebrow, ribbon, wordmark
+   Strong     → Secular One                   : h3, buttons, .font-strong
+   Body       → Assistant                                                         */
 
 @layer base {
   html {
@@ -29,14 +23,21 @@
     text-rendering: optimizeLegibility;
   }
   html, body { overflow-x: clip; }
-  h1, h2, h3, .font-display {
-    font-family: 'Antidott', 'Rubik', 'Assistant', sans-serif;
-    letter-spacing: -0.02em;
+  h1, h2, .font-display {
+    font-family: 'Noto Serif Hebrew', Georgia, serif;
+    letter-spacing: -0.015em;
     color: var(--color-ink);
   }
-  h1 { font-weight: 300; }
+  h1 { font-weight: 200; }
   h2 { font-weight: 300; }
-  h3 { font-weight: 400; }
+  h3, .font-strong {
+    font-family: 'Secular One', 'Assistant', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0;
+    font-synthesis: none;   /* Secular One has one weight — never fake-bold it */
+  }
+  h3 { color: var(--color-ink); }
+  .font-accent { font-family: 'Karantina', 'Noto Serif Hebrew', sans-serif; font-weight: 300; letter-spacing: 0.01em; font-synthesis: none; }
   ::selection { background: #F0D5D6; color: #3D2F37; }
   :focus-visible { outline: 2px solid #BD7A81; outline-offset: 3px; border-radius: 10px; }
   input, textarea, select { accent-color: #A5636B; }
@@ -84,9 +85,9 @@
 @layer components {
   /* Reusable building blocks for the new look */
   .card-soft { @apply bg-white rounded-[1.75rem] border border-rose-100/70 shadow-petal; }
-  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-full bg-rose-700 px-6 py-3 text-sm font-semibold text-white shadow-lift transition-all duration-300 hover:bg-rose-800 active:scale-[0.98]; }
-  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-white/80 px-5 py-2.5 text-sm font-semibold text-rose-700 transition-all duration-300 hover:bg-rose-50; }
-  .eyebrow { @apply text-[12px] font-semibold tracking-[0.06em] text-rose-600; }
+  .btn-primary { @apply font-strong inline-flex items-center justify-center gap-2 rounded-full bg-rose-700 px-6 py-3 text-[15px] font-normal text-white shadow-lift transition-all duration-300 hover:bg-rose-800 active:scale-[0.98]; }
+  .btn-ghost { @apply font-strong inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-white/80 px-5 py-2.5 text-[15px] font-normal text-rose-700 transition-all duration-300 hover:bg-rose-50; }
+  .eyebrow { @apply font-accent text-[21px] leading-none font-light tracking-[0.03em] text-rose-600; }
   .section-title { @apply font-display text-[1.65rem] md:text-[2.1rem] leading-tight text-ink; }
   /* Break out of the page container to the full viewport width */
   .full-bleed { width: 100vw; margin-inline: calc(50% - 50vw); }

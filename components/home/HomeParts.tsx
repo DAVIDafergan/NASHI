@@ -36,7 +36,7 @@ export const Marquee: React.FC<{ items: string[]; className?: string }> = ({ ite
           <div key={copy} className="flex shrink-0 items-center">
             {row.map((w, i) => (
               <span key={`${copy}-${i}`} className="flex items-center">
-                <span className="font-display text-[1.6rem] md:text-[2.4rem] leading-none px-6 md:px-10 text-ink/85">{w}</span>
+                <span className="font-accent text-[2.4rem] md:text-[3.6rem] leading-none px-6 md:px-10 text-ink/85">{w}</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" className="text-rose-400 shrink-0"><path fill="currentColor" d="M12 0c.6 6.4 5.6 11.4 12 12-6.4.6-11.4 5.6-12 12-.6-6.4-5.6-11.4-12-12C6.4 11.4 11.4 6.4 12 0z" /></svg>
               </span>
             ))}

@@ -460,7 +460,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     return (
       <div className="min-h-[70vh] flex items-center justify-center" dir="rtl">
         <div className="text-center space-y-5">
-          <p className="font-display text-5xl text-ink leading-none animate-pulse">נשי</p>
+          <p className="font-accent text-7xl text-ink leading-none animate-pulse">נשי</p>
           <div className="mx-auto h-px w-24 overflow-hidden bg-rose-100">
             <div className="h-full w-1/2 bg-rose-400 animate-[shimmer-sweep_1.6s_ease-in-out_infinite]" />
           </div>
@@ -496,7 +496,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             <p className="eyebrow animate-fade-in-up">קהילת נשים · תרבות · השראה</p>
             <AnimatedHeadline
               className="mt-5 text-[3.4rem] leading-[0.98] sm:text-[4.6rem] lg:text-[6.2rem] text-ink"
-              lines={[{ text: 'המקום שלך' }, { text: 'לפרוח,', className: 'text-rose-600' }, { text: 'להתחבר ולהשפיע.' , className: 'text-[0.55em] leading-[1.25] mt-3 text-slate-500 font-light' }]}
+              lines={[{ text: 'המקום שלך' }, { text: 'לפרוח,', className: 'font-accent text-[1.45em] leading-[0.82] text-rose-600' }, { text: 'להתחבר ולהשפיע.' , className: 'text-[0.55em] leading-[1.25] mt-3 text-slate-500 font-light' }]}
             />
             <p className="mt-7 max-w-md text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '900ms' }}>
               אירועים, חוגים, קהילה ורגעים קטנים של השראה — מרחב אחד, עדין ומחבק, שנבנה בשבילך.
@@ -535,7 +535,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     <div className="relative w-[78%] aspect-square">
                       <div className="absolute inset-0 rounded-[45%_55%_60%_40%/50%_45%_55%_50%] bg-gradient-to-br from-rose-200 via-rose-100 to-plum-200 animate-mesh-drift" />
                       <div className="absolute inset-[12%] rounded-[55%_45%_40%_60%/45%_55%_45%_55%] bg-white/50 backdrop-blur-xl border border-white/70 flex items-center justify-center">
-                        <span className="font-display text-7xl text-rose-700/80">נשי</span>
+                        <span className="font-accent text-8xl text-rose-700/80">נשי</span>
                       </div>
                     </div>
                   </div>
@@ -614,7 +614,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   <Calendar size={30} strokeWidth={1.3} />
                   <div>
                     <p className="text-white/70 text-sm">{upcomingEvents.length > 0 ? `${upcomingEvents.length} אירועים קרובים` : 'לוח האירועים'}</p>
-                    <h3 className="mt-1 font-display text-4xl md:text-6xl text-white">אירועים</h3>
+                    <h3 className="mt-1 font-accent text-6xl md:text-8xl leading-none text-white">אירועים</h3>
                     <span className="mt-4 inline-flex items-center gap-2 text-sm text-white/90">לגלות מה קורה <ArrowLeft size={15} className="transition-transform duration-500 group-hover:-translate-x-2" /></span>
                   </div>
                 </div>
@@ -624,7 +624,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               <TiltCard onClick={() => navigate('/classes')} className="group relative h-[190px] md:h-full rounded-[2rem] overflow-hidden cursor-pointer bg-plum-100 p-6 flex flex-col justify-between">
                 <GraduationCap size={28} strokeWidth={1.3} className="text-plum-600 transition-transform duration-500 group-hover:-rotate-12" />
                 <div>
-                  <h3 className="font-display text-2xl md:text-3xl text-plum-800">חוגים</h3>
+                  <h3 className="font-accent text-5xl md:text-6xl leading-none text-plum-800">חוגים</h3>
                   <p className="text-xs text-plum-600 mt-1">{classes.length > 0 ? `${classes.length} חוגים פעילים` : 'סדנאות והעשרה'}</p>
                 </div>
               </TiltCard>
@@ -633,7 +633,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               <TiltCard onClick={() => navigate('/lottery')} className="group relative h-[190px] md:h-full rounded-[2rem] overflow-hidden cursor-pointer bg-champagne-100 p-6 flex flex-col justify-between">
                 <Trophy size={28} strokeWidth={1.3} className="text-champagne-600 transition-transform duration-500 group-hover:scale-110" />
                 <div>
-                  <h3 className="font-display text-2xl md:text-3xl text-champagne-800">הגרלות</h3>
+                  <h3 className="font-accent text-5xl md:text-6xl leading-none text-champagne-800">הגרלות</h3>
                   <p className="text-xs text-champagne-700 mt-1 tabular-nums">{upcomingLottery ? `ההגרלה בעוד ${timeLeft}` : 'פרסים לחברות המעגל'}</p>
                 </div>
               </TiltCard>
@@ -642,7 +642,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               <TiltCard onClick={() => navigate('/community')} className="group relative h-[190px] md:h-full rounded-[2rem] overflow-hidden cursor-pointer bg-white border border-rose-100 p-6 md:p-8 flex items-center justify-between gap-6">
                 <div>
                   <HeartHandshake size={28} strokeWidth={1.3} className="text-rose-500" />
-                  <h3 className="mt-3 font-display text-2xl md:text-3xl text-ink">קהילה וחסד</h3>
+                  <h3 className="mt-3 font-accent text-5xl md:text-6xl leading-none text-ink">קהילה וחסד</h3>
                   <p className="text-sm text-slate-500 mt-1 max-w-[16rem]">עסקים, שירותים ויד מושטת — מנשים לנשים.</p>
                 </div>
                 <div className="hidden sm:flex -space-x-4 space-x-reverse">
@@ -707,7 +707,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 text-white">
                       {cls.day && <span className="inline-block rounded-full bg-white/20 backdrop-blur px-2.5 py-1 text-[11px] mb-2">{cls.day}</span>}
-                      <h3 className="font-display text-lg md:text-2xl leading-tight text-white">{cls.title}</h3>
+                      <h3 className="font-strong text-lg md:text-2xl leading-tight text-white">{cls.title}</h3>
                       <p className="mt-1 text-xs md:text-sm text-white/75 max-h-0 opacity-0 group-hover:max-h-10 group-hover:opacity-100 transition-all duration-500">{cls.instructor}</p>
                     </div>
                   </button>

@@ -85,7 +85,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
         <div className="max-w-7xl mx-auto px-5 md:px-8 h-full flex items-center justify-between gap-6">
           <div className="flex items-center gap-6 flex-1 min-w-0">
             <Link to="/" className="flex items-baseline gap-1.5 group z-50 shrink-0" aria-label="נשי — לדף הבית">
-              <span className="font-display text-[1.85rem] md:text-[2.1rem] leading-none text-ink tracking-tight">נשי</span>
+              <span className="font-accent text-[2.4rem] md:text-[2.7rem] leading-none text-ink">נשי</span>
               <span className="h-1.5 w-1.5 rounded-full bg-rose-400 group-hover:scale-150 transition-transform duration-500" />
             </Link>
 
@@ -203,7 +203,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
       <footer className="relative z-10 hidden md:block mt-auto border-t border-rose-100/70 bg-gradient-to-b from-transparent to-rose-50/60">
         <div className="max-w-7xl mx-auto px-8 py-14 grid grid-cols-3 items-start gap-10 text-right">
           <div>
-            <p className="font-display text-3xl text-ink leading-none">נשי</p>
+            <p className="font-accent text-5xl text-ink leading-none">נשי</p>
             <p className="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">פלטפורמה עירונית לקידום תרבות נשים — אירועים, חוגים, קהילה והשראה, במקום אחד.</p>
           </div>
           <div className="flex flex-col gap-2.5 text-sm">
