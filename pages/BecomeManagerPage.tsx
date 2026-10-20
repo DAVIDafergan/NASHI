@@ -55,7 +55,7 @@ const BecomeManagerPage: React.FC<{ user: any; onOpenLogin: () => void }> = ({ u
           להוביל את הקהילה<br /><span className="font-accent text-[1.3em] text-rose-600">באזור שלך</span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-          נשי היא קהילה ארצית לנשים דתיות. הארץ מחולקת לשבעה אזורים, ולכל אזור יש מנהלת תרבות שמעלה את מה שקורה בו: אירועים, חוגים, גמ"חים והגרלות. כל מה שהיא מעלה מופיע מיד לנשים באזור.
+          נשי היא קהילה ארצית לנשים דתיות. הארץ מחולקת לאזורים, ולכל אזור יש מנהלת תרבות שמעלה את מה שקורה בו: אירועים, חוגים, גמ"חים והגרלות. כל מה שהיא מעלה מופיע מיד לנשים באזור.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
           {REGIONS.map(r => <span key={r.id} className="rounded-full border border-rose-100 bg-white/80 px-3.5 py-1.5 text-[13px] text-slate-600">{r.name}</span>)}
