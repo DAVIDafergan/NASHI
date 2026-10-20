@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Users, UserPlus, CheckCircle2, PlayCircle, Calendar, Mail, ArrowLeft, Sparkles, GraduationCap, Gift, Quote,
-  Bell, ChevronLeft, ChevronRight, MessageSquare, Eye, TrendingUp, HeartHandshake,
+  Bell, ChevronLeft, ChevronRight, MessageSquare, Eye, TrendingUp, HeartHandshake, ShieldCheck,
 } from 'lucide-react';
 import { REGIONS } from '../../shared/regions';
 import type { AdminTab } from './AdminShell';
@@ -10,7 +10,7 @@ import { Badge, idOf, regionOfItem, LocationBadges } from './ui';
 type Props = {
   data: {
     users: any[]; events: any[]; classes: any[]; lotteries: any[]; community: any[];
-    pendingUsers: any[]; pendingPosts: any[]; pendingStories: any[]; activeStories: any[]; messages: any[];
+    pendingUsers: any[]; pendingPosts: any[]; pendingStories: any[]; activeStories: any[]; messages: any[]; managerApps?: any[];
   };
   go: (t: AdminTab) => void;
   create: (t: AdminTab) => void;
@@ -29,6 +29,7 @@ const Kpi: React.FC<{ label: string; value: React.ReactNode; icon: React.ReactNo
 
 const Dashboard: React.FC<Props> = ({ data, go, create }) => {
   const { users, events, classes, lotteries, community, pendingUsers, pendingPosts, pendingStories, activeStories, messages } = data;
+  const managerApps = data.managerApps || [];
   const now = Date.now();
   const [monthOffset, setMonthOffset] = useState(0);
 
@@ -39,6 +40,7 @@ const Dashboard: React.FC<Props> = ({ data, go, create }) => {
     .sort((a, b) => +new Date(a.date) - +new Date(b.date)), [events, now]);
 
   const queue = [
+    { n: managerApps.length, label: 'בקשות להיות מנהלת תרבות', tab: 'approvals' as AdminTab, icon: <ShieldCheck size={18} /> },
     { n: pendingUsers.length, label: 'בקשות הצטרפות למעגל', tab: 'approvals' as AdminTab, icon: <UserPlus size={18} /> },
     { n: pendingPosts.length, label: 'פוסטים לפורום שממתינים', tab: 'approvals' as AdminTab, icon: <MessageSquare size={18} /> },
     { n: pendingStories.length, label: 'סטטוסים שממתינים לאישור', tab: 'stories' as AdminTab, icon: <PlayCircle size={18} /> },

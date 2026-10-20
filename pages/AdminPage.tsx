@@ -18,6 +18,7 @@ import FlyersAdmin from '../components/admin/FlyersAdmin';
 import PersonalityAdmin from '../components/admin/PersonalityAdmin';
 import { ToastHost, AdminScopeContext, regionOfItem } from '../components/admin/ui';
 import RegionDashboard from '../components/admin/RegionDashboard';
+import ManagerRequestsAdmin from '../components/admin/ManagerRequestsAdmin';
 import { regionName } from '../shared/regions';
 
 const TABS = NAV.flatMap(g => g.items.map(i => i.id));
@@ -59,6 +60,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
   const [pendingStories, setPendingStories] = useState<any[]>([]);
   const [activeStories, setActiveStories] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [managerApps, setManagerApps] = useState<any[]>([]);
   // per-section data
   const [forumPosts, setForumPosts] = useState<any[]>([]);
   const [inspirations, setInspirations] = useState<any[]>([]);
@@ -69,7 +71,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
 
   const loadCore = useCallback(async () => {
     const mainOnly = <T,>(p: () => Promise<T>, empty: any) => (lockRegion ? Promise.resolve(empty) : p().catch(() => empty));
-    const [u, ap, ev, cl, lo, co, ps, as, ms] = await Promise.all([
+    const [u, ap, ev, cl, lo, co, ps, as, ms, mapps] = await Promise.all([
       mainOnly(() => api.getUsers(), []),
       mainOnly(() => api.getAdminApprovals(), null),
       api.getEvents().catch(() => []),
@@ -79,7 +81,9 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
       mainOnly(() => api.getPendingStories(), []),
       mainOnly(() => api.getActiveStoriesAdmin(), []),
       mainOnly(() => api.getContactMessages(), []),
+      mainOnly(() => api.getManagerApplications('pending'), []),
     ]);
+    setManagerApps(arr(mapps));
     // a regional manager sees (and can edit) only the local items of her region
     const own = (list: any) => (lockRegion ? arr(list).filter((x: any) => (x.scope || 'local') === 'local' && regionOfItem(x) === lockRegion) : arr(list));
     setUsers(arr(u)); setEvents(own(ev)); setClasses(own(cl)); setLotteries(own(lo)); setCommunity(own(co));
@@ -114,11 +118,11 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
   const createTick = createReq.tab === active ? createReq.n : 0;
 
   const counts = useMemo(() => ({
-    approvals: pendingUsers.length + pendingPosts.length,
+    approvals: pendingUsers.length + pendingPosts.length + managerApps.length,
     stories: pendingStories.length,
     messages: messages.filter(m => !m.isRead).length,
     forum: pendingPosts.length,
-  }), [pendingUsers, pendingPosts, pendingStories, messages]);
+  }), [pendingUsers, pendingPosts, pendingStories, messages, managerApps]);
 
   if (!user || !canEnter) {
     return (
@@ -147,9 +151,14 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
           <RegionDashboard region={lockRegion} name={firstName} go={go} create={create} data={{ events, classes, lotteries, community }} />
         )}
         {active === 'dashboard' && !lockRegion && (
-          <Dashboard go={go} create={create} data={{ users, events, classes, lotteries, community, pendingUsers, pendingPosts, pendingStories, activeStories, messages }} />
+          <Dashboard go={go} create={create} data={{ users, events, classes, lotteries, community, pendingUsers, pendingPosts, pendingStories, activeStories, messages, managerApps }} />
         )}
-        {active === 'approvals' && <ApprovalsAdmin pendingUsers={pendingUsers} pendingPosts={pendingPosts} reload={reload} />}
+        {active === 'approvals' && (
+          <div className="space-y-8">
+            <ManagerRequestsAdmin items={managerApps} reload={reload} />
+            <ApprovalsAdmin pendingUsers={pendingUsers} pendingPosts={pendingPosts} reload={reload} />
+          </div>
+        )}
         {active === 'stories' && <StoriesAdmin pending={pendingStories} active={activeStories} reload={reload} />}
         {active === 'messages' && <MessagesAdmin messages={messages} search={search} reload={reload} />}
         {active === 'events' && <EventsAdmin events={events} region={region} search={search} createTick={createTick} reload={reload} />}

@@ -912,6 +912,33 @@ export const api = {
         return json;
     },
 
+    async getMyManagerApplication(): Promise<any | null> {
+        if (!localStorage.getItem('token')) return null;
+        const res = await safeFetch(`${API_URL}/manager-applications/mine`, { headers: getHeaders() });
+        if (!res.ok) return null;
+        return res.json();
+    },
+
+    async applyAsManager(data: any) {
+        const res = await safeFetch(`${API_URL}/manager-applications`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || 'השליחה נכשלה');
+        return json;
+    },
+
+    async getManagerApplications(status: 'pending' | 'approved' | 'rejected' = 'pending'): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/admin/manager-applications?status=${status}`, { headers: getHeaders() });
+        if (!res.ok) return [];
+        return res.json();
+    },
+
+    async decideManagerApplication(id: string, decision: 'approve' | 'reject', region?: string) {
+        const res = await safeFetch(`${API_URL}/admin/manager-applications/${id}/${decision}`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ region }) });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || 'הפעולה נכשלה');
+        return json;
+    },
+
     async getPublicStats(): Promise<{ members: number } | null> {
         const res = await safeFetch(`${API_URL}/stats/public`).catch(() => null);
         if (!res || !res.ok) return null;

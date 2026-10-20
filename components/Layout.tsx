@@ -22,6 +22,7 @@ interface LayoutProps {
 const MORE_LINKS = [
   { label: 'נשות השבוע', path: '/personality-archive', hint: 'ראיונות מעוררי השראה' },
   { label: 'הגרלות', path: '/lottery', hint: 'פרסים לחברות הקהילה' },
+  { label: 'מנהלות תרבות', path: '/become-manager', hint: 'להוביל את הקהילה באזור שלך' },
   { label: 'צור קשר', path: '/contact', hint: 'נשמח לשמוע ממך' },
 ];
 
@@ -427,6 +428,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
           <div className="flex flex-col gap-2.5 text-sm">
             <p className="eyebrow mb-1">מידע</p>
             <Link to="/contact" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">צור קשר</Link>
+            <Link to="/become-manager" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">רוצה להיות מנהלת תרבות?</Link>
             <button onClick={() => setShowTermsModal(true)} className="text-slate-600 hover:text-rose-700 transition-colors w-fit text-right">תקנון ותנאי שימוש</button>
           </div>
         </div>

@@ -107,7 +107,7 @@ const AdminShell: React.FC<{
           <div className="mb-5 flex items-center justify-between px-2">
             <div>
               <p className="font-accent text-3xl leading-none text-ink">נשי</p>
-              <p className="text-[11px] text-slate-400">{lockedRegionName ? `ניהול אזור ${lockedRegionName}` : 'מערכת ניהול'}</p>
+              <p className="text-[11px] text-slate-400">{lockedRegionName ? `מנהלת תרבות · ${lockedRegionName}` : 'מערכת ניהול'}</p>
             </div>
             <Link to="/" className="flex items-center gap-1 rounded-full border border-rose-100 px-2.5 py-1 text-[11px] text-slate-500 hover:text-rose-700"><ExternalLink size={12} /> לאתר</Link>
           </div>

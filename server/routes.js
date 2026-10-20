@@ -13,6 +13,7 @@ import {
     ContactMessage, // הוספת מודל פניות הציבור לייבוא
     Ticket, // התווסף מודל הכרטיסים!
     Story, // <--- תוספת: מודל הסטוריז
+    ManagerApplication,
     ZodiacWheelPrize, ZodiacWheelSpin,
     Flyer // פליירים לקרוסלת דף הבית
 } from './models.js';
@@ -149,6 +150,76 @@ router.put('/admin/users/:id/role', authenticate, isAdmin, async (req, res) => {
             { new: true }).select('-password -resetPasswordToken -resetPasswordExpires');
         if (!user) return res.status(404).json({ error: 'not found' });
         res.json(user);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ---- בקשות להיות מנהלת תרבות ----
+const clip = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+
+// my application (to show its status)
+router.get('/manager-applications/mine', authenticate, async (req, res) => {
+    try { res.json(await ManagerApplication.findOne({ user: req.user.id }).sort({ createdAt: -1 })); }
+    catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/manager-applications', authenticate, async (req, res) => {
+    try {
+        const me = await User.findById(req.user.id).select('name phone city role isAdmin');
+        if (!me) return res.status(404).json({ error: 'not found' });
+        if (me.isAdmin || me.role === 'regionAdmin') return res.status(400).json({ error: 'את כבר מנהלת 🙂' });
+        const open = await ManagerApplication.findOne({ user: me._id, status: 'pending' });
+        if (open) return res.status(400).json({ error: 'הבקשה שלך כבר בבדיקה' });
+        const city = clip(req.body.city, 60) || me.city || '';
+        const region = regionOfCity(city) || (REGION_IDS.includes(req.body.region) ? req.body.region : '');
+        if (!region) return res.status(400).json({ error: 'בחרי עיר' });
+        const phone = clip(req.body.phone, 30) || me.phone || '';
+        if (!phone) return res.status(400).json({ error: 'חסר טלפון' });
+        const appl = await new ManagerApplication({
+            user: me._id, name: me.name, phone, city, region,
+            about: clip(req.body.about, 1500), experience: clip(req.body.experience, 1500), hoursPerWeek: clip(req.body.hoursPerWeek, 40),
+        }).save();
+        if (!me.city && city) await User.updateOne({ _id: me._id }, { city, region });
+        res.status(201).json(appl);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/admin/manager-applications', authenticate, isAdmin, async (req, res) => {
+    try {
+        const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : 'pending';
+        res.json(await ManagerApplication.find({ status }).populate('user', 'name email phone avatar city createdAt').sort({ createdAt: -1 }).limit(200));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/manager-applications/:id/:decision(approve|reject)', authenticate, isAdmin, async (req, res) => {
+    try {
+        const appl = await ManagerApplication.findById(req.params.id).populate('user', 'name email');
+        if (!appl) return res.status(404).json({ error: 'not found' });
+        const approve = req.params.decision === 'approve';
+        const region = approve ? (REGION_IDS.includes(req.body?.region) ? req.body.region : appl.region) : appl.region;
+        appl.status = approve ? 'approved' : 'rejected';
+        appl.region = region;
+        appl.decidedAt = new Date();
+        appl.decidedBy = req.user.id;
+        await appl.save();
+        if (approve) await User.updateOne({ _id: appl.user._id }, { role: 'regionAdmin', adminRegion: region });
+        // best-effort email
+        try {
+            if (approve && appl.user?.email && req.resend && process.env.RESEND_API_KEY) {
+                const regionLabel = (REGIONS.find(r => r.id === region) || {}).name || '';
+                await req.resend.emails.send({
+                    from: 'נשי <updates@nashi-co.com>',
+                    to: appl.user.email,
+                    subject: 'ברוכה הבאה למנהלות התרבות של נשי 💗',
+                    html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.7;color:#2B2027">
+                      <h2 style="color:#8A5058">מזל טוב, ${appl.user.name || ''}!</h2>
+                      <p>הבקשה שלך אושרה. מעכשיו את <b>מנהלת התרבות של אזור ${regionLabel}</b> בנשי.</p>
+                      <p>איך מתחילות: נכנסות לאתר עם המשתמש שלך, ובתפריט בוחרות <b>"ניהול האזור שלי"</b>. משם אפשר להעלות אירועים, חוגים, גמ"חים והגרלות, ולהנפיק כרטיסים.</p>
+                      <p><a href="https://nashi-co.com/#/admin" style="background:#8A5058;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none">לניהול האזור שלי</a></p>
+                      <p style="color:#888;font-size:13px">נשלח באהבה מ"נשי" · קהילת נשים דתיות מכל הארץ</p></div>`,
+                });
+            }
+        } catch (e) { console.warn('manager approval email failed:', e?.message); }
+        res.json({ success: true, application: appl });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

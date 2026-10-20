@@ -347,7 +347,25 @@ const FlyerSchema = new mongoose.Schema({
 });
 const Flyer = mongoose.model('Flyer', FlyerSchema);
 
+// בקשה להיות מנהלת תרבות אזורית — נכנסת לתור האישורים של המנהלת הראשית
+const ManagerApplicationSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  name: { type: String },
+  phone: { type: String },
+  city: { type: String },
+  region: { type: String },
+  about: { type: String },        // קצת עלייך
+  experience: { type: String },   // ניסיון בהפקה / קהילה
+  hoursPerWeek: { type: String },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  decidedAt: { type: Date },
+  decidedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdAt: { type: Date, default: Date.now },
+});
+const ManagerApplication = mongoose.model('ManagerApplication', ManagerApplicationSchema);
+
 export { 
+  ManagerApplication,
   Flyer,
   User, Event, Class, Lottery, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,

@@ -42,7 +42,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
     catch { setGift({ open: true, user: u }); toast('יצירת ההטבה נכשלה', 'bad'); }
   };
 
-  const filters: [Filter, string][] = [['all', 'כולן'], ['members', 'חברות מעגל'], ['requested', 'ביקשו להצטרף'], ['regular', 'רשומות'], ['nocity', 'בלי עיר'], ['managers', 'מנהלות אזור']];
+  const filters: [Filter, string][] = [['all', 'כולן'], ['members', 'חברות מעגל'], ['requested', 'ביקשו להצטרף'], ['regular', 'רשומות'], ['nocity', 'בלי עיר'], ['managers', 'מנהלות תרבות']];
 
   return (
     <div className="space-y-4">
@@ -89,7 +89,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
                         {u.isMemberRequested && !u.isMemberApproved && <IconButton tone="good" title="אישור למעגל" aria-label="אישור" onClick={async () => { await api.approveMember(idOf(u)); toast(`${u.name} אושרה ✨`); reload(); }}><Check size={15} /></IconButton>}
                         <IconButton title="הוספת נקודות" aria-label="נקודות" onClick={() => setPointsFor({ user: u, amount: 50 })}><Plus size={15} /></IconButton>
                         <IconButton title="קישור להטבה אישית" aria-label="הטבה" onClick={() => makeGift(u)}><Award size={15} /></IconButton>
-                        {!u.isAdmin && <IconButton title="מנהלת אזור" aria-label="מנהלת אזור" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
+                        {!u.isAdmin && <IconButton title="מנהלת תרבות" aria-label="מנהלת תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
                         {!u.isAdmin && <DeleteButton name={u.name} onConfirm={async () => { await api.deleteUser(idOf(u)); reload(); }} />}
                       </div>
                     </td>
@@ -117,7 +117,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
                   {u.isMemberRequested && !u.isMemberApproved && <IconButton tone="good" aria-label="אישור" onClick={async () => { await api.approveMember(idOf(u)); toast(`${u.name} אושרה ✨`); reload(); }}><Check size={15} /></IconButton>}
                   <IconButton aria-label="נקודות" onClick={() => setPointsFor({ user: u, amount: 50 })}><Plus size={15} /></IconButton>
                   <IconButton aria-label="הטבה" onClick={() => makeGift(u)}><Award size={15} /></IconButton>
-                  {!u.isAdmin && <IconButton aria-label="מנהלת אזור" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
+                  {!u.isAdmin && <IconButton aria-label="מנהלת תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
                   {!u.isAdmin && <DeleteButton name={u.name} onConfirm={async () => { await api.deleteUser(idOf(u)); reload(); }} />}
                 </div>
               </li>
@@ -127,14 +127,14 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
       )}
       <Pager page={page} total={pages} onPage={setPage} />
 
-      <Sheet open={!!roleFor} onClose={() => setRoleFor(null)} title="מנהלת אזור" subtitle={roleFor?.user?.name}
+      <Sheet open={!!roleFor} onClose={() => setRoleFor(null)} title="מנהלת תרבות" subtitle={roleFor?.user?.name}
         footer={roleFor && (
           <div className="flex gap-2">
             <button disabled={roleBusy || !roleFor.region} className="btn-primary flex-1 disabled:opacity-50" onClick={async () => {
               setRoleBusy(true);
               try { await api.setUserRole(idOf(roleFor.user), 'regionAdmin', roleFor.region); toast(`${roleFor.user.name} מנהלת עכשיו את ${regionName(roleFor.region)} ✨`); setRoleFor(null); reload(); }
               catch (e: any) { toast(e?.message || 'השמירה נכשלה', 'bad'); } finally { setRoleBusy(false); }
-            }}>{roleFor.user.role === 'regionAdmin' ? 'שמירת שינוי' : 'מינוי למנהלת אזור'}</button>
+            }}>{roleFor.user.role === 'regionAdmin' ? 'שמירת שינוי' : 'מינוי למנהלת תרבות'}</button>
             {roleFor.user.role === 'regionAdmin' && (
               <button disabled={roleBusy} className="btn-ghost" onClick={async () => {
                 setRoleBusy(true);
@@ -146,7 +146,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
         )}>
         {roleFor && (
           <div className="space-y-4">
-            <p className="text-sm leading-relaxed text-slate-600">מנהלת אזור נכנסת ל"ניהול" עם המשתמש הרגיל שלה, ויכולה להעלות, לערוך ולמחוק <b>אירועים, חוגים, פריטי קהילה והגרלות</b> באזור שלה בלבד. היא לא רואה משתמשות, פניות או הגדרות.</p>
+            <p className="text-sm leading-relaxed text-slate-600">מנהלת תרבות נכנסת ל"ניהול" עם המשתמש הרגיל שלה, ויכולה להעלות, לערוך ולמחוק <b>אירועים, חוגים, פריטי קהילה והגרלות</b> באזור שלה בלבד. היא לא רואה משתמשות, פניות או הגדרות.</p>
             <Field label="איזה אזור היא מנהלת?" required>
               <div className="grid grid-cols-2 gap-2">
                 {REGIONS.map(r => (

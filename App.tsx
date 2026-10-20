@@ -21,7 +21,8 @@ import { api } from './services/api';
 import AuthModal from './components/AuthModal'; // ייבוא המודל החדש
 import ErrorBoundary from './components/ErrorBoundary';
 import { setGuestCity } from './hooks/useMyPlace';
-import ShabbatGate from './components/ShabbatGate'; // ייבוא מגן השגיאות
+import ShabbatGate from './components/ShabbatGate';
+import BecomeManagerPage from './pages/BecomeManagerPage'; // ייבוא מגן השגיאות
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -248,6 +249,7 @@ const App: React.FC = () => {
 
             <Route path="/profile" element={user ? <ProfilePage user={user} events={events} onUpdateUser={handleUpdateUser} onLogout={handleLogout} /> : <Navigate to="/" replace />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/become-manager" element={<BecomeManagerPage user={user} onOpenLogin={handleOpenAuth} />} />
             
             <Route 
               path="/admin" 
