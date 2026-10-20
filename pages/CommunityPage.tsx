@@ -6,6 +6,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import ScrollReveal from '../components/ScrollReveal';
+import { PageShell, PageHero, FilterBar, SearchField, EmptyState, CardSkeletonGrid } from '../components/pages/PageKit';
 
 const tabIcon = (category: string) => {
   if (category === 'גמ"חים') return <Heart size={13} />;
@@ -80,115 +81,104 @@ const CommunityPage = () => {
     window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
   };
 
+  const tabBlurb: Record<string, string> = {
+    'שיעורי תורה': 'שיעורים והרצאות לנשים — קרוב לבית, בזמן שנוח לך.',
+    'גמ"חים': 'השאלות, עזרה ונתינה בין שכנות. כי ביחד הכול קל יותר.',
+    'עסקים מקומיים': 'עסקים של נשים מהעיר. מפרגנות, קונות ומרוויחות ביחד.',
+  };
+
   return (
-    <div className="min-h-screen bg-[#FBF7F4]">
-      <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-5 md:space-y-6 pb-24">
+    <PageShell>
+      <PageHero
+        eyebrow="קהילה וחסד"
+        title="הכוח של"
+        accent="נשים ביחד"
+        subtitle="שיעורים, גמ״חים ועסקים של נשים מהעיר. מוצאות, פונות בוואטסאפ ומחברות."
+      />
 
-        {/* כותרת וחזרה */}
-        <ScrollReveal className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(61,47,55,0.06)]">
-          <button onClick={() => navigate(-1)} className="w-11 h-11 shrink-0 flex items-center justify-center bg-[#F7F2F0] rounded-full text-[#2B2027] hover:bg-[#F8EAEA] hover:text-[#8A5058] transition-all active:scale-95">
-            <ArrowLeft size={20}/>
-          </button>
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold text-[#2B2027] tracking-tight">קהילה נשית</h2>
-            <p className="text-[#85757A] text-sm font-medium mt-0.5">כל מה שקורה בעיר עבורך</p>
-          </div>
-        </ScrollReveal>
-
-        {/* תפריט קטגוריות */}
-        <ScrollReveal delay={60} className="flex overflow-x-auto gap-2 pb-1 no-scrollbar">
-          {tabs.map(tab => (
+      {/* Tabs as big segmented cards */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5" role="tablist" aria-label="קטגוריות">
+        {tabs.map(tab => {
+          const active = activeTab === tab.id;
+          const count = items.filter(it => it.category === tab.id || (tab.id === 'עסקים מקומיים' && ['עסקים', 'עסק מקומי', 'עסקים מקומיים'].includes(it.category))).length;
+          return (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={active}
               onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); }}
-              className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl font-bold text-sm transition-all duration-300 active:scale-95 ${
-                activeTab === tab.id
-                ? 'bg-[#8A5058] text-white shadow-md shadow-[#8A5058]/20'
-                : 'bg-white text-[#85757A] border border-slate-200 hover:border-[#8A5058]/40 hover:text-[#8A5058]'
+              className={`group relative overflow-hidden rounded-[1.4rem] border px-3 py-4 sm:p-5 text-right transition-all duration-500 active:scale-[0.97] ${
+                active ? 'border-rose-700 bg-rose-700 text-white shadow-lift' : 'border-rose-100 bg-white/80 text-ink hover:border-rose-300 hover:-translate-y-0.5'
               }`}
             >
-              {tab.icon}
-              {tab.label}
+              <span className={`flex h-9 w-9 items-center justify-center rounded-full transition ${active ? 'bg-white/15' : 'bg-rose-50 text-rose-500'}`}>{tab.icon}</span>
+              <span className="mt-3 block font-strong text-[14px] sm:text-[16px] leading-tight">{tab.label}</span>
+              {!loading && <span className={`mt-0.5 block text-[12px] ${active ? 'text-white/75' : 'text-slate-400'}`}>{count} פריטים</span>}
             </button>
-          ))}
-        </ScrollReveal>
+          );
+        })}
+      </div>
 
-        {/* שורת חיפוש */}
-        <ScrollReveal delay={100} className="relative group max-w-2xl">
-          <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#8A5058] transition-colors" size={18}/>
-          <input
-            type="text"
-            placeholder={`חפשי בתוך ${activeTab}...`}
-            className="w-full pr-14 pl-6 py-3.5 min-h-[44px] bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-4 focus:ring-[#8A5058]/10 focus:border-[#8A5058]/40 outline-none transition-all text-[#2B2027] font-medium placeholder:font-normal placeholder:text-slate-400"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </ScrollReveal>
+      <FilterBar>
+        <SearchField value={searchTerm} onChange={setSearchTerm} placeholder={`חפשי בתוך ${activeTab}…`} />
+        <p className="mt-2 px-1 text-[13px] text-slate-500">{tabBlurb[activeTab]}</p>
+      </FilterBar>
 
-        {/* גריד תוצאות */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-5 bg-white rounded-2xl border border-slate-100">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-100 border-t-[#8A5058]"></div>
-            <p className="text-[#85757A] font-bold animate-pulse">טוען נתונים מהקהילה...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {filteredItems.map((item, i) => (
-              <ScrollReveal
-                key={item._id}
-                delay={i < 8 ? i * 60 : 0}
-                className="flex flex-col bg-white rounded-lg overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.08)] hover:scale-[1.02] transition-all duration-300 group"
-              >
-                {/* תמונה */}
-                <div className="h-28 relative overflow-hidden bg-[#F8EAEA] shrink-0">
+      {/* גריד תוצאות */}
+      {loading ? (
+        <CardSkeletonGrid count={8} className="grid-cols-2 md:grid-cols-3 lg:grid-cols-4" />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+          {filteredItems.map((item, i) => (
+            <ScrollReveal key={item._id} delay={i < 8 ? i * 60 : 0} animation="scale-in" className="h-full">
+              <div className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-rose-100/70 bg-white shadow-petal transition-all duration-500 hover:-translate-y-1 hover:shadow-lift">
+                <div className="relative m-1.5 mb-0 aspect-[4/3] overflow-hidden rounded-[1.2rem] bg-rose-50 shrink-0">
                   <img
                     src={item.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=500'}
-                    className="w-full h-full object-cover animate-float-slow group-hover:scale-105 transition-transform duration-700"
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
                     alt={item.title}
+                    loading="lazy"
                   />
-                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-md w-6 h-6 rounded-full flex items-center justify-center text-[#8A5058] shadow-sm">
+                  <span className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-rose-600 shadow-soft">
                     {tabIcon(item.category)}
-                  </div>
+                  </span>
                 </div>
 
-                {/* תוכן הכרטיס */}
-                <div className="flex-1 flex flex-col p-3 gap-2">
-                  <h3 className="text-[15px] font-semibold text-[#2B2027] leading-snug">{item.title}</h3>
-                  <p className="text-[#6A5960] text-[13px] leading-[1.4] line-clamp-2">{item.description}</p>
+                <div className="flex flex-1 flex-col gap-2 p-3 md:p-4">
+                  <h3 className="text-[15px] md:text-[16.5px] leading-snug">{item.title}</h3>
+                  {item.description && <p className="text-[13px] leading-[1.5] text-slate-500 line-clamp-3">{item.description}</p>}
 
                   {item.location && (
-                    <span className="inline-flex items-center gap-1 self-start bg-[#F7F2F0] text-[#85757A] text-[12px] font-medium px-2 py-1 rounded-full">
-                      <MapPin size={11} className="text-[#8A5058]" />
-                      <span className="truncate max-w-[110px]">{item.location}</span>
+                    <span className="inline-flex max-w-full items-center gap-1 self-start rounded-full bg-rose-50/70 px-2.5 py-1 text-[12px] text-slate-500">
+                      <MapPin size={11} className="shrink-0 text-rose-500" />
+                      <span className="truncate">{item.location}</span>
                     </span>
                   )}
 
                   <button
                     onClick={() => handleContact(item.phone, item.title)}
-                    className="mt-auto min-h-[44px] w-full py-2.5 bg-[#8A5058] text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-[#6F4148] hover:scale-[1.02] transition-all duration-200 active:scale-95"
+                    className="mt-auto inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full bg-rose-50 text-[13.5px] text-rose-700 transition-all duration-300 group-hover:bg-rose-700 group-hover:text-white active:scale-95 font-strong"
                   >
-                    <MessageCircle size={14}/>
-                    צרי קשר עכשיו
+                    <MessageCircle size={15}/>
+                    לפנייה בוואטסאפ
                   </button>
                 </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        )}
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+      )}
 
-        {/* מצב ריק */}
-        {!loading && filteredItems.length === 0 && (
-          <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-slate-200">
-            <div className="w-16 h-16 bg-[#F7F2F0] rounded-full flex items-center justify-center mx-auto mb-5 text-slate-300">
-              <Search size={32}/>
-            </div>
-            <h3 className="text-xl font-bold text-[#2B2027] mb-2">לא מצאנו את מה שחיפשת</h3>
-            <p className="text-[#85757A] font-medium max-w-sm mx-auto">נסי לשנות את מונח החיפוש או לעבור לקטגוריה אחרת למעלה.</p>
-          </div>
-        )}
-
-      </div>
-    </div>
+      {/* מצב ריק */}
+      {!loading && filteredItems.length === 0 && (
+        <EmptyState
+          icon={<Search size={28}/>}
+          title="לא מצאנו את מה שחיפשת"
+          text="נסי מילה אחרת, או עברי לקטגוריה אחרת למעלה."
+          action={searchTerm ? <button onClick={() => setSearchTerm('')} className="btn-ghost">ניקוי חיפוש</button> : undefined}
+        />
+      )}
+    </PageShell>
   );
 };
 

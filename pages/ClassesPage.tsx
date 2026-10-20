@@ -4,6 +4,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScrollReveal from '../components/ScrollReveal';
+import { TiltCard } from '../components/home/HomeParts';
+import { PageShell, PageHero, FilterBar, SearchField, Chip, ChipRow, EmptyState, PageLoading } from '../components/pages/PageKit';
 
 // הגדרת המבנה של חוג (כולל השדות החדשים)
 interface ClassItem {
@@ -76,148 +78,119 @@ const ClassesPage = () => {
       }
   };
 
-  if (loading) return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8A5058]"></div>
-      </div>
-  );
+  if (loading) return <PageLoading />;
+
+  const hasActiveFilters = filter !== '' || selectedDay !== 'all' || selectedCategory !== 'all';
+  const todayName = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][new Date().getDay()];
 
   return (
-    <div className="space-y-6 w-full pb-24 p-4 md:p-8 text-right bg-[#FBF7F4]" dir="rtl">
+    <PageShell>
+      <PageHero
+        eyebrow="חוגים ופעילויות"
+        title="זמן קבוע"
+        accent="רק בשבילך"
+        subtitle="מערכת השעות של העיר: ריקוד, יצירה, כושר, לימוד והעשרה. בחרי יום, מצאי חוג והירשמי בוואטסאפ בלחיצה."
+      />
 
-      <ScrollReveal className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
-        <div className="flex items-center gap-3 w-full">
-             <button onClick={() => navigate(-1)} className="w-11 h-11 shrink-0 flex items-center justify-center bg-white rounded-full shadow-sm text-[#2B2027] hover:bg-[#F7F2F0] border border-slate-100 transition-colors"><ArrowLeft size={20}/></button>
-             <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-[#2B2027]">חוגים ופעילויות</h2>
-                <p className="text-[#85757A] text-sm mt-0.5">מערכת השעות העירונית</p>
-             </div>
-        </div>
-      </ScrollReveal>
-
-      <ScrollReveal delay={80} className="bg-white p-3 md:p-4 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.05)] border border-slate-100 flex flex-col gap-4 sticky top-16 z-30">
-        <div className="relative w-full">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-            <input
-                type="text"
-                placeholder="חפשי חוג, מדריכה..."
-                className="w-full pr-10 pl-4 py-3 bg-[#F7F2F0] border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8A5058]/30 text-sm font-medium text-right min-h-[44px]"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-            />
-        </div>
-
-        <div className="flex gap-2 w-full overflow-x-auto pb-1 no-scrollbar">
-            {days.map(day => (
-                <button
-                    key={day}
-                    onClick={() => setSelectedDay(day)}
-                    className={`px-4 py-2 min-h-[36px] rounded-full text-xs md:text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 active:scale-95 ${
-                        selectedDay === day
-                        ? 'bg-[#8A5058] text-white shadow-md shadow-[#8A5058]/20'
-                        : 'bg-[#F7F2F0] text-[#85757A] hover:bg-[#F8EAEA] hover:text-[#8A5058]'
-                    }`}
-                >
-                    {day === 'all' ? 'כל הימים' : day}
-                </button>
-            ))}
-        </div>
-
+      <FilterBar>
+        <SearchField value={filter} onChange={setFilter} placeholder="חפשי חוג או מדריכה…" />
+        <ChipRow className="mt-3">
+          {days.map(day => (
+            <Chip key={day} active={selectedDay === day} onClick={() => setSelectedDay(day)}>
+              {day === 'all' ? 'כל הימים' : day}
+              {day === todayName && <span className={`mr-1 h-1.5 w-1.5 rounded-full ${selectedDay === day ? 'bg-white' : 'bg-rose-400'}`} aria-label="היום" />}
+            </Chip>
+          ))}
+        </ChipRow>
         {categories.length > 1 && (
-          <div className="flex gap-2 w-full overflow-x-auto pb-1 no-scrollbar border-t border-slate-50 pt-3">
-              {categories.map(cat => (
-                  <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`px-4 py-2 min-h-[36px] rounded-full text-xs md:text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 border active:scale-95 ${
-                          selectedCategory === cat
-                          ? 'bg-[#D2959A] text-white border-[#D2959A] shadow-md shadow-[#D2959A]/20'
-                          : 'bg-white text-[#85757A] border-slate-200 hover:border-[#D2959A]/50 hover:text-[#BD7A81]'
-                      }`}
-                  >
-                      {cat === 'all' ? 'כל הקטגוריות' : cat}
-                  </button>
-              ))}
-          </div>
+          <ChipRow className="mt-2">
+            {categories.map(cat => (
+              <Chip key={cat} tone="sage" active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)}>
+                {cat === 'all' ? 'כל הסוגים' : cat}
+              </Chip>
+            ))}
+          </ChipRow>
         )}
-      </ScrollReveal>
+      </FilterBar>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredClasses.length > 0 && (
+        <p className="mb-4 text-[14px] text-slate-500">
+          {filteredClasses.length} חוגים{selectedDay !== 'all' ? ` ביום ${selectedDay}` : ''}
+          {hasActiveFilters && (
+            <button onClick={() => {setFilter(''); setSelectedDay('all'); setSelectedCategory('all');}} className="mr-3 text-rose-700 underline underline-offset-4 decoration-rose-200">ניקוי</button>
+          )}
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-7">
         {filteredClasses.map((cls, i) => (
-            <ScrollReveal key={cls.id} delay={(i % 9) * 60} className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-[0_2px_16px_rgba(61,47,55,0.06)] hover:shadow-[0_8px_28px_rgba(61,47,55,0.1)] hover:-translate-y-1 transition-all duration-300 flex flex-col">
+          <ScrollReveal key={cls.id} delay={(i % 9) * 60} animation="scale-in" className="h-full">
+            <TiltCard max={4} className="group h-full rounded-[1.75rem] border border-rose-100/70 bg-white shadow-petal hover:shadow-lift flex flex-col">
+              <div className="relative m-2 mb-0 aspect-[16/10] overflow-hidden rounded-[1.4rem] bg-rose-50 shrink-0">
+                <img src={cls.image} alt={cls.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-plum-950/55 via-transparent to-transparent" />
+                <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-[12px] text-rose-700 shadow-soft backdrop-blur">
+                  <Heart size={11} className="fill-current" /> {cls.category || 'כללי'}
+                </span>
+                <div className="absolute bottom-3 right-3 left-3 flex items-end justify-between text-white">
+                  <span className="font-accent text-[2rem] leading-none">{cls.day}</span>
+                  <span className="rounded-full bg-white/20 px-3 py-1 text-[13px] backdrop-blur">{cls.time}</span>
+                </div>
+              </div>
 
-                <div className="h-44 overflow-hidden relative bg-[#F8EAEA] shrink-0">
-                    <img src={cls.image} alt={cls.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-[#2B2027] shadow-sm flex items-center gap-1">
-                        <Heart size={10} className="text-[#D2959A] fill-current" />
-                        {cls.category || 'כללי'}
-                    </div>
+              <div className="flex flex-1 flex-col gap-3 p-5 pt-4 text-right">
+                <div>
+                  <h3 className="text-[1.2rem] leading-snug">{cls.title}</h3>
+                  <p className="mt-1 text-[13.5px] text-slate-500">עם {cls.instructor}</p>
                 </div>
 
-                <div className="p-4 flex-1 flex flex-col text-right gap-3">
-                    <div>
-                      <h3 className="text-base font-bold text-[#2B2027] leading-snug">{cls.title}</h3>
-                      <p className="text-xs text-[#85757A] mt-1">עם המדריכה: <span className="font-bold text-[#2B2027]">{cls.instructor}</span></p>
-                    </div>
+                <ul className="space-y-1.5 text-[13.5px] text-slate-500">
+                  <li className="flex items-center gap-2"><MapPin size={14} className="shrink-0 text-rose-400" />{cls.location || 'מיקום יעודכן'}</li>
+                  <li className="flex items-center gap-2"><Users size={14} className="shrink-0 text-rose-400" />{cls.ageGroup || 'כל הגילאים'}</li>
+                  <li className="flex items-center gap-2"><Clock size={14} className="shrink-0 text-rose-400" />{cls.day} בשעה {cls.time}</li>
+                </ul>
 
-                    <div className="bg-[#F7F2F0] rounded-xl p-3 space-y-2.5">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2B2027]">
-                            <Clock size={15} className="text-[#8A5058] shrink-0" />
-                            <span>{cls.day} בשעה {cls.time}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-[#85757A] font-medium">
-                            <MapPin size={15} className="text-[#8A5058] shrink-0" />
-                            <span>{cls.location || 'מיקום יעודכן'}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-[#85757A] font-medium">
-                            <Users size={15} className="text-[#8A5058] shrink-0" />
-                            <span>{cls.ageGroup || 'כל הגילאים'}</span>
-                        </div>
+                {cls.exceptions && (
+                  <div className="flex items-start gap-2 rounded-2xl border border-champagne-100 bg-champagne-50 p-3 text-[13px] text-champagne-800">
+                    <Info size={14} className="mt-0.5 shrink-0" />
+                    <span>{cls.exceptions}</span>
+                  </div>
+                )}
 
-                        {cls.exceptions && (
-                            <div className="flex items-start gap-2 text-xs text-orange-700 bg-orange-50 p-2 rounded-lg border border-orange-100">
-                                <Info size={14} className="shrink-0 mt-0.5" />
-                                <span>{cls.exceptions}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex items-center justify-between px-1">
-                       <span className="text-lg font-bold text-[#2B2027]">₪{cls.price}</span>
-                       <span className="text-xs text-[#85757A]">מחיר חודשי</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
-                       <button
-                           onClick={() => handlePhoneAction(cls.contactPhone, cls.instructor, cls.title, 'instructor')}
-                           className="min-h-[44px] bg-white border-2 border-slate-100 text-[#2B2027] rounded-xl text-xs font-bold hover:border-[#8A5058]/40 hover:text-[#8A5058] active:scale-95 transition-all flex items-center justify-center gap-1.5"
-                       >
-                           <MessageCircle size={15} className="text-[#8A5058]" /> יצירת קשר
-                       </button>
-                       <button
-                           onClick={() => handlePhoneAction(cls.registrationPhone || cls.contactPhone, cls.instructor, cls.title, 'reg')}
-                           className="min-h-[44px] bg-[#8A5058] text-white rounded-xl text-xs font-bold hover:bg-[#6F4148] active:scale-95 transition-all shadow-md shadow-[#8A5058]/15 flex items-center justify-center gap-1.5"
-                       >
-                           <Phone size={15} /> הרשמה לחוג
-                       </button>
-                    </div>
+                <div className="mt-auto flex items-baseline justify-between border-t border-rose-50 pt-3">
+                  <span className="text-[12px] text-slate-400">מחיר חודשי</span>
+                  <span className="font-strong text-[1.35rem] text-ink">₪{cls.price}</span>
                 </div>
-            </ScrollReveal>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handlePhoneAction(cls.contactPhone, cls.instructor, cls.title, 'instructor')}
+                    className="btn-ghost !px-3 !text-[14px] min-h-[44px]"
+                  >
+                    <MessageCircle size={15} /> שאלה
+                  </button>
+                  <button
+                    onClick={() => handlePhoneAction(cls.registrationPhone || cls.contactPhone, cls.instructor, cls.title, 'reg')}
+                    className="btn-primary !px-3 !text-[14px] min-h-[44px]"
+                  >
+                    <Phone size={15} /> הרשמה
+                  </button>
+                </div>
+              </div>
+            </TiltCard>
+          </ScrollReveal>
         ))}
       </div>
 
-       {filteredClasses.length === 0 && (
-         <ScrollReveal className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
-           <p className="text-[#85757A] font-medium text-sm">לא נמצאו חוגים התואמים את החיפוש.</p>
-           <button
-             onClick={() => {setFilter(''); setSelectedDay('all'); setSelectedCategory('all');}}
-             className="mt-3 min-h-[44px] px-5 text-[#8A5058] text-xs font-bold hover:underline"
-           >
-             הצג את כל החוגים
-           </button>
-         </ScrollReveal>
+      {filteredClasses.length === 0 && (
+        <EmptyState
+          icon={<Calendar size={28} />}
+          title="לא נמצאו חוגים כאלה"
+          text="אולי ביום אחר? נסי לשנות את היום או את סוג החוג."
+          action={<button onClick={() => {setFilter(''); setSelectedDay('all'); setSelectedCategory('all');}} className="btn-ghost">הצגת כל החוגים</button>}
+        />
       )}
-    </div>
+    </PageShell>
   );
 };
 

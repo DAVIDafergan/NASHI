@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import ScrollReveal from '../components/ScrollReveal';
+import { PageShell, PageHero, Chip, ChipRow, EmptyState, Skeleton, Sheet, IconButton } from '../components/pages/PageKit';
 
 type SortMode = 'new' | 'popular' | 'mine';
 
@@ -140,242 +141,247 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
     ...(user ? [{ key: 'mine' as SortMode, label: 'שלי' }] : []),
   ];
 
+  const timeAgo = (d: string) => {
+    const diff = Date.now() - new Date(d).getTime();
+    const h = Math.floor(diff / 36e5);
+    if (h < 1) return 'ממש עכשיו';
+    if (h < 24) return `לפני ${h} שע׳`;
+    const days = Math.floor(h / 24);
+    if (days < 7) return days === 1 ? 'אתמול' : `לפני ${days} ימים`;
+    return new Date(d).toLocaleDateString('he-IL');
+  };
+
   return (
-    <div className="min-h-screen bg-[#FBF7F4] pb-24 pt-6 px-4 md:px-8 text-right" dir="rtl">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <PageShell wide={false}>
+      <PageHero
+        eyebrow="פורום נשי"
+        title="מדברות,"
+        accent="מתייעצות, מפרגנות"
+        subtitle="מרחב בטוח לשאלות, המלצות ושיתופים. כל פוסט עובר אישור מנהלת לפני שהוא עולה."
+      >
+        <button onClick={() => setIsModalOpen(true)} className="btn-primary !px-6 !py-3.5">
+          <Plus size={18}/> פתיחת נושא חדש
+        </button>
+      </PageHero>
 
-        {/* כותרת הפורום */}
-        <ScrollReveal className="flex flex-col md:flex-row justify-between items-center gap-5 bg-white p-6 md:p-8 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100">
-          <div className="text-center md:text-right">
-            <h1 className="text-2xl md:text-3xl font-bold text-[#2B2027] flex items-center justify-center md:justify-start gap-3">
-              <MessageSquare className="text-[#8A5058]" size={28} /> פורום נשי
-            </h1>
-            <p className="text-[#85757A] font-medium mt-1 text-sm">מרחב בטוח לשיתוף, התייעצות וצמיחה משותפת.</p>
-          </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="min-h-[44px] bg-[#8A5058] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md shadow-[#8A5058]/15 hover:bg-[#6F4148] active:scale-95 transition-all flex items-center gap-2"
-          >
-            <Plus size={18}/> פתיחת נושא חדש
-          </button>
-        </ScrollReveal>
-
-        {/* הודעת הצלחה לאחר שליחה לבדיקה */}
-        {showSuccessMessage && (
-          <div className="bg-[#8A5058] text-white p-4 rounded-xl shadow-md flex items-center gap-3 animate-bounce-in font-bold text-sm">
-            <CheckCircle size={20} />
-            הפוסט שלך נשלח בהצלחה! הוא יופיע בפורום מיד לאחר אישור המנהלת.
-          </div>
-        )}
-
-        {/* Tabs */}
-        <ScrollReveal delay={60} className="flex gap-2 overflow-x-auto no-scrollbar">
-          {tabs.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setSortMode(tab.key)}
-              className={`px-4 py-2 min-h-[36px] rounded-full text-sm font-bold whitespace-nowrap transition-all active:scale-95 ${
-                sortMode === tab.key
-                  ? 'bg-[#8A5058] text-white shadow-md shadow-[#8A5058]/20'
-                  : 'bg-white text-[#85757A] border border-slate-200 hover:border-[#8A5058]/40 hover:text-[#8A5058]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </ScrollReveal>
-
-        {/* רשימת הפוסטים */}
-        <div className="flex flex-col gap-3">
-          {loading ? (
-            <div className="text-center py-20">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-[#8A5058] border-r-4 border-transparent mx-auto"></div>
-              <p className="text-[#85757A] font-medium mt-4 text-sm">טוען שיחות בפורום...</p>
-            </div>
-          ) : filteredPosts.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200">
-              <MessageSquare className="mx-auto text-slate-200 mb-4" size={44} />
-              <p className="text-[#85757A] font-bold text-sm">לא נמצאו נושאים התואמים לחיפוש שלך.</p>
-            </div>
-          ) : (
-            filteredPosts.map((post, i) => {
-              const isExpanded = expandedPostId === post._id;
-              const isLiked = post.likes?.includes(user?.id) || post.likes?.includes(user?._id);
-              return (
-                <ScrollReveal
-                  key={post._id}
-                  as="article"
-                  delay={i < 6 ? i * 70 : 0}
-                  className="bg-white rounded-lg border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)] hover:scale-[1.01] transition-all duration-200 p-4"
-                >
-                  {/* ראש הפוסט */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <img
-                      src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${post.authorName || 'user'}`}
-                      alt={post.authorName}
-                      className="w-10 h-10 rounded-full bg-[#F8EAEA] shrink-0 object-cover border border-slate-100"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-[#2B2027] text-sm truncate">{post.authorName}</h4>
-                      <p className="text-[12px] text-[#A0AEC0] font-normal flex items-center gap-1">
-                        <Clock size={11}/> {new Date(post.createdAt).toLocaleDateString('he-IL')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* כותרת + תוכן */}
-                  <h3 className="text-base md:text-lg font-bold text-[#2B2027] leading-snug mb-1.5">{post.title}</h3>
-                  <p className={`text-[#6A5960] text-sm leading-[1.5] whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-3'}`}>
-                    {post.content}
-                  </p>
-                  {!isExpanded && post.content && post.content.length > 140 && (
-                    <button
-                      onClick={() => setExpandedPostId(post._id)}
-                      className="text-[#8A5058] text-xs font-bold mt-1.5 hover:underline"
-                    >
-                      קרא עוד
-                    </button>
-                  )}
-
-                  {isExpanded && post.image && (
-                    <div className="rounded-xl overflow-hidden border border-slate-100 mt-3">
-                      <img src={post.image} className="w-full h-auto max-h-[360px] object-cover" alt={post.title} />
-                    </div>
-                  )}
-
-                  {/* שורת אינטראקציה */}
-                  <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-slate-100">
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => handleLike(post._id)}
-                        title={`${post.likes?.length || 0} לייקים`}
-                        className={`flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#F7F2F0] hover:bg-[#F8EAEA] transition-colors active:scale-95 ${isLiked ? 'text-[#BD7A81]' : 'text-[#85757A]'}`}
-                      >
-                        <Heart size={15} className={isLiked ? 'fill-current' : ''} />
-                        <span className="text-[13px] font-medium">{post.likes?.length || 0}</span>
-                      </button>
-                      <span
-                        title={`${post.comments?.length || 0} תגובות`}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#F7F2F0] text-[#85757A]"
-                      >
-                        <MessageCircle size={15}/>
-                        <span className="text-[13px] font-medium">{post.comments?.length || 0}</span>
-                      </span>
-                      <button
-                        onClick={() => handleShare(post)}
-                        title="שיתוף"
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#F7F2F0] text-[#85757A] hover:text-[#8A5058] hover:bg-[#F8EAEA] transition-colors active:scale-95"
-                      >
-                        <Share2 size={15}/>
-                      </button>
-                    </div>
-
-                    <button
-                      onClick={() => setExpandedPostId(isExpanded ? null : post._id)}
-                      className="min-h-[36px] flex items-center gap-1.5 bg-[#8A5058] hover:bg-[#6F4148] text-white px-4 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02] active:scale-95 shadow-sm"
-                    >
-                      {isExpanded ? 'סגירת הדיון' : 'צפה בדיון'}
-                      <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                    </button>
-                  </div>
-
-                  {/* תגובות — מוצג רק כשמורחב */}
-                  {isExpanded && (
-                    <div className="bg-[#F7F2F0] rounded-xl p-4 space-y-3 mt-3">
-                      {post.comments?.map((comment: any, ci: number) => (
-                        <div key={ci} className="bg-white p-3 rounded-lg shadow-sm border border-slate-100 flex flex-col gap-1">
-                          <span className="font-semibold text-[#8A5058] text-[11px]">{comment.authorName}</span>
-                          <p className="text-[#2B2027] text-sm">{comment.text}</p>
-                        </div>
-                      ))}
-
-                      {user && (
-                        <div className="flex gap-2 pt-1">
-                          <input
-                            placeholder="כתבי תגובה לשיחה..."
-                            className="flex-1 bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all text-right min-h-[44px]"
-                            value={commentText[post._id] || ''}
-                            onChange={(e) => setCommentText({ ...commentText, [post._id]: e.target.value })}
-                          />
-                          <button
-                            onClick={() => handleAddComment(post._id)}
-                            className="min-w-[44px] min-h-[44px] bg-[#8A5058] text-white p-3 rounded-lg shadow-sm hover:bg-[#6F4148] active:scale-95 transition-all flex items-center justify-center"
-                          >
-                            <Send size={18} className="rotate-180" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </ScrollReveal>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* מודאל פתיחת נושא חדש */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setIsModalOpen(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-6 md:p-8 shadow-2xl relative overflow-hidden flex flex-col max-h-[88vh] animate-slide-up border-t-4 border-[#8A5058]">
-            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-4 shrink-0 md:hidden"></div>
-            <div className="flex justify-between items-center mb-6 shrink-0">
-              <h3 className="text-xl font-bold text-[#2B2027]">פתיחת נושא חדש</h3>
-              <button onClick={() => setIsModalOpen(false)} className="w-9 h-9 flex items-center justify-center hover:bg-slate-100 rounded-full transition-colors"><X size={18}/></button>
-            </div>
-
-            <form onSubmit={handleCreatePost} className="space-y-4 overflow-y-auto no-scrollbar pr-1">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#85757A] mr-1">כותרת הדיון</label>
-                <input
-                  required
-                  placeholder="על מה תרצי לדבר?"
-                  className="w-full p-4 bg-[#F7F2F0] border border-transparent rounded-xl font-semibold outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all text-right min-h-[44px]"
-                  value={newPost.title}
-                  onChange={e => setNewPost({ ...newPost, title: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#85757A] mr-1">תוכן ההודעה</label>
-                <textarea
-                  required
-                  placeholder="שתפי אותנו בפרטים..."
-                  rows={5}
-                  className="w-full p-4 bg-[#F7F2F0] border border-transparent rounded-xl font-medium outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 resize-none transition-all text-right"
-                  value={newPost.content}
-                  onChange={e => setNewPost({ ...newPost, content: e.target.value })}
-                />
-              </div>
-
-              <div className="relative border-2 border-dashed border-slate-200 p-6 text-center rounded-xl bg-[#F7F2F0] group hover:border-[#8A5058]/40 transition-all">
-                <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                {newPost.image ? (
-                  <div className="relative inline-block">
-                    <img src={newPost.image} className="h-32 rounded-xl shadow-md border-4 border-white" />
-                    <button onClick={(e) => { e.preventDefault(); setNewPost({...newPost, image: ''}); }} className="absolute -top-2 -left-2 bg-[#E53E3E] text-white rounded-full p-1"><X size={14}/></button>
-                  </div>
-                ) : (
-                  <div className="text-[#A0AEC0] flex flex-col items-center gap-2">
-                    <ImageIcon size={28} className="opacity-50" />
-                    <span className="text-xs font-bold">הוסיפי תמונה (אופציונלי, עד 2MB)</span>
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`w-full min-h-[44px] py-4 rounded-xl font-bold text-base shadow-md flex items-center justify-center gap-3 transition-all active:scale-95 ${isSubmitting ? 'bg-slate-300' : 'bg-[#8A5058] text-white hover:bg-[#6F4148]'}`}
-              >
-                {isSubmitting ? 'שולח לבדיקה...' : <><Send size={18} className="rotate-180"/> שליחת פוסט לאישור</>}
-              </button>
-              <p className="text-[11px] text-center text-[#A0AEC0] font-medium">הפוסט יפורסם לאחר אישור מנהלת המערכת</p>
-            </form>
-          </div>
+      {/* הודעת הצלחה לאחר שליחה לבדיקה */}
+      {showSuccessMessage && (
+        <div role="status" className="mb-5 flex items-center gap-3 rounded-2xl border border-sage-100 bg-sage-50 p-4 text-[14.5px] text-sage-800 animate-bounce-in">
+          <CheckCircle size={20} className="shrink-0" />
+          הפוסט שלך נשלח! הוא יופיע בפורום מיד לאחר אישור המנהלת.
         </div>
       )}
-    </div>
+
+      {/* Tabs */}
+      <ChipRow className="mb-6">
+        {tabs.map(tab => (
+          <Chip key={tab.key} active={sortMode === tab.key} onClick={() => setSortMode(tab.key)}>{tab.label}</Chip>
+        ))}
+        {searchTerm && <span className="self-center pr-2 text-[13px] text-slate-400">חיפוש: “{searchTerm}”</span>}
+      </ChipRow>
+
+      {/* רשימת הפוסטים */}
+      <div className="flex flex-col gap-4">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-[1.75rem] border border-rose-100/70 bg-white p-5 shadow-petal">
+              <div className="flex items-center gap-3"><Skeleton className="h-11 w-11 rounded-full" /><Skeleton className="h-4 w-32" /></div>
+              <Skeleton className="mt-4 h-5 w-2/3" />
+              <Skeleton className="mt-2 h-4 w-full" />
+              <Skeleton className="mt-2 h-4 w-5/6" />
+            </div>
+          ))
+        ) : filteredPosts.length === 0 ? (
+          <EmptyState
+            icon={<MessageSquare size={28} />}
+            title={sortMode === 'mine' ? 'עוד לא פתחת נושא' : 'אין עדיין שיחות כאן'}
+            text={sortMode === 'mine' ? 'יש לך שאלה או המלצה? זה המקום.' : 'היי הראשונה לפתוח שיחה — מישהי בדיוק מחכה לשאלה שלך.'}
+            action={<button onClick={() => setIsModalOpen(true)} className="btn-primary"><Plus size={16}/> פתיחת נושא</button>}
+          />
+        ) : (
+          filteredPosts.map((post, i) => {
+            const isExpanded = expandedPostId === post._id;
+            const isLiked = post.likes?.includes(user?.id) || post.likes?.includes(user?._id);
+            return (
+              <ScrollReveal
+                key={post._id}
+                as="article"
+                delay={i < 6 ? i * 70 : 0}
+                className={`rounded-[1.75rem] border bg-white p-5 md:p-6 shadow-petal transition-all duration-500 hover:shadow-lift ${isExpanded ? 'border-rose-200' : 'border-rose-100/70'}`}
+              >
+                {/* ראש הפוסט */}
+                <div className="mb-3 flex items-center gap-3">
+                  <img
+                    src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${post.authorName || 'user'}`}
+                    alt=""
+                    className="h-11 w-11 shrink-0 rounded-full border-2 border-white bg-rose-50 object-cover shadow-soft"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14.5px] text-ink font-strong">{post.authorName}</p>
+                    <p className="flex items-center gap-1 text-[12px] text-slate-400">
+                      <Clock size={11}/> {timeAgo(post.createdAt)}
+                    </p>
+                  </div>
+                  {post.status && post.status !== 'approved' && (
+                    <span className="rounded-full bg-champagne-50 px-2.5 py-1 text-[11px] text-champagne-700">ממתין לאישור</span>
+                  )}
+                </div>
+
+                {/* כותרת + תוכן */}
+                <h3 className="mb-1.5 text-[1.15rem] md:text-[1.3rem] leading-snug">{post.title}</h3>
+                <p className={`whitespace-pre-wrap text-[15px] leading-[1.65] text-slate-600 ${isExpanded ? '' : 'line-clamp-3'}`}>
+                  {post.content}
+                </p>
+                {!isExpanded && post.content && post.content.length > 140 && (
+                  <button onClick={() => setExpandedPostId(post._id)} className="mt-1 text-[13.5px] text-rose-700 hover:underline">
+                    להמשך קריאה
+                  </button>
+                )}
+
+                {isExpanded && post.image && (
+                  <div className="mt-4 overflow-hidden rounded-[1.25rem] border border-rose-100 animate-scale-in">
+                    <img src={post.image} className="h-auto max-h-[420px] w-full object-cover" alt={post.title} />
+                  </div>
+                )}
+
+                {/* שורת אינטראקציה */}
+                <div className="mt-4 flex items-center justify-between gap-2 border-t border-rose-50 pt-3">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleLike(post._id)}
+                      aria-pressed={isLiked}
+                      title={`${post.likes?.length || 0} לייקים`}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-2 transition active:scale-90 ${isLiked ? 'bg-rose-100 text-rose-600' : 'bg-rose-50/60 text-slate-500 hover:text-rose-600'}`}
+                    >
+                      <Heart size={16} className={`${isLiked ? 'fill-current animate-bounce-in' : ''}`} />
+                      <span className="text-[13px]">{post.likes?.length || 0}</span>
+                    </button>
+                    <span title={`${post.comments?.length || 0} תגובות`} className="flex items-center gap-1.5 rounded-full bg-rose-50/60 px-3 py-2 text-slate-500">
+                      <MessageCircle size={16}/>
+                      <span className="text-[13px]">{post.comments?.length || 0}</span>
+                    </span>
+                    <button onClick={() => handleShare(post)} aria-label="שיתוף" className="flex items-center rounded-full bg-rose-50/60 px-3 py-2 text-slate-500 transition hover:text-rose-700 active:scale-90">
+                      <Share2 size={16}/>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => setExpandedPostId(isExpanded ? null : post._id)}
+                    className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-4 text-[13.5px] transition font-strong ${isExpanded ? 'bg-rose-700 text-white' : 'bg-rose-50 text-rose-700 hover:bg-rose-700 hover:text-white'}`}
+                  >
+                    {isExpanded ? 'סגירה' : 'לדיון'}
+                    <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+
+                {/* תגובות — מוצג רק כשמורחב */}
+                {isExpanded && (
+                  <div className="mt-4 space-y-2.5 animate-fade-in-up">
+                    {post.comments?.length ? post.comments.map((comment: any, ci: number) => (
+                      <div key={ci} className="flex gap-2.5">
+                        <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${comment.authorName || 'c'}`} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-rose-50" />
+                        <div className="rounded-2xl rounded-tr-md bg-rose-50/60 px-4 py-2.5">
+                          <span className="block text-[12px] text-rose-700 font-strong">{comment.authorName}</span>
+                          <p className="text-[14.5px] text-ink">{comment.text}</p>
+                        </div>
+                      </div>
+                    )) : <p className="text-[13.5px] text-slate-400">עדיין אין תגובות — אולי את הראשונה?</p>}
+
+                    {user ? (
+                      <div className="flex gap-2 pt-2">
+                        <input
+                          placeholder="כתבי תגובה…"
+                          className="min-h-[46px] flex-1 rounded-full border border-rose-100 bg-white px-5 text-[15px] outline-none transition focus:border-rose-300 focus:ring-4 focus:ring-rose-100/70"
+                          value={commentText[post._id] || ''}
+                          onChange={(e) => setCommentText({ ...commentText, [post._id]: e.target.value })}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(post._id); }}
+                        />
+                        <button
+                          onClick={() => handleAddComment(post._id)}
+                          aria-label="שליחת תגובה"
+                          className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-rose-700 text-white shadow-soft transition hover:bg-rose-800 active:scale-90"
+                        >
+                          <Send size={17} className="rotate-180" />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="pt-1 text-[13px] text-slate-400">כדי להגיב צריך להתחבר.</p>
+                    )}
+                  </div>
+                )}
+              </ScrollReveal>
+            );
+          })
+        )}
+      </div>
+
+      {/* כפתור צף במובייל */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        aria-label="פתיחת נושא חדש"
+        className="fixed bottom-24 left-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-rose-700 text-white shadow-lift transition active:scale-90 md:hidden"
+      >
+        <Plus size={24} />
+      </button>
+
+      {/* מודאל פתיחת נושא חדש */}
+      <Sheet open={isModalOpen} onClose={() => setIsModalOpen(false)} label="פתיחת נושא חדש">
+        <div className="p-6 md:p-8 text-right">
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <p className="eyebrow">נושא חדש</p>
+              <h3 className="mt-1 font-display text-[2rem] leading-tight text-ink">על מה נדבר?</h3>
+            </div>
+            <IconButton label="סגירה" onClick={() => setIsModalOpen(false)} className="!bg-rose-50"><X size={18}/></IconButton>
+          </div>
+
+          <form onSubmit={handleCreatePost} className="space-y-4">
+            <label className="block">
+              <span className="mb-1.5 block text-[13px] text-slate-500">כותרת</span>
+              <input
+                required
+                placeholder="למשל: המלצה על גננת בשכונה"
+                className="w-full rounded-2xl border border-rose-100 bg-rose-50/30 p-4 text-[15px] outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-100/70"
+                value={newPost.title}
+                onChange={e => setNewPost({ ...newPost, title: e.target.value })}
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1.5 block text-[13px] text-slate-500">ההודעה</span>
+              <textarea
+                required
+                placeholder="שתפי אותנו בפרטים…"
+                rows={5}
+                className="w-full resize-none rounded-2xl border border-rose-100 bg-rose-50/30 p-4 text-[15px] outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-100/70"
+                value={newPost.content}
+                onChange={e => setNewPost({ ...newPost, content: e.target.value })}
+              />
+            </label>
+
+            <div className="group relative rounded-2xl border-2 border-dashed border-rose-200 bg-rose-50/30 p-5 text-center transition hover:border-rose-400">
+              <input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 cursor-pointer opacity-0" aria-label="הוספת תמונה" />
+              {newPost.image ? (
+                <div className="relative inline-block">
+                  <img src={newPost.image} className="h-32 rounded-xl border-4 border-white shadow-soft" />
+                  <button onClick={(e) => { e.preventDefault(); setNewPost({...newPost, image: ''}); }} className="absolute -top-2 -left-2 rounded-full bg-red-500 p-1 text-white" aria-label="הסרת תמונה"><X size={14}/></button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-rose-400">
+                  <ImageIcon size={26} />
+                  <span className="text-[13px]">הוספת תמונה (לא חובה, עד 2MB)</span>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" disabled={isSubmitting} className="btn-primary w-full !py-4 !text-base disabled:opacity-60">
+              {isSubmitting ? 'שולחת…' : <><Send size={18} className="rotate-180"/> שליחה לאישור</>}
+            </button>
+            <p className="text-center text-[12px] text-slate-400">הפוסט יפורסם אחרי אישור המנהלת</p>
+          </form>
+        </div>
+      </Sheet>
+    </PageShell>
   );
 };
 

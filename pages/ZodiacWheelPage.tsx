@@ -2,14 +2,16 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Sparkles, Gift, Lock, RefreshCw, Crown } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../services/api';
+import ScrollReveal from '../components/ScrollReveal';
+import { PageShell, PageHero, Skeleton } from '../components/pages/PageKit';
 
 interface ZodiacWheelPageProps {
   user?: User | null;
   onOpenLogin?: () => void;
 }
 
-const luxuryWinColors = ['#fbbf24', '#f59e0b', '#f97316', '#f43f5e'];
-const luxuryLoseColors = ['#334155', '#1f2937', '#3f3f46'];
+const luxuryWinColors = ['#D9A0A6', '#C98990', '#DDBF8A', '#BD7A81'];
+const luxuryLoseColors = ['#62425B', '#4F364A', '#77506E'];
 const BASE_SEGMENTS_COUNT = 12;
 
 const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) => {
@@ -142,96 +144,113 @@ const ZodiacWheelPage: React.FC<ZodiacWheelPageProps> = ({ user, onOpenLogin }) 
     : 'מחר בשעה 08:00';
 
   return (
-    <div className="min-h-screen py-8 px-4" dir="rtl">
-      <div className="max-w-5xl mx-auto space-y-8">
-        <div className="bg-gradient-to-l from-rose-100 via-white to-purple-100 rounded-[2.5rem] border border-rose-100 p-8 shadow-xl text-center">
-          <h1 className="text-3xl md:text-4xl font-black text-slate-800 flex items-center justify-center gap-3">
-            <Sparkles className="text-rose-500" /> גלגל המזלות
-          </h1>
-          <p className="mt-3 text-slate-600 font-medium">סיבוב יומי אחד לכל משתמשת רשומה, עם הטבות שוות ומזל גדול ✨</p>
-        </div>
+    <PageShell className="!max-w-6xl">
+      <PageHero
+        eyebrow="גלגל המזלות"
+        title="סיבוב אחד ביום,"
+        accent="הרבה מזל"
+        subtitle="כל משתמשת רשומה מסובבת פעם ביום ויכולה לזכות בהטבות שוות מהעסקים של העיר."
+      />
 
-        <div className="grid md:grid-cols-[1fr,360px] gap-8 items-center">
-          <div className="relative w-full max-w-[520px] mx-auto">
-            <div className="absolute top-[-14px] left-1/2 -translate-x-1/2 z-30 w-0 h-0 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-t-[30px] border-t-amber-200 drop-shadow-[0_8px_10px_rgba(251,191,36,0.4)]" />
-            <div
-              className="aspect-square rounded-full border-[14px] border-amber-200 shadow-[0_26px_85px_rgba(190,24,93,0.28)] relative overflow-hidden"
-              style={{
-                background: wheelGradient,
-                transform: `rotate(${rotation}deg)`,
-                transition: spinning ? 'transform 5.5s cubic-bezier(0.12, 0.88, 0.27, 1)' : 'none'
-              }}
-            >
-              <div className="absolute inset-[8%] rounded-full border border-white/25 pointer-events-none" />
-              {displaySegments.map((segment, i) => (
-                <div
-                  key={segment.key}
-                  className="absolute left-1/2 top-1/2 origin-bottom text-white font-black text-xs md:text-sm tracking-wide"
-                  style={{
-                    transform: `translate(-50%, -100%) rotate(${(i * segmentAngle) + segmentAngle / 2}deg)`,
-                    width: '120px',
-                    textAlign: 'center'
-                  }}
-                >
-                  <span className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]">{segment.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="absolute inset-0 m-auto w-24 h-24 rounded-full bg-gradient-to-br from-white to-amber-50 border-8 border-rose-200 shadow-[0_12px_30px_rgba(190,24,93,0.25)] flex items-center justify-center z-20">
-              <Crown className="text-amber-500" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm space-y-4">
-            <h3 className="font-black text-xl text-slate-800">מה אפשר לזכות?</h3>
-            <div className="text-xs bg-amber-50 border border-amber-100 text-amber-700 p-3 rounded-xl font-bold">
-              המנהלת מגדירה לכל הטבה כמה זוכות יכולות לזכות בה בכל יום.
-            </div>
-            <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-              {prizes.length === 0 ? (
-                <p className="text-slate-500 text-sm">אין כרגע הטבות מוגדרות. ניתן עדיין לסובב ולקבל "ללא זכייה".</p>
-              ) : prizes.map((p, i) => (
-                  <div key={p._id || p.id || i} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <p className="font-bold text-slate-800">{p.title}</p>
-                    {p.description && <p className="text-xs text-slate-500 mt-1">{p.description}</p>}
-                    <p className="text-xs text-rose-500 mt-1">מלאי: {p.stock}</p>
-                  </div>
-              ))}
-            </div>
-
-            {!user ? (
-              <button onClick={onOpenLogin} className="w-full py-3 rounded-xl bg-rose-700 text-white font-black flex items-center justify-center gap-2">
-                <Lock size={16} /> התחברי כדי לסובב
-              </button>
-            ) : (
-              <button
-                onClick={handleSpin}
-                disabled={!canSpin || spinning || loading}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 to-fuchsia-500 text-white font-black disabled:opacity-50 disabled:cursor-not-allowed"
+      <div className="grid items-center gap-10 md:grid-cols-[1fr_380px]">
+        <ScrollReveal animation="scale-in" className="relative mx-auto w-full max-w-[520px]">
+          {/* glow */}
+          <div aria-hidden="true" className="absolute inset-[6%] rounded-full bg-rose-300/40 blur-3xl animate-float-y-slow" />
+          <div className="absolute top-[-16px] left-1/2 z-30 h-0 w-0 -translate-x-1/2 border-l-[18px] border-r-[18px] border-t-[32px] border-l-transparent border-r-transparent border-t-rose-700 drop-shadow-[0_8px_10px_rgba(165,99,107,0.45)]" />
+          <div
+            className="relative aspect-square overflow-hidden rounded-full border-[12px] border-white shadow-[0_26px_85px_rgba(165,99,107,0.35)] ring-1 ring-rose-200"
+            style={{
+              background: wheelGradient,
+              transform: `rotate(${rotation}deg)`,
+              transition: spinning ? 'transform 5.5s cubic-bezier(0.12, 0.88, 0.27, 1)' : 'none'
+            }}
+          >
+            <div className="pointer-events-none absolute inset-[8%] rounded-full border border-white/30" />
+            {displaySegments.map((segment, i) => (
+              <div
+                key={segment.key}
+                className="absolute left-1/2 top-1/2 flex origin-bottom items-start justify-center pt-[7%] text-white text-[12px] sm:text-[13px] md:text-[15px] font-strong"
+                style={{
+                  transform: `translate(-50%, -100%) rotate(${(i * segmentAngle) + segmentAngle / 2}deg)`,
+                  width: '120px',
+                  height: '50%',
+                  textAlign: 'center'
+                }}
               >
-                {spinning ? 'הגלגל מסתובב...' : canSpin ? 'סובבי עכשיו' : 'הסיבוב היומי נוצל'}
-              </button>
-            )}
+                <span className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">{segment.label}</span>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleSpin}
+            disabled={!!user && (!canSpin || spinning || loading)}
+            aria-label="סיבוב הגלגל"
+            className="absolute inset-0 z-20 m-auto flex h-24 w-24 items-center justify-center rounded-full border-[6px] border-rose-100 bg-gradient-to-br from-white to-rose-50 shadow-[0_12px_30px_rgba(165,99,107,0.3)] transition hover:scale-105 active:scale-95 disabled:hover:scale-100"
+          >
+            <Crown className={`text-champagne-500 ${spinning ? 'animate-spin-slow' : ''}`} size={30} />
+          </button>
+        </ScrollReveal>
 
-            {!canSpin && user && (
-              <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl">
-                הסיבוב הבא ייפתח ב: <span className="font-black text-slate-700">{nextSpinText}</span>
-              </p>
-            )}
+        <ScrollReveal delay={120} className="space-y-4 rounded-[2rem] border border-rose-100/70 bg-white p-6 shadow-lift">
+          <h3 className="text-[1.3rem]">מה אפשר לזכות?</h3>
+          <p className="rounded-2xl border border-champagne-100 bg-champagne-50 p-3 text-[13px] text-champagne-800">
+            לכל הטבה יש מספר זוכות יומי שהמנהלת קובעת.
+          </p>
+          <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+            {loading ? (
+              <>
+                <Skeleton className="h-16" />
+                <Skeleton className="h-16" />
+              </>
+            ) : prizes.length === 0 ? (
+              <p className="text-[14px] text-slate-500">אין כרגע הטבות מוגדרות. אפשר עדיין לסובב ולנסות את המזל.</p>
+            ) : prizes.map((p, i) => (
+                <div key={p._id || p.id || i} className="flex items-start gap-3 rounded-2xl border border-rose-100 bg-rose-50/40 p-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-rose-500 shadow-soft"><Gift size={16} /></span>
+                  <div className="min-w-0">
+                    <p className="text-[15px] text-ink font-strong">{p.title}</p>
+                    {p.description && <p className="mt-0.5 text-[13px] text-slate-500">{p.description}</p>}
+                    <p className="mt-1 text-[12px] text-rose-600">נשארו: {p.stock}</p>
+                  </div>
+                </div>
+            ))}
+          </div>
 
-            <button onClick={loadData} className="text-xs text-slate-500 font-bold flex items-center gap-2 hover:text-rose-500">
-              <RefreshCw size={14} /> רענון מצב הגלגל
+          {!user ? (
+            <button onClick={onOpenLogin} className="btn-primary w-full !py-3.5">
+              <Lock size={16} /> התחברי כדי לסובב
             </button>
-          </div>
-        </div>
+          ) : (
+            <button
+              onClick={handleSpin}
+              disabled={!canSpin || spinning || loading}
+              className="btn-primary w-full !py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Sparkles size={17} />
+              {spinning ? 'הגלגל מסתובב…' : canSpin ? 'סובבי עכשיו' : 'הסיבוב היומי נוצל'}
+            </button>
+          )}
 
-        {resultMessage && (
-          <div className="bg-white p-5 rounded-2xl border border-rose-100 shadow-sm text-center font-bold text-slate-700">
-            {resultMessage}
-          </div>
-        )}
+          {!canSpin && user && (
+            <p className="rounded-2xl bg-rose-50/50 p-3 text-[13px] text-slate-500">
+              הסיבוב הבא ייפתח ב־<span className="text-ink font-strong">{nextSpinText}</span>
+            </p>
+          )}
+
+          <button onClick={loadData} className="flex items-center gap-2 text-[13px] text-slate-500 hover:text-rose-700">
+            <RefreshCw size={14} /> רענון מצב הגלגל
+          </button>
+        </ScrollReveal>
       </div>
-    </div>
+
+      {resultMessage && (
+        <div role="status" className="mt-8 rounded-[1.5rem] border border-rose-200 bg-gradient-to-l from-rose-50 via-white to-champagne-50 p-6 text-center animate-bounce-in">
+          <Sparkles className="mx-auto mb-2 text-rose-500" />
+          <p className="font-display text-[1.6rem] leading-snug text-ink">{resultMessage}</p>
+        </div>
+      )}
+    </PageShell>
   );
 };
 

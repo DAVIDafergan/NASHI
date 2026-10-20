@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Mic, Square, Send, Phone, Mail, MapPin, CheckCircle } from 'lucide-react';
 import { api } from '../services/api';
+import ScrollReveal from '../components/ScrollReveal';
+import { PageShell, PageHero, Chip } from '../components/pages/PageKit';
 
 const ContactPage: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -87,123 +89,133 @@ const ContactPage: React.FC = () => {
 
   if (isSubmitted) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8 animate-fade-in-up">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6">
-          <CheckCircle size={40} />
+      <PageShell wide={false}>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center p-8 text-center animate-scale-in">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-sage-50 text-sage-600 animate-bounce-in">
+            <CheckCircle size={40} />
+          </div>
+          <p className="eyebrow">נשלח</p>
+          <h1 className="mt-2 text-[2.4rem] leading-tight">תודה, קיבלנו!</h1>
+          <p className="mt-2 text-[16px] text-slate-500">הפנייה נשלחה ותופיע באזור האישי שלך בקרוב.</p>
+          <button onClick={() => setIsSubmitted(false)} className="btn-ghost mt-8">
+            שליחת פנייה נוספת
+          </button>
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">פנייתך התקבלה בהצלחה!</h2>
-        <p className="text-slate-600">הפנייה נשלחה ותופיע באזור האישי שלך בקרוב.</p>
-        <button onClick={() => setIsSubmitted(false)} className="mt-8 text-rose-600 font-medium hover:underline">
-          שליחת פנייה נוספת
-        </button>
-      </div>
+      </PageShell>
     );
   }
 
+  const inputCls = 'w-full rounded-2xl border border-rose-100 bg-rose-50/30 px-4 py-3 text-[15px] text-right outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-100/70';
+  const subjects = ['בירור על חוגים ואירועים', 'בקשה להתנדבות', 'הצעה למיזם חדש', 'דיווח על תקלה', 'אחר'];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="text-center md:text-right">
-        <h2 className="text-2xl font-bold text-slate-800">פניות הציבור</h2>
-        <p className="text-slate-500">אנחנו כאן לכל שאלה, הצעה או רעיון.</p>
-      </div>
+    <PageShell className="!max-w-5xl">
+      <PageHero
+        eyebrow="צרי קשר"
+        title="נשמח"
+        accent="לשמוע ממך"
+        subtitle="שאלה, רעיון, בקשה להתנדב או משהו שלא עובד — כתבי לנו, או פשוט השאירי הודעה קולית."
+      />
 
-      <div className="grid md:grid-cols-3 gap-8 text-right" dir="rtl">
-        <div className="space-y-4">
+      <div className="grid gap-6 md:grid-cols-[1fr_2fr] md:gap-8 text-right">
+        <aside className="space-y-4">
            {[
-             { icon: <Mail size={20} />, label: 'דוא"ל', value: 'YA@101.ORG.IL' },
+             { icon: <Mail size={20} />, label: 'דוא"ל', value: 'YA@101.ORG.IL', href: 'mailto:YA@101.ORG.IL' },
            ].map((item, i) => (
-             <div key={i} className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-               <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600">
-                 {item.icon}
-               </div>
-               <div>
-                 <p className="text-xs text-slate-400 font-medium">{item.label}</p>
-                 <p className="font-bold text-slate-800">{item.value}</p>
-               </div>
-             </div>
+             <ScrollReveal key={i} delay={i * 80}>
+               <a href={item.href} className="group flex items-center gap-4 rounded-[1.5rem] border border-rose-100/70 bg-white p-4 shadow-petal transition hover:-translate-y-0.5 hover:shadow-lift">
+                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition group-hover:bg-rose-700 group-hover:text-white">
+                   {item.icon}
+                 </div>
+                 <div className="min-w-0">
+                   <p className="text-[12.5px] text-slate-400">{item.label}</p>
+                   <p className="truncate text-[15px] text-ink font-strong" dir="ltr">{item.value}</p>
+                 </div>
+               </a>
+             </ScrollReveal>
            ))}
-        </div>
+           <ScrollReveal delay={160} className="hidden md:block rounded-[1.5rem] bg-gradient-to-br from-rose-100 via-rose-50 to-champagne-50 p-6">
+             <p className="font-accent text-[1.8rem] leading-none text-rose-700">טיפ קטן</p>
+             <p className="mt-2 text-[14.5px] leading-relaxed text-slate-600">אין זמן להקליד? לחצי על “הקלטת הודעה” ודברי. נחזור אלייך בהקדם.</p>
+           </ScrollReveal>
+        </aside>
 
-        <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">שם מלא</label>
-                <input 
-                  required 
-                  type="text" 
+        <ScrollReveal delay={80} animation="scale-in" className="rounded-[2rem] border border-rose-100/70 bg-white p-6 shadow-lift md:p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-1.5 block text-[13px] text-slate-500">שם מלא</span>
+                <input
+                  required
+                  type="text"
+                  autoComplete="name"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-right" 
+                  className={inputCls}
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">טלפון</label>
-                <input 
-                  required 
-                  type="tel" 
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[13px] text-slate-500">טלפון</span>
+                <input
+                  required
+                  type="tel"
+                  autoComplete="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-right" 
+                  className={inputCls}
                 />
+              </label>
+            </div>
+
+            <fieldset>
+              <legend className="mb-2 block text-[13px] text-slate-500">נושא הפנייה</legend>
+              <div className="flex flex-wrap gap-2">
+                {subjects.map(s => (
+                  <Chip key={s} active={formData.subject === s} onClick={() => setFormData({...formData, subject: s})}>{s}</Chip>
+                ))}
               </div>
-            </div>
+            </fieldset>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">נושא הפנייה</label>
-              <select 
-                value={formData.subject}
-                onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none text-slate-600 text-right"
-              >
-                <option>בירור על חוגים ואירועים</option>
-                <option>בקשה להתנדבות</option>
-                <option>הצעה למיזם חדש</option>
-                <option>דיווח על תקלה</option>
-                <option>אחר</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">תוכן הפנייה</label>
-              <textarea 
-                rows={4} 
+            <label className="block">
+              <span className="mb-1.5 block text-[13px] text-slate-500">תוכן הפנייה</span>
+              <textarea
+                rows={4}
                 value={formData.content}
                 onChange={(e) => setFormData({...formData, content: e.target.value})}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none resize-none text-right"
+                placeholder="ספרי לנו במה מדובר…"
+                className={`${inputCls} resize-none`}
               ></textarea>
-            </div>
+            </label>
 
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="text-sm font-medium text-slate-700 mb-2 block text-right">הודעה קולית (אופציונלי)</label>
-              <div className="flex items-center justify-end gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-100 bg-rose-50/30 p-3">
+              <span className="text-[13.5px] text-slate-500 pr-1">הודעה קולית (לא חובה)</span>
+              <div className="flex items-center gap-2">
                 {audioBlob && (
-                  <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                  <span className="flex items-center gap-1.5 rounded-full border border-sage-100 bg-sage-50 px-3 py-1.5 text-[13px] text-sage-700 animate-scale-in">
                     <CheckCircle size={14} />
-                    ההודעה הוקלטה
-                  </div>
+                    הוקלט
+                  </span>
                 )}
                 <button
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${isRecording ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                  className={`relative flex items-center gap-2 rounded-full px-4 py-2.5 text-[14px] transition-all font-strong ${isRecording ? 'bg-red-500 text-white' : 'bg-white text-rose-700 shadow-soft hover:bg-rose-700 hover:text-white'}`}
                 >
-                  {isRecording ? <Square size={16} className="fill-current" /> : <Mic size={16} />}
-                  {isRecording ? 'עצור הקלטה' : 'הקלט הודעה'}
+                  {isRecording && <span className="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-40" aria-hidden="true" />}
+                  {isRecording ? <Square size={15} className="relative fill-current" /> : <Mic size={16} />}
+                  <span className="relative">{isRecording ? 'עצירת הקלטה' : 'הקלטת הודעה'}</span>
                 </button>
               </div>
             </div>
 
-            <div className="pt-4 flex justify-end">
-              <button type="submit" className="w-full md:w-auto px-8 py-3 bg-rose-700 text-white rounded-xl font-bold hover:bg-rose-800 transition-all flex items-center justify-center gap-2">
-                <Send size={18} />
-                שליחת פנייה
-              </button>
-            </div>
+            <button type="submit" className="btn-primary w-full !py-4 !text-base">
+              <Send size={18} className="rotate-180" />
+              שליחת הפנייה
+            </button>
           </form>
-        </div>
+        </ScrollReveal>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

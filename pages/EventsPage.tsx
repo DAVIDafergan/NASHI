@@ -3,6 +3,7 @@ import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, T
 import { useLocation, useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
 import ScrollReveal from '../components/ScrollReveal';
+import { PageShell, PageHero, FilterBar, SearchField, Chip, ChipRow, EmptyState, PageLoading, Sheet, IconButton } from '../components/pages/PageKit';
 
 // --- Types ---
 interface EventSession {
@@ -180,75 +181,65 @@ const EventsPage = () => {
     });
   };
 
-  if (loading) return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
-      </div>
-  );
+  if (loading) return <PageLoading />;
+
+  const upcomingCount = events.filter(e => new Date(e.date) >= new Date()).length;
+  const hasActiveFilters = filter !== '' || selectedCategory !== 'all' || onlyFree;
 
   return (
-    <div className="space-y-6 w-full pb-20 p-4 md:p-12 text-right bg-[#FBF7F4]" dir="rtl">
-      
-      {/* Header with Back Button */}
-      <div className="flex items-center gap-4 mb-8 justify-start">
-            <button onClick={() => navigate(-1)} className="bg-white p-2.5 rounded-full shadow-sm text-slate-400 hover:text-rose-500 transition-colors border border-rose-50"><ArrowLeft size={20}/></button>
-            <h1 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tight">לוח אירועים <span className="text-rose-500 font-serif opacity-20">nashi</span></h1>
-      </div>
+    <PageShell>
+      <PageHero
+        eyebrow="לוח אירועים"
+        title="רגעים שכדאי"
+        accent="לא לפספס"
+        subtitle={upcomingCount > 0
+          ? <>ערבי נשים, סדנאות, הרצאות ומופעים. <span className="text-rose-700">{upcomingCount} אירועים קרובים</span> מחכים לך.</>
+          : 'ערבי נשים, סדנאות, הרצאות ומופעים — הכול במקום אחד.'}
+      />
 
       {/* --- Filter Bar --- */}
-      <div className="bg-white/60 backdrop-blur-xl p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-rose-50 sticky top-16 md:top-20 z-40 space-y-4">
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative w-full md:w-80">
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-300" size={18} />
-            <input 
-              type="text" 
-              placeholder="חפשי חוויות חדשות..." 
-              className="w-full pr-11 pl-4 py-3 bg-white/50 border border-rose-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-50 transition-all text-sm font-bold placeholder-slate-300 shadow-inner text-right"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2 w-full overflow-x-auto pb-1 no-scrollbar items-center">
+      <FilterBar>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <SearchField value={filter} onChange={setFilter} placeholder="חפשי אירוע או מקום…" className="lg:w-80 shrink-0" />
+          <ChipRow className="flex-1">
             {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-full text-xs font-black whitespace-nowrap transition-all border ${
-                  selectedCategory === cat 
-                    ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-200' 
-                    : 'bg-white text-slate-400 border-rose-50 hover:text-rose-500 hover:shadow-md'
-                }`}
-              >
-                {cat === 'all' ? 'הכל' : cat}
-              </button>
+              <Chip key={cat} active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)}>
+                {cat === 'all' ? 'הכול' : cat}
+              </Chip>
             ))}
-          </div>
+          </ChipRow>
         </div>
-
-        <div className="flex gap-2 items-center overflow-x-auto no-scrollbar pt-2 border-t border-rose-50/50">
-            <button onClick={() => setOnlyFree(!onlyFree)} className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-black transition-all border ${onlyFree ? 'bg-emerald-500 text-white border-emerald-500 shadow-md' : 'bg-white text-slate-400 border-rose-50'}`}>
-                <Ticket size={14}/> חינם בלבד
-            </button>
-            <div className="h-4 w-px bg-rose-100 mx-2"></div>
-            <select 
-                value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-white border-none text-slate-500 text-[11px] font-black rounded-xl px-3 py-2 focus:outline-none shadow-sm cursor-pointer"
+        <div className="mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <Chip tone="sage" active={onlyFree} onClick={() => setOnlyFree(!onlyFree)} icon={<Ticket size={14} />}>חינם בלבד</Chip>
+          <span className="mx-1 h-5 w-px shrink-0 bg-rose-100" />
+          <label className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full border border-rose-100 bg-white/80 pr-3.5 pl-2 text-[13.5px] text-slate-600">
+            <SortAsc size={14} className="text-rose-400" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="appearance-none bg-transparent py-2 pl-2 outline-none cursor-pointer"
+              aria-label="מיון"
             >
-                <option value="date">סדרי לפי תאריך</option>
-                <option value="price-low">מחיר: מהנמוך</option>
-                <option value="price-high">מחיר: מהגבוה</option>
+              <option value="date">לפי תאריך</option>
+              <option value="price-low">מחיר: מהנמוך</option>
+              <option value="price-high">מחיר: מהגבוה</option>
             </select>
+          </label>
+          {hasActiveFilters && (
+            <button onClick={() => { setFilter(''); setSelectedCategory('all'); setOnlyFree(false); }} className="mr-auto shrink-0 text-[13px] text-rose-700 underline underline-offset-4 decoration-rose-200 hover:decoration-rose-700">
+              ניקוי
+            </button>
+          )}
         </div>
-      </div>
+      </FilterBar>
 
       {/* --- Events Grid --- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7">
         {filteredEvents.map((event, i) => {
             const isPast = new Date(event.date) < new Date();
 
             return (
-                <ScrollReveal key={event.id} delay={(i % 8) * 60}>
+                <ScrollReveal key={event.id} delay={(i % 8) * 60} animation="scale-in">
                   <EventCard
                       title={event.title}
                       image={event.image}
@@ -264,161 +255,147 @@ const EventsPage = () => {
             );
         })}
       </div>
-      
+
       {/* Empty State */}
       {filteredEvents.length === 0 && (
-          <div className="text-center py-24 bg-white/40 rounded-[3rem] border-2 border-dashed border-rose-100">
-            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-300 shadow-inner">
-                <Calendar size={28} />
-            </div>
-            <p className="text-slate-400 text-base font-black">לא מצאנו אירועים שתואמים לחיפוש שלך...</p>
-            <button onClick={() => {setFilter(''); setSelectedCategory('all'); setOnlyFree(false);}} className="mt-4 text-rose-500 text-sm font-black underline decoration-2 underline-offset-4">ניקוי סינונים</button>
-          </div>
+          <EmptyState
+            icon={<Calendar size={28} />}
+            title="לא מצאנו אירועים כאלה"
+            text="נסי מילה אחרת או קטגוריה אחרת — ואולי האירוע הבא בדיוק בדרך."
+            action={<button onClick={() => {setFilter(''); setSelectedCategory('all'); setOnlyFree(false);}} className="btn-ghost">ניקוי סינונים</button>}
+          />
       )}
 
       {/* --- Detailed Event Modal --- */}
-      {/* מובייל: bottom sheet (נפתח מלמטה). דסקטופ: מודל ממורכז במסך */}
-      {selectedEvent && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in md:pt-24 md:px-4 md:pb-4" onClick={() => setSelectedEvent(null)}>
-            <div onClick={(e) => e.stopPropagation()} className="bg-white w-full md:max-w-[500px] rounded-t-2xl md:rounded-2xl max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up relative border-t-4 border-[#8A5058] no-scrollbar">
-                <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 sticky top-0 md:hidden"></div>
-
-                {/* Close Button UI */}
-                <button onClick={() => setSelectedEvent(null)} className="absolute top-5 left-5 p-3 bg-white/95 backdrop-blur-md rounded-full hover:bg-rose-500 hover:text-white z-50 text-slate-800 transition-all shadow-xl active:scale-90 border border-white/50"><X size={22} /></button>
-
-                <div className="pb-8">
-                  <div className="h-80 md:h-80 w-full relative overflow-hidden">
-                      <img src={selectedEvent.image} className={`w-full h-full object-cover transition-transform duration-1000 ${new Date(selectedEvent.date) < new Date() ? 'grayscale' : ''}`} />
-                      
-                      {selectedEvent.logo && (
-                        <div className="absolute top-5 right-5 w-14 h-14 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl border border-white/50 z-20">
-                           <img src={selectedEvent.logo} className="w-full h-full object-contain" alt="Logo" />
-                        </div>
-                      )}
-
-                      <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/10"></div>
-                      <div className="absolute bottom-12 right-8 text-white max-w-[85%] text-right z-30">
-                           <span className="bg-rose-500/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-black mb-3 inline-block tracking-widest shadow-lg border border-white/20 uppercase">{selectedEvent.category}</span>
-                           <h2 className="text-3xl md:text-4xl font-black leading-tight drop-shadow-2xl font-serif text-slate-900">{selectedEvent.title}</h2>
-                      </div>
-                  </div>
-                  
-                  <div className="px-8 py-2 bg-white relative z-10 text-right">
-                      
-                      <div className="flex gap-3 mb-8 -mt-6">
-                          <div className="flex-1 bg-white p-4 rounded-3xl text-center shadow-xl border border-rose-50/50">
-                              <p className="text-[10px] text-rose-300 font-black uppercase mb-1 tracking-widest">מתי</p>
-                              <p className="font-black text-slate-800 text-xs md:text-sm">
-                                {selectedEvent.hebrewDate || new Date(selectedEvent.date).toLocaleDateString('he-IL')}
-                              </p>
-                          </div>
-                          <div className="flex-1 bg-white p-4 rounded-3xl text-center shadow-xl border border-rose-50/50">
-                              <p className="text-[10px] text-rose-300 font-black uppercase mb-1 tracking-widest">שעה</p>
-                              <p className="font-black text-slate-800 text-xs md:text-sm">{formatEventTime(selectedEvent)}</p>
-                          </div>
-                          <div className="flex-1 bg-white p-4 rounded-3xl text-center shadow-xl border border-rose-50/50">
-                              <p className="text-[10px] text-rose-300 font-black uppercase mb-1 tracking-widest">מחיר</p>
-                              <p className="font-black text-rose-500 text-xs md:text-sm">{getDisplayPrice(selectedEvent).value === 0 ? 'בחינם' : `₪${getDisplayPrice(selectedEvent).value}`}</p>
-                          </div>
-                      </div>
-
-                      {selectedEvent.ticketLink && (
-                        <a 
-                          href={selectedEvent.ticketLink} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="w-full mb-6 bg-emerald-500 hover:bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-emerald-100 transition-all active:scale-95 border-b-4 border-emerald-700"
-                        >
-                            <ExternalLink size={20} /> שרייני מקום עכשיו
-                        </a>
-                      )}
-
-                      {selectedEvent.targetAges && (
-                          <div className="mb-5 flex items-center gap-3 bg-purple-50/50 p-4 rounded-2xl border border-purple-100/50 text-purple-700">
-                              <Users2 size={18} />
-                              <span className="text-xs font-black">קהל יעד: {selectedEvent.targetAges}</span>
-                          </div>
-                      )}
-
-                      {selectedEvent.notes && (
-                          <div className="mb-8 p-5 bg-slate-50/80 rounded-3xl border border-slate-100 text-right">
-                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                <MessageSquare size={14}/> מידע חשוב שכדאי לדעת:
-                              </h4>
-                              <p className="text-xs md:text-sm text-slate-600 leading-relaxed font-bold">{selectedEvent.notes}</p>
-                          </div>
-                      )}
-
-                      {selectedEvent.sessions && selectedEvent.sessions.length > 0 && (
-                        <div className="mb-8 space-y-4">
-                            <h4 className="font-black text-sm text-slate-800 flex items-center gap-2 pr-2">
-                              <Sparkles size={18} className="text-rose-500" />
-                              מפגשי הסדרה:
-                            </h4>
-                            <div className="grid grid-cols-1 gap-2">
-                               {selectedEvent.sessions.map((session, idx) => (
-                                 <div key={idx} className="flex justify-between items-center bg-rose-50/30 px-4 py-3 rounded-2xl text-[11px] border border-rose-100/50 font-bold text-slate-700">
-                                    <span>{session.name}</span>
-                                    <span className="text-rose-400">{new Date(session.date).toLocaleDateString('he-IL')}</span>
-                                 </div>
-                               ))}
-                            </div>
-                        </div>
-                      )}
-
-                      <div className="space-y-6 mb-8 pr-2">
-                          <div className="flex items-start gap-4 justify-start">
-                              <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 shrink-0 border border-rose-100 shadow-inner"><MapPin size={22} /></div>
-                              <div className="text-right">
-                                  <h4 className="font-black text-slate-800 text-sm">איפה זה קורה?</h4>
-                                  <p className="text-slate-500 text-sm mt-1 font-medium">{selectedEvent.location}</p>
-                              </div>
-                          </div>
-                      </div>
-
-                      <div className="flex gap-4 mb-10">
-                          <button onClick={handleShare} className="w-full py-5 rounded-[2rem] bg-rose-700 text-white font-black text-sm flex items-center justify-center gap-3 shadow-xl hover:bg-rose-600 transition-all active:scale-95">
-                              <Share2 size={20} /> שתפי עם חברות
-                          </button>
-                      </div>
-
-                      <div className="border-t border-rose-50 pt-8 text-right">
-                          <h4 className="font-black text-slate-800 text-sm mb-5 flex items-center gap-2 justify-start font-serif">
-                              <MessageSquare size={16} className="text-rose-300" />
-                              שתפי אותנו בחוויה שלך
-                          </h4>
-                          {reviewSubmitted ? (
-                              <div className="bg-emerald-50 text-emerald-600 p-5 rounded-3xl text-center text-sm font-black border border-emerald-100 flex items-center justify-center gap-3 animate-bounce-in">
-                                  <CheckCircle2 size={20} /> תודה ששיתפת אותנו!
-                              </div>
-                          ) : (
-                              <form onSubmit={handleSubmitReview} className="space-y-4">
-                                  <div className="flex justify-center gap-3 bg-slate-50/50 p-4 rounded-3xl border border-slate-100">
-                                      {[1, 2, 3, 4, 5].map((star) => (
-                                          <button key={star} type="button" onClick={() => setUserRating(star)} className="focus:outline-none transition-all hover:scale-125 active:scale-90 p-1">
-                                              <Star size={28} className={`${star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200'} transition-colors`} />
-                                          </button>
-                                      ))}
-                                  </div>
-                                  <textarea 
-                                    className="w-full bg-slate-50 border-none rounded-3xl px-6 py-4 text-sm focus:ring-4 focus:ring-rose-50 outline-none placeholder-slate-300 text-right font-bold h-24 resize-none" 
-                                    placeholder="איך היה האירוע? נשמח לשמוע..."
-                                    value={reviewText}
-                                    onChange={e => setReviewText(e.target.value)}
-                                  />
-                                  <button type="submit" className={`w-full py-4 rounded-2xl font-black text-xs transition-all ${userRating > 0 ? 'bg-rose-500 text-white shadow-lg shadow-rose-100 hover:bg-rose-600' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}>
-                                      {userRating > 0 ? 'שליחת משוב' : 'דרגי בבקשה כדי לשלוח'}
-                                  </button>
-                              </form>
-                          )}
-                      </div>
-                  </div>
+      <Sheet open={!!selectedEvent} onClose={() => setSelectedEvent(null)} label={selectedEvent?.title}>
+        {selectedEvent && (() => {
+          const isPast = new Date(selectedEvent.date) < new Date();
+          const price = getDisplayPrice(selectedEvent);
+          return (
+            <div className="pb-8">
+              <div className="relative m-2 overflow-hidden rounded-[1.6rem] aspect-[4/3] md:aspect-[16/10]">
+                <img src={selectedEvent.image} alt="" className={`h-full w-full object-cover animate-kenburns ${isPast ? 'grayscale' : ''}`} />
+                <div className="absolute inset-0 bg-gradient-to-t from-plum-950/80 via-plum-950/10 to-transparent" />
+                <div className="absolute top-3 left-3 flex gap-2">
+                  <IconButton label="סגירה" onClick={() => setSelectedEvent(null)}><X size={18} /></IconButton>
                 </div>
-            </div>
-        </div>
-      )}
+                {selectedEvent.logo && (
+                  <div className="absolute top-3 right-3 h-14 w-14 rounded-2xl bg-white/95 p-2 shadow-soft">
+                    <img src={selectedEvent.logo} className="h-full w-full object-contain" alt="Logo" />
+                  </div>
+                )}
+                <div className="absolute bottom-0 right-0 left-0 p-5 md:p-6 text-right">
+                  <span className="inline-block rounded-full bg-white/90 px-3 py-1 text-[12px] text-rose-700">{selectedEvent.category}</span>
+                  <h2 className="mt-2 text-[1.9rem] md:text-[2.3rem] leading-[1.1] !text-white">{selectedEvent.title}</h2>
+                </div>
+              </div>
 
-    </div>
+              <div className="px-5 md:px-7 pt-4 text-right">
+                <div className="grid grid-cols-3 gap-2.5 mb-6">
+                  {[
+                    { k: 'מתי', v: selectedEvent.hebrewDate || new Date(selectedEvent.date).toLocaleDateString('he-IL'), icon: <Calendar size={15} /> },
+                    { k: 'שעה', v: formatEventTime(selectedEvent), icon: <Clock size={15} /> },
+                    { k: 'מחיר', v: price.value === 0 ? 'בחינם' : `₪${price.value}`, icon: <Ticket size={15} />, hi: true },
+                  ].map((c) => (
+                    <div key={c.k} className="rounded-2xl border border-rose-100 bg-rose-50/40 p-3 text-center">
+                      <div className="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-full bg-white text-rose-500 shadow-soft">{c.icon}</div>
+                      <p className="text-[11px] text-slate-400">{c.k}</p>
+                      <p className={`font-strong text-[13px] md:text-sm ${c.hi ? 'text-rose-700' : 'text-ink'}`}>{c.v}</p>
+                    </div>
+                  ))}
+                </div>
+                {price.isEarly && (
+                  <p className="-mt-3 mb-5 flex items-center gap-1.5 text-[13px] text-sage-700"><Sparkles size={14} /> מחיר מוקדם בתוקף לזמן מוגבל</p>
+                )}
+
+                {selectedEvent.ticketLink && (
+                  <a
+                    href={selectedEvent.ticketLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary w-full !py-4 !text-base mb-5"
+                  >
+                    <ExternalLink size={18} /> שרייני מקום עכשיו
+                  </a>
+                )}
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-start gap-3 rounded-2xl bg-white border border-rose-100 p-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-500"><MapPin size={18} /></div>
+                    <div>
+                      <p className="text-[12px] text-slate-400">איפה זה קורה</p>
+                      <p className="text-[15px] text-ink">{selectedEvent.location}</p>
+                    </div>
+                  </div>
+                  {selectedEvent.targetAges && (
+                    <div className="flex items-center gap-3 rounded-2xl border border-plum-100 bg-plum-50/60 p-4 text-plum-700">
+                      <Users2 size={18} />
+                      <span className="text-[14px]">קהל יעד: {selectedEvent.targetAges}</span>
+                    </div>
+                  )}
+                  {selectedEvent.notes && (
+                    <div className="rounded-2xl border border-champagne-100 bg-champagne-50/70 p-4">
+                      <p className="mb-1.5 flex items-center gap-1.5 text-[12px] text-champagne-700"><MessageSquare size={14}/> מידע חשוב שכדאי לדעת</p>
+                      <p className="text-[14px] leading-relaxed text-slate-600 whitespace-pre-line">{selectedEvent.notes}</p>
+                    </div>
+                  )}
+                </div>
+
+                {selectedEvent.sessions && selectedEvent.sessions.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="mb-3 flex items-center gap-2 text-[15px]"><Sparkles size={16} className="text-rose-500" /> מפגשי הסדרה</h4>
+                    <ol className="relative space-y-2 border-r-2 border-rose-100 pr-4">
+                      {selectedEvent.sessions.map((session, idx) => (
+                        <li key={idx} className="relative flex items-center justify-between rounded-2xl bg-rose-50/40 px-4 py-3 text-[13.5px]">
+                          <span className="absolute -right-[1.42rem] top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-rose-400 ring-4 ring-white" />
+                          <span className="text-ink">{session.name}</span>
+                          <span className="text-rose-500">{new Date(session.date).toLocaleDateString('he-IL')}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                <button onClick={handleShare} className="btn-ghost w-full !py-3.5 mb-8">
+                  <Share2 size={18} /> שתפי עם חברות
+                </button>
+
+                <div className="border-t border-rose-100 pt-6">
+                  <h4 className="mb-4 flex items-center gap-2 text-[15px]">
+                    <MessageSquare size={16} className="text-rose-400" />
+                    שתפי אותנו בחוויה שלך
+                  </h4>
+                  {reviewSubmitted ? (
+                    <div className="flex items-center justify-center gap-2 rounded-2xl border border-sage-100 bg-sage-50 p-5 text-[15px] text-sage-700 animate-bounce-in">
+                      <CheckCircle2 size={20} /> תודה ששיתפת אותנו!
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmitReview} className="space-y-3">
+                      <div className="flex justify-center gap-1.5 rounded-2xl bg-rose-50/40 p-3" role="radiogroup" aria-label="דירוג">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button key={star} type="button" aria-label={`${star} כוכבים`} onClick={() => setUserRating(star)} className="p-1 transition hover:scale-125 active:scale-90">
+                            <Star size={28} className={`${star <= userRating ? 'fill-champagne-400 text-champagne-400' : 'text-rose-100'} transition-colors`} />
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        className="h-24 w-full resize-none rounded-2xl border border-rose-100 bg-white px-4 py-3 text-[15px] outline-none placeholder:text-slate-400 focus:border-rose-300 focus:ring-4 focus:ring-rose-100/70"
+                        placeholder="איך היה האירוע? נשמח לשמוע…"
+                        value={reviewText}
+                        onChange={e => setReviewText(e.target.value)}
+                      />
+                      <button type="submit" className={`w-full ${userRating > 0 ? 'btn-primary' : 'rounded-full bg-rose-50 py-3 text-sm text-rose-300 cursor-not-allowed'}`}>
+                        {userRating > 0 ? 'שליחת משוב' : 'דרגי בכוכבים כדי לשלוח'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </Sheet>
+    </PageShell>
   );
 };
 

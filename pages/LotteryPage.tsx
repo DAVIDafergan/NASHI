@@ -4,6 +4,8 @@ import { LotteryItem, User } from '../types';
 import { useLocation } from 'react-router-dom';
 import { api } from '../services/api'; // ייבוא ה-API
 import ScrollReveal from '../components/ScrollReveal';
+import { SectionHeader } from '../components/home/HomeParts';
+import { PageShell, PageHero, ChipRow, EmptyState, Portal } from '../components/pages/PageKit';
 
 interface LotteryPageProps {
     lotteries?: LotteryItem[];
@@ -391,44 +393,43 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       const isRegistered = user && lottery.participants.includes(user.id || user._id);
       const isMissionStarted = user && lottery.missionStarted?.includes(user.id || user._id);
       const canParticipate = lottery.participationType === 'everyone' || (user && user.points >= (lottery.minPointsToEnter || 0)) || lottery.participationType === 'mission';
+      const base = 'w-full min-h-[48px] rounded-full text-[15px] font-strong transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.97]';
 
       if (user?.isAdmin) {
           return (
-              <button onClick={() => handleOpenDraw(lottery)} className="w-full py-4 min-h-[44px] rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 bg-rose-700 text-white shadow-xl hover:bg-[#6F4148] active:scale-95">
-                  <Sparkles size={18} className="text-yellow-400" />
+              <button onClick={() => handleOpenDraw(lottery)} className={`${base} bg-rose-700 text-white shadow-lift hover:bg-rose-800`}>
+                  <Sparkles size={17} className="text-champagne-200" />
                   {lottery.winnerId ? 'צפייה בתוצאות' : 'ניהול הגרלה (Live)'}
               </button>
           );
       }
       if (!lottery.isActive || lottery.winnerId) {
           return (
-              <button onClick={() => handleOpenDraw(lottery)} className="w-full py-4 min-h-[44px] rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 bg-[#F8EAEA] text-[#8A5058] hover:bg-[#c9e5da]">
-                  <Trophy size={18} /> צפייה בזוכה המאושרת
+              <button onClick={() => handleOpenDraw(lottery)} className={`${base} bg-rose-50 text-rose-700 hover:bg-rose-100`}>
+                  <Trophy size={17} /> צפייה בזוכה
               </button>
           );
       }
       if (isRegistered) {
           return (
-              <div className="w-full py-4 min-h-[44px] rounded-xl font-black text-sm bg-emerald-50 text-emerald-600 flex items-center justify-center gap-2 border border-emerald-100">
-                  <CheckCircle2 size={18} /> את בפנים! בהצלחה
+              <div className={`${base} border border-sage-200 bg-sage-50 text-sage-700`}>
+                  <CheckCircle2 size={17} /> את בפנים! בהצלחה
               </div>
           );
       }
       if (lottery.participationType === 'mission' && isMissionStarted) {
           return (
-              <button onClick={() => handleCompleteMission(lottery)} className="w-full py-4 min-h-[44px] rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-xl bg-gradient-to-r from-orange-500 to-amber-600 text-white">
-                  <CheckCircle size={18} /> סיימתי את המשימה!
+              <button onClick={() => handleCompleteMission(lottery)} className={`${base} bg-gradient-to-l from-champagne-500 to-rose-500 text-white shadow-lift`}>
+                  <CheckCircle size={17} /> סיימתי את המשימה!
               </button>
           );
       }
       return (
           <button
               onClick={() => handleEnterLottery(lottery)}
-              className={`w-full py-4 min-h-[44px] rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 ${
-                  canParticipate ? 'bg-[#8A5058] text-white hover:bg-[#6F4148]' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-              }`}
+              className={`${base} ${canParticipate ? 'bg-rose-700 text-white shadow-lift hover:bg-rose-800' : 'bg-rose-50 text-rose-300 cursor-not-allowed'}`}
           >
-              <Ticket size={18} />
+              <Ticket size={17} />
               {lottery.participationType === 'mission' ? 'התחילי משימה להגרלה' : canParticipate ? 'הירשמי להגרלה עכשיו' : 'חסרות לך נקודות'}
           </button>
       );
@@ -448,82 +449,109 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
     const finalPrizes = (lottery.prizes && lottery.prizes.length > 0) ? lottery.prizes : allPrizes;
 
     return (
-        <div className="space-y-1.5">
+        <ol className="space-y-1.5">
             {finalPrizes.map((p: string, idx: number) => (
-                <div key={idx} className={`flex items-center gap-2 p-2 rounded-xl transition-all ${isDark ? 'bg-white/5 border border-white/10' : 'bg-[#F7F2F0] border border-transparent'}`}>
-                    <div className={`${idx === 0 ? 'text-amber-500' : 'text-slate-400'} shrink-0`}>
-                        {idx === 0 ? <Trophy size={16} /> : <Medal size={14} />}
-                    </div>
-                    <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-[#2B2027]'}`}>
-                        {idx === 0 ? 'פרס ראשון: ' : `פרס ${idx + 1}: `}
-                        <span className={idx === 0 ? 'text-[#8A5058]' : ''}>{p}</span>
+                <li key={idx} className={`flex items-center gap-2.5 rounded-2xl px-3 py-2 ${isDark ? 'bg-white/10' : idx === 0 ? 'bg-champagne-50 border border-champagne-100' : 'bg-rose-50/50'}`}>
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${idx === 0 ? 'bg-champagne-400 text-white' : 'bg-white text-slate-400'}`}>
+                        {idx === 0 ? <Trophy size={14} /> : <Medal size={13} />}
                     </span>
-                </div>
+                    <span className={`text-[14px] ${isDark ? 'text-white' : 'text-ink'}`}>
+                        <span className="text-slate-400">{idx === 0 ? 'פרס ראשון · ' : `פרס ${idx + 1} · `}</span>
+                        {p}
+                    </span>
+                </li>
             ))}
-        </div>
+        </ol>
     );
   };
 
-  // פונקציית עזר לרינדור פרסים באתגרים (מוקטן ועדין יותר)
+  // פונקציית עזר לרינדור פרסים באתגרים
   const renderChallengePrizes = (prizes: string[]) => {
       if (!prizes || prizes.length === 0) return null;
       return (
-          <div className="flex flex-col gap-1.5 mt-2 w-full md:w-auto">
+          <div className="mt-3 flex flex-wrap gap-1.5">
               {prizes.map((p, idx) => (
-                  <div key={idx} className="inline-flex items-center gap-2 text-indigo-900 font-bold bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm border border-white/50 w-fit">
-                      {idx === 0 ? <Trophy size={14} className="text-yellow-500" /> : <Medal size={12} className="text-slate-400" />}
-                      <span className="text-[11px] md:text-xs">
-                          {idx === 0 ? 'פרס ראשון:' : `פרס ${idx + 1}:`} {p}
-                      </span>
-                  </div>
+                  <span key={idx} className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[12.5px] text-plum-800 shadow-soft backdrop-blur">
+                      {idx === 0 ? <Trophy size={13} className="text-champagne-500" /> : <Medal size={12} className="text-slate-400" />}
+                      {idx === 0 ? 'פרס ראשון:' : `פרס ${idx + 1}:`} {p}
+                  </span>
               ))}
           </div>
       );
   };
 
+  const inputCls = 'w-full rounded-2xl border border-rose-100 bg-rose-50/30 px-4 py-3 text-[15px] outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-100/70';
+
   return (
-    <div className="min-h-screen space-y-6 md:space-y-8 pb-10 text-right bg-slate-50/50" dir="rtl">
-      {/* Tab Navigation - מוצג תמיד למעלה */}
-      <div className="flex justify-center p-1 bg-slate-200/50 backdrop-blur-sm w-fit mx-auto rounded-full gap-1 shadow-inner mt-4 md:mt-8">
+    <PageShell>
+      <PageHero
+        eyebrow="הגרלות ואתגרים"
+        title="קצת מזל,"
+        accent="הרבה פרגון"
+        subtitle="הגרלות לחברות המעגל ואתגרי חוסן משפחתיים עם פרסים אמיתיים. נרשמות בלחיצה ומחכות לגילוי."
+      >
+        <div className="inline-flex rounded-full border border-rose-100 bg-white/80 p-1 shadow-soft" role="tablist">
           <button
+            role="tab"
+            aria-selected={activeTab === 'regular'}
             onClick={() => setActiveTab('regular')}
-            className={`px-5 py-2 md:px-8 md:py-3 rounded-full font-bold md:font-black text-xs md:text-sm transition-all ${activeTab === 'regular' ? 'bg-white text-[#8A5058] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[14.5px] transition-all duration-300 ${activeTab === 'regular' ? 'bg-rose-700 text-white shadow-soft' : 'text-slate-500 hover:text-rose-700'}`}
           >
-            הגרלות כלליות
+            <Gift size={16} /> הגרלות
           </button>
           <button
+            role="tab"
+            aria-selected={activeTab === 'challenges'}
             onClick={() => setActiveTab('challenges')}
-            className={`px-5 py-2 md:px-8 md:py-3 rounded-full font-bold md:font-black text-xs md:text-sm transition-all flex items-center gap-1.5 ${activeTab === 'challenges' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[14.5px] transition-all duration-300 ${activeTab === 'challenges' ? 'bg-plum-700 text-white shadow-soft' : 'text-slate-500 hover:text-plum-700'}`}
           >
-            אתגרי החוסן
+            <Target size={16} /> אתגרי החוסן
           </button>
-      </div>
+        </div>
+      </PageHero>
 
       {activeTab === 'regular' ? (
-        <div className="max-w-6xl mx-auto px-4 space-y-8">
+        <div className="space-y-10 animate-fade-in">
 
             {/* --- כרטיס ההגרלה הפעילה המוביל --- */}
             {featuredLottery && (
-              <ScrollReveal className="relative bg-white rounded-2xl p-5 md:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border-2 border-[#D2959A]/50 animate-pulse-border overflow-hidden">
-                 <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-                    <div className="w-20 h-20 md:w-24 md:h-24 shrink-0 rounded-2xl bg-[#F8EAEA] flex items-center justify-center text-[#BD7A81]">
-                       <Gift size={44} />
-                    </div>
-                    <div className="flex-1 text-center md:text-right space-y-3 w-full">
-                       <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#8A5058] bg-[#F8EAEA] px-3 py-1 rounded-full uppercase tracking-widest">
-                          <Star size={11} className="fill-[#8A5058]" /> ההגרלה הפעילה
+              <ScrollReveal animation="scale-in" className="relative overflow-hidden rounded-[2rem] border border-rose-100 bg-white shadow-lift">
+                 <div className="grid md:grid-cols-[1.1fr_1fr]">
+                    <div className="relative min-h-[220px] md:min-h-[380px] overflow-hidden bg-rose-100">
+                       {(featuredLottery as any).image ? (
+                         <img src={(featuredLottery as any).image} alt="" className="absolute inset-0 h-full w-full object-cover animate-kenburns" />
+                       ) : (
+                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-rose-200 via-rose-100 to-champagne-100">
+                           <Gift size={88} className="text-rose-400 animate-float-y" />
+                         </div>
+                       )}
+                       <div className="absolute inset-0 bg-gradient-to-t from-plum-950/70 via-transparent to-transparent md:bg-gradient-to-l md:from-transparent md:via-transparent md:to-plum-950/30" />
+                       <span className="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-1.5 text-[12.5px] text-rose-700 shadow-soft">
+                          <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" /><span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" /></span>
+                          ההגרלה הפעילה
                        </span>
-                       <h2 className="text-2xl md:text-3xl font-bold text-[#2B2027]">{featuredLottery.title}</h2>
-                       {renderPrizeList(featuredLottery)}
-                       <div className="flex items-center justify-center md:justify-start gap-2 text-[#6A5960] text-sm font-bold pt-1">
-                          <Clock size={16} className="text-[#8A5058]" /> {drawCountdown}
-                       </div>
-                       <div className="flex items-center justify-center md:justify-start gap-2 text-[#85757A] text-xs font-medium">
-                          <Users size={14} /> {featuredLottery.participants.length} משתתפות נרשמו
-                       </div>
+                       {drawCountdown && (
+                         <div className="absolute bottom-4 right-4 left-4 md:left-auto rounded-2xl bg-white/15 px-4 py-3 text-white backdrop-blur-md">
+                           <p className="text-[12px] opacity-80">ההגרלה תתקיים בעוד</p>
+                           <p className="font-strong text-[1.25rem] leading-tight flex items-center gap-2"><Clock size={17} /> {drawCountdown}</p>
+                         </div>
+                       )}
                     </div>
-                    <div className="w-full md:w-64 shrink-0">
-                       {renderActionButton(featuredLottery)}
+                    <div className="flex flex-col gap-4 p-6 md:p-9 text-right">
+                       <h2 className="text-[2rem] md:text-[2.6rem] leading-[1.08]">{featuredLottery.title}</h2>
+                       {renderPrizeList(featuredLottery)}
+                       <div className="flex items-center gap-2 text-[14px] text-slate-500">
+                          <div className="flex -space-x-2 space-x-reverse">
+                            {[0,1,2].map(n => <span key={n} className="h-7 w-7 rounded-full border-2 border-white bg-gradient-to-br from-rose-200 to-champagne-200" />)}
+                          </div>
+                          <Users size={15} className="text-rose-400" /> {featuredLottery.participants.length} משתתפות כבר בפנים
+                       </div>
+                       <div className="mt-auto flex items-center gap-2 pt-2">
+                          <div className="flex-1">{renderActionButton(featuredLottery)}</div>
+                          <button onClick={() => handleShare(featuredLottery)} aria-label="שיתוף" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-rose-100 bg-white text-rose-700 transition hover:bg-rose-50 active:scale-90">
+                            <Share2 size={18} />
+                          </button>
+                       </div>
                     </div>
                  </div>
               </ScrollReveal>
@@ -531,155 +559,154 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
             {/* --- הגרלות נוספות / שהסתיימו --- */}
             {otherLotteries.length > 0 && (
-              <div className="space-y-4">
-                 <h3 className="text-lg font-bold text-[#2B2027] px-1">
-                    {featuredLottery ? 'הגרלות נוספות' : 'הגרלות'}
-                 </h3>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <section>
+                 <SectionHeader eyebrow={featuredLottery ? 'עוד הזדמנויות' : 'כל ההגרלות'} title={featuredLottery ? 'הגרלות נוספות' : 'הגרלות'} className="!px-0 mb-6" />
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     {otherLotteries.map((lottery: any, i) => (
-                        <ScrollReveal key={lottery.id || lottery._id} delay={i < 6 ? i * 60 : 0} className={`bg-white rounded-2xl p-3 shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100 hover:shadow-[0_8px_28px_rgba(61,47,55,0.1)] transition-all duration-300 flex flex-col group relative overflow-hidden ${!lottery.isActive ? 'opacity-90' : ''}`}>
-                            <div className="h-36 relative overflow-hidden rounded-xl mb-3 shrink-0 bg-slate-50">
-                                <img src={lottery.image} alt={lottery.title} className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${!lottery.isActive ? 'grayscale-[0.3]' : ''}`} />
-                                <div className="absolute top-2 right-2 flex flex-col gap-1.5 items-end">
+                        <ScrollReveal key={lottery.id || lottery._id} delay={i < 6 ? i * 60 : 0} animation="scale-in" className="h-full">
+                          <div className={`group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-rose-100/70 bg-white shadow-petal transition-all duration-500 hover:-translate-y-1 hover:shadow-lift ${!lottery.isActive ? 'opacity-90' : ''}`}>
+                            <div className="relative m-2 mb-0 aspect-[16/10] shrink-0 overflow-hidden rounded-[1.4rem] bg-rose-50">
+                                <img src={lottery.image} alt={lottery.title} loading="lazy" className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 ${!lottery.isActive ? 'grayscale-[0.4]' : ''}`} />
+                                <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1.5">
                                     {lottery.participationType === 'mission' ? (
-                                        <div className="bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-orange-600 flex items-center gap-1 shadow-sm">
-                                            <ClipboardList size={11} /> הגרלת משימה
-                                        </div>
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-3 py-1 text-[11.5px] text-champagne-700 shadow-soft">
+                                            <ClipboardList size={12} /> הגרלת משימה
+                                        </span>
                                     ) : (
-                                        <div className="bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-[#8A5058] flex items-center gap-1 shadow-sm">
+                                        <span className="rounded-full bg-white/95 px-3 py-1 text-[11.5px] text-rose-700 shadow-soft">
                                             {lottery.participationType === 'everyone' ? 'פתוח לכולן' : `${lottery.minPointsToEnter} נקודות`}
-                                        </div>
+                                        </span>
                                     )}
                                     {!lottery.isActive && (
-                                        <div className="bg-[#CBD5E0] px-3 py-1 rounded-full text-[10px] font-bold text-[#2B2027] flex items-center gap-1">
-                                            <CheckCircle2 size={11} /> הגרלה הסתיימה
-                                        </div>
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-plum-900/80 px-3 py-1 text-[11.5px] text-white">
+                                            <CheckCircle2 size={12} /> הסתיימה
+                                        </span>
                                     )}
                                 </div>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleShare(lottery); }}
-                                    className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md p-2 rounded-full text-[#8A5058] hover:bg-white transition-all shadow-sm"
+                                    aria-label="שיתוף"
+                                    className="absolute bottom-2.5 left-2.5 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-rose-700 shadow-soft transition hover:bg-white active:scale-90"
                                 >
-                                    <Share2 size={14} />
+                                    <Share2 size={15} />
                                 </button>
                             </div>
 
-                            <div className="px-1 pb-1 flex-1 flex flex-col text-right gap-2.5">
-                                <h4 className="font-bold text-[#2B2027] text-sm leading-snug">{lottery.title}</h4>
+                            <div className="flex flex-1 flex-col gap-3 p-5 pt-4 text-right">
+                                <h3 className="text-[1.15rem] leading-snug">{lottery.title}</h3>
                                 {renderPrizeList(lottery)}
 
-                                <div className="flex items-center gap-3 text-[11px] text-[#85757A] font-medium">
-                                    <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(lottery.drawDate).toLocaleDateString('he-IL')}</span>
-                                    <span className="flex items-center gap-1"><Users size={12} /> {lottery.participants.length}</span>
+                                <div className="flex items-center gap-4 text-[13px] text-slate-500">
+                                    <span className="flex items-center gap-1"><Calendar size={13} className="text-rose-400" /> {new Date(lottery.drawDate).toLocaleDateString('he-IL')}</span>
+                                    <span className="flex items-center gap-1"><Users size={13} className="text-rose-400" /> {lottery.participants.length}</span>
                                 </div>
 
                                 <div className="mt-auto pt-1">
                                     {renderActionButton(lottery)}
                                 </div>
                             </div>
+                          </div>
                         </ScrollReveal>
                     ))}
                  </div>
-              </div>
+              </section>
             )}
 
             {filteredLotteries.length === 0 && (
-              <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200">
-                 <Gift size={36} className="text-slate-300 mx-auto mb-3" />
-                 <p className="text-slate-400 font-bold text-sm">אין הגרלות פעילות כרגע. חזרי לבדוק בקרוב!</p>
-              </div>
+              <EmptyState icon={<Gift size={28} />} title="אין הגרלות פעילות כרגע" text="הגרלה חדשה בדרך — חזרי לבדוק בקרוב, או הצטרפי לאתגר החוסן." action={<button onClick={() => setActiveTab('challenges')} className="btn-ghost"><Target size={16}/> לאתגרי החוסן</button>} />
             )}
         </div>
       ) : (
-        /* --- ממשק אתגרים חדש - מעודן ומותאם לנייד --- */
-        <div className="max-w-6xl mx-auto px-4 animate-scale-in space-y-6 md:space-y-8">
-            
+        /* --- אתגרי חוסן --- */
+        <div className="space-y-8 animate-fade-in">
+
             {/* ניהול למנהלת (הוספת/עריכת אתגר) */}
             {user?.isAdmin && (
-                <div className={`bg-white p-6 md:p-8 rounded-[2rem] border ${editingChallengeId ? 'border-amber-300 shadow-[0_0_25px_rgba(251,191,36,0.3)]' : 'border-indigo-100 shadow-lg'} relative overflow-hidden`}>
-                    <div className={`absolute top-0 right-0 w-1.5 h-full ${editingChallengeId ? 'bg-amber-400' : 'bg-indigo-500'}`}></div>
-                    <div className={`flex items-center gap-2 mb-4 ${editingChallengeId ? 'text-amber-600' : 'text-indigo-700'}`}>
+                <div className={`relative overflow-hidden rounded-[2rem] border bg-white p-6 md:p-8 shadow-petal ${editingChallengeId ? 'border-champagne-300' : 'border-plum-100'}`}>
+                    <div className={`absolute top-0 right-0 h-full w-1.5 ${editingChallengeId ? 'bg-champagne-400' : 'bg-plum-500'}`}></div>
+                    <div className={`mb-5 flex items-center gap-2 ${editingChallengeId ? 'text-champagne-700' : 'text-plum-700'}`}>
                         {editingChallengeId ? <Edit size={20} /> : <Settings size={20} />}
-                        <h4 className="text-xl md:text-2xl font-black">ניהול חוסן - {editingChallengeId ? 'עריכת אתגר' : 'יצירת אתגר'}</h4>
+                        <h3 className="text-xl md:text-2xl">ניהול חוסן · {editingChallengeId ? 'עריכת אתגר' : 'יצירת אתגר'}</h3>
                     </div>
-                    
-                    <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
-                        <div className="space-y-2 lg:col-span-1">
-                            <label className="text-[10px] md:text-xs font-bold text-slate-400 mr-2">כותרת האתגר</label>
-                            <input 
-                                type="text" 
-                                value={newChallenge.title} 
+
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-start">
+                        <label className="block lg:col-span-1">
+                            <span className="mb-1.5 block text-[12.5px] text-slate-500">כותרת האתגר</span>
+                            <input
+                                type="text"
+                                value={newChallenge.title}
                                 onChange={(e) => setNewChallenge({...newChallenge, title: e.target.value})}
-                                className="w-full p-3 md:p-4 bg-slate-50 rounded-xl font-medium text-sm border border-slate-100 focus:border-indigo-300 outline-none" 
-                                placeholder="שם האתגר..."
+                                className={inputCls}
+                                placeholder="שם האתגר…"
                             />
-                        </div>
-                        
+                        </label>
+
                         {/* ריבוי פרסים */}
-                        <div className="space-y-2 lg:col-span-2">
-                            <label className="text-[10px] md:text-xs font-bold text-slate-400 mr-2">רשימת פרסים לזוכים</label>
+                        <div className="lg:col-span-2">
+                            <span className="mb-1.5 block text-[12.5px] text-slate-500">פרסים לזוכים</span>
                             <div className="space-y-2">
                                 {newChallenge.prizes.map((prize, idx) => (
                                     <div key={idx} className="flex gap-2">
-                                        <input 
-                                            type="text" 
-                                            value={prize} 
+                                        <input
+                                            type="text"
+                                            value={prize}
                                             onChange={(e) => handlePrizeChange(idx, e.target.value)}
-                                            className="w-full p-3 md:p-4 bg-slate-50 rounded-xl font-medium text-sm border border-slate-100 focus:border-indigo-300 outline-none" 
+                                            className={inputCls}
                                             placeholder={`פרס ${idx + 1}`}
                                         />
-                                        <button onClick={() => removePrizeField(idx)} className="bg-red-50 text-red-500 px-3 rounded-xl hover:bg-red-100 transition-colors shrink-0">
+                                        <button onClick={() => removePrizeField(idx)} aria-label="הסרת פרס" className="shrink-0 rounded-2xl bg-red-50 px-3 text-red-500 transition hover:bg-red-100">
                                             <Minus size={16} />
                                         </button>
                                     </div>
                                 ))}
                             </div>
-                            <button onClick={addPrizeField} className="text-[10px] md:text-xs font-bold text-indigo-600 flex items-center gap-1 mt-1 hover:underline">
-                                <Plus size={12} /> הוספי פרס
+                            <button onClick={addPrizeField} className="mt-2 flex items-center gap-1 text-[13px] text-plum-700 hover:underline">
+                                <Plus size={13} /> הוספת פרס
                             </button>
                         </div>
 
-                        <div className="space-y-2 lg:col-span-1">
-                            <label className="text-[10px] md:text-xs font-bold text-slate-400 mr-2">הסבר / משימה</label>
-                            <textarea 
-                                value={newChallenge.notes} 
+                        <label className="block lg:col-span-1">
+                            <span className="mb-1.5 block text-[12.5px] text-slate-500">הסבר / משימה</span>
+                            <textarea
+                                value={newChallenge.notes}
                                 onChange={(e) => setNewChallenge({...newChallenge, notes: e.target.value})}
-                                className="w-full p-3 md:p-4 bg-slate-50 rounded-xl font-medium text-sm border border-slate-100 focus:border-indigo-300 outline-none h-[48px] md:h-[56px] resize-none" 
-                                placeholder="הנחיות..."
+                                className={`${inputCls} h-[96px] resize-none`}
+                                placeholder="הנחיות…"
                             />
-                        </div>
+                        </label>
 
                         {/* תמונה לאתגר */}
-                        <div className="space-y-2 lg:col-span-1 flex flex-col h-full justify-between">
-                            <div 
+                        <div className="flex flex-col gap-2 lg:col-span-1">
+                            <span className="block text-[12.5px] text-slate-500">תמונה</span>
+                            <div
                                 onClick={() => document.getElementById('admin-challenge-image')?.click()}
-                                className={`h-[48px] md:h-[56px] rounded-xl border border-dashed flex items-center justify-center gap-2 cursor-pointer transition-all overflow-hidden relative ${newChallenge.image ? 'border-indigo-500' : 'border-slate-300 hover:border-indigo-300'}`}
+                                className={`relative flex h-[52px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-2xl border border-dashed transition ${newChallenge.image ? 'border-plum-400' : 'border-rose-200 hover:border-plum-300'}`}
                             >
                                 {newChallenge.image ? (
-                                    <img src={newChallenge.image} className="w-full h-full object-cover" alt="Preview" />
+                                    <img src={newChallenge.image} className="h-full w-full object-cover" alt="Preview" />
                                 ) : (
                                     <>
                                         <ImageIcon size={16} className="text-slate-400" />
-                                        <span className="text-[10px] md:text-xs font-medium text-slate-500">תמונה</span>
+                                        <span className="text-[13px] text-slate-500">בחירת תמונה</span>
                                     </>
                                 )}
                                 <input id="admin-challenge-image" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, true)} />
                             </div>
 
-                            <div className="flex gap-2 mt-2 h-[48px] md:h-[56px]">
-                                <button 
+                            <div className="flex gap-2">
+                                <button
                                     onClick={handleAdminSaveChallenge}
-                                    className={`flex-1 text-white py-3 md:py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-1.5 ${editingChallengeId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-full py-3 text-[14px] text-white transition font-strong ${editingChallengeId ? 'bg-champagne-500 hover:bg-champagne-600' : 'bg-plum-700 hover:bg-plum-800'}`}
                                 >
-                                    {editingChallengeId ? <><Edit size={16} /> שמרי שינויים</> : <><Plus size={16} /> צרי אתגר</>}
+                                    {editingChallengeId ? <><Edit size={15} /> שמירה</> : <><Plus size={15} /> יצירה</>}
                                 </button>
                                 {editingChallengeId && (
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             setEditingChallengeId(null);
                                             setNewChallenge({ title: '', prizes: [''], notes: '', image: '', drawDate: '' });
                                         }}
-                                        className="px-4 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all flex items-center justify-center"
+                                        className="rounded-full bg-rose-50 px-4 text-[14px] text-slate-500 transition hover:bg-rose-100"
                                     >
                                         ביטול
                                     </button>
@@ -690,168 +717,147 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                 </div>
             )}
 
-            {/* חווית משתמש משופרת: תפריט אתגרים אופקי עדין */}
             {challenges.length === 0 ? (
-                <div className="text-center py-16 bg-white/50 rounded-[2rem] border border-dashed border-slate-200">
-                    <Target size={36} className="text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-400 font-medium text-sm md:text-base">אין כרגע אתגרי חוסן פעילים. חזרי לבדוק בקרוב!</p>
-                </div>
+                <EmptyState icon={<Target size={28} />} title="אין כרגע אתגרי חוסן פעילים" text="האתגר הבא בדרך. בינתיים — אולי הגרלה?" action={<button onClick={() => setActiveTab('regular')} className="btn-ghost"><Gift size={16}/> להגרלות</button>} />
             ) : (
                 <div className="space-y-6 md:space-y-8">
-                    {/* Ribbon - בחירת אתגר - מוקטן ומעודן */}
-                    <div className="flex overflow-x-auto gap-3 pb-2 snap-x hide-scrollbar scroll-smooth">
+                    {/* בחירת אתגר */}
+                    <ChipRow>
                         {challenges.map((challenge) => {
                             const isSelected = viewingChallengeId === (challenge._id || challenge.id);
                             return (
-                                <button 
+                                <button
                                     key={challenge._id || challenge.id}
                                     onClick={() => setViewingChallengeId(challenge._id || challenge.id)}
-                                    className={`snap-center shrink-0 px-4 py-2.5 md:px-6 md:py-3 rounded-2xl md:rounded-3xl font-bold md:font-black text-xs md:text-sm whitespace-nowrap transition-all border shadow-sm flex items-center gap-1.5 md:gap-2 ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 scale-[1.02]' : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'}`}
+                                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2.5 text-[14px] transition-all duration-300 active:scale-95 ${isSelected ? 'border-plum-700 bg-plum-700 text-white shadow-soft' : 'border-rose-100 bg-white/80 text-slate-600 hover:border-plum-300 hover:text-plum-700'}`}
                                 >
-                                    <Target size={16} className={isSelected ? 'text-indigo-200' : 'text-slate-400'} />
+                                    <Target size={15} className={isSelected ? 'text-plum-200' : 'text-slate-400'} />
                                     {challenge.title}
-                                    {challenge.isActive === false && <Lock size={12} className="mr-1 opacity-50" />}
+                                    {challenge.isActive === false && <Lock size={12} className="mr-1 opacity-60" />}
                                 </button>
                             );
                         })}
-                    </div>
+                    </ChipRow>
 
-                    {/* תצוגת האתגר הנבחר - קומפקטי ואלגנטי */}
+                    {/* תצוגת האתגר הנבחר */}
                     {challenges.map((challenge) => {
                         if (viewingChallengeId !== (challenge._id || challenge.id)) return null;
-                        
+
                         const currentEntries = challengeEntries.filter(e => e.challengeId === (challenge._id || challenge.id));
                         const challengePrizes = challenge.prizes || (challenge.prize ? [challenge.prize] : []);
-                        
+                        const isOpen = selectedChallengeId === (challenge._id || challenge.id);
+
                         return (
-                            <div key={challenge._id || challenge.id} className="bg-white rounded-[2rem] md:rounded-[3.5rem] overflow-hidden border border-slate-100 shadow-xl relative animate-fade-in">
+                            <div key={challenge._id || challenge.id} className="relative overflow-hidden rounded-[2rem] border border-rose-100 bg-white shadow-lift animate-scale-in">
                                 {/* Header של האתגר */}
-                                <div className={`p-6 md:p-10 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 min-h-[180px] md:min-h-[250px]`}>
+                                <div className="relative flex min-h-[220px] md:min-h-[300px] flex-col justify-end gap-5 overflow-hidden p-6 md:flex-row md:items-end md:justify-between md:p-10">
                                     {challenge.image ? (
                                         <>
-                                            <div className="absolute inset-0 bg-black/60 z-0"></div>
-                                            <img src={challenge.image} alt={challenge.title} className="absolute inset-0 w-full h-full object-cover z-[1]" />
+                                            <img src={challenge.image} alt={challenge.title} className="absolute inset-0 z-0 h-full w-full object-cover animate-kenburns" />
+                                            <div className="absolute inset-0 z-[1] bg-gradient-to-t from-plum-950/90 via-plum-950/45 to-plum-950/10"></div>
                                         </>
                                     ) : (
-                                        <div className={`absolute inset-0 ${challenge.isActive !== false ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800' : 'bg-slate-800'}`}>
-                                            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                                        <div className={`absolute inset-0 ${challenge.isActive !== false ? 'bg-gradient-to-br from-plum-700 via-rose-700 to-plum-900' : 'bg-plum-900'}`}>
+                                            <div className="absolute -top-20 -left-10 h-72 w-72 rounded-full bg-rose-400/30 blur-3xl animate-mesh-drift" />
                                         </div>
                                     )}
-                                    
-                                    <div className="relative z-10 text-center md:text-right space-y-2.5 text-white flex-1 w-full">
-                                        <h3 className="text-2xl md:text-4xl font-black drop-shadow-md">{challenge.title}</h3>
-                                        {challenge.notes && <p className="text-indigo-50 font-medium text-sm md:text-base max-w-2xl drop-shadow-sm bg-black/20 p-3 md:p-4 rounded-xl md:rounded-2xl backdrop-blur-sm border border-white/10 leading-relaxed">{challenge.notes}</p>}
-                                        
-                                        {/* רינדור הפרסים - מוקטן עדין */}
+
+                                    <div className="relative z-10 flex-1 space-y-2 text-right text-white">
+                                        <p className="font-accent text-[1.3rem] text-rose-200">אתגר חוסן</p>
+                                        <h3 className="text-[2rem] md:text-[2.8rem] leading-[1.05] !text-white">{challenge.title}</h3>
+                                        {challenge.notes && <p className="max-w-2xl text-[15px] leading-relaxed text-white/85">{challenge.notes}</p>}
                                         {renderChallengePrizes(challengePrizes)}
                                     </div>
-                                    
-                                    <div className="relative z-10 flex flex-col gap-2.5 min-w-[200px] md:min-w-[250px] w-full md:w-auto mt-2 md:mt-0">
+
+                                    <div className="relative z-10 flex w-full flex-col gap-2.5 md:w-auto md:min-w-[250px]">
                                         {challenge.winnerFamily ? (
-                                            <div className="bg-gradient-to-r from-yellow-400 to-amber-500 text-amber-950 px-5 py-4 rounded-2xl font-black text-center shadow-lg border border-yellow-300 animate-bounce text-sm">
-                                                <Trophy size={20} className="mx-auto mb-1 opacity-80" />
-                                                <span className="block text-[10px] opacity-70 mb-0.5">הזוכה המאושרת:</span>
-                                                <span className="text-base">משפחת {challenge.winnerFamily}</span>
+                                            <div className="rounded-2xl bg-gradient-to-l from-champagne-300 to-champagne-400 px-5 py-4 text-center text-champagne-950 shadow-lift animate-bounce-in">
+                                                <Trophy size={22} className="mx-auto mb-1" />
+                                                <span className="block text-[12px] opacity-75">הזוכה המאושרת</span>
+                                                <span className="font-strong text-[1.1rem]">משפחת {challenge.winnerFamily}</span>
                                             </div>
                                         ) : challenge.isActive !== false ? (
-                                            <button 
-                                                onClick={() => setSelectedChallengeId(selectedChallengeId === (challenge._id || challenge.id) ? null : (challenge._id || challenge.id))}
-                                                className={`w-full px-5 md:px-6 py-3.5 md:py-4 rounded-2xl md:rounded-3xl font-bold md:font-black shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm md:text-base ${selectedChallengeId === (challenge._id || challenge.id) ? 'bg-rose-700 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50'}`}
+                                            <button
+                                                onClick={() => setSelectedChallengeId(isOpen ? null : (challenge._id || challenge.id))}
+                                                className={`flex w-full min-h-[52px] items-center justify-center gap-2 rounded-full px-6 text-[15.5px] shadow-lift transition-all active:scale-[0.97] font-strong ${isOpen ? 'bg-white/15 text-white backdrop-blur border border-white/30' : 'bg-white text-plum-800 hover:bg-rose-50'}`}
                                             >
-                                                {selectedChallengeId === (challenge._id || challenge.id) ? 'סגירת הטופס' : 'השתתפי באתגר!'} 
-                                                <Target size={18} className={selectedChallengeId === (challenge._id || challenge.id) ? 'text-slate-400' : 'text-indigo-400'} />
+                                                {isOpen ? 'סגירת הטופס' : 'השתתפי באתגר!'}
+                                                <Target size={18} />
                                             </button>
                                         ) : (
-                                            <div className="bg-black/40 text-white px-5 py-3 rounded-2xl font-bold text-center backdrop-blur-sm border border-white/10 text-sm">
-                                                <Lock className="mx-auto mb-1 opacity-50" size={16}/>
+                                            <div className="rounded-2xl border border-white/15 bg-black/30 px-5 py-3 text-center text-[14px] text-white backdrop-blur-sm">
+                                                <Lock className="mx-auto mb-1 opacity-60" size={16}/>
                                                 האתגר הסתיים
                                             </div>
                                         )}
 
                                         {user?.isAdmin && (
-                                            <div className="flex gap-2 mt-1">
-                                                <button onClick={() => handleAdminRunChallenge(challenge._id || challenge.id)} className="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-1 shadow-sm">
-                                                    <Eye size={12}/> הגרלי
+                                            <div className="flex gap-2">
+                                                <button onClick={() => handleAdminRunChallenge(challenge._id || challenge.id)} className="flex flex-1 items-center justify-center gap-1 rounded-full bg-sage-500 py-2 text-[12.5px] text-white transition hover:bg-sage-600">
+                                                    <Eye size={13}/> הגרלה
                                                 </button>
-                                                <button onClick={() => handleEditChallengeClick(challenge)} className="flex-1 bg-amber-500 text-white py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-amber-600 transition-colors flex items-center justify-center gap-1 shadow-sm">
-                                                    <Edit size={12}/> עריכה
+                                                <button onClick={() => handleEditChallengeClick(challenge)} className="flex flex-1 items-center justify-center gap-1 rounded-full bg-champagne-500 py-2 text-[12.5px] text-white transition hover:bg-champagne-600">
+                                                    <Edit size={13}/> עריכה
                                                 </button>
-                                                <button onClick={() => handleAdminDeleteChallenge(challenge._id || challenge.id)} className="flex-1 bg-red-500 text-white py-2 rounded-xl text-[10px] md:text-xs font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-1 shadow-sm">
-                                                    <Trash2 size={12}/> מחיקה
+                                                <button onClick={() => handleAdminDeleteChallenge(challenge._id || challenge.id)} className="flex flex-1 items-center justify-center gap-1 rounded-full bg-red-500 py-2 text-[12.5px] text-white transition hover:bg-red-600">
+                                                    <Trash2 size={13}/> מחיקה
                                                 </button>
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* אזור טופס העלאה - אלגנטי וקומפקטי */}
-                                {selectedChallengeId === (challenge._id || challenge.id) && (
-                                    <div className="p-5 md:p-10 bg-indigo-50/30 border-b border-indigo-100 animate-fade-in">
+                                {/* אזור טופס העלאה */}
+                                {isOpen && (
+                                    <div className="border-b border-rose-100 bg-rose-50/40 p-5 md:p-10 animate-fade-in-up">
                                         {!user ? (
-                                            <div className="text-center py-8 bg-white rounded-2xl border border-dashed border-indigo-200 shadow-sm">
-                                                <Lock size={32} className="text-indigo-300 mx-auto mb-3" />
-                                                <h4 className="text-base md:text-lg font-bold text-slate-800">התחברי כדי להשתתף</h4>
-                                                <button onClick={() => window.location.hash = '/login'} className="mt-4 bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition-all text-sm">כניסה למערכת</button>
+                                            <div className="mx-auto max-w-md rounded-[1.5rem] border border-dashed border-rose-200 bg-white py-8 text-center">
+                                                <Lock size={30} className="mx-auto mb-3 text-rose-300" />
+                                                <h4 className="text-lg">התחברי כדי להשתתף</h4>
+                                                <button onClick={() => window.location.hash = '/login'} className="btn-primary mt-4">כניסה</button>
                                             </div>
                                         ) : (
-                                            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto bg-white p-5 md:p-8 rounded-2xl md:rounded-[2rem] shadow-sm border border-slate-50">
+                                            <div className="mx-auto grid max-w-3xl gap-6 rounded-[1.5rem] border border-rose-100 bg-white p-5 shadow-soft md:grid-cols-2 md:p-8">
                                                 <div className="space-y-4">
-                                                    <div className="space-y-1.5">
-                                                        <label className="text-[10px] md:text-xs font-bold text-slate-500 mr-1">שם משפחה (יוצג באתר)</label>
-                                                        <input 
-                                                            type="text" 
-                                                            value={familyName}
-                                                            onChange={(e) => setFamilyName(e.target.value)}
-                                                            placeholder="למשל: לוי"
-                                                            className="w-full px-4 py-3 md:px-5 md:py-3.5 rounded-xl bg-slate-50 border border-slate-100 focus:border-indigo-400 focus:bg-white outline-none transition-colors font-medium text-sm"
-                                                        />
-                                                    </div>
-
-                                                    <div className="space-y-1.5">
-                                                        <label className="text-[10px] md:text-xs font-bold text-slate-500 mr-1">מספר טלפון (חסוי להנהלה בלבד)</label>
-                                                        <input 
-                                                            type="tel" 
-                                                            value={phone}
-                                                            onChange={(e) => setPhone(e.target.value)}
-                                                            placeholder="למשל: 050-1234567"
-                                                            className="w-full px-4 py-3 md:px-5 md:py-3.5 rounded-xl bg-slate-50 border border-slate-100 focus:border-indigo-400 focus:bg-white outline-none transition-colors font-medium text-sm"
-                                                        />
-                                                    </div>
+                                                    <label className="block">
+                                                        <span className="mb-1.5 block text-[13px] text-slate-500">שם משפחה (יוצג באתר)</span>
+                                                        <input type="text" value={familyName} onChange={(e) => setFamilyName(e.target.value)} placeholder="למשל: לוי" className={inputCls} />
+                                                    </label>
+                                                    <label className="block">
+                                                        <span className="mb-1.5 block text-[13px] text-slate-500">טלפון (גלוי רק להנהלה)</span>
+                                                        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="050-1234567" className={inputCls} />
+                                                    </label>
                                                 </div>
 
-                                                <div className="space-y-4 flex flex-col justify-end">
-                                                    <div className="space-y-1.5 flex-1">
-                                                        <label className="text-[10px] md:text-xs font-bold text-slate-500 mr-1">תמונה לאתגר 📸</label>
-                                                        <div 
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="flex-1">
+                                                        <span className="mb-1.5 block text-[13px] text-slate-500">התמונה שלכן לאתגר</span>
+                                                        <div
                                                             onClick={() => document.getElementById('challenge-input')?.click()}
-                                                            className={`group relative h-28 md:h-32 rounded-xl border-2 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-2 bg-slate-50 ${entryImage ? 'border-indigo-500' : 'border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30'}`}
+                                                            className={`group relative flex h-32 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed bg-rose-50/30 transition ${entryImage ? 'border-plum-400' : 'border-rose-200 hover:border-plum-300'}`}
                                                         >
                                                             {entryImage ? (
-                                                                <div className="w-full h-full relative">
-                                                                    <img src={entryImage} className="w-full h-full object-cover" alt="Preview" />
-                                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                                                <div className="relative h-full w-full">
+                                                                    <img src={entryImage} className="h-full w-full object-cover" alt="Preview" />
+                                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
                                                                         <Camera className="text-white" size={24} />
                                                                     </div>
                                                                 </div>
                                                             ) : (
                                                                 <>
-                                                                    <div className="w-10 h-10 bg-white shadow-sm rounded-full flex items-center justify-center text-indigo-400">
+                                                                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-plum-500 shadow-soft">
                                                                         <Camera size={20} />
                                                                     </div>
-                                                                    <p className="font-medium text-slate-500 text-[10px] md:text-xs">לחצי לבחירת תמונה</p>
+                                                                    <p className="text-[13px] text-slate-500">לחצי לבחירת תמונה</p>
                                                                 </>
                                                             )}
                                                             <input id="challenge-input" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, false)} />
                                                         </div>
                                                     </div>
 
-                                                    <button 
-                                                        onClick={handleChallengeSubmit}
-                                                        disabled={isSubmitting}
-                                                        className="w-full py-3.5 md:py-4 rounded-xl bg-indigo-600 text-white font-bold text-sm md:text-base shadow-md hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                                    >
-                                                        {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-                                                        שלחי תמונה
+                                                    <button onClick={handleChallengeSubmit} disabled={isSubmitting} className="btn-primary w-full !py-3.5 disabled:opacity-50">
+                                                        {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} className="rotate-180" />}
+                                                        שליחת התמונה
                                                     </button>
                                                 </div>
                                             </div>
@@ -859,40 +865,38 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                     </div>
                                 )}
 
-                                {/* גלריית התמונות של האתגר - עדינה ופרופורציונלית */}
+                                {/* גלריית התמונות של האתגר */}
                                 <div className="p-6 md:p-10">
-                                    <div className="flex items-center justify-between mb-5">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 md:w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500">
-                                                <ImageIcon size={18} />
-                                            </div>
-                                            <div>
-                                                <h4 className="text-lg md:text-xl font-black text-slate-800">הגלריה</h4>
-                                                <p className="text-slate-400 font-medium text-[10px] md:text-xs">{currentEntries.length} משתתפות</p>
-                                            </div>
+                                    <div className="mb-5 flex items-end justify-between">
+                                        <div>
+                                            <p className="eyebrow">הגלריה</p>
+                                            <h4 className="font-display text-[1.8rem] leading-tight text-ink">המשפחות שהשתתפו</h4>
                                         </div>
+                                        <span className="rounded-full bg-rose-50 px-3 py-1 text-[13px] text-rose-700">{currentEntries.length} משתתפות</span>
                                     </div>
 
                                     {currentEntries.length > 0 ? (
-                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-5">
+                                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5">
                                             {currentEntries.map((entry, idx) => (
-                                                <div key={idx} className="group relative bg-slate-100 rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-slate-100 aspect-[4/5]">
-                                                    <img src={entry.image} alt={entry.familyName} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 transition-opacity flex flex-col justify-end p-3 md:p-4">
-                                                        <p className="text-white font-bold text-xs md:text-sm drop-shadow-sm truncate">
+                                                <ScrollReveal key={idx} delay={(idx % 10) * 50} animation="scale-in">
+                                                  <div className="group relative aspect-[4/5] overflow-hidden rounded-[1.25rem] bg-rose-50 shadow-soft">
+                                                    <img src={entry.image} alt={entry.familyName} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                                    <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-plum-950/80 via-transparent to-transparent p-3">
+                                                        <p className="truncate text-[13.5px] text-white font-strong">
                                                             {/* תיקון באג ה-"משפחת משפחת" - אם כבר כתבה משפחת לא נוסיף */}
                                                             {entry.familyName.startsWith('משפחת') ? entry.familyName : `משפחת ${entry.familyName}`}
                                                         </p>
                                                         {user?.isAdmin && (
-                                                            <p className="text-indigo-200 text-[9px] md:text-[10px] font-medium mt-0.5 dir-ltr text-left">{entry.phone}</p>
+                                                            <p className="mt-0.5 text-left text-[10.5px] text-plum-100" dir="ltr">{entry.phone}</p>
                                                         )}
                                                     </div>
-                                                </div>
+                                                  </div>
+                                                </ScrollReveal>
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-10 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                                            <p className="text-slate-400 font-medium text-sm">הגלריה ריקה. תהיי הראשונה להעלות!</p>
+                                        <div className="rounded-[1.5rem] border border-dashed border-rose-200 bg-rose-50/30 py-10 text-center text-[15px] text-slate-500">
+                                            הגלריה ריקה. תהיי הראשונה להעלות!
                                         </div>
                                     )}
                                 </div>
@@ -905,37 +909,38 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       )}
 
       {/* --- מודל ההגרלות הלייב --- */}
-      {/* הערה: מודל הגרלה חיה נשאר עם עיצובו התיאטרלי הכהה (dramatic reveal) ומרכוז במקום bottom-sheet — לחיצה על הרקע סוגרת, בהתאם לשאר האתר */}
+      {/* מודל הגרלה חיה נשאר תיאטרלי וכהה (dramatic reveal) — לחיצה על הרקע סוגרת */}
       {selectedLottery && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in" onClick={() => setSelectedLottery(null)}>
-              <div className="w-full max-w-md relative" onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => setSelectedLottery(null)} className="absolute -top-12 right-0 p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-all"><X size={20} /></button>
-                  
-                  <div className="bg-gradient-to-b from-indigo-950 via-purple-900 to-slate-950 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative">
-                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 animate-pulse"></div>
-                      
-                      <div className="p-8 md:p-10 text-center relative z-10 min-h-[350px] flex flex-col items-center justify-center">
+        <Portal>
+          <div dir="rtl" className="fixed inset-0 z-[300] flex items-center justify-center bg-plum-950/90 p-4 backdrop-blur-md animate-fade-in" onClick={() => setSelectedLottery(null)}>
+              <div className="relative w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => setSelectedLottery(null)} aria-label="סגירה" className="absolute -top-12 right-0 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"><X size={20} /></button>
+
+                  <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-b from-plum-900 via-rose-900 to-plum-950 shadow-2xl">
+                      <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-rose-400/30 blur-3xl animate-mesh-drift" />
+
+                      <div className="relative z-10 flex min-h-[360px] flex-col items-center justify-center p-8 text-center md:p-10">
                           <div className="mb-6">
-                              <span className="text-rose-400 text-[9px] font-bold tracking-[0.2em] uppercase mb-2 block">Live Drawing Event</span>
-                              <h3 className="text-2xl md:text-3xl font-black text-white leading-tight">{selectedLottery.title}</h3>
+                              <span className="mb-2 block font-accent text-[1.4rem] tracking-wide text-rose-300">הגרלה חיה</span>
+                              <h3 className="text-[1.8rem] md:text-[2.2rem] leading-tight !text-white">{selectedLottery.title}</h3>
                           </div>
 
                           {!showWinner && !isDrawing && !selectedLottery.winnerId && (
-                              <div className="space-y-6 w-full animate-fade-in">
-                                  <div className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center mx-auto border border-white/10">
-                                    <Gift size={36} className="text-rose-400/60" />
+                              <div className="w-full space-y-6 animate-fade-in">
+                                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-white/15 bg-white/5 animate-float-y">
+                                    <Gift size={36} className="text-rose-300" />
                                   </div>
                                   {user?.isAdmin ? (
                                       <div className="space-y-4">
-                                          <p className="text-purple-200 font-medium text-sm">מוכנה להפעיל?</p>
-                                          <button onClick={simulateDraw} className="w-full bg-gradient-to-r from-yellow-400 via-orange-500 to-rose-500 text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
-                                              הפעלת רולטה
+                                          <p className="text-[15px] text-rose-100">מוכנה להפעיל?</p>
+                                          <button onClick={simulateDraw} className="w-full rounded-full bg-gradient-to-l from-champagne-300 via-rose-400 to-rose-500 px-6 py-4 text-lg text-white shadow-lift transition active:scale-95 font-strong">
+                                              הפעלת ההגרלה
                                           </button>
                                       </div>
                                   ) : (
-                                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                                          <Loader2 size={24} className="text-rose-400 animate-spin mx-auto mb-3" />
-                                          <p className="text-white/80 font-medium text-sm">המנהלת טרם הפעילה...</p>
+                                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                          <Loader2 size={24} className="mx-auto mb-3 animate-spin text-rose-300" />
+                                          <p className="text-[14.5px] text-white/80">המנהלת עוד לא הפעילה…</p>
                                       </div>
                                   )}
                               </div>
@@ -943,42 +948,37 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
                           {isDrawing && (
                               <div className="space-y-6 animate-fade-in">
-                                  <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-rose-300 to-purple-500 animate-pulse">
+                                  <div className="font-accent text-[7rem] leading-none text-transparent bg-clip-text bg-gradient-to-b from-white via-rose-200 to-rose-400 animate-pulse">
                                       {countdown}
                                   </div>
-                                  <div className="flex flex-col items-center gap-2">
-                                      <p className="text-rose-200 font-bold text-sm tracking-widest animate-bounce">מערבבים שמות...</p>
-                                  </div>
+                                  <p className="text-[15px] tracking-wide text-rose-200 animate-bounce">מערבבות שמות…</p>
                               </div>
                           )}
 
                           {(showWinner || selectedLottery.winnerId) && (
-                              <div className="space-y-6 animate-scale-in w-full">
-                                  <Trophy size={80} className="text-yellow-400 mx-auto drop-shadow-lg animate-bounce" />
-                                  
-                                  <div className="relative z-10">
-                                      <p className="text-[10px] font-bold text-rose-300 uppercase tracking-widest mb-2">יש לנו זוכה מאושרת!</p>
-                                      <div className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl shadow-xl">
-                                          <h2 className="text-2xl font-black text-white mb-2">
+                              <div className="w-full space-y-6 animate-scale-in">
+                                  <Trophy size={76} className="mx-auto text-champagne-300 drop-shadow-lg animate-bounce" />
+                                  <div>
+                                      <p className="mb-2 text-[13px] text-rose-200">יש לנו זוכה!</p>
+                                      <div className="rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-md">
+                                          <h2 className="text-[1.6rem] !text-white">
                                               {selectedLottery.winnerId === 'No Participants' ? 'אין משתתפות' : 'חברת המעגל המאושרת'}
                                           </h2>
                                       </div>
                                   </div>
-
-                                  <div className="pt-2">
-                                      <button onClick={() => setSelectedLottery(null)} className="w-full mt-4 bg-white text-slate-900 py-3 rounded-xl font-bold text-sm hover:bg-rose-50 transition-colors">
-                                          סגירה
-                                      </button>
-                                  </div>
+                                  <button onClick={() => setSelectedLottery(null)} className="w-full rounded-full bg-white py-3 text-[15px] text-plum-900 transition hover:bg-rose-50 font-strong">
+                                      סגירה
+                                  </button>
                               </div>
                           )}
                       </div>
                   </div>
               </div>
           </div>
+        </Portal>
       )}
 
-    </div>
+    </PageShell>
   );
 };
 

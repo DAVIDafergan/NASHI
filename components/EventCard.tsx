@@ -73,7 +73,7 @@ const EventCard: React.FC<EventCardProps> = ({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onClick?.(); }}
-          className={`mt-auto w-full py-3 rounded-full text-sm font-semibold active:scale-[0.98] transition-all min-h-[44px] ${
+          className={`mt-auto w-full py-3 rounded-full text-[14.5px] font-strong active:scale-[0.98] transition-all min-h-[44px] ${
             isPast
               ? 'bg-slate-100 text-slate-500'
               : 'bg-rose-50 text-rose-700 group-hover:bg-rose-700 group-hover:text-white'

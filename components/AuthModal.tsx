@@ -56,201 +56,213 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     }
   };
 
+  const inputCls = 'w-full rounded-2xl border border-rose-100 bg-rose-50/30 py-3.5 pr-12 pl-4 text-[15px] text-ink outline-none transition placeholder:text-slate-400 focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-100/70';
+  const iconCls = 'absolute top-1/2 right-4 -translate-y-1/2 text-rose-300';
+
   return (
-    <div className="fixed inset-0 z-[200] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" dir="rtl" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center bg-plum-900/40 backdrop-blur-sm animate-fade-in text-right md:p-6" dir="rtl" onClick={onClose}>
 
       {/* כרטיס הטופס */}
       {!showTerms ? (
-        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-md shadow-2xl overflow-hidden relative animate-slide-up max-h-[88vh] flex flex-col">
-          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0 md:hidden"></div>
+        <div onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={isRegister ? 'הצטרפות' : 'התחברות'} className="relative flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] md:rounded-[2rem] bg-white shadow-lift animate-slide-up">
+          <div className="mx-auto mt-2.5 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-rose-100 md:hidden"></div>
 
           {/* כותרת */}
-          <div className="bg-gradient-to-r from-purple-600 to-rose-500 p-8 text-white text-center relative shrink-0">
-            <button onClick={onClose} className="absolute top-4 left-4 p-2 bg-white/20 rounded-full hover:bg-white/40 transition-colors">
-              <X size={20} />
+          <div className="relative shrink-0 overflow-hidden px-7 pt-7 pb-5 md:px-8 md:pt-9">
+            <div aria-hidden="true" className="pointer-events-none absolute -top-16 -left-10 h-48 w-48 rounded-full bg-rose-200/50 blur-3xl animate-mesh-drift" />
+            <div aria-hidden="true" className="pointer-events-none absolute -top-10 right-[-3rem] h-40 w-40 rounded-full bg-champagne-200/60 blur-3xl animate-mesh-drift-slow" />
+            <button onClick={onClose} aria-label="סגירה" className="absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-slate-500 transition hover:bg-rose-700 hover:text-white active:scale-90">
+              <X size={18} />
             </button>
-            <h2 className="text-3xl font-black tracking-tight mb-2">
-              {isRegister ? 'הצטרפות למעגל' : 'ברוכה השבה'}
-            </h2>
-            <p className="text-purple-100 text-sm font-medium">
-              {isRegister ? 'מלאי פרטים והתחילי לצבור חוויות' : 'התחברי כדי לראות מה חדש'}
-            </p>
+            <div className="relative">
+              <p className="font-accent text-[2.2rem] leading-none text-rose-700">נשי<span className="text-rose-300">.</span></p>
+              <h2 key={isRegister ? 'r' : 'l'} className="mt-3 text-[2.2rem] md:text-[2.5rem] leading-[1.05] animate-blur-in">
+                {isRegister ? 'בואי, יש לך מקום כאן' : 'טוב שחזרת'}
+              </h2>
+              <p className="mt-2 text-[15px] text-slate-500">
+                {isRegister ? 'דקה אחת והצטרפת לקהילה: אירועים, חוגים, הגרלות והשראה.' : 'התחברי כדי לראות מה חדש במעגל.'}
+              </p>
+            </div>
+
+            {/* מתג התחברות/הרשמה */}
+            <div className="relative mt-5 grid grid-cols-2 rounded-full bg-rose-50 p-1 text-[14.5px]" role="tablist">
+              <span aria-hidden="true" className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-full bg-white shadow-soft transition-all duration-500 ${isRegister ? 'right-[calc(50%+0rem)]' : 'right-1'}`} />
+              <button type="button" role="tab" aria-selected={!isRegister} onClick={() => setIsRegister(false)} className={`relative z-10 rounded-full py-2 transition ${!isRegister ? 'text-rose-700 font-strong' : 'text-slate-500'}`}>התחברות</button>
+              <button type="button" role="tab" aria-selected={isRegister} onClick={() => setIsRegister(true)} className={`relative z-10 rounded-full py-2 transition ${isRegister ? 'text-rose-700 font-strong' : 'text-slate-500'}`}>הרשמה</button>
+            </div>
           </div>
 
-          <div className="p-8 overflow-y-auto flex-1">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              
-              {isRegister && (
-                <div className="space-y-1">
-                  <div className="relative">
-                    <User className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      type="text" 
-                      name="name"
-                      placeholder="שם מלא"
-                      autoComplete="name" // מילוי אוטומטי לשם
-                      required
-                      className="w-full pr-12 pl-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-50/50 transition-all font-bold text-slate-700"
-                      value={formData.name}
-                      onChange={e => setFormData({...formData, name: e.target.value})}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <div className="relative">
-                  <Mail className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400" size={18} />
-                  <input 
-                    type="email" 
-                    name="email"
-                    placeholder="כתובת אימייל"
-                    autoComplete="username" // מילוי אוטומטי למייל
-                    required
-                    className="w-full pr-12 pl-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-50/50 transition-all font-bold text-slate-700"
-                    value={formData.email}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
-                  />
-                </div>
-              </div>
+          <div className="flex-1 overflow-y-auto px-7 pb-8 md:px-8">
+            <form onSubmit={handleSubmit} className="space-y-3">
 
               {isRegister && (
-                <div className="space-y-1">
-                  <div className="relative">
-                    <Phone className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      type="tel" 
-                      name="phone"
-                      placeholder="מספר נייד"
-                      autoComplete="tel" // מילוי אוטומטי לטלפון
-                      required
-                      className="w-full pr-12 pl-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-50/50 transition-all font-bold text-slate-700"
-                      value={formData.phone}
-                      onChange={e => setFormData({...formData, phone: e.target.value})}
-                    />
-                  </div>
-                </div>
+                <label className="relative block animate-fade-in-up">
+                  <span className="sr-only">שם מלא</span>
+                  <User className={iconCls} size={18} />
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="שם מלא"
+                    autoComplete="name"
+                    required
+                    className={inputCls}
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                  />
+                </label>
               )}
 
-              <div className="space-y-1">
-                <div className="relative">
-                  <Lock className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400" size={18} />
-                  <input 
-                    type="password" 
-                    name="password"
-                    placeholder="סיסמה"
-                    autoComplete={isRegister ? "new-password" : "current-password"} // מילוי אוטומטי לסיסמה
+              <label className="relative block">
+                <span className="sr-only">אימייל</span>
+                <Mail className={iconCls} size={18} />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="כתובת אימייל"
+                  autoComplete="username"
+                  required
+                  className={inputCls}
+                  value={formData.email}
+                  onChange={e => setFormData({...formData, email: e.target.value})}
+                />
+              </label>
+
+              {isRegister && (
+                <label className="relative block animate-fade-in-up">
+                  <span className="sr-only">טלפון נייד</span>
+                  <Phone className={iconCls} size={18} />
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="מספר נייד"
+                    autoComplete="tel"
                     required
-                    className="w-full pr-12 pl-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-purple-300 focus:ring-4 focus:ring-purple-50/50 transition-all font-bold text-slate-700"
-                    value={formData.password}
-                    onChange={e => setFormData({...formData, password: e.target.value})}
+                    className={inputCls}
+                    value={formData.phone}
+                    onChange={e => setFormData({...formData, phone: e.target.value})}
                   />
+                </label>
+              )}
+
+              <label className="relative block">
+                <span className="sr-only">סיסמה</span>
+                <Lock className={iconCls} size={18} />
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="סיסמה"
+                  autoComplete={isRegister ? "new-password" : "current-password"}
+                  required
+                  className={inputCls}
+                  value={formData.password}
+                  onChange={e => setFormData({...formData, password: e.target.value})}
+                />
+              </label>
+
+              {!isRegister && (
+                <div className="flex justify-start px-1">
+                  <button
+                    type="button"
+                    onClick={() => { onClose(); navigate('/forgot-password'); }}
+                    className="text-[13px] text-rose-600 underline-offset-4 transition-colors hover:text-rose-800 hover:underline"
+                  >
+                    שכחת סיסמה?
+                  </button>
                 </div>
-                
-                {/* תוספת: קישור שכחתי סיסמה (רק במצב התחברות) */}
-                {!isRegister && (
-                  <div className="flex justify-start px-1">
-                    <button 
-                      type="button"
-                      onClick={() => { onClose(); navigate('/forgot-password'); }}
-                      className="text-[10px] font-black text-rose-400 hover:text-rose-600 transition-colors uppercase tracking-tighter"
-                    >
-                      שכחת סיסמה? לחצי כאן
-                    </button>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* צ'ק בוקס לתקנון (רק בהרשמה) */}
               {isRegister && (
-                <div className="flex items-start gap-3 pt-2 px-1">
-                   <div className="relative flex items-center">
-                     <input 
-                       id="terms-check" 
-                       type="checkbox" 
-                       className="peer h-5 w-5 cursor-pointer appearance-none rounded-lg border-2 border-slate-300 transition-all checked:border-purple-500 checked:bg-purple-500 hover:border-purple-400"
+                <div className="flex items-start gap-3 px-1 pt-1">
+                   <div className="relative mt-0.5 flex items-center">
+                     <input
+                       id="terms-check"
+                       type="checkbox"
+                       className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-rose-200 transition-all checked:border-rose-700 checked:bg-rose-700 hover:border-rose-400"
                        checked={formData.agreedToTerms}
                        onChange={e => setFormData({...formData, agreedToTerms: e.target.checked})}
                      />
                      <CheckCircle size={12} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100" />
                    </div>
-                   <label htmlFor="terms-check" className="text-xs text-slate-500 font-medium leading-tight cursor-pointer select-none">
-                     אני מאשרת שקראתי והסכמתי ל
-                     <span 
-                       className="text-purple-600 font-bold underline hover:text-purple-800 mr-1"
+                   <label htmlFor="terms-check" className="cursor-pointer select-none text-[13.5px] leading-snug text-slate-500">
+                     קראתי ואני מסכימה ל
+                     <span
+                       className="mr-1 text-rose-700 underline underline-offset-4 hover:text-rose-900"
                        onClick={(e) => { e.preventDefault(); setShowTerms(true); }}
                      >
-                       תקנון ומדיניות האתר
+                       תקנון האתר
                      </span>
                    </label>
                 </div>
               )}
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
-                className="w-full py-4 bg-rose-700 text-white rounded-2xl font-black shadow-xl hover:bg-purple-600 hover:shadow-purple-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4"
+                className="btn-primary mt-3 w-full !py-4 !text-base disabled:opacity-70"
               >
-                {loading ? <span className="animate-spin text-xl">⏳</span> : (
+                {loading ? <span className="h-5 w-5 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-label="טוען" /> : (
                   <>
-                    {isRegister ? 'הרשמה מהירה' : 'כניסה למערכת'} <ArrowRight size={20} />
+                    {isRegister ? 'הצטרפות לקהילה' : 'כניסה'} <ArrowRight size={19} className="rotate-180" />
                   </>
                 )}
               </button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-xs text-slate-400 font-medium">
-                {isRegister ? 'כבר יש לך משתמש?' : 'עדיין אין לך משתמש?'}
-                <button 
-                  onClick={() => setIsRegister(!isRegister)} 
-                  className="text-purple-600 font-black underline mr-1 hover:text-purple-800"
-                >
-                  {isRegister ? 'התחברי כאן' : 'הירשמי עכשיו'}
-                </button>
-              </p>
-            </div>
+            <p className="mt-6 text-center text-[13.5px] text-slate-500">
+              {isRegister ? 'כבר יש לך משתמש?' : 'עדיין לא חלק מהקהילה?'}
+              <button
+                onClick={() => setIsRegister(!isRegister)}
+                className="mr-1 text-rose-700 underline underline-offset-4 hover:text-rose-900"
+              >
+                {isRegister ? 'להתחברות' : 'להרשמה בחינם'}
+              </button>
+            </p>
           </div>
         </div>
       ) : (
         // --- מודאל התקנון (נפתח במקום הטופס) ---
-        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-xl shadow-2xl relative flex flex-col max-h-[88vh] animate-slide-up border-t-4 border-[#8A5058]">
-           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 shrink-0 md:hidden"></div>
-           <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-              <h3 className="text-lg font-black text-slate-800 flex items-center gap-2"><ShieldCheck className="text-purple-500"/> תקנון ומדיניות האתר</h3>
-              <button onClick={() => setShowTerms(false)} className="p-2 hover:bg-white rounded-full transition-colors"><X size={20}/></button>
+        <div onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="תקנון האתר" className="relative flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-t-[2rem] md:rounded-[2rem] bg-white shadow-lift animate-slide-up">
+           <div className="mx-auto mt-2.5 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-rose-100 md:hidden"></div>
+           <div className="flex shrink-0 items-center justify-between border-b border-rose-100 px-6 py-5 md:px-8">
+              <div>
+                <p className="eyebrow">לפני שמצטרפות</p>
+                <h3 className="mt-1 flex items-center gap-2 font-display text-[1.7rem] text-ink"><ShieldCheck className="text-rose-500" size={22}/> תקנון האתר</h3>
+              </div>
+              <button onClick={() => setShowTerms(false)} aria-label="חזרה" className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-slate-500 transition hover:bg-rose-700 hover:text-white"><X size={18}/></button>
            </div>
-           
-           <div className="p-8 overflow-y-auto text-sm leading-loose text-slate-600 space-y-4">
-             <p className="font-bold text-slate-900">כללי</p>
+
+           <div className="overflow-y-auto px-6 py-6 md:px-8 text-[14.5px] leading-[1.85] text-slate-600 space-y-3">
+             <p className="text-ink font-strong">כללי</p>
              <p>ברוכות הבאות לאתר. השימוש באתר ובתכניו כפוף לתקנון ולמדיניות שימוש זו, ומהווה הסכמה מלאה לכל תנאיה. הנהלת האתר רשאית לעדכן את התקנון מעת לעת, לפי שיקול דעתה הבלעדי וללא הודעה מוקדמת. נוסח התקנון המעודכן הוא המחייב.</p>
 
-             <p className="font-bold text-slate-900 mt-4">מהות האתר ותכניו</p>
+             <p className="text-ink font-strong pt-2">מהות האתר ותכניו</p>
              <p>האתר מהווה מרחב קהילתי לנשים ונערות, שמטרתו שיתוף, השראה, חיבור ויצירת שיח פתוח ומכבד. התכנים המפורסמים באתר נכתבים לצורכי שיח, שיתוף דעות וניסיון אישי בלבד.</p>
              <p>ייתכנו בתכני האתר טעויות, אי־דיוקים או מידע שאינו מעודכן. אין לראות בתכנים המופיעים באתר ייעוץ מקצועי מכל סוג שהוא, לרבות אך לא רק: ייעוץ רפואי, נפשי, משפטי, פיננסי או טיפולי.</p>
 
-             <p className="font-bold text-slate-900 mt-4">אחריות ושימוש במידע</p>
+             <p className="text-ink font-strong pt-2">אחריות ושימוש במידע</p>
              <p>השימוש בתכני האתר ובמידע המפורסם בו נעשה על אחריות המשתמשת בלבד. הנהלת האתר לא תישא בכל אחריות לנזק, ישיר או עקיף, שעלול להיגרם עקב הסתמכות על מידע המופיע באתר או שימוש בו.</p>
 
-             <p className="font-bold text-slate-900 mt-4">פעילות כספית והתקשרויות חיצוניות</p>
+             <p className="text-ink font-strong pt-2">פעילות כספית והתקשרויות חיצוניות</p>
              <p>האתר אינו עוסק בכספים, תשלומים, תרומות, מכירת מוצרים או קניית כרטיסים, ואינו מהווה צד לכל התקשרות כספית או חוזית המתקיימת מחוץ למסגרת האתר. כל התקשרות בין משתמשות או בין משתמשת לגורם חיצוני נעשית באחריותן הבלעדית של הצדדים המעורבים.</p>
 
-             <p className="font-bold text-slate-900 mt-4">קישורים ותכנים חיצוניים</p>
+             <p className="text-ink font-strong pt-2">קישורים ותכנים חיצוניים</p>
              <p>באתר עשויים להופיע קישורים, הפניות או אזכורים לגורמים חיצוניים. הנהלת האתר אינה אחראית לתוכן, לאמינות, לזמינות או לפעילות של אתרים, שירותים או גורמים חיצוניים אלו, והשימוש בהם הוא באחריות המשתמשת בלבד.</p>
 
-             <p className="font-bold text-slate-900 mt-4">פרטיות ושמירת מידע</p>
+             <p className="text-ink font-strong pt-2">פרטיות ושמירת מידע</p>
              <p>האתר מכבד את פרטיות המשתמשות. מסירת מידע אישי, פרסומו או שיתופו באתר נעשים ביוזמת המשתמשת ובאחריותה בלבד. הנהלת האתר אינה אחראית לשימוש שייעשה במידע אישי שפורסם בפומבי על ידי המשתמשת.</p>
              <p>הנהלת האתר תפעל, ככל שניתן, לשמור על סביבה בטוחה ומכבדת, אך אינה יכולה להבטיח הגנה מלאה מפני שימוש לא ראוי במידע שפורסם.</p>
 
-             <p className="font-bold text-slate-900 mt-4">התנהלות ושיח קהילתי</p>
+             <p className="text-ink font-strong pt-2">התנהלות ושיח קהילתי</p>
              <p>המשתמשות מתחייבות לנהל שיח מכבד, אחראי ורגיש. הנהלת האתר שומרת לעצמה את הזכות להסיר תכנים, להגביל גישה או לחסום משתמשת, לפי שיקול דעתה, במקרה של הפרת תקנון זה או פגיעה ברוח הקהילה.</p>
 
-             <p className="font-bold text-slate-900 mt-4">סמכות שיפוט</p>
+             <p className="text-ink font-strong pt-2">סמכות שיפוט</p>
              <p>על תקנון זה ועל השימוש באתר יחולו דיני מדינת ישראל בלבד, וסמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים בישראל.</p>
              <p className="italic mt-2 text-xs opacity-70">תקנון זה נועד להבהיר את אופן השימוש באתר ולשמור על קהילה בטוחה, מכבדת ומעצימה.</p>
            </div>
-           <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
-             <button onClick={() => { setShowTerms(false); setFormData({...formData, agreedToTerms: true}); }} className="w-full py-3 bg-purple-600 text-white rounded-xl font-black hover:bg-purple-700 transition-colors">קראתי ואני מאשרת את התקנון</button>
+
+           <div className="shrink-0 border-t border-rose-100 bg-rose-50/40 p-4">
+             <button onClick={() => { setShowTerms(false); setFormData({...formData, agreedToTerms: true}); }} className="btn-primary w-full !py-3.5">קראתי ואני מאשרת</button>
            </div>
         </div>
       )}

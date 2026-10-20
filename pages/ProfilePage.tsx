@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { User, Award, Star, Settings, QrCode, TrendingUp, Heart, Calendar, Edit2, Save, X, Camera, HeartHandshake, Lock, ClipboardList, CheckCircle2, Target, Clock, LogOut, Bookmark, Activity } from 'lucide-react'; // נוספו אייקונים
+import { User, Award, Star, Settings, QrCode, TrendingUp, Heart, Calendar, Edit2, Save, X, Camera, HeartHandshake, Lock, ClipboardList, CheckCircle2, Target, Clock, LogOut, Bookmark, Activity, Sparkles } from 'lucide-react'; // נוספו אייקונים
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { UserLevel, EventItem, LotteryItem } from '../types'; // הוספת LotteryItem
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api'; // ייבוא ה-API לסנכרון משימות
 import ScrollReveal from '../components/ScrollReveal';
+import { PageShell, EmptyState } from '../components/pages/PageKit';
 
 interface ProfilePageProps {
     user: User;
@@ -104,196 +105,213 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
     ? new Date(user.createdAt).toLocaleDateString('he-IL', { year: 'numeric', month: 'short' })
     : null;
 
+  const firstName = (user.name || '').split(' ')[0] || 'יקרה';
+  const inputCls = 'w-full min-h-[46px] rounded-2xl border border-rose-100 bg-rose-50/30 px-4 text-[15px] text-right outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-100/70';
+
   return (
-    <div className="space-y-6 w-full max-w-5xl mx-auto pb-10 text-right" dir="rtl">
+    <PageShell className="!max-w-5xl">
 
       {/* כרטיס פרופיל עליון */}
-      <ScrollReveal className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100 relative overflow-visible">
-        <div className="flex flex-col md:flex-row gap-8 items-center md:items-start relative z-10">
+      <header className="relative isolate pt-6 md:pt-12 pb-8">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-rose-200/40 blur-3xl animate-mesh-drift" />
+          <div className="absolute top-10 left-[-4rem] h-64 w-64 rounded-full bg-champagne-200/50 blur-3xl animate-mesh-drift-slow" />
+        </div>
 
-          {/* Avatar Section */}
-          <div className="relative group">
-            <div className={`w-32 h-32 md:w-36 md:h-36 rounded-full border-4 border-white shadow-xl overflow-hidden ${isEditing ? 'cursor-pointer ring-4 ring-[#F8EAEA]' : ''}`}
-                 onClick={() => isEditing && setShowAvatarPicker(!showAvatarPicker)}>
-               <img src={isEditing ? editForm.avatar : user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie'} alt="Profile" className="w-full h-full object-cover bg-[#F7F2F0]" />
-               {isEditing && (
-                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                       <Camera size={24} />
+        <div className="relative overflow-visible rounded-[2rem] border border-rose-100 bg-white/85 p-6 md:p-9 shadow-lift backdrop-blur animate-scale-in">
+          <div className="relative z-10 flex flex-col items-center gap-6 md:flex-row md:items-center md:gap-9">
+
+            {/* Avatar Section */}
+            <div className="relative group shrink-0">
+              <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-rose-300 via-champagne-200 to-plum-200 animate-spin-slow opacity-80" aria-hidden="true" />
+              <div className={`relative h-32 w-32 md:h-40 md:w-40 overflow-hidden rounded-full border-4 border-white shadow-lift ${isEditing ? 'cursor-pointer' : ''}`}
+                   onClick={() => isEditing && setShowAvatarPicker(!showAvatarPicker)}>
+                 <img src={isEditing ? editForm.avatar : user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie'} alt="Profile" className="h-full w-full bg-rose-50 object-cover" />
+                 {isEditing && (
+                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
+                         <Camera size={24} />
+                     </div>
+                 )}
+              </div>
+
+              {/* Avatar Picker Popup */}
+              {showAvatarPicker && isEditing && (
+                  <div className="absolute top-full right-1/2 translate-x-1/2 md:right-0 md:translate-x-0 z-50 mt-3 grid w-64 grid-cols-4 gap-2 rounded-[1.5rem] border border-rose-100 bg-white p-4 shadow-lift animate-fade-in-up">
+                      {predefinedAvatars.map((url, i) => (
+                          <button key={i} onClick={() => handleAvatarSelect(url)} className="h-12 w-12 overflow-hidden rounded-full border border-rose-100 transition-transform hover:scale-110">
+                              <img src={url} className="h-full w-full" />
+                          </button>
+                      ))}
+                  </div>
+              )}
+            </div>
+
+            {/* Info Section */}
+            <div className="w-full flex-1 space-y-4 text-center md:text-right">
+               {isEditing ? (
+                   <div className="grid gap-3 md:grid-cols-2 animate-fade-in-up">
+                       <label className="block text-right">
+                           <span className="mb-1 block text-[12.5px] text-slate-500">שם מלא</span>
+                           <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className={inputCls} />
+                       </label>
+                       <label className="block text-right">
+                           <span className="mb-1 block text-[12.5px] text-slate-500">טלפון</span>
+                           <input type="text" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className={inputCls} />
+                       </label>
+                       <label className="block text-right">
+                           <span className="mb-1 block text-[12.5px] text-slate-500">אימייל</span>
+                           <input type="text" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className={inputCls} />
+                       </label>
+                       <label className="block text-right">
+                           <span className="mb-1 block text-[12.5px] text-slate-500">כתובת</span>
+                           <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className={inputCls} />
+                       </label>
+                       <div className="flex gap-2 md:col-span-2 pt-1">
+                           <button onClick={handleSave} className="btn-primary flex-1"><Save size={17} /> שמירה</button>
+                           <button onClick={() => setIsEditing(false)} className="btn-ghost"><X size={17} /> ביטול</button>
+                       </div>
                    </div>
+               ) : (
+                  <>
+                      <p className="eyebrow">האזור האישי</p>
+                      <h1 className="text-[2.4rem] md:text-[3.2rem] leading-[1.02]">שלום, {firstName}</h1>
+                      <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                          <span className={`rounded-full px-4 py-1.5 text-[13px] shadow-soft font-strong ${getLevelStyle(user.level)}`}>
+                              {user.level}
+                          </span>
+                          <span className="text-[14.5px] text-slate-500">{user.occupation || user.email}</span>
+                      </div>
+
+                      {/* 3 Badges: נקודות / אירועים שאהבתי / חברה מאז */}
+                      <div className="grid grid-cols-3 gap-2 max-w-md mx-auto md:mx-0">
+                          <div className="rounded-2xl bg-rose-50/60 px-3 py-2.5 text-center">
+                              <Star size={15} className="mx-auto text-rose-500" />
+                              <p className="font-strong text-[1.15rem] text-ink leading-tight mt-1">{user.points}</p>
+                              <p className="text-[11.5px] text-slate-500">נקודות</p>
+                          </div>
+                          <div className="rounded-2xl bg-rose-50/60 px-3 py-2.5 text-center">
+                              <Heart size={15} className="mx-auto text-rose-400" />
+                              <p className="font-strong text-[1.15rem] text-ink leading-tight mt-1">{likedEvents.length}</p>
+                              <p className="text-[11.5px] text-slate-500">שמורים</p>
+                          </div>
+                          <div className="rounded-2xl bg-rose-50/60 px-3 py-2.5 text-center">
+                              <Calendar size={15} className="mx-auto text-slate-400" />
+                              <p className="font-strong text-[0.95rem] text-ink leading-tight mt-1.5 truncate">{memberSinceLabel || '—'}</p>
+                              <p className="text-[11.5px] text-slate-500">חברה מאז</p>
+                          </div>
+                      </div>
+                  </>
+               )}
+
+               {/* מדד התקדמות - מופיע רק למאושרות */}
+               {!isEditing && user.isMemberApproved && (
+                  <div className="mx-auto w-full max-w-md md:mx-0">
+                      <div className="mb-1.5 flex justify-between text-[12.5px] text-slate-500">
+                        <span>{user.points} נקודות</span>
+                        <span>{nextLevelPoints} ליעד הבא</span>
+                      </div>
+                      <div className="h-2.5 overflow-hidden rounded-full bg-rose-50">
+                        <div className="h-full rounded-full bg-gradient-to-l from-rose-600 via-rose-400 to-sage-400 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                      </div>
+                  </div>
+               )}
+
+               {/* כפתורי פעולה */}
+               {!isEditing && (
+                 <div className="flex justify-center gap-2 pt-1 md:justify-start">
+                    <button onClick={() => setIsEditing(true)} className="btn-ghost">
+                        <Edit2 size={16} /> עריכת פרטים
+                    </button>
+                    {onLogout && (
+                      <button onClick={handleLogoutClick} className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-5 py-2.5 text-[15px] text-red-500 transition hover:bg-red-50 font-strong">
+                          <LogOut size={16} /> התנתקות
+                      </button>
+                    )}
+                 </div>
                )}
             </div>
-
-            {/* Avatar Picker Popup */}
-            {showAvatarPicker && isEditing && (
-                <div className="absolute top-full right-0 mt-2 bg-white p-4 rounded-2xl shadow-2xl border border-slate-100 z-50 w-64 grid grid-cols-4 gap-2 animate-fade-in-up">
-                    {predefinedAvatars.map((url, i) => (
-                        <button key={i} onClick={() => handleAvatarSelect(url)} className="w-12 h-12 rounded-full overflow-hidden hover:scale-110 transition-transform border border-slate-200">
-                            <img src={url} className="w-full h-full" />
-                        </button>
-                    ))}
-                </div>
-            )}
           </div>
-
-          {/* Info Section */}
-          <div className="flex-1 w-full text-center md:text-right space-y-4">
-             {isEditing ? (
-                 <div className="grid md:grid-cols-2 gap-4 animate-fade-in-up">
-                     <div className="space-y-1 text-right">
-                         <label className="text-xs font-bold text-[#85757A]">שם מלא</label>
-                         <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F7F2F0] text-right outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all" />
-                     </div>
-                     <div className="space-y-1 text-right">
-                         <label className="text-xs font-bold text-[#85757A]">טלפון</label>
-                         <input type="text" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F7F2F0] text-right outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all" />
-                     </div>
-                     <div className="space-y-1 text-right">
-                         <label className="text-xs font-bold text-[#85757A]">אימייל</label>
-                         <input type="text" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F7F2F0] text-right outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all" />
-                     </div>
-                     <div className="space-y-1 text-right">
-                         <label className="text-xs font-bold text-[#85757A]">כתובת</label>
-                         <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className="w-full p-3 min-h-[44px] rounded-lg border border-slate-200 bg-[#F7F2F0] text-right outline-none focus:ring-2 focus:ring-[#8A5058]/25 focus:border-[#8A5058]/40 transition-all" />
-                     </div>
-                 </div>
-             ) : (
-                <>
-                    <div className="flex flex-col md:flex-row items-center gap-3 justify-center md:justify-start">
-                        <h2 className="text-2xl md:text-3xl font-bold text-[#2B2027]">{user.name}</h2>
-                        <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-md ${getLevelStyle(user.level)}`}>
-                            {user.level}
-                        </span>
-                    </div>
-                    <p className="text-[#6A5960] text-sm">{user.occupation || user.email}</p>
-
-                    {/* 3 Badges: נקודות / אירועים שאהבתי / חברה מאז */}
-                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                        <span className="inline-flex items-center gap-1.5 bg-[#F7F2F0] text-[#2B2027] text-xs font-bold px-3 py-1.5 rounded-full">
-                            <Star size={13} className="text-[#8A5058]" /> {user.points} נקודות
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 bg-[#F7F2F0] text-[#2B2027] text-xs font-bold px-3 py-1.5 rounded-full">
-                            <Heart size={13} className="text-[#BD7A81]" /> {likedEvents.length} אירועים שמורים
-                        </span>
-                        {memberSinceLabel && (
-                          <span className="inline-flex items-center gap-1.5 bg-[#F7F2F0] text-[#2B2027] text-xs font-bold px-3 py-1.5 rounded-full">
-                              <Calendar size={13} className="text-[#85757A]" /> חברה מאז {memberSinceLabel}
-                          </span>
-                        )}
-                    </div>
-                </>
-             )}
-
-             {/* מדד התקדמות - מופיע רק למאושרות */}
-             {!isEditing && user.isMemberApproved && (
-                <div className="mt-4 max-w-md w-full mx-auto md:mx-0">
-                    <div className="flex justify-between text-xs font-bold text-[#85757A] mb-1">
-                    <span>{user.points} נקודות</span>
-                    <span>{nextLevelPoints} ליעד הבא</span>
-                    </div>
-                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                    <div className="h-full bg-gradient-to-r from-[#8A5058] to-[#86A98C] transition-all duration-1000" style={{ width: `${progress}%` }}></div>
-                    </div>
-                </div>
-             )}
-
-             {/* כפתורי פעולה: עריכה (outline) + התנתקות (danger) */}
-             {!isEditing && (
-               <div className="flex gap-2 justify-center md:justify-start pt-1">
-                  <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] text-[#2B2027] bg-white border border-slate-200 hover:border-[#8A5058]/40 hover:text-[#8A5058] rounded-xl transition-colors font-bold text-sm">
-                      <Edit2 size={16} /> עריכת פרטים
-                  </button>
-                  {onLogout && (
-                    <button onClick={handleLogoutClick} className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] text-[#E53E3E] bg-white border border-[#E53E3E]/25 hover:bg-[#E53E3E]/5 rounded-xl transition-colors font-bold text-sm">
-                        <LogOut size={16} /> התנתקות
-                    </button>
-                  )}
-               </div>
-             )}
-          </div>
-
-          {isEditing && (
-            <div className="flex gap-2 self-start absolute top-0 left-0 md:relative">
-                <div className="flex gap-2">
-                    <button onClick={() => setIsEditing(false)} className="p-3 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors"><X size={20} /></button>
-                    <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[#8A5058] text-white rounded-xl font-bold hover:bg-[#6F4148] transition-colors"><Save size={18} /> שמירה</button>
-                </div>
-            </div>
-          )}
         </div>
-      </ScrollReveal>
+      </header>
 
       {/* טאבים: הפעילות שלי / הסימניות שלי */}
-      <ScrollReveal delay={80} className="flex gap-2">
+      <div className="mb-6 inline-flex rounded-full border border-rose-100 bg-white/80 p-1 shadow-soft" role="tablist">
         {[
           { key: 'activity' as const, label: 'הפעילות שלי', icon: Activity },
-          { key: 'bookmarks' as const, label: 'הסימניות שלי', icon: Bookmark },
+          { key: 'bookmarks' as const, label: 'אירועים ששמרתי', icon: Bookmark },
         ].map(tab => {
           const TabIcon = tab.icon;
           return (
             <button
               key={tab.key}
+              role="tab"
+              aria-selected={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-bold transition-all ${
-                activeTab === tab.key
-                  ? 'bg-[#8A5058] text-white shadow-md shadow-[#8A5058]/20'
-                  : 'bg-white text-[#85757A] border border-slate-200 hover:border-[#8A5058]/40 hover:text-[#8A5058]'
+              className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-[14.5px] transition-all duration-300 ${
+                activeTab === tab.key ? 'bg-rose-700 text-white shadow-soft' : 'text-slate-500 hover:text-rose-700'
               }`}
             >
               <TabIcon size={16} /> {tab.label}
             </button>
           );
         })}
-      </ScrollReveal>
+      </div>
 
       {activeTab === 'activity' ? (
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid gap-6 lg:grid-cols-2 animate-fade-in">
           <div className="space-y-6">
               {/* Digital Card */}
-              <ScrollReveal delay={100} className={`rounded-2xl p-8 text-white shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500 ${user.isMemberApproved ? (user.level === UserLevel.AMBASSADOR ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-gradient-to-br from-slate-800 to-slate-900') : 'bg-slate-400 grayscale'}`}>
-                  <div className="flex justify-between items-start mb-8 relative z-10">
-                      <div>
-                          <p className="text-xs opacity-70 tracking-[0.2em] font-medium mb-1">כרטיס תושבת</p>
-                          <h3 className="text-2xl font-black tracking-wide">נשי קארד</h3>
+              <ScrollReveal delay={100} animation="scale-in">
+                <div className={`group relative aspect-[1.6/1] overflow-hidden rounded-[1.75rem] p-6 md:p-8 text-white shadow-lift transition-transform duration-700 hover:-rotate-1 hover:scale-[1.02] ${user.isMemberApproved ? (user.level === UserLevel.AMBASSADOR ? 'bg-gradient-to-br from-champagne-400 via-champagne-500 to-rose-600' : 'bg-gradient-to-br from-plum-800 via-rose-800 to-plum-950') : 'bg-gradient-to-br from-slate-400 to-slate-500 grayscale'}`}>
+                    <div className="relative z-10 flex h-full flex-col justify-between">
+                      <div className="flex items-start justify-between">
+                          <div>
+                              <p className="mb-1 text-[12px] tracking-[0.18em] opacity-75">כרטיס תושבת</p>
+                              <p className="font-accent text-[2.6rem] leading-none">נשי קארד</p>
+                          </div>
+                          <Heart className="fill-current text-white/25" size={40} />
                       </div>
-                      <Heart className="text-white/20 fill-current drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" size={40} />
-                  </div>
-                  <div className="flex justify-between items-end relative z-10">
-                      <div>
-                          <p className="text-xs opacity-60 mb-1">שם בעלת הכרטיס</p>
-                          <p className="font-bold tracking-wider text-lg">{user.name}</p>
+                      <div className="flex items-end justify-between">
+                          <div>
+                              <p className="mb-1 text-[12px] opacity-70">בעלת הכרטיס</p>
+                              <p className="font-strong text-[1.2rem] tracking-wide">{user.name}</p>
+                              {!user.isMemberApproved && <p className="mt-1 text-[12px] opacity-80">יופעל לאחר אישור החברות</p>}
+                          </div>
+                          <QrCode size={58} className="rounded-xl bg-white p-1.5 text-plum-900" />
                       </div>
-                      <QrCode size={56} className="bg-white text-slate-900 p-1.5 rounded-lg" />
-                  </div>
-                  {/* Decorative circles */}
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-white/20 transition-colors"></div>
-                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full blur-2xl -ml-10 -mb-10"></div>
+                    </div>
+                    {/* Decorative */}
+                    <div className="absolute -top-16 -right-16 h-52 w-52 rounded-full bg-white/15 blur-3xl transition-colors group-hover:bg-white/25"></div>
+                    <div className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-black/10 blur-2xl"></div>
+                    <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-l from-transparent via-white/20 to-transparent transition-transform duration-1000 group-hover:translate-x-full"></div>
+                </div>
               </ScrollReveal>
 
               {/* Missions Section - המשימות הפעילות שלי */}
               {user.isMemberApproved && activeMissions.length > 0 && (
-                  <ScrollReveal delay={150} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-orange-100">
-                      <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-orange-600">
+                  <ScrollReveal delay={150} className="rounded-[1.75rem] border border-champagne-100 bg-white p-6 shadow-petal">
+                      <h3 className="mb-4 flex items-center gap-2 text-[1.15rem] text-champagne-700">
                           <Target size={20} />
                           משימות בביצוע ({activeMissions.length})
                       </h3>
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                           {activeMissions.map(mission => (
-                              <div key={mission.id || mission._id} className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 space-y-3">
-                                  <div className="flex justify-between items-start">
-                                      <h4 className="font-black text-slate-800 text-sm">{mission.title}</h4>
-                                      <div className="flex items-center gap-1 text-[10px] text-orange-600 bg-white px-2 py-1 rounded-full shadow-sm">
-                                          <Clock size={10} />
-                                          עד: {new Date(mission.drawDate).toLocaleDateString('he-IL')}
-                                      </div>
+                              <div key={mission.id || mission._id} className="space-y-3 rounded-2xl border border-champagne-100 bg-champagne-50/60 p-4">
+                                  <div className="flex items-start justify-between gap-2">
+                                      <h4 className="text-[15px] text-ink font-strong">{mission.title}</h4>
+                                      <span className="flex shrink-0 items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11.5px] text-champagne-700 shadow-soft">
+                                          <Clock size={11} />
+                                          עד {new Date(mission.drawDate).toLocaleDateString('he-IL')}
+                                      </span>
                                   </div>
-                                  <p className="text-xs text-slate-600 font-medium leading-relaxed bg-white/50 p-3 rounded-xl">
+                                  <p className="rounded-xl bg-white/70 p-3 text-[14px] leading-relaxed text-slate-600">
                                       {mission.missionText}
                                   </p>
                                   <button
                                       onClick={() => handleCompleteMission(mission._id || mission.id)}
-                                      className="w-full py-2.5 min-h-[44px] bg-orange-500 text-white rounded-xl text-xs font-black shadow-md shadow-orange-200 hover:bg-orange-600 transition-all flex items-center justify-center gap-2"
+                                      className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-champagne-500 text-[14px] text-white transition hover:bg-champagne-600 font-strong"
                                   >
-                                      <CheckCircle2 size={14} /> סיימתי את המשימה!
+                                      <CheckCircle2 size={15} /> סיימתי את המשימה!
                                   </button>
                               </div>
                           ))}
@@ -304,35 +322,34 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
 
           {/* Benefits & History */}
           <div className="space-y-6">
-               <ScrollReveal delay={100} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100 h-full flex flex-col">
-                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-slate-800">
-                      <Award size={20} className="text-yellow-500" />
+               <ScrollReveal delay={100} className="flex h-full flex-col rounded-[1.75rem] border border-rose-100/70 bg-white p-6 shadow-petal">
+                  <h3 className="mb-4 flex items-center gap-2 text-[1.15rem]">
+                      <Award size={20} className="text-champagne-500" />
                       ההטבות שלי
                   </h3>
 
                   {user.isMemberApproved ? (
-                    /* תצוגה למאושרות - ההטבות מוגדרות ע"י המנהלת בלבד */
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-[#F7F2F0] rounded-2xl border border-dashed border-slate-200">
-                        <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                    <div className="flex flex-1 flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-rose-200 bg-rose-50/30 p-6 text-center">
+                        <Sparkles size={26} className="mb-2 text-rose-300 animate-float-y" />
+                        <p className="text-[14.5px] leading-relaxed text-slate-500">
                           אין כרגע הטבות מוגדרות למעגל. המנהלת תעדכן כאן הטבות חדשות בקרוב.
                         </p>
                     </div>
                   ) : (
-                    /* באנר הצטרפות למי שלא אושרה */
-                    <div className="flex-1 flex flex-col items-center justify-center space-y-6 bg-[#F7F2F0] rounded-2xl p-8 border border-dashed border-slate-200 text-center">
-                        <div className="w-16 h-16 bg-[#F8EAEA] rounded-full flex items-center justify-center text-[#8A5058]">
-                          <Lock size={32} />
+                    <div className="flex flex-1 flex-col items-center justify-center space-y-5 rounded-[1.25rem] border border-dashed border-rose-200 bg-gradient-to-b from-rose-50/60 to-white p-8 text-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-rose-600 shadow-soft">
+                          <Lock size={28} />
                         </div>
                         <div className="space-y-2">
-                          <h4 className="font-black text-slate-800">הטבות המעגל חסומות</h4>
-                          <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                          <h4 className="text-[1.1rem]">הטבות המעגל עוד נעולות</h4>
+                          <p className="text-[14.5px] leading-relaxed text-slate-500">
                             {user.isMemberRequested
                               ? "בקשתך בטיפול. מיד לאחר אישור המנהלת, כל ההטבות והנקודות יופיעו כאן עבורך!"
                               : "הצטרפי למעגל הנשי של העיר כדי להתחיל לצבור נקודות וליהנות מהטבות בלעדיות."}
                           </p>
                         </div>
                         {!user.isMemberRequested && (
-                          <Link to="/" className="bg-[#8A5058] text-white px-8 py-3 min-h-[44px] rounded-xl font-black text-sm shadow-lg hover:bg-[#6F4148] transition-all flex items-center gap-2">
+                          <Link to="/" className="btn-primary">
                             <HeartHandshake size={18} /> הצטרפי למעגל עכשיו
                           </Link>
                         )}
@@ -342,9 +359,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
 
               {/* גרף צבירה - מופיע רק למאושרות */}
               {user.isMemberApproved && (
-                <ScrollReveal delay={150} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100">
-                    <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                        <TrendingUp size={20} className="text-purple-500" />
+                <ScrollReveal delay={150} className="rounded-[1.75rem] border border-rose-100/70 bg-white p-6 shadow-petal">
+                    <h3 className="mb-6 flex items-center gap-2 text-[1.15rem]">
+                        <TrendingUp size={20} className="text-plum-500" />
                         צבירת נקודות שנתית
                     </h3>
                     <div className="h-48 w-full">
@@ -353,12 +370,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                             <XAxis dataKey="name" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
                             <YAxis hide />
                             <Tooltip
-                                cursor={{fill: '#f1f5f9'}}
-                                contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                                cursor={{fill: '#FBF2F2'}}
+                                contentStyle={{borderRadius: '14px', border: 'none', boxShadow: '0 10px 30px -10px rgba(61,47,55,.25)'}}
                             />
-                            <Bar dataKey="points" radius={[6, 6, 6, 6]}>
+                            <Bar dataKey="points" radius={[8, 8, 8, 8]}>
                                 {mockData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={index === mockData.length - 1 ? '#8A5058' : '#e2e8f0'} />
+                                <Cell key={`cell-${index}`} fill={index === mockData.length - 1 ? '#A5636B' : '#F0DDDE'} />
                                 ))}
                             </Bar>
                         </BarChart>
@@ -369,36 +386,36 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
           </div>
         </div>
       ) : (
-        /* הסימניות שלי — אירועים שנשמרו/סומנו כאהובים */
-        <ScrollReveal delay={100} className="bg-white p-6 rounded-2xl shadow-[0_2px_16px_rgba(61,47,55,0.06)] border border-slate-100 min-h-[300px]">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-slate-800">
-                <Heart size={20} className="text-[#BD7A81] fill-current" />
-                אירועים שאהבתי ({likedEvents.length})
-            </h3>
+        /* אירועים שנשמרו/סומנו כאהובים */
+        <div className="animate-fade-in">
             {likedEvents.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {likedEvents.map(event => (
-                        <div key={event.id} className="flex items-center gap-3 bg-[#F7F2F0] p-3 rounded-2xl border border-transparent hover:border-[#8A5058]/20 transition-colors group">
-                            <img src={event.image} className="w-16 h-16 rounded-xl object-cover shadow-sm shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-[#8A5058] transition-colors">{event.title}</h4>
-                                <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
-                                    <Calendar size={12} />
-                                    <span>{new Date(event.date).toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                        </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {likedEvents.map((event, i) => (
+                        <ScrollReveal key={event.id} delay={i * 50}>
+                          <Link to="/events" className="group flex items-center gap-3 rounded-[1.4rem] border border-rose-100/70 bg-white p-2.5 shadow-petal transition hover:-translate-y-0.5 hover:shadow-lift">
+                              <img src={event.image} className="h-16 w-16 shrink-0 rounded-[1rem] object-cover" />
+                              <div className="min-w-0 flex-1">
+                                  <h4 className="line-clamp-1 text-[15px] text-ink transition-colors group-hover:text-rose-700 font-strong">{event.title}</h4>
+                                  <div className="mt-1 flex items-center gap-1 text-[12.5px] text-slate-500">
+                                      <Calendar size={12} className="text-rose-400" />
+                                      <span>{new Date(event.date).toLocaleDateString('he-IL')}</span>
+                                  </div>
+                              </div>
+                          </Link>
+                        </ScrollReveal>
                     ))}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400 text-sm bg-[#F7F2F0] rounded-2xl border border-dashed border-slate-200 h-full">
-                    <Heart size={32} className="mb-2 opacity-20" />
-                    <p>לא סימנת אירועים עדיין</p>
-                </div>
+                <EmptyState
+                  icon={<Heart size={28} />}
+                  title="עוד לא שמרת אירועים"
+                  text="סמני לב על אירוע שמעניין אותך — והוא יחכה לך כאן."
+                  action={<Link to="/events" className="btn-primary">ללוח האירועים</Link>}
+                />
             )}
-        </ScrollReveal>
+        </div>
       )}
-    </div>
+    </PageShell>
   );
 };
 
