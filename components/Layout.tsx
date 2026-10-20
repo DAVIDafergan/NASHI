@@ -252,7 +252,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
 
           {/* actions */}
           <div className="flex items-center gap-2">
-            <PlaceChip user={user} onUpdateUser={onUpdateUser} className="hidden sm:flex" />
+            <PlaceChip user={user} onUpdateUser={onUpdateUser} className="hidden sm:flex md:hidden lg:flex" />
             <button onClick={() => setSearchOpen(true)} aria-label="חיפוש" className="flex h-10 w-10 items-center justify-center rounded-full border border-rose-100 bg-white/70 text-slate-500 transition hover:border-rose-300 hover:text-rose-700">
               <Search size={17} strokeWidth={1.8} />
             </button>
@@ -301,7 +301,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
               </div>
             ) : (
               <>
-                <button onClick={onOpenLogin} className="hidden sm:inline-flex h-10 items-center rounded-full px-4 text-[14px] text-slate-600 hover:text-rose-700">כניסה</button>
+                <button onClick={onOpenLogin} className="hidden sm:inline-flex md:hidden lg:inline-flex h-10 items-center rounded-full px-4 text-[14px] text-slate-600 hover:text-rose-700">כניסה</button>
                 <button onClick={onOpenLogin} className="btn-primary !px-5 !py-2.5 min-h-[40px]">הצטרפי חינם</button>
               </>
             )}
