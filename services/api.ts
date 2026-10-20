@@ -68,9 +68,13 @@ export const api = {
         const res = await safeFetch(`${API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData)
+            body: JSON.stringify({ ...userData, ref: (() => { try { return localStorage.getItem('nashi-ref') || undefined; } catch { return undefined; } })() })
         });
-        if (!res.ok) throw new Error('Registration failed');
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error === 'Email exists' ? 'המייל הזה כבר רשום. אפשר להתחבר.' : (err.error || 'ההרשמה נכשלה'));
+        }
+        try { localStorage.removeItem('nashi-ref'); } catch { /* ignore */ }
         return res.json();
     },
 
@@ -475,7 +479,9 @@ export const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        return res.json();
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'שגיאה בשליחה');
+        return json;
     },
 
     async getPendingInterviews(): Promise<PersonalityProfile[]> {
@@ -488,6 +494,39 @@ export const api = {
             method: 'POST',
             headers: getHeaders()
         });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'שגיאה באישור');
+        return json;
+    },
+
+    async getAllPersonalitiesAdmin(): Promise<any[]> {
+        const res = await safeFetch(`${API_URL}/admin/personality/all`, { headers: getHeaders() });
+        if (!res.ok) throw new Error('שגיאה בטעינת הראיונות');
+        return res.json();
+    },
+
+    async createPersonalityAdmin(data: any, publish: boolean) {
+        const res = await safeFetch(`${API_URL}/admin/personality`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ ...data, publish }) });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'שגיאה בשמירה');
+        return json;
+    },
+
+    async updatePersonalityAdmin(id: string, data: any) {
+        const res = await safeFetch(`${API_URL}/admin/personality/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(data) });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'שגיאה בשמירה');
+        return json;
+    },
+
+    async unfeaturePersonality(id: string) {
+        const res = await safeFetch(`${API_URL}/admin/personality/unfeature/${id}`, { method: 'POST', headers: getHeaders() });
+        return res.json();
+    },
+
+    async getPersonalityById(id: string) {
+        const res = await safeFetch(`${API_URL}/personality/item/${id}`);
+        if (!res.ok) return null;
         return res.json();
     },
 
@@ -845,13 +884,27 @@ export const api = {
         return res.json();
     },
 
-    async uploadStory(data: { type: string, content: string }): Promise<any> {
-        validateImageSize(data);
+    async uploadStory(data: { type: string, content: string, caption?: string, background?: string }): Promise<any> {
         const res = await safeFetch(`${API_URL}/stories`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(data)
         });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || 'העלאת הסטטוס נכשלה');
+        return json;
+    },
+
+    async getPublicStats(): Promise<{ members: number } | null> {
+        const res = await safeFetch(`${API_URL}/stats/public`).catch(() => null);
+        if (!res || !res.ok) return null;
+        return res.json();
+    },
+
+    async getMyStories(): Promise<any[]> {
+        if (!localStorage.getItem('token')) return [];
+        const res = await safeFetch(`${API_URL}/stories/mine`, { headers: getHeaders() });
+        if (!res.ok) return [];
         return res.json();
     },
 

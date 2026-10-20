@@ -10,6 +10,8 @@ import { api } from '../services/api';
 import FlyerCarousel from '../components/FlyerCarousel';
 import { AnimatedHeadline, Marquee, SectionHeader, TiltCard } from '../components/home/HomeParts';
 import ScrollReveal from '../components/ScrollReveal';
+import StoriesSection from '../components/stories/StoriesSection';
+import InviteBand from '../components/home/InviteBand';
 import EventCard from '../components/EventCard';
 
 // --- Interfaces ---
@@ -21,23 +23,6 @@ interface LotteryItem {
 }
 interface AdItem {
   _id: string; type: 'image' | 'video'; content: string; link: string; title: string;
-}
-
-// ממשק חכם לסטוריז (כולל כיתוב)
-interface StoryItem {
-  id?: string; _id?: string;
-  user: { _id?: string; id?: string; name: string; avatar: string };
-  type: 'text' | 'image';
-  content: string;
-  caption?: string; 
-  createdAt?: string;
-}
-
-// ממשק חדש לקבוצת סטוריז (אוגד את הסטוריז של אותה משתמשת)
-interface UserStoryGroup {
-  userId: string;
-  user: { _id?: string; id?: string; name: string; avatar: string };
-  stories: StoryItem[];
 }
 
 const categories = [
@@ -84,34 +69,6 @@ const renderTextWithLinks = (text: string) => {
   });
 };
 
-// --- קומפוננטה עזר: מציירת את הפסים הצבעוניים סביב האוואטר לפי מספר הסטוריז ---
-const StoryRing = ({ count }: { count: number }) => {
-  if (count <= 1) {
-    return <div className="absolute inset-0 rounded-full border-[2.5px] border-[#D2959A] shadow-[0_0_8px_rgba(232,165,178,0.4)]"></div>;
-  }
-  const radius = 32.5;
-  const circumference = 2 * Math.PI * radius;
-  const gap = 8; 
-  const dashLength = (circumference / count) - gap;
-  
-  return (
-    <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none drop-shadow-[0_0_4px_rgba(232,165,178,0.5)]" viewBox="0 0 69 69">
-      <circle 
-         cx="34.5" cy="34.5" r={radius} 
-         fill="none" stroke="url(#story-gradient)" strokeWidth="2.5"
-         strokeDasharray={`${dashLength} ${gap}`} 
-         strokeLinecap="round"
-      />
-      <defs>
-        <linearGradient id="story-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#A5636B" />
-          <stop offset="100%" stopColor="#D2959A" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-};
-
 const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin: () => void, onUpdateUser?: (u: any) => void }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -135,21 +92,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const [membershipForm, setMembershipForm] = useState({ age: '', occupation: '', address: '', phone: user?.phone || '' });
   const [isLoading, setIsLoading] = useState(true);
 
-  // === מצבים למערכת הסטוריז המקובצים ===
-  const [groupedStories, setGroupedStories] = useState<UserStoryGroup[]>([]);
-  const [activeGroupIndex, setActiveGroupIndex] = useState<number | null>(null);
-  const [activeInnerIndex, setActiveInnerIndex] = useState<number>(0);
-  const [storyProgress, setStoryProgress] = useState(0);
-  const [showAddStoryModal, setShowAddStoryModal] = useState(false);
-  const [newStory, setNewStory] = useState<{ type: 'text' | 'image', content: string, caption?: string }>({ type: 'text', content: '', caption: '' });
-  const [isUploadingStory, setIsUploadingStory] = useState(false);
-
   // לוגיקת טעינת נתונים
   useEffect(() => {
     const loadAllData = async () => {
       try {
         setIsLoading(true);
-        const [evRes, lotRes, adsRes, persDataRaw, commData, inspData, annData, classRes, storiesRes] = await Promise.all([
+        const [evRes, lotRes, adsRes, persDataRaw, commData, inspData, annData, classRes] = await Promise.all([
           fetch(`${API_URL}/events`).then(res => res.json()).catch(() => []),
           fetch(`${API_URL}/lotteries`).then(res => res.json()).catch(() => []),
           fetch(`${API_URL}/ads`).then(res => res.json()).catch(() => []),
@@ -158,32 +106,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           api.getInspirations().catch(() => []),
           api.getAnnouncements().catch(() => []),
           api.getClasses().catch(() => []),
-          api.getStories().catch(() => []) 
         ]);
 
         setEvents(Array.isArray(evRes) ? evRes.map((e: any) => ({...e, id: e._id || e.id})) : []);
         setLotteries(Array.isArray(lotRes) ? lotRes.map((l: any) => ({...l, id: l._id || l.id})) : []);
         setAds(Array.isArray(adsRes) ? adsRes : []);
-        
-        const nowTime = new Date().getTime();
-        const validStories = Array.isArray(storiesRes) ? storiesRes.filter((story: any) => {
-          const timeField = story.approvedAt || story.createdAt;
-          if (!timeField) return true; 
-          const storyTime = new Date(timeField).getTime();
-          return (nowTime - storyTime) < (24 * 60 * 60 * 1000); 
-        }) : [];
-
-        const grouped = validStories.reduce((acc: UserStoryGroup[], story: any) => {
-            const uid = story.user?._id || story.user?.id;
-            let group = acc.find(g => g.userId === uid);
-            if (!group) {
-                group = { userId: uid, user: story.user, stories: [] };
-                acc.push(group);
-            }
-            group.stories.push(story);
-            return acc;
-        }, []);
-        setGroupedStories(grouped);
         
         const persData = Array.isArray(persDataRaw) ? persDataRaw[0] : persDataRaw;
         setPersonality(persData);
@@ -206,32 +133,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     };
     loadAllData();
   }, []);
-
-  // 1. פתיחה אוטומטית של סטורי אם הגענו מלינק משותף
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const storyId = params.get('storyId');
-    
-    if (storyId && groupedStories.length > 0) {
-      for (let gIndex = 0; gIndex < groupedStories.length; gIndex++) {
-        const sIndex = groupedStories[gIndex].stories.findIndex(s => s._id === storyId || s.id === storyId);
-        if (sIndex !== -1) {
-          setActiveGroupIndex(gIndex);
-          setActiveInnerIndex(sIndex);
-          setStoryProgress(0);
-          break;
-        }
-      }
-    }
-  }, [location.search, groupedStories]);
-
-  // 2. ספירת צפיות ברגע שהסטורי מוצג
-  useEffect(() => {
-    const currentStory = activeGroupIndex !== null ? groupedStories[activeGroupIndex]?.stories[activeInnerIndex] : null;
-    if (currentStory && user) {
-       api.viewStory(currentStory._id || currentStory.id!).catch(console.error);
-    }
-  }, [activeGroupIndex, activeInnerIndex, user]);
 
   // "אירועים קרובים" — מציג רק אירועים שטרם עברו, ממוינים מהקרוב ביותר. אירוע שעבר התאריך שלו לא יופיע כאן יותר,
   // גם אם המשמעות היא רשימה ריקה (הסקשן כולו מוסתר במקרה הזה)
@@ -270,115 +171,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       return () => clearInterval(adTimer);
     }
   }, [ads, currentAdIndex]);
-
-  // === טיימר חכם למערכת הסטוריז המקובצים ===
-  useEffect(() => {
-    if (activeGroupIndex === null) return;
-    const duration = 7000;
-    const intervalTime = 70; 
-    const step = 100 / (duration / intervalTime);
-
-    const timer = setInterval(() => {
-      setStoryProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          handleNextStory();
-          return 0;
-        }
-        return prev + step;
-      });
-    }, intervalTime);
-
-    return () => clearInterval(timer);
-  }, [activeGroupIndex, activeInnerIndex]);
-
-  const handleNextStory = () => {
-    setStoryProgress(0);
-    const group = groupedStories[activeGroupIndex!];
-    if (activeInnerIndex < group.stories.length - 1) {
-        setActiveInnerIndex(prev => prev + 1); 
-    } else {
-        if (activeGroupIndex! < groupedStories.length - 1) {
-            setActiveGroupIndex(prev => prev! + 1); 
-            setActiveInnerIndex(0);
-        } else {
-            setActiveGroupIndex(null); 
-        }
-    }
-  };
-
-  const handlePrevStory = () => {
-    setStoryProgress(0);
-    if (activeInnerIndex > 0) {
-        setActiveInnerIndex(prev => prev - 1); 
-    } else {
-        if (activeGroupIndex! > 0) {
-            setActiveGroupIndex(prev => prev! - 1); 
-            setActiveInnerIndex(groupedStories[activeGroupIndex! - 1].stories.length - 1);
-        } else {
-            setActiveInnerIndex(0); 
-        }
-    }
-  };
-
-  const submitNewStory = async () => {
-    if (!newStory.content.trim()) return;
-    setIsUploadingStory(true);
-    try {
-        await api.uploadStory(newStory);
-        alert('הסטורי נשלח בהצלחה וממתין לאישור מנהלת!');
-        setShowAddStoryModal(false);
-        setNewStory({ type: 'text', content: '', caption: '' });
-    } catch (err: any) {
-        alert(err.message || 'אירעה שגיאה בהעלאת הסטורי');
-    } finally {
-        setIsUploadingStory(false);
-    }
-  };
-
-  const handleDeleteMyStory = async (storyId: string) => {
-    if (!window.confirm('למחוק את הסטורי שלך?')) return;
-    try {
-        await api.deleteMyStory(storyId);
-        setGroupedStories(prev => {
-            const newGroups = prev.map(g => ({
-                ...g,
-                stories: g.stories.filter(s => s._id !== storyId && s.id !== storyId)
-            })).filter(g => g.stories.length > 0);
-            return newGroups;
-        });
-        setActiveGroupIndex(null); 
-    } catch (err: any) {
-        alert('שגיאה במחיקה: ' + err.message);
-    }
-  };
-
-  const handleShareStory = async (story: StoryItem) => {
-      if (navigator.share) {
-          try {
-              await navigator.share({
-                  title: 'סטורי מקהילת נשי',
-                  text: story.type === 'text' ? story.content : (story.caption || 'צפי בסטורי הזה בקהילת נשי!'),
-                  url: `${API_URL}/stories/share/${story._id || story.id}` 
-              });
-          } catch (error) {
-              console.log('Error sharing', error);
-          }
-      } else {
-          alert("הדפדפן שלך לא תומך בשיתוף ישיר.");
-      }
-  };
-
-  const handleStoryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5000000) { alert('הקובץ גדול מדי. המקסימום הוא 5MB'); return; }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        setNewStory({ ...newStory, type: 'image', content: reader.result as string });
-    };
-    reader.readAsDataURL(file);
-  };
 
   // רק אירועים עתידיים - אירוע שעבר התאריך שלו לא מוצג יותר בבאנר הראשי, גם אם סומן כ"hero" ע"י מנהלת
   const heroEvents = events.filter(e => e.isHero && new Date(e.date) >= new Date());
@@ -471,8 +263,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   }
 
   const latestInspiration = inspirations[0] || { text: "הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך.", author: "נ.ש" };
-  const activeGroup = activeGroupIndex !== null ? groupedStories[activeGroupIndex] : null;
-  const currentStory = activeGroup ? activeGroup.stories[activeInnerIndex] : null;
 
   return (
     <div className="min-h-screen pb-12 relative font-sans text-right" dir="rtl">
@@ -577,30 +367,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         </ScrollReveal>
 
         {/* ============ STORIES ============ */}
-        <section>
-          <div className="px-5 md:px-0 flex items-center justify-between mb-4">
-            <p className="eyebrow">רגעים מהקהילה</p>
-            <span className="text-xs text-slate-400">נעלמים אחרי 24 שעות</span>
-          </div>
-          <div className="w-full px-5 md:px-0 pb-2 pt-1 overflow-x-auto no-scrollbar flex gap-5 snap-x">
-            <button type="button" className="flex flex-col items-center gap-2 shrink-0 snap-center group" onClick={() => user ? setShowAddStoryModal(true) : onOpenLogin()}>
-              <div className="relative w-[76px] h-[76px] rounded-full p-1 flex items-center justify-center bg-white cursor-pointer transition-all duration-500 group-hover:scale-[1.07] active:scale-95 shadow-petal border border-dashed border-rose-300">
-                 {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="w-full h-full rounded-full bg-rose-50 flex items-center justify-center text-rose-400"><Camera size={22} strokeWidth={1.5} /></span>}
-                 <span className="absolute -bottom-0.5 -right-0.5 bg-rose-600 text-white rounded-full p-[5px] border-2 border-white shadow-md group-hover:rotate-90 transition-transform duration-500"><Plus size={12} strokeWidth={3} /></span>
-              </div>
-              <span className="text-[12px] font-medium text-slate-600">הוסיפי רגע</span>
-            </button>
-            {groupedStories.map((group, idx) => (
-              <button type="button" key={group.userId} className="flex flex-col items-center gap-2 shrink-0 snap-center animate-scale-in" style={{ animationDelay: `${idx * 70}ms` }} onClick={() => { setActiveGroupIndex(idx); setActiveInnerIndex(0); setStoryProgress(0); }}>
-                <div className="relative w-[76px] h-[76px] p-[3px] flex items-center justify-center transform active:scale-95 hover:scale-[1.07] transition-all duration-500">
-                  <StoryRing count={group.stories.length} />
-                  <img src={group.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${group.user?.name || 'user'}`} className="w-full h-full rounded-full object-cover border-[3px] border-white bg-white relative z-10" alt="" />
-                </div>
-                <span className="text-[12px] text-slate-600 w-[76px] truncate text-center">{group.user?.name || 'משתמשת'}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        <StoriesSection user={user} onOpenLogin={onOpenLogin} />
 
         {/* ============ BENTO — what is NASHI ============ */}
         <section>
@@ -718,28 +485,52 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         )}
 
         {/* ============ WOMAN OF THE WEEK — spotlight ============ */}
-        {personality && (
+        {personality && personality.name && (() => {
+          const pid = personality._id || personality.id;
+          const teaser = (personality.questions || []).find((q: any) => (q.answer || '').trim().length > 40);
+          const goRead = () => navigate(pid ? `/personality-archive/${pid}` : '/personality-archive');
+          return (
           <section className="px-5 md:px-0">
             <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
               <ScrollReveal animation="clip-up" className="relative mx-auto w-full max-w-[420px]">
                 <div className="absolute -inset-5 rounded-t-full rounded-b-[3rem] border border-rose-200 animate-float-y-slow" aria-hidden="true" />
-                <div className="relative aspect-[4/5] rounded-t-full rounded-b-[2.5rem] overflow-hidden bg-rose-100 shadow-lift">
-                  <img src={personality.image} alt={personality.name} className="w-full h-full object-cover animate-kenburns" loading="lazy" />
-                </div>
+                <button type="button" onClick={goRead} className="relative block w-full aspect-[4/5] rounded-t-full rounded-b-[2.5rem] overflow-hidden bg-gradient-to-b from-rose-100 to-rose-200 shadow-lift">
+                  {personality.image ? (
+                    <img src={personality.image} alt={personality.name} className="w-full h-full object-cover animate-kenburns" loading="lazy" />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center font-accent text-[9rem] text-white/80">{String(personality.name).trim().charAt(0)}</span>
+                  )}
+                  <span className="absolute bottom-5 right-1/2 translate-x-1/2 rounded-full bg-white/90 px-4 py-1.5 font-accent text-xl text-rose-700 shadow-soft backdrop-blur">אשת השבוע</span>
+                </button>
               </ScrollReveal>
               <div>
-                <ScrollReveal><p className="eyebrow">אשת השבוע</p></ScrollReveal>
+                <ScrollReveal><p className="eyebrow">הכירו את אשת השבוע</p></ScrollReveal>
                 <ScrollReveal animation="blur-in" delay={120}><h2 className="mt-3 font-display text-[2.6rem] md:text-[4rem] leading-[1.02] text-ink">{personality.name}</h2></ScrollReveal>
-                {personality.role && <ScrollReveal delay={240}><p className="mt-5 text-lg text-slate-600 leading-relaxed max-w-md">{personality.role}</p></ScrollReveal>}
-                <ScrollReveal delay={360}>
-                  <button type="button" onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')} className="btn-primary group mt-8">
-                    לקריאת הראיון <ArrowLeft size={16} className="transition-transform duration-500 group-hover:-translate-x-1.5" />
-                  </button>
+                {personality.role && <ScrollReveal delay={200}><p className="mt-4 text-lg text-slate-600 leading-relaxed max-w-md">{personality.role}</p></ScrollReveal>}
+                {personality.motto && (
+                  <ScrollReveal delay={280}><p className="mt-6 max-w-md border-r-2 border-rose-300 pr-4 font-display text-2xl leading-snug text-rose-800">"{personality.motto}"</p></ScrollReveal>
+                )}
+                {teaser && (
+                  <ScrollReveal delay={340}>
+                    <div className="mt-6 max-w-md rounded-[1.5rem] bg-white/80 p-5 shadow-soft">
+                      <p className="font-strong text-ink text-[15px]">{teaser.question}</p>
+                      <p className="mt-2 text-slate-600 leading-relaxed line-clamp-3">{teaser.answer}</p>
+                    </div>
+                  </ScrollReveal>
+                )}
+                <ScrollReveal delay={420}>
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={goRead} className="btn-primary group">
+                      לקריאת הראיון המלא <ArrowLeft size={16} className="transition-transform duration-500 group-hover:-translate-x-1.5" />
+                    </button>
+                    <button type="button" onClick={() => navigate('/personality-archive')} className="btn-ghost">כל נשות השבוע</button>
+                  </div>
                 </ScrollReveal>
               </div>
             </div>
           </section>
-        )}
+          );
+        })()}
 
         {/* ============ COMMUNITY ============ */}
         {communityItems.length > 0 && (
@@ -762,6 +553,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
           </section>
         )}
+
+        {/* ============ INVITE ============ */}
+        <InviteBand user={user} onOpenLogin={onOpenLogin} />
 
         {/* ============ ANNOUNCEMENTS ============ */}
         {announcements.length > 0 && (
@@ -802,136 +596,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       </div>
 
       {/* --- מודלים --- */}
-
-      {/* 1. מודל צפייה בסטורי (Fullscreen) */}
-      {activeGroup !== null && currentStory && (
-         <div className="fixed inset-0 z-[400] bg-slate-900/95 backdrop-blur-3xl flex flex-col animate-fade-in transition-all duration-300" dir="rtl">
-            {/* פסי התקדמות */}
-            <div className="absolute top-4 left-0 right-0 flex gap-1.5 px-4 z-50" dir="ltr">
-               {activeGroup.stories.map((_, idx) => (
-                  <div key={idx} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden shadow-sm">
-                     <div className="h-full bg-white transition-all duration-75 ease-linear rounded-full"
-                         style={{ width: idx === activeInnerIndex ? `${storyProgress}%` : idx < activeInnerIndex ? '100%' : '0%' }}>
-                     </div>
-                  </div>
-               ))}
-            </div>
-            
-            {/* הדר הסטורי */}
-            <div className="absolute top-10 left-0 right-0 px-5 z-50 flex justify-between items-center drop-shadow-lg">
-               <div className="flex items-center gap-3">
-                  <img src={currentStory.user?.avatar || `https://api.dicebear.com/7.x/lorelei/svg?seed=${currentStory.user?.name || 'user'}`} className="w-10 h-10 rounded-full border-[1.5px] border-white/60 shadow-md bg-white object-cover" />
-                  <span className="text-white font-bold text-sm tracking-wide drop-shadow-md">{currentStory.user?.name}</span>
-               </div>
-               <div className="flex gap-2 items-center">
-                  <button onClick={() => handleShareStory(currentStory)} className="text-white p-2.5 hover:bg-white/10 bg-black/20 backdrop-blur-md rounded-full transition-colors shadow-sm" title="שתפי את הסטורי">
-                     <Share2 size={18}/>
-                  </button>
-                  
-                  {user && (currentStory.user?._id === user._id || currentStory.user?.id === user.id) && (
-                     <button onClick={() => handleDeleteMyStory(currentStory._id || currentStory.id!)} className="text-white p-2.5 hover:bg-red-500/80 bg-black/20 backdrop-blur-md rounded-full transition-colors shadow-sm" title="מחיקת הסטורי שלך">
-                        <Trash2 size={18}/>
-                     </button>
-                  )}
-                  <button onClick={() => setActiveGroupIndex(null)} className="text-white p-2.5 hover:bg-white/20 bg-black/20 backdrop-blur-md rounded-full transition-colors shadow-sm ml-2"><X size={22}/></button>
-               </div>
-            </div>
-            
-            {/* אזור התוכן */}
-            <div className="flex-1 relative flex items-center justify-center overflow-hidden">
-               {currentStory.type === 'image' ? (
-                   <>
-                     <img src={currentStory.content} className="w-full h-full object-contain drop-shadow-2xl" alt="Story" />
-                     {currentStory.caption && (
-                        <div className="absolute bottom-20 left-0 right-0 px-6 text-center z-[60] animate-fade-in-up flex justify-center">
-                           <div className="inline-block bg-black/50 text-white px-6 py-4 rounded-[1.5rem] text-sm font-medium backdrop-blur-xl shadow-2xl border border-white/10 leading-relaxed max-w-[90%] pointer-events-none">
-                              {renderTextWithLinks(currentStory.caption)}
-                           </div>
-                        </div>
-                     )}
-                   </>
-               ) : (
-                   <div className="w-full h-full bg-gradient-to-br from-rose-300 via-pink-400 to-[#BD7A81] flex items-center justify-center p-8 text-center pointer-events-none">
-                      <p className="text-white text-3xl md:text-5xl font-black leading-snug drop-shadow-lg font-serif max-w-2xl relative z-[60]">
-                         {renderTextWithLinks(currentStory.content)}
-                      </p>
-                   </div>
-               )}
-            </div>
-            
-            {/* אזורי לחיצה לניווט */}
-            <div className="absolute inset-y-24 right-0 w-1/3 z-40 cursor-e-resize" onClick={handlePrevStory}></div>
-            <div className="absolute inset-y-24 left-0 w-2/3 z-40 cursor-w-resize" onClick={handleNextStory}></div>
-         </div>
-      )}
-
-      {/* 2. מודל העלאת סטורי חדש */}
-      {showAddStoryModal && (
-          <div className="fixed inset-0 z-[450] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowAddStoryModal(false)}>
-             <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-md p-8 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#8A5058]">
-                 <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-5 md:hidden"></div>
-                 <button onClick={() => setShowAddStoryModal(false)} className="absolute top-6 left-6 p-2 bg-slate-50 text-slate-400 rounded-full hover:bg-rose-50 hover:text-rose-400 transition-colors"><X size={20}/></button>
-                 <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Sparkles className="text-[#BD7A81]" size={20}/> שתפי רגע למעגל</h2>
-                 
-                 <div className="flex gap-4 mb-6">
-                    <button 
-                       onClick={() => setNewStory({...newStory, type: 'text', caption: ''})} 
-                       className={`flex-1 py-4 rounded-2xl flex flex-col items-center gap-2 font-bold text-sm transition-all border-2 ${newStory.type === 'text' ? 'border-rose-300 text-rose-500 bg-rose-50/50' : 'border-slate-100 text-slate-400 hover:bg-slate-50'}`}
-                    >
-                       <TypeIcon size={24} /> טקסט
-                    </button>
-                    <button 
-                       onClick={() => setNewStory({...newStory, type: 'image', content: ''})} 
-                       className={`flex-1 py-4 rounded-2xl flex flex-col items-center gap-2 font-bold text-sm transition-all border-2 ${newStory.type === 'image' ? 'border-rose-300 text-rose-500 bg-rose-50/50' : 'border-slate-100 text-slate-400 hover:bg-slate-50'}`}
-                    >
-                       <ImageIcon size={24} /> תמונה
-                    </button>
-                 </div>
-
-                 {newStory.type === 'text' ? (
-                     <textarea 
-                        className="w-full h-36 bg-slate-50 border border-slate-100 rounded-2xl p-5 resize-none outline-none focus:ring-2 focus:ring-rose-200 text-slate-700 font-medium transition-all"
-                        placeholder="מה תרצי לשתף היום? (ניתן לצרף לינק)"
-                        value={newStory.content}
-                        onChange={e => setNewStory({...newStory, content: e.target.value})}
-                     ></textarea>
-                 ) : (
-                     <div className="space-y-4">
-                       <div className="relative border-2 border-dashed border-slate-200 hover:border-rose-300 rounded-2xl p-8 flex flex-col items-center justify-center text-slate-400 bg-slate-50 overflow-hidden min-h-[180px] transition-colors">
-                          <input type="file" accept="image/*" onChange={handleStoryImageUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                          {newStory.content ? (
-                             <img src={newStory.content} className="absolute inset-0 w-full h-full object-cover" />
-                          ) : (
-                             <>
-                                <Camera size={32} className="mb-3 text-rose-300" />
-                                <p className="font-bold text-sm">הקישי לבחירת תמונה</p>
-                             </>
-                          )}
-                       </div>
-                       
-                       {newStory.content && (
-                          <input 
-                             type="text" 
-                             placeholder="הוסיפי כיתוב (אופציונלי, ניתן לצרף לינק)..." 
-                             className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-rose-200 text-slate-700 font-medium text-sm transition-all"
-                             value={newStory.caption || ''}
-                             onChange={e => setNewStory({...newStory, caption: e.target.value})}
-                          />
-                       )}
-                     </div>
-                 )}
-
-                 <button 
-                    onClick={submitNewStory} 
-                    disabled={isUploadingStory || !newStory.content}
-                    className="w-full mt-8 bg-rose-700 text-white font-bold py-4 rounded-2xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 hover:bg-rose-500 transition-all active:scale-95"
-                 >
-                    {isUploadingStory ? 'מעלה...' : 'שליחה לאישור'} <Send size={16} />
-                 </button>
-                 <p className="text-center text-[11px] text-slate-400 mt-5 font-medium">הסטורי יופיע למשך 24 שעות לאחר אישור המנהלת</p>
-             </div>
-          </div>
-      )}
 
       {/* 3. מודל בקשת הצטרפות */}
       {showMembershipModal && (

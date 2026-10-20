@@ -12,6 +12,8 @@ const UserSchema = new mongoose.Schema({
   avatar: { type: String },
   isAdmin: { type: Boolean, default: false },
   points: { type: Number, default: 0 },
+  referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  referralsCount: { type: Number, default: 0 },
   
   // שדות מעגל נשי
   isMemberRequested: { type: Boolean, default: false },
@@ -152,6 +154,11 @@ const PersonalitySchema = new mongoose.Schema({
   isActive: { type: Boolean, default: false },
   isTemplate: { type: Boolean, default: false },
   externalToken: { type: String },
+  // awaiting = link sent, not filled yet · submitted = filled, waiting for admin · published = approved (archive)
+  // Older documents have no status: a token means "awaiting", otherwise they are treated as published.
+  status: { type: String, enum: ['awaiting', 'submitted', 'published'] },
+  publishedAt: { type: Date },
+  createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
 const Personality = mongoose.model('Personality', PersonalitySchema);
@@ -237,6 +244,7 @@ const StorySchema = new mongoose.Schema({
   type: { type: String, enum: ['image', 'text'], default: 'text' }, // סוג הסטורי: תמונה או טקסט בלבד
   content: { type: String, required: true }, // התוכן עצמו (טקסט או תמונה כ-Base64)
   caption: { type: String, default: '' }, // טקסט שיופיע מתחת לתמונה
+  background: { type: String, default: '' }, // רקע לסטורי טקסט (מזהה ערכת צבעים)
   status: { type: String, enum: ['pending', 'approved'], default: 'pending' }, // סטטוס לאישור מנהלת
   createdAt: { type: Date, default: Date.now },
   approvedAt: { type: Date }, // שדה שיתעדכן ברגע שהמנהלת מאשרת

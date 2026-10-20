@@ -233,6 +233,7 @@ const App: React.FC = () => {
             
             {/* נתיב לארכיון נשות השבוע */}
             <Route path="/personality-archive" element={<PersonalityArchivePage />} />
+            <Route path="/personality-archive/:id" element={<PersonalityArchivePage />} />
 
             {/* נתיבי שחזור ואיפוס סיסמה */}
             <Route path="/forgot-password" element={<ForgotPassword />} />

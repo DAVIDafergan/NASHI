@@ -172,6 +172,8 @@ export default {
         'fade-in': 'fade-in 500ms cubic-bezier(0.16, 1, 0.3, 1) both',
         'fade-in-fast': 'fade-in-fast 200ms ease-out both',
         'fade-in-up': 'fade-in-up 600ms cubic-bezier(0.16, 1, 0.3, 1) both',
+        // page wrapper: same motion, but drops the transform when done so position:fixed modals inside pages cover the screen
+        'page-in': 'fade-in-up 600ms cubic-bezier(0.16, 1, 0.3, 1) backwards',
         'slide-up': 'slide-up 400ms cubic-bezier(0.16, 1, 0.3, 1) both',
         'bounce-in': 'bounce-in 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
         'float-slow': 'float-slow 9s ease-in-out infinite',

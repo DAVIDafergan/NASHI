@@ -10,6 +10,7 @@ import {
 import { User, EventItem, LotteryItem, ClassItem, PersonalityProfile, CommunityItem } from '../types';
 import { api } from '../services/api';
 import FlyersAdmin from '../components/admin/FlyersAdmin';
+import PersonalityAdmin from '../components/admin/PersonalityAdmin';
 
 // קומפוננטת מודאל פנימית
 const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) => {
@@ -1699,114 +1700,7 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
           </div>
         )}
 
-        {/* טאב אשת השבוע (משודרג עם כפתור עריכה) */}
-        {activeTab === 'personality' && (
-          <div className="max-w-4xl mx-auto space-y-12 animate-fade-in text-right">
-            
-            {/* ראיונות הממתינים לאישור */}
-            {pendingInterviews.length > 0 && (
-                <div className="space-y-6">
-                    <h3 className="text-xl font-black text-orange-500 pr-4 flex items-center gap-2"><Clock/> ראיונות הממתינים לאישורך:</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                        {pendingInterviews.map(interview => (
-                            <div key={interview.id || (interview as any)._id} className="bg-orange-50 border border-orange-100 p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-4">
-                                <div className="flex items-center gap-4 w-full md:w-auto">
-                                    <img src={interview.image} className="w-16 h-16 rounded-2xl object-cover shadow-sm shrink-0" />
-                                    <div>
-                                        <p className="font-black text-slate-800">{interview.name}</p>
-                                        <p className="text-xs text-slate-500">{interview.role}</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2 w-full md:w-auto justify-end">
-                                    <button onClick={() => { setSelectedInterview(interview); setIsPreviewModalOpen(true); }} className="bg-white p-2 rounded-xl text-blue-500 shadow-sm" title="תצוגה מקדימה"><Eye size={20}/></button>
-                                    <button 
-                                        onClick={() => { setEditingInterview(JSON.parse(JSON.stringify(interview))); setIsEditInterviewModalOpen(true); }} 
-                                        className="bg-white p-2 rounded-xl text-orange-500 shadow-sm hover:bg-orange-100 transition-colors" 
-                                        title="עריכה לפני אישור"
-                                    >
-                                        <Edit size={20}/>
-                                    </button>
-                                    <button onClick={async () => {
-                                        await api.approvePersonality(interview.id || (interview as any)._id);
-                                        alert("הראיון אושר ופורסם באתר!");
-                                        loadTabData();
-                                    }} className="bg-green-500 text-white px-4 py-2 rounded-xl font-black text-xs shadow-sm hover:bg-green-600 transition-colors">אישור ופרסום</button>
-                                    <button onClick={() => handleDelete(interview.id || (interview as any)._id, 'personality', interview.name)} className="bg-red-100 text-red-500 px-4 py-2 rounded-xl hover:bg-red-200 transition-colors"><Trash2 size={20}/></button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            <div className="bg-white p-8 md:p-10 rounded-[3.5rem] shadow-xl border border-rose-50 space-y-8">
-              <div className="flex justify-between items-center border-b pb-4">
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3"><Sparkles className="text-rose-500"/> הגדרת אשת השבוע</h3>
-              </div>
-              
-              <div className="p-4 bg-blue-50 border-r-4 border-blue-500 rounded-xl mb-6">
-                <p className="text-sm font-bold text-blue-900">שימי לב: השאלות שתגדירי כאן יישמרו כתבנית קבועה תמיד. גם אחרי שליחת לינק, השאלות לא ימחקו עד שתבחרי לשנותן.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input placeholder="שם מלא של האישה" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none focus:ring-2 focus:ring-rose-100" value={personalityForm.name} onChange={e=>setPersonalityForm({...personalityForm, name:e.target.value})} />
-                <input placeholder="תפקיד / תיאור קצר" className="p-4 bg-slate-50 rounded-2xl font-bold text-right outline-none focus:ring-2 focus:ring-rose-100" value={personalityForm.role} onChange={e=>setPersonalityForm({...personalityForm, role:e.target.value})} />
-              </div>
-
-              <div className="space-y-4 bg-slate-50 p-6 rounded-[2rem]">
-                <div className="flex justify-between items-center mb-4"><h4 className="font-black text-lg">הגדרת השאלון</h4><button onClick={addQuestion} className="text-rose-500 font-bold text-sm">+ הוספת שאלה</button></div>
-                {personalityForm.questions?.map((q, i) => (
-                  <div key={i} className="flex gap-2 mb-3">
-                    <input placeholder="כתבי את השאלה כאן..." className="flex-1 p-3 bg-white border border-slate-100 rounded-xl font-bold text-right outline-none focus:border-rose-200" value={q.question} onChange={e=>updateQuestion(i,'question',e.target.value)} />
-                    <button onClick={()=>{const qs=[...personalityForm.questions!]; qs.splice(i,1); setPersonalityForm({...personalityForm, questions:qs});}} className="text-red-400 p-2"><Trash2 size={18}/></button>
-                  </div>
-                ))}
-              </div>
-
-              <button onClick={async () => { 
-                try {
-                  // שמירה ספציפית של התבנית
-                  await api.updatePersonalityTemplate(personalityForm);
-                  const res = await api.generateInterviewLink(personalityForm); 
-                  const fullLink = `${window.location.origin}/#/interview/${res.token || res.id}`;
-                  setGeneratedLink(fullLink);
-                  alert("השאלות נשמרו כתבנית והלינק הופק בהצלחה!");
-                } catch (err: any) { alert("שגיאה: " + err.message); }
-              }} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 transition-all">
-                <LinkIcon size={18}/> שמירת שאלות והפקת לינק למילוי עצמי
-              </button>
-
-              {generatedLink && (
-                <div className="p-4 bg-blue-50 rounded-2xl border-2 border-blue-100 flex items-center gap-3 animate-fade-in-up">
-                  <input readOnly className="flex-1 bg-transparent font-mono text-[10px] text-blue-800 text-left outline-none overflow-hidden" value={generatedLink} />
-                  <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert("הלינק הועתק!"); }} className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"><Copy size={16}/></button>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-6">
-                <h4 className="font-black text-xl text-slate-700 pr-4">ארכיון נשות המעגל (כל הראיונות):</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {allInterviews.map((interview) => (
-                    <div key={interview._id || (interview as any).id} className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100 flex justify-between items-center group hover:shadow-md transition-shadow">
-                       <div className="flex items-center gap-3">
-                          <img src={interview.image} className="w-12 h-12 rounded-xl object-cover shadow-sm shrink-0" />
-                          <div>
-                            <p className="font-black text-slate-800 leading-none">{interview.name}</p>
-                            <p className="text-[10px] text-slate-400 mt-1">{interview.role}</p>
-                          </div>
-                       </div>
-                       <div className="flex gap-2 items-center">
-                          {interview.isActive ? <span className="bg-emerald-50 text-emerald-600 text-[8px] font-black px-2 py-1 rounded-full border border-emerald-100 whitespace-nowrap">פעילה באתר</span> : null}
-                          <button onClick={() => handleDelete(interview._id || (interview as any).id, 'personality', interview.name)} className="p-2 text-red-400 hover:bg-red-50 rounded-xl"><Trash2 size={18}/></button>
-                       </div>
-                    </div>
-                  ))}
-                  {allInterviews.length === 0 && <p className="text-slate-400 italic pr-4">טרם אושרו ראיונות לארכיון.</p>}
-                </div>
-            </div>
-          </div>
-        )}
+        {activeTab === 'personality' && <PersonalityAdmin />}
 
         {/* טאב הגדרות */}
         {activeTab === 'settings' && (
@@ -1859,76 +1753,6 @@ const AdminPage: React.FC<{ user: User | null, onLogin: (user: User) => void }> 
         </div>
       </Modal>
 
-      {/* מודל עריכת ראיון אשת השבוע לפני אישור */}
-      <Modal isOpen={isEditInterviewModalOpen} onClose={() => setIsEditInterviewModalOpen(false)} title="עריכת הראיון ואישור">
-        {editingInterview && (
-            <form onSubmit={async (e) => {
-                e.preventDefault();
-                try {
-                    // הפעולה מתבצעת בשני שלבים חכמים:
-                    // 1. קודם מאשרים את הראיון (מה שהופך אותו לראיון ה"פעיל" במסד הנתונים)
-                    await api.approvePersonality(editingInterview.id || (editingInterview as any)._id);
-                    // 2. מיד לאחר מכן מעדכנים את הראיון הפעיל עם הטקסטים החדשים שערכנו
-                    await api.updatePersonality(editingInterview);
-                    
-                    alert("הראיון נערך, אושר ופורסם בהצלחה!");
-                    setIsEditInterviewModalOpen(false);
-                    loadTabData();
-                } catch(err: any) { alert("שגיאה בעריכת הראיון: " + err.message); }
-            }} className="space-y-4 text-right">
-                
-                <div className="flex items-center gap-4 mb-4 bg-orange-50 p-4 rounded-2xl">
-                    <img src={editingInterview.image} className="w-16 h-16 rounded-xl object-cover" />
-                    <div>
-                        <p className="text-xs font-black text-orange-600 mb-1">את עורכת את התשובות של:</p>
-                        <input required className="w-full bg-transparent font-black text-lg outline-none border-b border-orange-200 focus:border-orange-400" value={editingInterview.name} onChange={e => setEditingInterview({...editingInterview, name: e.target.value})} placeholder="שם מלא" />
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400">תפקיד / מקצוע:</label>
-                    <input className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right border border-slate-100 focus:border-orange-300" value={editingInterview.role || ''} onChange={e => setEditingInterview({...editingInterview, role: e.target.value})} placeholder="למשל: יועצת זוגית" />
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400">מוטו לחיים:</label>
-                    <input className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-right border border-slate-100 focus:border-orange-300" value={editingInterview.motto || ''} onChange={e => setEditingInterview({...editingInterview, motto: e.target.value})} placeholder="משפט מפתח" />
-                </div>
-
-                <div className="space-y-4 mt-4 max-h-[40vh] overflow-y-auto pr-2 no-scrollbar border-t border-slate-100 pt-4">
-                    {editingInterview.questions?.map((q, i) => (
-                        <div key={i} className="bg-slate-50 p-4 rounded-2xl space-y-2">
-                            <p className="font-black text-sm text-slate-700">{q.question}</p>
-                            <textarea className="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-400 min-h-[100px] leading-relaxed" value={q.answer} onChange={e => {
-                                const newQs = [...(editingInterview.questions || [])];
-                                newQs[i].answer = e.target.value;
-                                setEditingInterview({...editingInterview, questions: newQs});
-                            }} />
-                        </div>
-                    ))}
-                </div>
-                <button type="submit" className="w-full py-4 bg-orange-500 hover:bg-orange-600 transition-colors text-white rounded-2xl font-black shadow-lg flex justify-center items-center gap-2"><CheckCircle size={20}/> שמירת שינויים ופרסום באתר</button>
-            </form>
-        )}
-      </Modal>
-
-      <Modal isOpen={isPreviewModalOpen} onClose={() => setIsPreviewModalOpen(false)} title="תצוגה מקדימה של הראיון">
-        {selectedInterview && (
-            <div className="space-y-4 text-right">
-                <img src={selectedInterview.image} className="w-32 h-32 rounded-3xl mx-auto object-cover" />
-                <h4 className="text-2xl font-black text-center">{selectedInterview.name}</h4>
-                <p className="font-bold text-rose-500 text-center">{selectedInterview.role}</p>
-                <div className="space-y-4 mt-6">
-                    {selectedInterview.questions?.map((q, i) => (
-                        <div key={i} className="bg-slate-50 p-4 rounded-2xl">
-                            <p className="font-black text-xs text-slate-400 mb-1">{q.question}</p>
-                            <p className="font-bold leading-relaxed">{q.answer}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
-      </Modal>
 
       <Modal isOpen={isLotteryModalOpen} onClose={()=>setIsLotteryModalOpen(false)} title={lotteryForm._id ? "עריכת הגרלה" : "הגרלה חדשה"}>
         <form onSubmit={async (e)=>{

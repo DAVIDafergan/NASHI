@@ -31,6 +31,13 @@ const authenticate = (req, res, next) => {
     } catch (err) { res.status(400).json({ error: 'Invalid Token' }); }
 };
 
+// never send password hashes / reset tokens to the browser
+const publicUser = (u) => {
+    const o = u.toObject ? u.toObject() : { ...u };
+    delete o.password; delete o.resetPasswordToken; delete o.resetPasswordExpires;
+    return { ...o, id: o._id };
+};
+
 const isAdmin = (req, res, next) => {
     if (!req.user || !req.user.isAdmin) return res.status(403).json({ error: 'Admin access required' });
     next();
@@ -99,7 +106,7 @@ const zodiacWheelRateLimit = createSimpleRateLimiter(10, 60 * 1000);
 
 router.get('/admin/approvals', authenticate, isAdmin, async (req, res) => {
     try {
-        const pendingUsers = await User.find({ isMemberRequested: true, isMemberApproved: false });
+        const pendingUsers = await User.find({ isMemberRequested: true, isMemberApproved: false }).select('-password -resetPasswordToken -resetPasswordExpires');
         const pendingPosts = await ForumPost.find({ status: 'pending' }).populate('author', 'name');
         res.json({ pendingUsers, pendingPosts });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -140,9 +147,18 @@ router.post('/register', async (req, res) => {
             avatar: `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(name)}&backgroundColor=ffd5dc,ffdfbf,c0aede,d1d4f9,ffc0cb&mouth=smile,happy,cute&eyes=happy,open,wink`,
             points: config.pointsPerRegister || 50
         });
+        // חברה שהזמינה אותה (קישור הזמנה /s/join?ref=...) מקבלת נקודות
+        const ref = typeof req.body.ref === 'string' && mongoose.Types.ObjectId.isValid(req.body.ref) ? req.body.ref : null;
+        if (ref) {
+            const inviter = await User.findById(ref).select('_id email');
+            if (inviter && inviter.email !== email) {
+                user.referredBy = inviter._id;
+                await User.updateOne({ _id: inviter._id }, { $inc: { points: config.pointsPerReferral || 30, referralsCount: 1 } });
+            }
+        }
         await user.save();
         const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
-        res.json({ token, user: { ...user.toObject(), id: user._id } });
+        res.json({ token, user: publicUser(user) });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -156,7 +172,7 @@ router.post('/login', async (req, res) => {
         if (!isMatch) return res.status(400).json({ error: 'סיסמה שגויה' });
 
         const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { ...user.toObject(), id: user._id } });
+        res.json({ token, user: publicUser(user) });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -210,7 +226,13 @@ router.put('/users/:id', authenticate, async (req, res) => {
         if (req.user.id !== req.params.id && !req.user.isAdmin) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
-        const updated = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
+        // משתמשת רגילה יכולה לעדכן רק פרטים אישיים, לא הרשאות, נקודות או סיסמה
+        const PROTECTED = ['_id', 'id', 'isAdmin', 'isMemberApproved', 'isMemberRequested', 'points', 'password', 'email',
+            'resetPasswordToken', 'resetPasswordExpires', 'referredBy', 'referralsCount', 'createdAt', 'lastZodiacWheelSpinAt', 'zodiacWheelSpinsCount'];
+        const update = { ...req.body };
+        if (!req.user.isAdmin) PROTECTED.forEach(k => delete update[k]);
+        else { delete update.password; delete update._id; }
+        const updated = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select('-password -resetPasswordToken -resetPasswordExpires');
         res.json(updated);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -572,8 +594,38 @@ router.delete('/community/:id', authenticate, isAdmin, async (req, res) => {
 });
 
 // ================= 7. אשת השבוע (PERSONALITY) =================
+// Flow: admin sends a questionnaire link → she fills it (status "submitted") → admin approves
+// (status "published" + shown on the homepage). Published interviews stay in the public archive.
 
-// נתיב חדש לקבלת השאלות הקבועות (התבנית)
+const personalityStatus = (p) => p.status || (p.externalToken ? 'awaiting' : 'published');
+const PUBLISHED_FILTER = {
+    isTemplate: { $ne: true },
+    $or: [
+        { status: 'published' },
+        { status: { $exists: false }, $or: [{ externalToken: null }, { externalToken: { $exists: false } }] },
+    ],
+};
+const withStatus = (doc) => { const o = doc.toObject ? doc.toObject() : doc; return { ...o, id: o._id, status: personalityStatus(o) }; };
+const cleanText = (v, max = 4000) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const cleanImage = (v) => (typeof v === 'string' && (/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(v) || /^https?:\/\//i.test(v)) ? v : undefined);
+const cleanQuestions = (qs, base) => {
+    if (!Array.isArray(qs)) return base || [];
+    return qs.slice(0, 40).map((q, i) => ({
+        question: cleanText(q?.question, 500) || cleanText(base?.[i]?.question, 500),
+        answer: cleanText(q?.answer, 6000),
+    })).filter(q => q.question);
+};
+const pickPersonalityFields = (body, base) => {
+    const out = {};
+    if (body.name !== undefined) out.name = cleanText(body.name, 120);
+    if (body.role !== undefined) out.role = cleanText(body.role, 200);
+    if (body.motto !== undefined) out.motto = cleanText(body.motto, 400);
+    if (body.image !== undefined) { const img = cleanImage(body.image); out.image = img || ''; }
+    if (body.questions !== undefined) out.questions = cleanQuestions(body.questions, base);
+    return out;
+};
+
+// התבנית: השאלות הקבועות לשאלון
 router.get('/personality/template', async (req, res) => {
     try {
         const template = await Personality.findOne({ isTemplate: true });
@@ -581,59 +633,61 @@ router.get('/personality/template', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// נתיב חדש לעדכון השאלות הקבועות (התבנית) - מתוקן למחיקת שאלות סופית
 router.post('/personality/template', authenticate, isAdmin, async (req, res) => {
     try {
         let template = await Personality.findOne({ isTemplate: true });
-        if (!template) {
-            template = new Personality({ ...req.body, isTemplate: true, isActive: false });
-        } else {
-            // עדכון מפורש של המערך כדי להבטיח מחיקת איברים
-            template.name = req.body.name;
-            template.role = req.body.role;
-            template.image = req.body.image;
-            template.questions = req.body.questions;
-            
-            // פקודה קריטית: מודיעה למונגוס שהמערך השתנה ויש לדרוס את הישן
-            template.markModified('questions');
-        }
+        const questions = cleanQuestions(req.body.questions).map(q => ({ question: q.question, answer: '' }));
+        if (!template) template = new Personality({ isTemplate: true, isActive: false, questions });
+        else { template.questions = questions; template.markModified('questions'); }
         await template.save();
         res.json(template);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// אשת השבוע שמוצגת בדף הבית: זו שהמנהלת בחרה, ואם אין — האחרונה שאושרה
 router.get('/personality', async (req, res) => {
-    try { 
-        const p = await Personality.findOne({ isActive: true, isTemplate: false }).sort({ updatedAt: -1 }); 
-        res.json(p || {}); 
+    try {
+        let p = await Personality.findOne({ ...PUBLISHED_FILTER, isActive: true }).sort({ updatedAt: -1 });
+        if (!p) p = await Personality.findOne(PUBLISHED_FILTER).sort({ publishedAt: -1, updatedAt: -1 });
+        res.set('Cache-Control', 'public, max-age=60');
+        res.json(p ? withStatus(p) : {});
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ארכיון ציבורי — רק ראיונות שאושרו
 router.get('/personality/archive', async (req, res) => {
     try {
-        const all = await Personality.find({ isTemplate: false }).sort({ updatedAt: -1 });
-        res.json(all);
+        const all = await Personality.find(PUBLISHED_FILTER).sort({ isActive: -1, publishedAt: -1, updatedAt: -1 });
+        res.json(all.map(withStatus));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// עריכת אשת השבוע הנוכחית (תאימות לאחור לממשק הישן)
 router.post('/personality', authenticate, isAdmin, async (req, res) => {
     try {
-        let p = await Personality.findOne({ isActive: true, isTemplate: false });
-        if (!p) p = new Personality(req.body);
-        else Object.assign(p, req.body, { updatedAt: Date.now() });
+        let p = await Personality.findOne({ ...PUBLISHED_FILTER, isActive: true });
+        if (!p) p = new Personality({ status: 'published', publishedAt: new Date(), isActive: true });
+        Object.assign(p, pickPersonalityFields(req.body, p.questions), { updatedAt: Date.now() });
         await p.save();
-        res.json(p);
+        res.json(withStatus(p));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// יצירת לינק לשאלון
 router.post('/personality/generate-link', authenticate, isAdmin, async (req, res) => {
     try {
-        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        const p = new Personality({ 
-            name: 'ממתין למילוי',
+        const token = crypto.randomBytes(16).toString('hex');
+        let questions = cleanQuestions(req.body.questions);
+        if (!questions.length) {
+            const template = await Personality.findOne({ isTemplate: true });
+            questions = (template?.questions || []).map(q => ({ question: q.question, answer: '' }));
+        }
+        const p = new Personality({
+            name: cleanText(req.body.name, 120) || 'ממתין למילוי',
             role: '',
-            questions: req.body.questions || [],
-            externalToken: token, 
+            questions: questions.map(q => ({ question: q.question, answer: '' })),
+            externalToken: token,
+            status: 'awaiting',
             isActive: false,
             isTemplate: false
         });
@@ -646,37 +700,81 @@ router.get('/personality/fill/:token', async (req, res) => {
     try {
         const p = await Personality.findOne({ externalToken: req.params.token });
         if (!p) return res.status(404).json({ error: 'Link invalid or expired' });
-        res.json(p);
+        res.json({ _id: p._id, name: p.name === 'ממתין למילוי' ? '' : p.name, role: p.role, motto: p.motto, questions: p.questions });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// היא שולחת את השאלון — נשמרים רק שדות התוכן; האישור נשאר בידי המנהלת
 router.post('/personality/fill/:token', async (req, res) => {
     try {
-        const p = await Personality.findOneAndUpdate(
-            { externalToken: req.params.token },
-            { 
-                ...req.body, 
-                externalToken: null,
-                updatedAt: Date.now() 
-            },
-            { new: true }
-        );
+        const p = await Personality.findOne({ externalToken: req.params.token });
         if (!p) return res.status(404).json({ error: 'Interview not found' });
+        const fields = pickPersonalityFields(req.body, p.questions);
+        if (!fields.name) return res.status(400).json({ error: 'חסר שם' });
+        Object.assign(p, fields, { externalToken: null, status: 'submitted', isActive: false, updatedAt: Date.now() });
+        await p.save();
         res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- ניהול ---
+router.get('/admin/personality/all', authenticate, isAdmin, async (req, res) => {
+    try {
+        const all = await Personality.find({ isTemplate: { $ne: true } }).sort({ updatedAt: -1 });
+        res.json(all.map(withStatus));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.get('/admin/personality/pending', authenticate, isAdmin, async (req, res) => {
     try {
-        const pending = await Personality.find({ isActive: false, isTemplate: false, externalToken: null });
-        res.json(pending);
+        const pending = await Personality.find({ isTemplate: { $ne: true }, status: 'submitted' }).sort({ updatedAt: -1 });
+        res.json(pending.map(withStatus));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// הוספה ידנית ע"י המנהלת (בלי שאלון)
+router.post('/admin/personality', authenticate, isAdmin, async (req, res) => {
+    try {
+        const fields = pickPersonalityFields(req.body);
+        if (!fields.name) return res.status(400).json({ error: 'חסר שם' });
+        const publish = req.body.publish === true;
+        if (publish) await Personality.updateMany({ isTemplate: { $ne: true } }, { isActive: false });
+        const p = new Personality({ ...fields, isTemplate: false, status: publish ? 'published' : 'submitted', isActive: publish, publishedAt: publish ? new Date() : undefined });
+        await p.save();
+        res.json(withStatus(p));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/admin/personality/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        const p = await Personality.findById(req.params.id);
+        if (!p || p.isTemplate) return res.status(404).json({ error: 'not found' });
+        Object.assign(p, pickPersonalityFields(req.body, p.questions), { updatedAt: Date.now() });
+        await p.save();
+        res.json(withStatus(p));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// אישור + הצגה בדף הבית (אפשר גם להחזיר לדף הבית מישהי מהארכיון)
 router.post('/admin/personality/approve/:id', authenticate, isAdmin, async (req, res) => {
     try {
-        await Personality.updateMany({ isTemplate: false }, { isActive: false });
-        await Personality.findByIdAndUpdate(req.params.id, { isActive: true });
+        const p = await Personality.findById(req.params.id);
+        if (!p || p.isTemplate) return res.status(404).json({ error: 'not found' });
+        if (personalityStatus(p) === 'awaiting') return res.status(400).json({ error: 'השאלון עוד לא מולא' });
+        await Personality.updateMany({ isTemplate: { $ne: true } }, { isActive: false });
+        p.status = 'published';
+        p.isActive = true;
+        if (!p.publishedAt) p.publishedAt = new Date();
+        p.updatedAt = Date.now();
+        await p.save();
+        res.json({ success: true, personality: withStatus(p) });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// הורדה מדף הבית (נשארת בארכיון)
+router.post('/admin/personality/unfeature/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        await Personality.findByIdAndUpdate(req.params.id, { isActive: false });
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -685,6 +783,16 @@ router.delete('/personality/:id', authenticate, isAdmin, async (req, res) => {
     try {
         await Personality.findByIdAndDelete(req.params.id);
         res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ראיון בודד שאושר (לשיתוף / קישור ישיר מהארכיון)
+router.get('/personality/item/:id', async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'not found' });
+        const p = await Personality.findOne({ ...PUBLISHED_FILTER, _id: req.params.id });
+        if (!p) return res.status(404).json({ error: 'not found' });
+        res.json(withStatus(p));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -973,7 +1081,9 @@ router.get('/me', authenticate, async (req, res) => {
 
 router.post('/membership/request', authenticate, async (req, res) => {
     try {
-        const user = await User.findByIdAndUpdate(req.user.id, { ...req.body, isMemberRequested: true, isMemberApproved: false }, { new: true }).select('-password');
+        const { age, occupation, address, phone, city, birthDate } = req.body || {};
+        const fields = Object.fromEntries(Object.entries({ age, occupation, address, phone, city, birthDate }).filter(([, v]) => v !== undefined));
+        const user = await User.findByIdAndUpdate(req.user.id, { ...fields, isMemberRequested: true, isMemberApproved: false }, { new: true }).select('-password -resetPasswordToken -resetPasswordExpires');
         res.json({ success: true, user });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -1220,6 +1330,15 @@ router.post('/admin/tickets/verify/:code', authenticate, isAdmin, async (req, re
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// מספרים ציבוריים להוכחה חברתית בדף הבית (מעוגלים)
+router.get('/stats/public', async (req, res) => {
+    try {
+        const members = await User.countDocuments({});
+        res.set('Cache-Control', 'public, max-age=600');
+        res.json({ members });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ================= 17. סטוריז (STORIES) =================
 
 // שליפת סטוריז מאושרים (עבור דף הבית)
@@ -1227,6 +1346,7 @@ router.get('/stories', async (req, res) => {
     try {
         // שולפים רק סטוריז במצב "approved". (ה-TTL במונגו כבר דואג למחוק את מה שעבר 24 שעות)
         const stories = await Story.find({ status: 'approved' })
+            .select('-viewedBy')
             .populate('user', 'name avatar') // מביאים את שם ותמונת המשתמשת
             .sort({ approvedAt: 1 }); // סידור מהישן לחדש (כמו בוואצפ)
         res.json(stories);
@@ -1234,17 +1354,33 @@ router.get('/stories', async (req, res) => {
 });
 
 // העלאת סטורי חדש על ידי משתמשת (מחייב חיבור)
+const STORY_BACKGROUNDS = ['rose', 'plum', 'sage', 'sunset', 'night', 'cream'];
 router.post('/stories', authenticate, async (req, res) => {
     try {
+        const type = req.body.type === 'image' ? 'image' : 'text';
+        const content = typeof req.body.content === 'string' ? req.body.content : '';
+        if (type === 'text' && (!content.trim() || content.length > 700)) return res.status(400).json({ error: 'הטקסט צריך להיות עד 700 תווים' });
+        if (type === 'image' && !/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(content)) return res.status(400).json({ error: 'קובץ התמונה לא תקין' });
+        if (type === 'image' && content.length > 7 * 1024 * 1024) return res.status(400).json({ error: 'התמונה גדולה מדי' });
+        const recentPending = await Story.countDocuments({ user: req.user.id, status: 'pending' });
+        if (recentPending >= 5) return res.status(429).json({ error: 'יש לך כבר 5 סטטוסים שממתינים לאישור' });
         const story = new Story({
             user: req.user.id,
-            type: req.body.type || 'text',
-            content: req.body.content,
-            caption: req.body.caption || '' // <--- הוספנו פה את קבלת הטקסט!
-            // status יהיה 'pending' אוטומטית לפי המודל
+            type,
+            content: type === 'text' ? content.trim() : content,
+            caption: typeof req.body.caption === 'string' ? req.body.caption.trim().slice(0, 300) : '',
+            background: STORY_BACKGROUNDS.includes(req.body.background) ? req.body.background : '',
         });
         await story.save();
-        res.status(201).json({ success: true, message: 'הסטורי נשלח לאישור מנהלת' });
+        res.status(201).json({ success: true, id: story._id, message: 'הסטטוס נשלח לאישור' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// הסטטוסים שלי (כולל אלה שממתינים לאישור)
+router.get('/stories/mine', authenticate, async (req, res) => {
+    try {
+        const stories = await Story.find({ user: req.user.id }).select('-viewedBy').sort({ createdAt: -1 }).limit(20);
+        res.json(stories);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -1347,62 +1483,9 @@ router.get('/stories/image/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// --- ראוט מיוחד לשיתוף בוואצפ (OG Tags) מתוקן ועשיר ---
-router.get('/stories/share/:id', async (req, res) => {
-    try {
-        const story = await Story.findById(req.params.id).populate('user', 'name');
-        if (!story) return res.status(404).send('הסטורי לא נמצא או שנמחק');
-
-        const isText = story.type === 'text';
-        const title = `סטורי חדש מאת ${story.user?.name || 'חברה בקהילה'} | קהילת נשי`;
-        
-        // אם הסטורי הוא טקסט - נציג את הטקסט שלו כתיאור. אם תמונה - נציג את הכיתוב שהיא הוסיפה.
-        const description = isText ? story.content : (story.caption || 'היכנסי לראות את הסטורי שהעליתי הרגע לקהילה!');
-        
-        // כתובת השרת שלנו (כדי לחלץ את התמונה)
-        const serverUrl = req.protocol + '://' + req.get('host');
-        
-        // תמונת ברירת מחדל (אפשר להחליף את הלינק של Unsplash בלינק ללוגו של קהילת נשי!)
-        const defaultImageUrl = 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'; 
-        
-        // בסטורי טקסט אין לנו תמונה במסד, אז ניתן את תמונת הדיפולט.
-        const imageUrl = isText ? defaultImageUrl : `${serverUrl}/api/stories/image/${story._id}`; 
-        
-        // הכתובת אליה המשתמשת תועבר כשתלחץ על הלינק (לדף הבית של האתר שלך)
-        const frontendUrl = process.env.FRONTEND_URL || 'https://nashi-production.up.railway.app';
-        const redirectUrl = `${frontendUrl}/#/?storyId=${story._id}`;
-
-        const html = `
-        <!DOCTYPE html>
-        <html lang="he" dir="rtl">
-        <head>
-            <meta charset="UTF-8">
-            <title>${title}</title>
-            
-            <meta property="og:title" content="${title}" />
-            <meta property="og:description" content="${description}" />
-            <meta property="og:image" content="${imageUrl}" />
-            <meta property="og:url" content="${redirectUrl}" />
-            <meta property="og:type" content="website" />
-            <meta property="og:site_name" content="קהילת נשי" />
-
-            <meta name="twitter:card" content="summary_large_image" />
-            <meta name="twitter:title" content="${title}" />
-            <meta name="twitter:description" content="${description}" />
-            <meta name="twitter:image" content="${imageUrl}" />
-            
-            <script>
-                // הפניה אוטומטית לאתר מיד אחרי שוואצפ שואב את הנתונים המקדימים
-                window.location.href = "${redirectUrl}";
-            </script>
-        </head>
-        <body style="background:#fffcfc; text-align:center; padding-top:50px; font-family:sans-serif;">
-            <h2>מעביר אותך לסטורי...</h2>
-        </body>
-        </html>
-        `;
-        res.send(html);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+// --- שיתוף סטורי: הקישור הישן מפנה לדף התצוגה החדש (/s/story/:id) ---
+router.get('/stories/share/:id', (req, res) => {
+    res.redirect(301, `/s/story/${encodeURIComponent(req.params.id)}`);
 });
 
 export default router;

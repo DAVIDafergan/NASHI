@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 // שינוי הנתיב ל-routes.js כדי להתאים למבנה שלך
 import apiRoutes from './server/routes.js'; 
+import shareRoutes from './server/share.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -63,6 +64,9 @@ mongoose.connect(MONGO_URI)
 // Routes - API
 // כל הראוטים כולל הודעות הנהלה, הגרלות ומשתמשים מנוהלים בתוך apiRoutes
 app.use('/api', apiRoutes);
+
+// Link previews for WhatsApp/Facebook (must come before the SPA fallback)
+app.use(shareRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
