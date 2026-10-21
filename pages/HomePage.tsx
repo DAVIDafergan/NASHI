@@ -1,4 +1,5 @@
 import { placeLabel } from '../utils/share';
+import RichText from '../components/RichText';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Bell, Star, Music, Palette, Activity, Briefcase, Mic, Clock, Sparkles,
@@ -144,7 +145,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const pickNear = <T,>(list: T[]): T[] => {
     if (!place.region) return list;
     const near = list.filter((i: any) => isNear(i, place.region));
-    return near.length ? near : list;
+    if (!near.length) return list;
+    // her own city first, then the rest of the region (stable: keeps the original order inside each group)
+    const mine = near.filter((i: any) => (i.scope || 'local') === 'local' && i.city === place.city);
+    return mine.length ? [...mine, ...near.filter(i => !mine.includes(i))] : near;
   };
   const areaLabel = place.city ? `באזור שלך · ${regionName(place.region) || place.city}` : 'מכל הארץ';
   const shownClasses = useMemo(() => pickNear(classes as any[]), [classes, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -557,17 +561,17 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         {/* ============ ANNOUNCEMENTS ============ */}
         {announcements.length > 0 && (
           <section className="px-5 md:px-0">
-            <ScrollReveal animation="scale-in" className="card-soft p-6 md:p-10 grid md:grid-cols-[220px_1fr] gap-6 md:gap-10">
-              <div>
+            <ScrollReveal animation="scale-in" className="card-soft p-5 sm:p-6 md:p-10 grid md:grid-cols-[220px_minmax(0,1fr)] gap-5 md:gap-10">
+              <div className="min-w-0">
                 <span className="relative inline-flex h-3 w-3"><span className="absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-60 animate-ping" /><span className="relative inline-flex h-3 w-3 rounded-full bg-rose-500" /></span>
                 <h2 className="mt-3 font-display text-3xl text-ink">לוח מודעות</h2>
                 <p className="mt-1 text-sm text-slate-500">עדכונים מהנהלת הקהילה</p>
               </div>
-              <div className="divide-y divide-rose-100">
+              <div className="min-w-0 divide-y divide-rose-100">
                 {announcements.slice(0, 3).map((ann: any, i: number) => (
-                  <ScrollReveal key={ann._id || i} delay={i * 120} className="py-4 first:pt-0 last:pb-0">
-                    <h3 className="text-lg text-ink flex items-center gap-2"><Megaphone size={16} className="text-rose-400 shrink-0" strokeWidth={1.6} /> {ann.title}</h3>
-                    <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">{ann.content}</p>
+                  <ScrollReveal key={ann._id || i} delay={i * 120} className="min-w-0 py-4 first:pt-0 last:pb-0">
+                    <h3 className="flex items-start gap-2 text-lg leading-snug text-ink break-words [overflow-wrap:anywhere]"><Megaphone size={16} className="mt-1 shrink-0 text-rose-400" strokeWidth={1.6} /> <span className="min-w-0">{ann.title}</span></h3>
+                    {ann.content && <RichText text={String(ann.content)} clampLines={5} className="mt-1.5 text-[14.5px] leading-relaxed text-slate-600" />}
                   </ScrollReveal>
                 ))}
               </div>

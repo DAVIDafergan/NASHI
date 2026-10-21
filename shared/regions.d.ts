@@ -1,6 +1,7 @@
 export type RegionId = 'north' | 'haifa' | 'sharon' | 'center' | 'jerusalem' | 'shomron' | 'south';
 export declare const REGIONS: { id: RegionId; name: string }[];
 export declare const CITIES: Record<RegionId, string[]>;
+export declare const MAIN_CITIES: Record<RegionId, string[]>;
 export declare const DEFAULT_CITY: string;
 export declare const DEFAULT_REGION: RegionId;
 export declare const SCOPES: { id: 'local' | 'national' | 'online'; name: string }[];

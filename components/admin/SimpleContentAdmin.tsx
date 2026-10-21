@@ -146,8 +146,8 @@ export const AnnouncementsAdmin: React.FC<{ items: any[]; createTick: number; re
           {items.map(a => (
             <article key={a._id} className="flex flex-col rounded-[1.5rem] border border-rose-100 bg-white p-5 shadow-soft">
               <div className="mb-2 flex items-center gap-2 text-rose-500"><Bell size={17} /><span className="text-xs text-slate-400">{fmtDate(a.createdAt)}</span></div>
-              <h4 className="font-strong text-[16px] text-ink">{a.title}</h4>
-              <p className="mt-1 line-clamp-4 flex-1 whitespace-pre-line text-sm leading-relaxed text-slate-600">{a.content}</p>
+              <h4 className="font-strong text-[16px] text-ink break-words">{a.title}</h4>
+              <p className="mt-1 line-clamp-4 flex-1 whitespace-pre-line break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-slate-600">{a.content}</p>
               <div className="mt-3 flex justify-end gap-1.5 border-t border-rose-50 pt-3">
                 <IconButton onClick={() => { setForm({ ...blank, ...a }); setOpen(true); }} aria-label="עריכה"><Pencil size={15} /></IconButton>
                 <DeleteButton name={a.title} onConfirm={async () => { await api.deleteAnnouncement(a._id); reload(); }} />
@@ -160,7 +160,7 @@ export const AnnouncementsAdmin: React.FC<{ items: any[]; createTick: number; re
         <form id="ann-form" onSubmit={save} className="space-y-4">
           <FormSection title="ההודעה" icon={<Bell size={17} />}>
             <Field label="כותרת" required><input required className={inputCls} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Field>
-            <Field label="תוכן" required><textarea required rows={6} className={`${inputCls} resize-y`} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} /></Field>
+            <Field label="תוכן" required hint="אפשר לכתוב כמו בוואטסאפ: *טקסט מודגש*, קישורים ומספרי טלפון הופכים ללחיצים. הודעה ארוכה תוצג עם 'קראי עוד'."><textarea required rows={6} className={`${inputCls} resize-y`} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} /></Field>
           </FormSection>
         </form>
       </Sheet>

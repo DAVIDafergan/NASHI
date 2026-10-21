@@ -8,7 +8,14 @@ import { regionOfCity } from '../shared/regions';
 const KEY = 'nashi-city';
 const EVT = 'nashi-place';
 
-const readGuest = (): string => { try { return localStorage.getItem(KEY) || ''; } catch { return ''; } };
+const readGuest = (): string => {
+  try {
+    const c = localStorage.getItem(KEY);
+    if (c) return c;
+    // a logged-in member's city (kept by the app with the user) when a page doesn't pass the user in
+    return JSON.parse(localStorage.getItem('user') || 'null')?.city || '';
+  } catch { return ''; }
+};
 
 export function setGuestCity(city: string) {
   try { if (city) localStorage.setItem(KEY, city); else localStorage.removeItem(KEY); } catch { /* ignore */ }
