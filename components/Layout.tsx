@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { shareLink } from '../utils/share';
 import InstallPrompt from './InstallPrompt';
+import SupplierBanner from './SupplierBanner';
 import { PlaceChip, CityPrompt, AutoLocate } from './PlaceControl';
 import { User } from '../types';
 
@@ -23,8 +24,11 @@ const MORE_LINKS = [
   { label: 'נשות השבוע', path: '/personality-archive', hint: 'ראיונות מעוררי השראה' },
   { label: 'הגרלות', path: '/lottery', hint: 'פרסים לחברות הקהילה' },
   { label: 'מנהלות תרבות', path: '/become-manager', hint: 'להוביל את הקהילה באזור שלך' },
+  { label: 'לספקים', path: '/suppliers/join', hint: 'הצטרפות למאגר הספקים של נשי' },
   { label: 'צור קשר', path: '/contact', hint: 'נשמח לשמוע ממך' },
 ];
+// only for culture managers (regionAdmin) and the main admin
+const MANAGER_LINK = { label: 'מאתרות ספקים', path: '/suppliers', hint: 'מאגר ספקים לאירועים — למנהלות בלבד' };
 
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, searchTerm, setSearchTerm, onUpdateUser }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -38,6 +42,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
   const [showTermsModal, setShowTermsModal] = useState(false); // מצב למודל תקנון
   const navigate = useNavigate();
   const location = useLocation();
+  const isManager = !!user && (user.isAdmin || (user as any).role === 'regionAdmin');
+  const moreLinks = isManager ? [MANAGER_LINK, ...MORE_LINKS] : MORE_LINKS;
   const navRef = useRef<HTMLElement>(null);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
 
@@ -120,7 +126,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
     navigate('/');
   };
 
-  const isActive = (path: string) => (path === '/' ? location.pathname === '/' : location.pathname.startsWith(path));
+  const isActive = (path: string) => (path === '/' ? location.pathname === '/' : path === '/suppliers' ? location.pathname === '/suppliers' : location.pathname.startsWith(path));
 
   // sliding pill behind the active desktop link
   useLayoutEffect(() => {
@@ -225,8 +231,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
             <div className="relative">
               <button
                 onClick={() => setMoreOpen(o => !o)}
-                data-active={MORE_LINKS.some(l => isActive(l.path))}
-                className={`relative z-10 flex items-center gap-1 px-4 py-2 rounded-full text-[14px] transition-colors ${MORE_LINKS.some(l => isActive(l.path)) ? 'text-white font-strong' : 'text-slate-600 hover:text-rose-700'}`}
+                data-active={moreLinks.some(l => isActive(l.path))}
+                className={`relative z-10 flex items-center gap-1 px-4 py-2 rounded-full text-[14px] transition-colors ${moreLinks.some(l => isActive(l.path)) ? 'text-white font-strong' : 'text-slate-600 hover:text-rose-700'}`}
                 aria-expanded={moreOpen}
               >
                 עוד <ChevronDown size={14} className={`transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
@@ -235,7 +241,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                 <>
                   <div className="fixed inset-0 z-[55]" onClick={() => setMoreOpen(false)} />
                   <div className="absolute left-1/2 top-full z-[60] mt-3 w-72 -translate-x-1/2 rounded-[1.6rem] border border-rose-100 bg-white p-2 shadow-lift animate-fade-in-up">
-                    {MORE_LINKS.map(l => (
+                    {moreLinks.map(l => (
                       <Link key={l.path} to={l.path} className="group flex items-center justify-between rounded-2xl px-4 py-3 hover:bg-rose-50">
                         <span>
                           <span className="block font-strong text-[15px] text-ink group-hover:text-rose-700">{l.label}</span>
@@ -324,7 +330,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
           </div>
           <div className="relative px-6"><PlaceChip user={user} onUpdateUser={onUpdateUser} className="w-full justify-center !h-12 !text-[15px]" /></div>
           <nav className="relative flex-1 overflow-y-auto px-6 pt-2">
-            {[...primaryLinks, ...MORE_LINKS].map((l, i) => (
+            {[...primaryLinks, ...moreLinks].map((l, i) => (
               <Link key={l.path} to={l.path} className="group flex items-center justify-between border-b border-rose-100/80 py-4 animate-fade-in-up" style={{ animationDelay: `${i * 45}ms` }}>
                 <span className={`font-display text-[2rem] leading-none ${isActive(l.path) ? 'text-rose-700' : 'text-ink'}`}>{l.label}</span>
                 <ArrowLeft size={18} className="text-rose-300" />
@@ -377,6 +383,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
         <div key={location.pathname} className="w-full max-w-7xl mx-auto px-4 md:px-8 py-4 animate-page-in">
           {children}
         </div>
+        <SupplierBanner />
       </main>
 
       <InstallPrompt />
@@ -429,6 +436,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
             <p className="eyebrow mb-1">מידע</p>
             <Link to="/contact" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">צור קשר</Link>
             <Link to="/become-manager" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">רוצה להיות מנהלת תרבות?</Link>
+            <Link to="/suppliers/join" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">ספקים? הצטרפו למאגר</Link>
             <button onClick={() => setShowTermsModal(true)} className="text-slate-600 hover:text-rose-700 transition-colors w-fit text-right">תקנון ותנאי שימוש</button>
           </div>
         </div>

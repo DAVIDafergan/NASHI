@@ -34,9 +34,15 @@ interface EventItem {
   hebrewDate?: string;
   ticketLink?: string;
   logo?: string;
+  // imported automatically by the events agent
+  source?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  soldOut?: boolean;
+  salesClosed?: boolean;
 }
 
-const API_URL = 'https://nashi-production.up.railway.app/api';
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
 
 const EventsPage = () => {
   const location = useLocation();
@@ -255,6 +261,7 @@ const EventsPage = () => {
                       time={formatEventTime(event)}
                       location={placeLabel(event as any)}
                       category={event.category}
+                      statusLabel={!isPast && event.soldOut ? 'אזלו הכרטיסים' : !isPast && event.salesClosed ? 'המכירה נסגרה' : undefined}
                       isPast={isPast}
                       ctaLabel={isPast ? 'לסיכום' : 'לפרטים והרשמה'}
                       onClick={() => setSelectedEvent(event)}
@@ -316,15 +323,24 @@ const EventsPage = () => {
                   <p className="-mt-3 mb-5 flex items-center gap-1.5 text-[13px] text-sage-700"><Sparkles size={14} /> מחיר מוקדם בתוקף לזמן מוגבל</p>
                 )}
 
-                {selectedEvent.ticketLink && (
+                {selectedEvent.ticketLink && (selectedEvent.source && (selectedEvent.soldOut || selectedEvent.salesClosed) ? (
+                  <div className="mb-5 flex items-center justify-center gap-2 rounded-full bg-slate-100 py-4 text-base text-slate-500">
+                    <Ticket size={18} /> {selectedEvent.soldOut ? 'אזלו הכרטיסים' : 'המכירה נסגרה'}
+                  </div>
+                ) : (
                   <a
                     href={selectedEvent.ticketLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-primary w-full !py-4 !text-base mb-5"
                   >
-                    <ExternalLink size={18} /> שרייני מקום עכשיו
+                    <ExternalLink size={18} /> {selectedEvent.source ? 'לרכישת כרטיסים' : 'שרייני מקום עכשיו'}
                   </a>
+                ))}
+                {selectedEvent.source && (
+                  <p className="-mt-3 mb-5 text-center text-[12.5px] text-slate-400">
+                    יובא אוטומטית מ<a href={selectedEvent.sourceUrl || selectedEvent.ticketLink} target="_blank" rel="noopener noreferrer" className="text-rose-700 underline underline-offset-2">{selectedEvent.sourceName || 'אתר המכירה'}</a> · הרכישה והפרטים המחייבים באתר המכירה
+                  </p>
                 )}
 
                 <div className="space-y-3 mb-6">

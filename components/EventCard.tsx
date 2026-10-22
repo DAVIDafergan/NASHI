@@ -9,6 +9,8 @@ interface EventCardProps {
   time?: string;
   location: string;
   category?: string;
+  /** e.g. "אזלו הכרטיסים" — shown instead of the category chip */
+  statusLabel?: string;
   ctaLabel?: string;
   onClick?: () => void;
   isPast?: boolean;
@@ -28,6 +30,7 @@ const EventCard: React.FC<EventCardProps> = ({
   time,
   location,
   category,
+  statusLabel,
   ctaLabel = 'לפרטים והרשמה',
   onClick,
   isPast = false,
@@ -51,6 +54,10 @@ const EventCard: React.FC<EventCardProps> = ({
         {isPast ? (
           <span className="absolute top-3 right-3 inline-flex items-center gap-1.5 bg-white/90 text-slate-600 px-3 py-1.5 rounded-full text-[11px] font-semibold shadow-soft">
             <CheckCircle2 size={13} /> האירוע הסתיים
+          </span>
+        ) : statusLabel ? (
+          <span className="absolute top-3 right-3 bg-ink/85 text-white px-3 py-1 rounded-full text-[11px] font-semibold shadow-soft">
+            {statusLabel}
           </span>
         ) : category && (
           <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide text-rose-700 shadow-soft">

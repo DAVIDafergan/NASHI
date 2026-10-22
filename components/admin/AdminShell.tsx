@@ -4,14 +4,14 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, CheckCircle2, PlayCircle, Mail, Calendar, GraduationCap, HeartHandshake, Gift, Sparkles,
   Quote, Image as ImageIcon, Megaphone, Bell, Users, MessageSquare, Ticket, Send, Settings, Menu, X, Plus,
-  Search, MapPin, ArrowRight, ExternalLink,
+  Search, MapPin, ArrowRight, ExternalLink, Bot, Store,
 } from 'lucide-react';
 import { REGIONS } from '../../shared/regions';
 
 export type AdminTab =
   | 'dashboard' | 'approvals' | 'stories' | 'messages'
   | 'events' | 'classes' | 'community' | 'lotteries' | 'personality' | 'inspirations' | 'flyers' | 'ads' | 'announcements'
-  | 'users' | 'forum' | 'tickets' | 'broadcast' | 'settings';
+  | 'users' | 'forum' | 'tickets' | 'broadcast' | 'settings' | 'importer' | 'suppliers';
 
 export type NavItem = { id: AdminTab; label: string; icon: React.ReactNode; hint: string };
 
@@ -35,8 +35,10 @@ export const NAV: { group: string; items: NavItem[] }[] = [
       { id: 'flyers', label: 'פליירים', icon: <ImageIcon size={18} />, hint: 'קרוסלת הפליירים בדף הבית' },
       { id: 'ads', label: 'פרסומות', icon: <Megaphone size={18} />, hint: 'באנרים וסרטונים בדף הבית' },
       { id: 'announcements', label: 'הודעות הנהלה', icon: <Bell size={18} />, hint: 'לוח המודעות בדף הבית' },
+      { id: 'importer', label: 'סוכן אירועים', icon: <Bot size={18} />, hint: 'ייבוא אוטומטי של אירועים לנשים מאתרי כרטיסים' },
     ],
   },
+  { group: 'ספקים', items: [{ id: 'suppliers', label: 'מאגר ספקים', icon: <Store size={18} />, hint: 'ספקים בתשלום חודשי, סטטוס תשלום ואישורים' }] },
   {
     group: 'קהילה', items: [
       { id: 'users', label: 'משתמשות', icon: <Users size={18} />, hint: 'כל הנרשמות, נקודות וחברות במעגל' },

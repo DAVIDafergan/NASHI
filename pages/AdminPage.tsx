@@ -19,6 +19,8 @@ import PersonalityAdmin from '../components/admin/PersonalityAdmin';
 import { ToastHost, AdminScopeContext, regionOfItem } from '../components/admin/ui';
 import RegionDashboard from '../components/admin/RegionDashboard';
 import ManagerRequestsAdmin from '../components/admin/ManagerRequestsAdmin';
+import ImporterAdmin from '../components/admin/ImporterAdmin';
+import SuppliersAdmin from '../components/admin/SuppliersAdmin';
 import { regionName } from '../shared/regions';
 
 const TABS = NAV.flatMap(g => g.items.map(i => i.id));
@@ -27,7 +29,7 @@ const PRIMARY: Partial<Record<AdminTab, string>> = {
   inspirations: 'השראה חדשה', ads: 'פרסום חדש', announcements: 'הודעה חדשה',
 };
 const WITH_REGION: AdminTab[] = ['events', 'classes', 'community', 'lotteries', 'users'];
-const WITH_SEARCH: AdminTab[] = ['events', 'classes', 'community', 'lotteries', 'users', 'messages', 'forum', 'inspirations'];
+const WITH_SEARCH: AdminTab[] = ['events', 'classes', 'community', 'lotteries', 'users', 'messages', 'forum', 'inspirations', 'suppliers'];
 
 const arr = (x: any) => (Array.isArray(x) ? x : []);
 const REGION_TABS: AdminTab[] = ['dashboard', 'events', 'classes', 'community', 'lotteries', 'tickets'];
@@ -175,6 +177,8 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
         {active === 'tickets' && <TicketsAdmin tickets={tickets} events={events} reload={reload} />}
         {active === 'broadcast' && <BroadcastAdmin recipients={users.length} />}
         {active === 'settings' && <SettingsAdmin settings={settings} setSettings={setSettings} />}
+        {active === 'importer' && <ImporterAdmin />}
+        {active === 'suppliers' && <SuppliersAdmin search={search} />}
         </AdminScopeContext.Provider>
       </AdminShell>
       <ToastHost />

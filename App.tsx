@@ -23,6 +23,9 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { setGuestCity } from './hooks/useMyPlace';
 import ShabbatGate from './components/ShabbatGate';
 import BecomeManagerPage from './pages/BecomeManagerPage'; // ייבוא מגן השגיאות
+import SuppliersDirectoryPage from './pages/SuppliersDirectoryPage';
+import SupplierSignupPage from './pages/SupplierSignupPage';
+import SupplierEditPage from './pages/SupplierEditPage';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -250,6 +253,10 @@ const App: React.FC = () => {
             <Route path="/profile" element={user ? <ProfilePage user={user} events={events} onUpdateUser={handleUpdateUser} onLogout={handleLogout} /> : <Navigate to="/" replace />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/become-manager" element={<BecomeManagerPage user={user} onOpenLogin={handleOpenAuth} />} />
+            {/* מאגר ספקים: מאתרות ספקים (מנהלות בלבד), הצטרפות ספקים בתשלום, עריכה בקישור אישי */}
+            <Route path="/suppliers" element={<SuppliersDirectoryPage user={user} onOpenLogin={handleOpenAuth} />} />
+            <Route path="/suppliers/join" element={<SupplierSignupPage />} />
+            <Route path="/suppliers/edit" element={<SupplierEditPage />} />
             
             <Route 
               path="/admin" 
