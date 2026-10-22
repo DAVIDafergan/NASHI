@@ -1,0 +1,21 @@
+{
+  "event": {
+    "title": "המחזמר \"אמא\"",
+    "location": "בנייני האומה",
+    "location_map": "a:6:{s:5:\"title\";s:23:\"בנייני האומה\";s:10:\"cleanTitle\";s:35:\"שדרות שזר 1, ירושלים\";s:3:\"lat\";d:32.08;s:3:\"lng\";d:34.83;s:4:\"zoom\";i:16;s:4:\"city\";s:14:\"ירושלים\";}",
+    "time_google_openstart": "20270110T193000",
+    "time_start": "0",
+    "description": "מחזמר לנשים ולנערות בלבד. הכניסה חופשית בהרשמה מראש.",
+    "active": "1",
+    "closed": "0",
+    "issoldout": "0",
+    "is_all_free": "1"
+  },
+  "tickets": [
+    {
+      "title": "כניסה חופשית",
+      "price": "0",
+      "active": "1"
+    }
+  ]
+}

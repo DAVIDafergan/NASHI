@@ -1,0 +1,20 @@
+{
+  "event": {
+    "title": "הצגה לנשים - \"בית אבא\"",
+    "location": "מתנ\"ס נווה שמיר",
+    "location_map": "a:5:{s:5:\"title\";s:27:\"מתנ\"ס נווה שמיר\";s:10:\"cleanTitle\";s:34:\"נהר הירדן 7, בית שמש\";s:3:\"lat\";d:32.08;s:3:\"lng\";d:34.83;s:4:\"zoom\";i:16;}",
+    "time_start": "1796148000",
+    "description": "הצגה לנשים בלבד",
+    "active": "1",
+    "closed": "0",
+    "issoldout": "1",
+    "is_all_free": "0"
+  },
+  "tickets": [
+    {
+      "title": "כרטיס",
+      "price": "70",
+      "active": "0"
+    }
+  ]
+}

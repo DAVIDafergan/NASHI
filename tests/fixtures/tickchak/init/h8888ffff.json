@@ -1,0 +1,20 @@
+{
+  "event": {
+    "title": "סדנת שזירת חלות לנשים",
+    "location": "בית הכנסת הגדול",
+    "location_map": "a:5:{s:5:\"title\";s:28:\"בית הכנסת הגדול\";s:10:\"cleanTitle\";s:34:\"אבני נזר 4, קרית ספר\";s:3:\"lat\";d:32.08;s:3:\"lng\";d:34.83;s:4:\"zoom\";i:16;}",
+    "time_start": "1794502800",
+    "description": "סדנה לנשים בלבד לקראת שבת",
+    "active": "1",
+    "closed": "0",
+    "issoldout": "0",
+    "is_all_free": "0"
+  },
+  "tickets": [
+    {
+      "title": "השתתפות",
+      "price": "50",
+      "active": "1"
+    }
+  ]
+}

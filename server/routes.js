@@ -15,7 +15,8 @@ import {
     Story, // <--- תוספת: מודל הסטוריז
     ManagerApplication,
     ZodiacWheelPrize, ZodiacWheelSpin,
-    Flyer // פליירים לקרוסלת דף הבית
+    Flyer, // פליירים לקרוסלת דף הבית
+    ImportBlock // אירועים מיובאים שנמחקו (שהסוכן לא יחזיר)
 } from './models.js';
 
 const router = express.Router();
@@ -371,7 +372,8 @@ router.delete('/users/:id', authenticate, isAdmin, async (req, res) => {
 // ================= 3. אירועים (EVENTS) =================
 
 router.get('/events', async (req, res) => {
-    try { res.json(await Event.find().populate('attendees', 'name avatar')); } 
+    // hidden = imported events a manager hid, or that disappeared from the source / already happened
+    try { res.json(await Event.find({ hidden: { $ne: true } }).populate('attendees', 'name avatar')); } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -379,18 +381,34 @@ router.post('/events', authenticate, canManage(Event), async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
+        ['source', 'sourceId', 'importedAt', 'lastSeenAt', 'hidden', 'hiddenReason'].forEach(k => delete data[k]); // manual events are never "imported"
         res.json(await new Event(data).save());
     } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// fields that only the events agent writes
+const IMPORT_FIELDS = ['source', 'sourceId', 'sourceName', 'sourceUrl', 'sourceImageUrl', 'importedAt', 'lastSeenAt', 'importEdited', 'hidden', 'hiddenReason'];
+
 router.put('/events/:id', authenticate, canManage(Event), async (req, res) => {
-    try { res.json(await Event.findByIdAndUpdate(req.params.id, req.body, { new: true })); } 
+    try {
+        const update = { ...req.body };
+        IMPORT_FIELDS.forEach(k => delete update[k]);
+        const current = await Event.findById(req.params.id).select('source');
+        // a manager edited an imported event: the agent keeps her text from now on and only refreshes status/price/time
+        if (current?.source) update.importEdited = true;
+        res.json(await Event.findByIdAndUpdate(req.params.id, update, { new: true }));
+    } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.delete('/events/:id', authenticate, canManage(Event), async (req, res) => {
-    try { await Event.findByIdAndDelete(req.params.id); res.json({ success: true }); } 
+    try {
+        const ev = await Event.findById(req.params.id).select('source sourceId title');
+        // deleting an imported event also stops the agent from importing it again
+        if (ev?.source) await ImportBlock.updateOne({ source: ev.source, sourceId: ev.sourceId }, { $setOnInsert: { title: ev.title, blockedBy: req.user.id } }, { upsert: true });
+        await Event.findByIdAndDelete(req.params.id); res.json({ success: true });
+    } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 

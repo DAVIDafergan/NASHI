@@ -1,0 +1,1 @@
+/* tickchak landing */ window.TC = window.TC || {}; TC.landing = {event_hash:"h0000hhhh",lang:"he",currency:"ILS",theme:"default"};

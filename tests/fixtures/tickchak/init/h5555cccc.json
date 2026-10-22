@@ -1,0 +1,20 @@
+{
+  "event": {
+    "title": "ערב נשים - שירה ותפילה",
+    "location": "אולם הגן הקסום",
+    "location_map": "a:5:{s:5:\"title\";s:26:\"אולם הגן הקסום\";s:10:\"cleanTitle\";s:10:\"ישראל\";s:3:\"lat\";d:32.08;s:3:\"lng\";d:34.83;s:4:\"zoom\";i:16;}",
+    "time_start": "1795716000",
+    "description": "לנשים בלבד",
+    "active": "1",
+    "closed": "0",
+    "issoldout": "0",
+    "is_all_free": "0"
+  },
+  "tickets": [
+    {
+      "title": "כרטיס",
+      "price": "40",
+      "active": "1"
+    }
+  ]
+}

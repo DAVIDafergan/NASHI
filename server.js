@@ -7,6 +7,9 @@ import apiRoutes from './server/routes.js';
 import shareRoutes from './server/share.js';
 import { mediaRouter, mediaRequests, mediaResponses } from './server/media.js';
 import { calendarRouter, restGuard } from './server/calendar.js';
+import importerRoutes from './server/importerRoutes.js';
+import { createSuppliersRouter, startSupplierJobs } from './server/suppliers.js';
+import { startImporter } from './server/importer/index.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -57,7 +60,11 @@ app.use((req, res, next) => {
 
 // Database Connection
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+    startImporter();       // סוכן האירועים (only when IMPORTER_ENABLED=1)
+    startSupplierJobs();   // expires lapsed supplier subscriptions
+  })
   .catch((err) => {
     console.error('❌ MongoDB Connection Error:', err);
     process.exit(1);
@@ -72,6 +79,8 @@ app.use('/api', restGuard);
 app.use('/api', mediaRouter);
 app.use('/api', mediaRequests);
 app.use('/api', mediaResponses);
+app.use('/api', importerRoutes);            // admin: events agent
+app.use('/api', createSuppliersRouter());   // supplier directory + paid signup
 app.use('/api', apiRoutes);
 
 // Link previews for WhatsApp/Facebook (must come before the SPA fallback)

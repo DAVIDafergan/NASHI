@@ -1,0 +1,30 @@
+{
+  "status": "ok",
+  "total": 2,
+  "events": [
+    {
+      "eid": "eGen5Xx9g",
+      "title": "הצגת חנוכה לכל המשפחה",
+      "description": "הצגה לכל המשפחה, אבא אמא וילדים",
+      "location": "חיפה",
+      "fb_img": "https://static.tickchak.co.il/uploads/g.jpg",
+      "time_start": 1797433200,
+      "time_end": 0,
+      "link": "https://tickchak.co.il/eGen5Xx9g",
+      "in_stock": 1,
+      "cat_id": 7
+    },
+    {
+      "eid": "eWmn4Kq8z",
+      "title": "המחזמר \"אמא\" - לנשים ולנערות בלבד",
+      "description": "הפקת ענק של בנות הסמינר",
+      "location": "בנייני האומה, ירושלים",
+      "fb_img": "https://static.tickchak.co.il/uploads/events/eWmn4Kq8z/og.png",
+      "time_start": 1799602200,
+      "time_end": 0,
+      "link": "https://tickchak.co.il/eWmn4Kq8z",
+      "in_stock": 1,
+      "cat_id": 7
+    }
+  ]
+}

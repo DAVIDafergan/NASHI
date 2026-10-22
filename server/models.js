@@ -116,10 +116,59 @@ const EventSchema = new mongoose.Schema({
   isHero: { type: Boolean, default: false },
   registrationLink: { type: String },
   attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  // --- imported automatically by the events agent (server/importer). Manual events have no `source`. ---
+  source: { type: String },          // adapter id, e.g. 'tickchak'
+  sourceId: { type: String },        // the event id on the source site
+  sourceName: { type: String },      // shown as "יובא מ…"
+  sourceUrl: { type: String },       // event page on the source (also the ticket link)
+  sourceImageUrl: { type: String },  // flyer URL on the source (we store our own copy in `image`)
+  importedAt: { type: Date },
+  lastSeenAt: { type: Date },
+  importEdited: { type: Boolean },   // a manager edited it on NASHI: the agent keeps her text and only refreshes status
+  startAt: { type: Date },           // exact start instant (date + time, Israel time)
+  soldOut: { type: Boolean, default: false },
+  salesClosed: { type: Boolean, default: false },
+  // hidden events are not served by GET /events. reason: 'admin' (a manager hid it), 'gone' (removed from the source), 'past'
+  hidden: { type: Boolean, default: false },
+  hiddenReason: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
+EventSchema.index({ source: 1, sourceId: 1 }, { unique: true, partialFilterExpression: { source: { $type: 'string' } } });
 EventSchema.plugin(locationPlugin);
 const Event = mongoose.model('Event', EventSchema);
+
+// One run of the events agent — shown in the admin "סוכן אירועים" panel.
+const ImportRunSchema = new mongoose.Schema({
+  trigger: { type: String, enum: ['schedule', 'manual', 'test'], default: 'schedule' },
+  triggeredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  status: { type: String, enum: ['running', 'done', 'failed'], default: 'running' },
+  startedAt: { type: Date, default: Date.now },
+  finishedAt: { type: Date },
+  counts: {
+    discovered: { type: Number, default: 0 },
+    created: { type: Number, default: 0 },
+    updated: { type: Number, default: 0 },
+    unchanged: { type: Number, default: 0 },
+    skipped: { type: Number, default: 0 },
+    hidden: { type: Number, default: 0 },
+    errors: { type: Number, default: 0 },
+  },
+  sources: [{ _id: false, id: String, name: String, discovered: Number, created: Number, updated: Number, skipped: Number, errors: Number, error: String }],
+  skipped: [{ _id: false, source: String, sourceId: String, title: String, url: String, reason: String }],
+  errors: [{ type: String }],
+});
+const ImportRun = mongoose.model('ImportRun', ImportRunSchema);
+
+// An imported event a manager deleted — the agent must not bring it back.
+const ImportBlockSchema = new mongoose.Schema({
+  source: { type: String, required: true },
+  sourceId: { type: String, required: true },
+  title: { type: String },
+  blockedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdAt: { type: Date, default: Date.now },
+});
+ImportBlockSchema.index({ source: 1, sourceId: 1 }, { unique: true });
+const ImportBlock = mongoose.model('ImportBlock', ImportBlockSchema);
 
 const ClassSchema = new mongoose.Schema({
   ...locationFields,
@@ -364,7 +413,53 @@ const ManagerApplicationSchema = new mongoose.Schema({
 });
 const ManagerApplication = mongoose.model('ManagerApplication', ManagerApplicationSchema);
 
-export { 
+// ספקים — paid listing in the directory that only culture managers can browse.
+// Visible in the directory only while status === 'active' and currentPeriodEnd is in the future.
+const SupplierSchema = new mongoose.Schema({
+  businessName: { type: String, required: true },
+  contactName: { type: String, required: true },
+  phone: { type: String, required: true },
+  whatsapp: { type: String },
+  email: { type: String, required: true, lowercase: true, trim: true },
+  website: { type: String },
+  instagram: { type: String },
+  facebook: { type: String },
+  // service area: whole regions and/or specific localities; nationwide = every region
+  nationwide: { type: Boolean, default: false },
+  regions: { type: [String], default: [] },
+  cities: { type: [String], default: [] },
+  servedRegions: { type: [String], default: [], index: true }, // derived: regions + regions of the cities (all when nationwide)
+  categories: { type: [String], default: [] }, // ids from shared/suppliers.js
+  styles: { type: [String], default: [] },
+  description: { type: String, default: '' },
+  priceRange: { type: String },
+  priceNote: { type: String },
+  logo: { type: String },                       // data URL (served via /api/media)
+  gallery: { type: [String], default: [] },     // up to 6 data URLs
+  status: { type: String, enum: ['pending_payment', 'active', 'expired', 'suspended'], default: 'pending_payment' },
+  statusNote: { type: String },
+  // subscription (monthly)
+  subscription: {
+    provider: { type: String, default: 'manual' },
+    customerId: { type: String },
+    subscriptionId: { type: String },
+    currentPeriodEnd: { type: Date },
+    lastPaymentAt: { type: Date },
+    lastPaymentAmount: { type: Number },
+    cancelAtPeriodEnd: { type: Boolean, default: false },
+  },
+  payments: [{ _id: false, at: Date, amount: Number, provider: String, reference: String, by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, note: String }],
+  editTokenHash: { type: String, index: true }, // sha256 of the magic-link token (the token itself is never stored)
+  editTokenAt: { type: Date },
+  views: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+SupplierSchema.index({ status: 1, 'subscription.currentPeriodEnd': 1 });
+const Supplier = mongoose.model('Supplier', SupplierSchema);
+
+export {
+  Supplier, ImportRun, ImportBlock,
   ManagerApplication,
   Flyer,
   User, Event, Class, Lottery, Settings, GiftCode, 

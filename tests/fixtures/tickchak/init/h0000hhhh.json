@@ -1,0 +1,20 @@
+{
+  "event": {
+    "title": "ערב נשים בתל אביב",
+    "location": "גן אירועים, תל אביב-יפו",
+    "location_map": "a:5:{s:5:\"title\";s:19:\"גן אירועים\";s:10:\"cleanTitle\";s:36:\"הירקון 1, תל אביב-יפו\";s:3:\"lat\";d:32.08;s:3:\"lng\";d:34.83;s:4:\"zoom\";i:16;}",
+    "time_start": "1796065200",
+    "description": "ערב כיף עם מוזיקה וריקודים",
+    "active": "1",
+    "closed": "0",
+    "issoldout": "0",
+    "is_all_free": "0"
+  },
+  "tickets": [
+    {
+      "title": "כרטיס",
+      "price": "120",
+      "active": "1"
+    }
+  ]
+}
