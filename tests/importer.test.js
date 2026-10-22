@@ -297,7 +297,7 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     assert.match(reasons.eLiv4Ww8x, /event_hash/);
     assert.match(reasons.eSec6Yy0h, /דתי\/חרדי/);
     assert.equal(run.counts.created, 2);
-    assert.ok(run.errors.some(e => /eGen5Xx9g/.test(e)), 'a broken event page is an error, not a crash');
+    assert.ok(run.errorMessages.some(e => /eGen5Xx9g/.test(e)), 'a broken event page is an error, not a crash');
     assert.equal((await Event.findById(manual._id).lean()).title, 'אירוע ידני');
   });
 

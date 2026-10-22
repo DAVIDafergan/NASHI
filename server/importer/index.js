@@ -40,7 +40,7 @@ export function runImporterNow({ trigger = 'manual', triggeredBy, adapters, http
 
 export async function startImporter() {
   // a run that was cut by a restart is not "running" anymore
-  try { await ImportRun.updateMany({ status: 'running' }, { $set: { status: 'failed', finishedAt: new Date() }, $push: { errors: 'הריצה נקטעה (השרת הופעל מחדש)' } }); } catch { /* db not ready yet */ }
+  try { await ImportRun.updateMany({ status: 'running' }, { $set: { status: 'failed', finishedAt: new Date() }, $push: { errorMessages: 'הריצה נקטעה (השרת הופעל מחדש)' } }); } catch { /* db not ready yet */ }
   const { enabled, intervalHours } = importerConfig();
   if (!enabled) { console.log('ℹ️  events importer schedule is off (IMPORTER_ENABLED != 1)'); return; }
   const every = intervalHours * 3600 * 1000;

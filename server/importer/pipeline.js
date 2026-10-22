@@ -158,12 +158,12 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
     const past = await Event.updateMany({ source: { $type: 'string' }, hidden: { $ne: true }, $or: [{ startAt: { $lt: cutoff } }, { startAt: { $exists: false }, date: { $lt: new Date(cutoff.getTime() - 864e5) } }] }, { $set: { hidden: true, hiddenReason: 'past' } });
     counts.hidden += past.modifiedCount || 0;
 
-    Object.assign(run, { status: 'done', finishedAt: now(), counts, sources, skipped, errors });
+    Object.assign(run, { status: 'done', finishedAt: now(), counts, sources, skipped, errorMessages: errors });
     await run.save();
     log(`[importer] done: ${JSON.stringify(counts)}`);
   } catch (e) {
     fail(e.message);
-    Object.assign(run, { status: 'failed', finishedAt: now(), counts, sources, skipped, errors });
+    Object.assign(run, { status: 'failed', finishedAt: now(), counts, sources, skipped, errorMessages: errors });
     await run.save().catch(() => {});
     log(`[importer] failed: ${e.message}`);
   }
