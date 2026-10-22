@@ -219,7 +219,7 @@ export const PaymentStep: React.FC<{ price: number | null; providerLabel?: strin
         <div aria-hidden="true" className="pointer-events-none absolute -left-10 -top-16 h-56 w-56 rounded-full bg-rose-500/30 blur-3xl" />
         <p className="font-accent text-[21px] leading-none text-rose-200">מנוי חודשי למאגר</p>
         <div className="mt-3 flex items-baseline gap-2">
-          {price ? <><span className="font-display text-[3.4rem] leading-none tabular-nums">₪{price}</span><span className="text-white/70">לחודש</span></> : <span className="text-2xl">המחיר יימסר בשיחה</span>}
+          {price ? <><span className="font-display text-[3.4rem] leading-none tabular-nums !text-white">₪{price}</span><span className="text-white/70">לחודש</span></> : <span className="text-2xl">המחיר יימסר בשיחה</span>}
         </div>
         <ul className="mt-5 space-y-2 text-[14.5px] text-white/85">
           {['הכרטיס שלכם מוצג לכל מנהלות התרבות של נשי', 'חיפוש לפי קטגוריה, סגנון ואזור — מגיעים בדיוק אליכם', 'עריכת הכרטיס בכל זמן בקישור אישי', 'בלי התחייבות: אפשר להפסיק בכל חודש'].map(t => (

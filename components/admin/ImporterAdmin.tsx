@@ -18,7 +18,8 @@ const reasonsOf = (run: ImportRun) => {
 
 const RunCard: React.FC<{ run: ImportRun; open: boolean; onToggle: () => void }> = ({ run, open, onToggle }) => {
   const c = run.counts || ({} as ImportRun['counts']);
-  const failed = run.status === 'failed';
+  // a run where nothing could be read (e.g. the sites were unreachable) is a failure too
+  const failed = run.status === 'failed' || ((run.counts?.failed || 0) > 0 && !(run.counts?.discovered || 0));
   return (
     <article className={`rounded-[1.4rem] border bg-white shadow-soft ${failed ? 'border-red-100' : 'border-rose-100/80'}`}>
       <button type="button" onClick={onToggle} className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 p-4 text-right">
@@ -126,7 +127,7 @@ const ImporterAdmin: React.FC = () => {
         </div>
         <div className="relative mt-5 grid grid-cols-3 gap-2 md:max-w-lg">
           {[{ k: 'מוצגים באתר', v: status?.totals.visible ?? '—' }, { k: 'מוסתרים', v: status?.totals.hidden ?? '—' }, { k: 'נחסמו', v: status?.totals.blocked ?? '—' }].map(x => (
-            <div key={x.k} className="rounded-2xl bg-white/10 px-3 py-2.5"><p className="font-display text-[1.6rem] leading-none tabular-nums">{x.v}</p><p className="mt-1 text-[11.5px] text-white/70">{x.k}</p></div>
+            <div key={x.k} className="rounded-2xl bg-white/10 px-3 py-2.5"><p className="font-display text-[1.6rem] leading-none tabular-nums !text-white">{x.v}</p><p className="mt-1 text-[11.5px] text-white/70">{x.k}</p></div>
           ))}
         </div>
       </section>

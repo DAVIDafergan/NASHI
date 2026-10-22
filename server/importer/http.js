@@ -83,14 +83,18 @@ export function createHttp({ fetchImpl = globalThis.fetch, minIntervalMs = 1500,
     const u = new URL(url);
     if (!robots.has(u.origin)) {
       robots.set(u.origin, (async () => {
+        // 4xx = no robots.txt → allowed. 5xx / network error = unknown → don't crawl that site this run.
         try {
           const r = await raw(`${u.origin}/robots.txt`);
-          if (r.status >= 400) return () => true; // no robots.txt → allowed
+          if (r.status >= 500) return null;
+          if (r.status >= 400) return () => true;
           return parseRobots(await r.text());
-        } catch { return () => true; }
+        } catch { return null; }
       })());
     }
-    return (await robots.get(u.origin))(u.pathname + u.search);
+    const rules = await robots.get(u.origin);
+    if (!rules) throw new Error(`האתר ${u.host} לא זמין (robots.txt) — מדלגים עליו בריצה הזו`);
+    return rules(u.pathname + u.search);
   };
 
   async function request(url, { method = 'GET', form, headers, as = 'text', cache: useCache = method === 'GET' } = {}) {

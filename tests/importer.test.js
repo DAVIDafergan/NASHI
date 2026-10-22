@@ -346,3 +346,18 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     assert.equal(g.hidden, true);
   });
 });
+
+describe('robots.txt unavailable', () => {
+  test('network error on robots.txt → the site is skipped, not crawled', async () => {
+    let pages = 0;
+    const fetchImpl = async (url) => { if (url.endsWith('/robots.txt')) throw new Error('ECONNRESET'); pages++; return new Response('x'); };
+    const http = createHttp({ fetchImpl, minIntervalMs: 0 });
+    await assert.rejects(http.getText('https://tickchak.co.il/eGlt7Hnk2'), /לא זמין/);
+    assert.equal(pages, 0);
+  });
+  test('404 robots.txt → allowed', async () => {
+    const fetchImpl = async (url) => url.endsWith('/robots.txt') ? new Response('', { status: 404 }) : new Response('ok');
+    const http = createHttp({ fetchImpl, minIntervalMs: 0 });
+    assert.equal((await http.getText('https://tickchak.co.il/x')).text, 'ok');
+  });
+});
