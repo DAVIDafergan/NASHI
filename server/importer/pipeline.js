@@ -60,7 +60,7 @@ export function planUpdate(existing, fields) {
 export async function runImport({ adapters, http, models, trigger = 'schedule', triggeredBy, now = () => new Date(), maxDetails = Number(process.env.IMPORTER_MAX_DETAILS || 300), log = console.log }) {
   const { Event, ImportRun, ImportBlock } = models;
   const run = await ImportRun.create({ trigger, triggeredBy, status: 'running', startedAt: now() });
-  const counts = { discovered: 0, created: 0, updated: 0, unchanged: 0, skipped: 0, hidden: 0, errors: 0 };
+  const counts = { discovered: 0, created: 0, updated: 0, unchanged: 0, skipped: 0, hidden: 0, failed: 0 };
   const skipped = [];
   const errors = [];
   const sources = [];
@@ -68,17 +68,17 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
     counts.skipped++;
     if (skipped.length < 400) skipped.push({ source: src, sourceId: c.sourceId, title: (title || c.listItem?.title || '').slice(0, 140), url: c.url, reason });
   };
-  const fail = (msg) => { counts.errors++; if (errors.length < 150) errors.push(String(msg).slice(0, 400)); };
+  const fail = (msg) => { counts.failed++; if (errors.length < 150) errors.push(String(msg).slice(0, 400)); };
   let detailsBudget = maxDetails;
 
   try {
     for (const adapter of adapters) {
-      const st = { id: adapter.id, name: adapter.name, discovered: 0, created: 0, updated: 0, skipped: 0, errors: 0, error: '' };
+      const st = { id: adapter.id, name: adapter.name, discovered: 0, created: 0, updated: 0, skipped: 0, failed: 0, error: '' };
       sources.push(st);
       let channelErrors = 0;
       const ctx = {
         channel: async (name, fn) => {
-          try { await fn(); } catch (e) { channelErrors++; st.errors++; fail(`${adapter.name} · ${name}: ${e.message}`); }
+          try { await fn(); } catch (e) { channelErrors++; st.failed++; fail(`${adapter.name} · ${name}: ${e.message}`); }
         },
       };
       try {
@@ -102,7 +102,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
           if (detailsBudget-- <= 0) { skip(adapter.id, c, 'הגענו למכסת הבדיקות לריצה'); st.skipped++; continue; }
           let n;
           try { n = await adapter.details(c, http); }
-          catch (e) { if (e.skip) skip(adapter.id, c, e.message); else { st.errors++; fail(`${adapter.name} · ${c.url}: ${e.message}`); } if (counts.skipped > before) st.skipped++; continue; }
+          catch (e) { if (e.skip) skip(adapter.id, c, e.message); else { st.failed++; fail(`${adapter.name} · ${c.url}: ${e.message}`); } if (counts.skipped > before) st.skipped++; continue; }
           n.sourceId = n.sourceId || c.sourceId;
 
           const verdict = classifyEvent({ title: n.title, description: n.description, location: n.location, strong: n.strong || c.strong, categoryText: c.women ? 'אירוע לנשים' : '' });
@@ -128,7 +128,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
               await Event.create({ ...fields, image, source: adapter.id, sourceId: n.sourceId, importedAt: now(), lastSeenAt: now(), hidden: false });
               counts.created++; st.created++;
             } catch (e) {
-              if (e?.code === 11000) { counts.unchanged++; } else { st.errors++; fail(`שמירה: ${n.title}: ${e.message}`); }
+              if (e?.code === 11000) { counts.unchanged++; } else { st.failed++; fail(`שמירה: ${n.title}: ${e.message}`); }
             }
             continue;
           }
@@ -149,7 +149,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
           counts.hidden += r.modifiedCount || 0;
         }
       } catch (e) {
-        st.error = e.message; st.errors++;
+        st.error = e.message; st.failed++;
         fail(`${adapter.name}: ${e.message}`);
       }
     }

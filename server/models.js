@@ -151,12 +151,12 @@ const ImportRunSchema = new mongoose.Schema({
     unchanged: { type: Number, default: 0 },
     skipped: { type: Number, default: 0 },
     hidden: { type: Number, default: 0 },
-    errors: { type: Number, default: 0 },
+    failed: { type: Number, default: 0 },
   },
-  sources: [{ _id: false, id: String, name: String, discovered: Number, created: Number, updated: Number, skipped: Number, errors: Number, error: String }],
+  sources: [{ _id: false, id: String, name: String, discovered: Number, created: Number, updated: Number, skipped: Number, failed: Number, error: String }],
   skipped: [{ _id: false, source: String, sourceId: String, title: String, url: String, reason: String }],
   errorMessages: [{ type: String }],
-}, { suppressReservedKeysWarning: true }); // only nested counts.errors / sources[].errors — safe
+});
 const ImportRun = mongoose.model('ImportRun', ImportRunSchema);
 
 // An imported event a manager deleted — the agent must not bring it back.
