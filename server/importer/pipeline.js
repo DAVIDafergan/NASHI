@@ -105,7 +105,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
           catch (e) { if (e.skip) skip(adapter.id, c, e.message); else { st.failed++; fail(`${adapter.name} · ${c.url}: ${e.message}`); } if (counts.skipped > before) st.skipped++; continue; }
           n.sourceId = n.sourceId || c.sourceId;
 
-          const verdict = classifyEvent({ title: n.title, description: n.description, location: n.location, strong: n.strong || c.strong, categoryText: c.women ? 'אירוע לנשים' : '' });
+          const verdict = classifyEvent({ title: n.title, description: `${n.description}\n${n.extraText || ''}`, location: n.location, strong: n.strong || c.strong, categoryText: c.women ? 'אירוע לנשים' : '' });
           const existing = await Event.findOne({ source: adapter.id, sourceId: n.sourceId });
           if (!verdict.ok) {
             skip(adapter.id, c, verdict.reason, n.title); st.skipped++;

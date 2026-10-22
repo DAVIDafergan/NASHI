@@ -159,47 +159,49 @@ describe('robots.txt + polite client', () => {
 
 describe('Tickchak / Glatticket parsing', () => {
   test('event ids', () => {
-    for (const ok of ['eGlt7Hnk2', 'eMnvDANlx', 'eWjYbgpon']) assert.ok(isEid(ok), ok);
-    for (const bad of ['events', 'eventsxx', 'about', 'e12', 'terms']) assert.ok(!isEid(bad), bad);
+    for (const ok of ['900001', '113538', 113204]) assert.ok(isEid(ok), String(ok));
+    // LIVE aggregator ids and paths are not sale pages
+    for (const bad of ['hKpLyNdxl', 'eMnvDANlx', 'events', 'about', '12', '']) assert.ok(!isEid(bad), bad);
   });
   test('Glatticket home: links + "הופעות לנשים" section', () => {
     const links = parseEventLinks(fx('glatticket-home.html'));
-    assert.deepEqual(links.map(l => l.eid).sort(), ['eGen5Xx9g', 'eGlt7Hnk2']);
-    assert.equal(links.find(l => l.eid === 'eGlt7Hnk2').women, true);
-    assert.equal(links.find(l => l.eid === 'eGen5Xx9g').women, false);
+    assert.deepEqual(links.map(l => l.eid).sort(), ['900001', '900009']);
+    assert.equal(links.find(l => l.eid === '900001').women, true);
+    assert.equal(links.find(l => l.eid === '900009').women, false);
   });
   test('LIVE hub links (/…/event/<id>)', () => {
-    assert.deepEqual(parseEventLinks(fx('live-women-hub.html')).map(l => l.eid).sort(), ['eLiv4Ww8x', 'eWmn4Kq8z']);
+    // the aggregator id (hKpLyNdxl) is ignored; the JSON-LD offer points at the real sale page
+    assert.deepEqual(parseEventLinks(fx('live-women-hub.html')).map(l => l.eid).sort(), ['900002']);
   });
   test('event_hash from the ev_ script', () => {
-    const html = fx('page-eGlt7Hnk2.html');
-    assert.equal(findEventScript(html), 'https://static.tickchak.co.il/js/ev_eGlt7Hnk2.js?v=1729');
-    assert.equal(findEventHash(fx('ev_eGlt7Hnk2.js')), 'h1a2b3c4d5e6');
+    const html = fx('page-900001.html');
+    assert.equal(findEventScript(html), 'https://static.tickchak.co.il/js/ev_900001.js?v=1729');
+    assert.equal(findEventHash(fx('ev_900001.js')), 'h1a2b3c4d5e6');
     assert.equal(findEventHash(html), '');
   });
   test('normalize: prices (active tickets only), city, time, flyer, Glatticket attribution', () => {
-    const n = normalizeTickchak({ init: JSON.parse(fx('init/h1a2b3c4d5e6.json')), pageUrl: 'https://glatticket.co.il/eGlt7Hnk2', pageHtml: fx('page-eGlt7Hnk2.html'), listItem: { eid: 'eGlt7Hnk2' } });
+    const n = normalizeTickchak({ init: JSON.parse(fx('init/h1a2b3c4d5e6.json')), pageUrl: 'https://glatticket.co.il/900001', pageHtml: fx('page-900001.html'), listItem: { eid: '900001' } });
     assert.equal(n.title, 'ערב נשים לחנוכה עם הזמרת חני ויס');
     assert.equal(n.priceMin, 60); assert.equal(n.priceMax, 90); assert.equal(n.isFree, false);
     assert.equal(n.tickets.length, 2);
     assert.equal(n.city, 'בני ברק'); assert.equal(n.region, 'center');
     assert.equal(n.venue, 'היכל התרבות בני ברק');
     assert.deepEqual(israelParts(n.startAt), { date: '2026-12-15', time: '20:00' });
-    assert.equal(n.imageUrl, 'https://static.tickchak.co.il/uploads/events/eGlt7Hnk2/flyer.jpg');
+    assert.equal(n.imageUrl, 'https://static.tickchak.co.il/uploads/events/900001/flyer.jpg');
     assert.equal(n.sourceName, 'גלאטיקט'); assert.equal(n.strong, true);
     assert.equal(n.soldOut, false); assert.equal(n.closed, false);
     assert.match(n.description, /לנשים ולנערות בלבד/);
     assert.doesNotMatch(n.description, /<b>/);
   });
   test('normalize: free event, google time, structured city', () => {
-    const n = normalizeTickchak({ init: JSON.parse(fx('init/h7f8e9d0c1b2.json')), pageUrl: 'https://tickchak.co.il/eWmn4Kq8z', pageHtml: fx('page-eWmn4Kq8z.html'), listItem: { eid: 'eWmn4Kq8z' } });
+    const n = normalizeTickchak({ init: JSON.parse(fx('init/h7f8e9d0c1b2.json')), pageUrl: 'https://tickchak.co.il/900002', pageHtml: fx('page-900002.html'), listItem: { eid: '900002' } });
     assert.equal(n.isFree, true); assert.equal(n.priceMin, 0);
     assert.equal(n.city, 'ירושלים');
     assert.deepEqual(israelParts(n.startAt), { date: '2027-01-10', time: '19:30' });
     assert.equal(n.sourceName, "טיקצ'אק");
   });
   test('normalize: sold out (flag or all tickets inactive)', () => {
-    const n = normalizeTickchak({ init: JSON.parse(fx('init/h7777eeee.json')), pageUrl: 'https://tickchak.co.il/eSld2Uu6e', pageHtml: fx('page-eSld2Uu6e.html') });
+    const n = normalizeTickchak({ init: JSON.parse(fx('init/h7777eeee.json')), pageUrl: 'https://tickchak.co.il/900007', pageHtml: fx('page-900007.html') });
     assert.equal(n.soldOut, true);
   });
   test('discover + details end to end on fixtures', async () => {
@@ -210,19 +212,19 @@ describe('Tickchak / Glatticket parsing', () => {
     const cands = await ad.discover(http, { channel: async (n, fn) => { try { await fn(); } catch (e) { errors.push(n + e.message); } } });
     assert.deepEqual(errors, []);
     const ids = cands.map(c => c.sourceId).sort();
-    assert.ok(ids.includes('eGlt7Hnk2') && ids.includes('eWmn4Kq8z') && ids.includes('eLiv4Ww8x'));
-    assert.equal(cands.find(c => c.sourceId === 'eGlt7Hnk2').strong, true);
-    assert.equal(cands.find(c => c.sourceId === 'eWmn4Kq8z').women, true, 'listed on the women hub too');
-    assert.equal(ad.prefilter(cands.find(c => c.sourceId === 'ePst1Tt5d'), NOW), 'עבר');
-    assert.match(ad.prefilter(cands.find(c => c.sourceId === 'eMix5Qq2a'), NOW), /לא מתאים/);
-    const n = await ad.details(cands.find(c => c.sourceId === 'eWmn4Kq8z'), http);
+    assert.ok(ids.includes('900001') && ids.includes('900002'));
+    assert.ok(!ids.some(id => !/^\d+$/.test(id)), 'only numeric sale-page ids');
+    assert.equal(cands.find(c => c.sourceId === '900001').strong, true);
+    assert.equal(cands.find(c => c.sourceId === '900002').women, true, 'listed on the women hub too');
+    assert.equal(ad.prefilter(cands.find(c => c.sourceId === '900006'), NOW), 'עבר');
+    assert.match(ad.prefilter(cands.find(c => c.sourceId === '900003'), NOW), /לא מתאים/);
+    const n = await ad.details(cands.find(c => c.sourceId === '900002'), http);
     assert.equal(n.isFree, true);
-    await assert.rejects(ad.details(cands.find(c => c.sourceId === 'eLiv4Ww8x'), http), (e) => e.skip === true);
   });
 });
 
 describe('mapping to NASHI events + update plan', () => {
-  const n = normalizeTickchak({ init: JSON.parse(fx('init/h1a2b3c4d5e6.json')), pageUrl: 'https://glatticket.co.il/eGlt7Hnk2', pageHtml: fx('page-eGlt7Hnk2.html'), listItem: { eid: 'eGlt7Hnk2' } });
+  const n = normalizeTickchak({ init: JSON.parse(fx('init/h1a2b3c4d5e6.json')), pageUrl: 'https://glatticket.co.il/900001', pageHtml: fx('page-900001.html'), listItem: { eid: '900001' } });
   const f = toEventFields(n);
   test('fields', () => {
     assert.equal(f.date.toISOString(), '2026-12-15T00:00:00.000Z');
@@ -231,7 +233,7 @@ describe('mapping to NASHI events + update plan', () => {
     assert.equal(f.price, 60);
     assert.equal(f.category, 'מוזיקה');
     assert.deepEqual(f.audience, ['נשים ובנות']);
-    assert.equal(f.ticketLink, 'https://glatticket.co.il/eGlt7Hnk2');
+    assert.equal(f.ticketLink, 'https://glatticket.co.il/900001');
     assert.match(f.notes, /כרטיס רגיל ₪60 · שורות ראשונות ₪90/);
     assert.ok(f.hebrewDate.length > 3);
   });
@@ -281,23 +283,22 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     const run = await go();
     assert.equal(run.status, 'done');
     const created = await Event.find({ source: 'tickchak' }).lean();
-    assert.deepEqual(created.map(e => e.sourceId).sort(), ['eGlt7Hnk2', 'eWmn4Kq8z']);
-    const glatt = created.find(e => e.sourceId === 'eGlt7Hnk2');
+    assert.deepEqual(created.map(e => e.sourceId).sort(), ['900001', '900002']);
+    const glatt = created.find(e => e.sourceId === '900001');
     assert.match(glatt.image, /^data:image\/jpeg;base64,/);
     assert.equal(glatt.region, 'center');
     assert.equal(glatt.sourceName, 'גלאטיקט');
     assert.equal(glatt.hidden, false);
     const reasons = Object.fromEntries(run.skipped.map(s => [s.sourceId, s.reason]));
-    assert.match(reasons.eMix5Qq2a, /לא מתאים/);
-    assert.match(reasons.eNoP7Rr3b, /מחיר/);
-    assert.match(reasons.eCty8Ss4c, /עיר/);
-    assert.equal(reasons.ePst1Tt5d, 'עבר');
-    assert.equal(reasons.eSld2Uu6e, 'אזלו הכרטיסים');
-    assert.match(reasons.eImg3Vv7f, /פלייר/);
-    assert.match(reasons.eLiv4Ww8x, /event_hash/);
-    assert.match(reasons.eSec6Yy0h, /דתי\/חרדי/);
+    assert.match(reasons["900003"], /לא מתאים/);
+    assert.match(reasons["900004"], /מחיר/);
+    assert.match(reasons["900005"], /עיר/);
+    assert.equal(reasons["900006"], 'עבר');
+    assert.equal(reasons["900007"], 'אזלו הכרטיסים');
+    assert.match(reasons["900008"], /פלייר/);
+    assert.match(reasons["900010"], /דתי\/חרדי/);
     assert.equal(run.counts.created, 2);
-    assert.ok(run.errorMessages.some(e => /eGen5Xx9g/.test(e)), 'a broken event page is an error, not a crash');
+    assert.ok(run.errorMessages.some(e => /900009/.test(e)), 'a broken event page is an error, not a crash');
     assert.equal((await Event.findById(manual._id).lean()).title, 'אירוע ידני');
   });
 
@@ -310,39 +311,39 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
 
   test('run 3: price change + sold out are updated; removed event is hidden; manual event untouched', async () => {
     const run = await go({
-      init: (hash, json) => hash === 'h1a2b3c4d5e6' ? { ...json, event: { ...json.event, issoldout: '1' }, tickets: json.tickets.map(t => ({ ...t, price: t.price === '60' ? '65' : t.price })) } : json,
-      search: (term, json) => ({ ...json, events: json.events.filter(e => e.eid !== 'eWmn4Kq8z') }),
+      init: (hash, json) => hash === 'h1a2b3c4d5e6' ? { ...json, event: { ...json.event, issoldout: '0' }, tickets: json.tickets.map(t => ({ ...t, price: t.price === '60' ? '65' : t.price })) } : json,
+      search: (term, json) => ({ ...json, events: json.events.filter(e => e.eid !== '900002') }),
       handle: ({ u }) => (u.host === 'live.tickchak.co.il' && u.pathname === '/performances-for-women') ? new Response('<html><body></body></html>', { headers: { 'content-type': 'text/html' } }) : null,
     });
-    const g = await Event.findOne({ sourceId: 'eGlt7Hnk2' }).lean();
+    const g = await Event.findOne({ sourceId: '900001' }).lean();
     assert.equal(g.price, 65);
     assert.equal(g.soldOut, true);
-    const gone = await Event.findOne({ sourceId: 'eWmn4Kq8z' }).lean();
+    const gone = await Event.findOne({ sourceId: '900002' }).lean();
     assert.equal(gone.hidden, true); assert.equal(gone.hiddenReason, 'gone');
     assert.ok(run.counts.updated >= 1);
     assert.equal(await Event.countDocuments({ source: { $exists: false } }), 1);
   });
 
   test('back on the source → visible again; admin-hidden and deleted stay out', async () => {
-    await Event.updateOne({ sourceId: 'eGlt7Hnk2' }, { hidden: true, hiddenReason: 'admin' });
+    await Event.updateOne({ sourceId: '900001' }, { hidden: true, hiddenReason: 'admin' });
     const run = await go();
-    assert.equal((await Event.findOne({ sourceId: 'eWmn4Kq8z' }).lean()).hidden, false);
-    assert.equal((await Event.findOne({ sourceId: 'eGlt7Hnk2' }).lean()).hidden, true);
+    assert.equal((await Event.findOne({ sourceId: '900002' }).lean()).hidden, false);
+    assert.equal((await Event.findOne({ sourceId: '900001' }).lean()).hidden, true);
     // delete + block
-    const ev = await Event.findOne({ sourceId: 'eWmn4Kq8z' });
-    await ImportBlock.create({ source: 'tickchak', sourceId: 'eWmn4Kq8z' });
+    const ev = await Event.findOne({ sourceId: '900002' });
+    await ImportBlock.create({ source: 'tickchak', sourceId: '900002' });
     await ev.deleteOne();
     const run2 = await go();
-    assert.equal(await Event.countDocuments({ sourceId: 'eWmn4Kq8z' }), 0);
-    assert.ok(run2.skipped.some(s => s.sourceId === 'eWmn4Kq8z' && /נמחק/.test(s.reason)));
+    assert.equal(await Event.countDocuments({ sourceId: '900002' }), 0);
+    assert.ok(run2.skipped.some(s => s.sourceId === '900002' && /נמחק/.test(s.reason)));
     assert.equal(run.status, 'done');
   });
 
   test('past imported events are hidden', async () => {
-    await Event.updateOne({ sourceId: 'eGlt7Hnk2' }, { hidden: false, hiddenReason: null, startAt: new Date('2026-10-01T18:00:00Z') });
+    await Event.updateOne({ sourceId: '900001' }, { hidden: false, hiddenReason: null, startAt: new Date('2026-10-01T18:00:00Z') });
     const { fetchImpl } = createFakeFetch({ search: () => ({ events: [] }), handle: ({ u }) => (u.host.includes('glatticket') || u.host.startsWith('live.')) ? new Response('<html></html>') : null });
     await runImport({ adapters: [createTickchakAdapter({ searchTerms: ['נשים'] })], http: createHttp({ fetchImpl, minIntervalMs: 0 }), models: { Event, ImportRun, ImportBlock }, now: clock, trigger: 'test', log: () => {} });
-    const g = await Event.findOne({ sourceId: 'eGlt7Hnk2' }).lean();
+    const g = await Event.findOne({ sourceId: '900001' }).lean();
     assert.equal(g.hidden, true);
   });
 });
@@ -352,7 +353,7 @@ describe('robots.txt unavailable', () => {
     let pages = 0;
     const fetchImpl = async (url) => { if (url.endsWith('/robots.txt')) throw new Error('ECONNRESET'); pages++; return new Response('x'); };
     const http = createHttp({ fetchImpl, minIntervalMs: 0 });
-    await assert.rejects(http.getText('https://tickchak.co.il/eGlt7Hnk2'), /לא זמין/);
+    await assert.rejects(http.getText('https://tickchak.co.il/900001'), /לא זמין/);
     assert.equal(pages, 0);
   });
   test('404 robots.txt → allowed', async () => {

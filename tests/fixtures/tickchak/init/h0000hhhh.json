@@ -7,8 +7,8 @@
     "description": "ערב כיף עם מוזיקה וריקודים",
     "active": "1",
     "closed": "0",
-    "issoldout": "0",
-    "is_all_free": "0"
+    "issoldout": "120",
+    "is_all_free": false
   },
   "tickets": [
     {

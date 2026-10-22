@@ -8,8 +8,8 @@
     "description": "מחזמר לנשים ולנערות בלבד. הכניסה חופשית בהרשמה מראש.",
     "active": "1",
     "closed": "0",
-    "issoldout": "0",
-    "is_all_free": "1"
+    "issoldout": "300",
+    "is_all_free": true
   },
   "tickets": [
     {

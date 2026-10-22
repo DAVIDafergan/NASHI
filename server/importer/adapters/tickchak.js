@@ -1,5 +1,5 @@
 import { phpUnserialize } from '../php.js';
-import { clean, metaContent, truthy, decodeEntities } from '../text.js';
+import { clean, metaContent, decodeEntities } from '../text.js';
 import { parseWhen } from '../time.js';
 import { resolveCity } from '../city.js';
 import { classifyEvent } from '../classify.js';
@@ -25,27 +25,62 @@ export const SEARCH_TERMS = [
   'הצגה', 'מופע', 'מחזמר', 'הפקה', 'ערב', 'כנס', 'התוועדות', 'הרצאה', 'סדנה', 'זמרת', 'ערב שירה', 'יום עיון',
 ];
 
-// Tickchak event ids: "e" + 6–12 alphanumerics, never all-lowercase (that would be a path like /events)
-const EID = /^e(?=[A-Za-z0-9]*[A-Z0-9])[A-Za-z0-9]{6,12}$/;
-export const isEid = (s) => EID.test(String(s || ''));
+// Tickchak / Glatticket sale pages are https://<domain>/<numeric eid> (e.g. tickchak.co.il/113538, glatticket.co.il/113204),
+// links often carry ?ref=… / ?_ref=… / #event. (LIVE aggregator ids like "hKpLyNdxl" are NOT sale pages.)
+const EID = /^\d{4,8}$/;
+export const isEid = (s) => EID.test(String(s ?? ''));
+const SALE_URL = /https?:\/\/(?:www\.)?(glatticket|tickchak)\.co\.il\/(\d{4,8})(?=[?#"'\s<\\/]|$)/g;
 
-/** Event links (and the heading they appear under) in a Glatticket / LIVE page. */
+const WOMEN_HINT = /נשים|לנשים|נשות|נשי|בנות|נערות|אמהות|רבנית/;
+
+/** schema.org Event objects from <script type="application/ld+json"> blocks (Glatticket home / LIVE hubs use an @graph). */
+export function jsonLdEvents(html = '') {
+  const out = [];
+  const re = /<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi;
+  let m;
+  const walk = (x) => {
+    if (!x || typeof x !== 'object') return;
+    if (Array.isArray(x)) { x.forEach(walk); return; }
+    const t = x['@type'];
+    if (t === 'Event' || (Array.isArray(t) && t.includes('Event'))) out.push(x);
+    for (const v of Object.values(x)) if (v && typeof v === 'object') walk(v);
+  };
+  while ((m = re.exec(html))) { try { walk(JSON.parse(m[1])); } catch { /* broken block */ } }
+  return out;
+}
+
+/** Sale-page event ids found in a Glatticket / LIVE page, with hints (women's event? sold out?). */
 export function parseEventLinks(html = '', { womenHeading = /נשים|לנשים/ } = {}) {
-  const out = new Map(); // eid -> { eid, url, women, heading }
-  // split the page by headings so we know the section of each link
+  const out = new Map(); // eid -> { eid, host, women, soldOut, title, startDate }
+  const add = (eid, host, patch = {}) => {
+    const prev = out.get(eid) || { eid, host, women: false, soldOut: false, title: '', startDate: '' };
+    out.set(eid, { ...prev, ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v)), women: prev.women || !!patch.women });
+  };
+  // 1. structured data (preferred: has the name, date and availability)
+  for (const ev of jsonLdEvents(html)) {
+    const urls = [ev['@id'], ev.url, ...(Array.isArray(ev.offers) ? ev.offers : [ev.offers]).map(o => o?.url)].filter(Boolean).join(' ');
+    SALE_URL.lastIndex = 0;
+    const m = SALE_URL.exec(urls);
+    if (!m) continue;
+    const offers = (Array.isArray(ev.offers) ? ev.offers : [ev.offers]).filter(Boolean);
+    add(m[2], m[1], {
+      title: clean(ev.name || '', 200), startDate: ev.startDate || '',
+      women: WOMEN_HINT.test(`${ev.name || ''} ${ev.description || ''}`),
+      soldOut: offers.length > 0 && offers.every(o => /SoldOut/i.test(o.availability || '')),
+    });
+  }
+  // 2. plain links, with the heading they appear under
   const heads = [];
   const hre = /<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/gi;
   let m;
   while ((m = hre.exec(html))) heads.push({ at: m.index, text: clean(m[1], 200) });
   const sectionAt = (pos) => { let h = ''; for (const x of heads) { if (x.at <= pos) h = x.text; else break; } return h; };
-  const lre = /href=["']((?:https?:)?\/\/(?:www\.|home\.|live\.)?(?:glatticket|tickchak)\.co\.il\/(?:[a-z0-9-]+\/)*(?:event\/)?([A-Za-z0-9]{7,13})|\/(?:[a-z0-9-]+\/)*event\/([A-Za-z0-9]{7,13})|\/([A-Za-z0-9]{7,13}))(?=["'?#/])/g;
+  const lre = /href=["']([^"']+)["']/gi;
   while ((m = lre.exec(html))) {
-    const eid = m[2] || m[3] || m[4];
-    if (!isEid(eid)) continue;
-    const heading = sectionAt(m.index);
-    const prev = out.get(eid);
-    const women = womenHeading.test(heading) || !!prev?.women;
-    out.set(eid, { eid, url: m[1].startsWith('//') ? `https:${m[1]}` : m[1], women, heading: prev?.heading || heading });
+    SALE_URL.lastIndex = 0;
+    const u = SALE_URL.exec(m[1].startsWith('//') ? `https:${m[1]}` : m[1]);
+    if (!u) continue;
+    add(u[2], u[1], { women: womenHeading.test(sectionAt(m.index)) });
   }
   return [...out.values()];
 }
@@ -67,7 +102,7 @@ export function locationStrings(locationMap) {
   walk(v);
   const pick = (re) => flat.filter(([k]) => re.test(k)).map(([, s]) => s);
   return {
-    venue: (pick(/^title$/i)[0] || pick(/name/i)[0] || '').trim(),
+    venue: (pick(/^title$/i)[0] || pick(/name/i)[0] || '').split(',')[0].trim(),
     // city-ish fields first, then the full addresses
     parts: [...pick(/city|locality|town|עיר/i), ...pick(/cleanTitle/i), ...pick(/address|formatted/i), ...pick(/^title$/i), ...flat.map(([, s]) => s)],
   };
@@ -75,43 +110,70 @@ export function locationStrings(locationMap) {
 
 const num = (v) => { const n = Number(String(v ?? '').replace(/[^\d.]/g, '')); return Number.isFinite(n) ? n : NaN; };
 
-/** form/init JSON (+ page data) → normalized event used by the pipeline. Pure: unit-tested on fixtures. */
+const yes = (v) => v === true || v === 1 || v === '1' || v === 'true';
+
+/**
+ * Sold out? Real form/init sends `issoldout` as a STRING COUNT of remaining tickets (e.g. "41"), not a flag —
+ * so "1" means one ticket left. Sold out = boolean true, a zero count, or no active ticket with stock left.
+ */
+export function isSoldOut(ev = {}, tickets = [], listItem = {}) {
+  const so = ev.issoldout;
+  if (so === true) return true;
+  if (so !== undefined && so !== null && so !== '' && so !== false && /^\d+$/.test(String(so)) && Number(so) === 0) return true;
+  const active = tickets.filter(t => !('active' in t) || yes(t.active));
+  if (tickets.length && !active.length) return true;
+  const withStock = active.filter(t => t.amount_avaliable !== undefined && t.amount_avaliable !== null);
+  if (withStock.length && withStock.length === active.length && withStock.every(t => Number(t.amount_avaliable) <= 0)) return true;
+  // the search listing's in_stock is only a fallback: it can be stale/false while form/init still sells tickets
+  if (!tickets.length && (listItem.in_stock === false || listItem.in_stock === 0 || listItem.in_stock === '0')) return true;
+  return false;
+}
+
+/** form/init JSON (+ page data) → normalized event used by the pipeline. Pure: unit-tested on real + synthetic fixtures. */
 export function normalizeTickchak({ init, pageUrl, pageHtml = '', listItem = {}, strong = false, women = false }) {
   const ev = init?.event || {};
   const tickets = Array.isArray(init?.tickets) ? init.tickets : [];
   const loc = locationStrings(ev.location_map);
-  const location = clean(ev.location || listItem.location || '', 300);
-  const venue = (loc.venue || location.split(',')[0] || '').trim();
-  const resolved = resolveCity(loc.parts, location, listItem.location || '');
-  const activeTickets = tickets.filter(t => !('active' in t) || truthy(t.active));
+  const evLocation = clean(ev.location || listItem.location || '', 200);
+  const venue = (evLocation || loc.venue || '').trim();
+  // "אולם רמון, שדרות מנחם בגין, 51, גדרה" — the venue plus the structured address when it adds something
+  const address = clean(loc.parts.find(p => /\d|,/.test(p)) || '', 200).replace(/,?\s*ישראל\s*$/, '');
+  const location = address && !evLocation.includes(address) && address !== evLocation ? `${evLocation ? `${evLocation}, ` : ''}${address}` : (evLocation || address);
+  const resolved = resolveCity(loc.parts, evLocation, listItem.location || '');
+  const activeTickets = tickets.filter(t => !('active' in t) || yes(t.active));
   // prices of the tickets on sale; when nothing is on sale (sold out) keep the last known prices
   const priced = activeTickets.length ? activeTickets : tickets;
   const prices = priced.map(t => num(t.price)).filter(n => Number.isFinite(n));
   const paid = prices.filter(n => n > 0);
-  const isFree = truthy(ev.is_all_free) || (prices.length > 0 && paid.length === 0);
+  const isFree = yes(ev.is_all_free) || (prices.length > 0 && paid.length === 0);
   const startAt = parseWhen(ev.time_start) || parseWhen(ev.time_google_openstart) || parseWhen(listItem.time_start);
   const endAt = parseWhen(ev.time_end) || parseWhen(listItem.time_end);
   const host = (() => { try { return new URL(pageUrl).host; } catch { return ''; } })();
-  const glatt = /glatticket/i.test(host);
-  const imageUrl = metaContent(pageHtml, 'og:image') || listItem.fb_img || '';
+  const glatt = /glatticket/i.test(host) || yes(ev.glatticket_index);
+  const eid = String(ev.eid || listItem.eid || '').trim();
+  const imageUrl = metaContent(pageHtml, 'og:image') || metaContent(pageHtml, 'twitter:image:src') || listItem.fb_img || '';
+  // clean ticket link (no ?ref=…): the sale page on the domain we actually fetched
+  const ticketUrl = isEid(eid) && host ? `https://${host}/${eid}` : (pageUrl && /^https?:/.test(pageUrl) ? pageUrl.replace(/^http:/, 'https:').replace(/[?#].*$/, '') : '');
   return {
-    sourceId: listItem.eid || ev.eid || '',
+    sourceId: eid,
     sourceName: glatt ? 'גלאטיקט' : "טיקצ'אק",
     title: clean(ev.title || listItem.title || '', 200),
     description: clean(ev.description || listItem.description || '', 3000),
     startAt, endAt,
-    venue, location: location || venue,
+    venue, location,
     city: resolved?.city || '', region: resolved?.region || '', cityHow: resolved?.how || '',
     priceMin: paid.length ? Math.min(...paid) : (isFree ? 0 : NaN),
     priceMax: paid.length ? Math.max(...paid) : (isFree ? 0 : NaN),
     isFree,
     tickets: activeTickets.map(t => ({ title: clean(t.title || '', 80), price: num(t.price) })).slice(0, 12),
-    soldOut: truthy(ev.issoldout) || (tickets.length > 0 && activeTickets.length === 0) || listItem.in_stock === 0 || listItem.in_stock === '0',
-    closed: truthy(ev.closed) || (('active' in ev) && !truthy(ev.active)),
-    ticketUrl: pageUrl && /^https?:/.test(pageUrl) ? pageUrl.replace(/^http:/, 'https:') : '',
+    soldOut: isSoldOut(ev, tickets, listItem),
+    closed: yes(ev.closed) || ev.suspended === true || (('active' in ev) && !yes(ev.active)),
+    ticketUrl,
     imageUrl: imageUrl.startsWith('//') ? `https:${imageUrl}` : imageUrl,
     strong: strong || glatt,
     women,
+    // more text for the women/Haredi classifier only (not shown): og:description + what the listing said
+    extraText: [metaContent(pageHtml, 'og:description'), listItem.title, listItem.description].filter(Boolean).join('\n').slice(0, 2000),
   };
 }
 
@@ -129,13 +191,13 @@ export function createTickchakAdapter({ searchTerms = SEARCH_TERMS, pageSize = 1
       // 1. Glatticket home (strong)
       await ctx.channel('glatticket-home', async () => {
         const { text } = await http.getText(glatticketHome);
-        for (const l of parseEventLinks(text)) add(l.eid, { strong: true, women: l.women, url: `https://glatticket.co.il/${l.eid}` });
+        for (const l of parseEventLinks(text)) add(l.eid, { strong: true, women: l.women, url: `https://glatticket.co.il/${l.eid}`, listItem: { title: l.title, soldOutHint: l.soldOut } });
       });
       // 2. LIVE hubs (category hint only)
       for (const hub of hubs) {
         await ctx.channel(`hub ${hub.replace(/^https:\/\//, '')}`, async () => {
           const { text } = await http.getText(hub);
-          for (const l of parseEventLinks(text, { womenHeading: /./ })) if (!found.has(l.eid)) add(l.eid, { women: /women|tzama/i.test(hub) });
+          for (const l of parseEventLinks(text, { womenHeading: /./ })) if (!found.has(l.eid)) add(l.eid, { women: /women|tzama/i.test(hub) || l.women, url: `https://${l.host}.co.il/${l.eid}` });
         });
       }
       // 3. Tickchak search
@@ -148,7 +210,9 @@ export function createTickchakAdapter({ searchTerms = SEARCH_TERMS, pageSize = 1
               const eid = String(e.eid || '').trim();
               if (!isEid(eid)) continue;
               const prev = found.get(eid);
-              add(eid, { listItem: e, url: prev?.url || (e.link && /^https?:\/\/[^/]*(tickchak|glatticket)\.co\.il\//.test(e.link) ? e.link : `${TICKCHAK}/${eid}`) });
+              // real `link` is "tickchak.co.il/112712?ref=1B1O" (no scheme) — we use the clean sale page
+              const host = /glatticket/i.test(String(e.link || '')) ? 'https://glatticket.co.il' : TICKCHAK;
+              add(eid, { listItem: e, url: prev?.url || `${host}/${eid}` });
             }
             if (events.length < pageSize) break;
           }

@@ -44,7 +44,8 @@ export function classifyEvent({ title = '', description = '', location = '', cat
   if (MIXED_HINT.test(text)) return { ok: false, reason: 'קהל מעורב' };
   const ex = EXCLUDE.exec(text);
   if (ex) return { ok: false, reason: `לא מתאים: "${ex[0].trim()}"` };
-  const womenOnly = WOMEN_ONLY.test(text);
+  // also catches real-world typos like "לנשיםנבלבד" (Glatticket 113204) where word boundaries fail
+  const womenOnly = WOMEN_ONLY.test(text) || /נשים\s?נ?בלבד/.test(text);
   const women = womenOnly || WOMEN.test(text);
   if (!women) return { ok: false, reason: 'לא נמצא סימון שהאירוע לנשים' };
   if (womenOnly) reasons.push('לנשים בלבד');

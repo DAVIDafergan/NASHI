@@ -9,8 +9,8 @@
     "description": "<p>בס\"ד</p><p>ערב מוזיקלי מרומם <b>לנשים ולנערות בלבד</b>, בהפרדה מלאה ובהשגחה רוחנית.</p>",
     "active": "1",
     "closed": "0",
-    "issoldout": "0",
-    "is_all_free": "0"
+    "issoldout": "120",
+    "is_all_free": false
   },
   "tickets": [
     {

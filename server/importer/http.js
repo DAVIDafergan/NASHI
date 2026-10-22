@@ -88,7 +88,11 @@ export function createHttp({ fetchImpl = globalThis.fetch, minIntervalMs = 1500,
           const r = await raw(`${u.origin}/robots.txt`);
           if (r.status >= 500) return null;
           if (r.status >= 400) return () => true;
-          return parseRobots(await r.text());
+          // tickchak.co.il has no robots.txt: it answers 200 with the HTML homepage → that's "no rules", not a block
+          const type = (r.headers.get('content-type') || '').toLowerCase();
+          const body = await r.text();
+          if ((type && !type.includes('text/plain')) || /^\s*<(!doctype|html)/i.test(body)) return () => true;
+          return parseRobots(body);
         } catch { return null; }
       })());
     }
