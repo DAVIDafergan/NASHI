@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import { eventPreview, page, imageInfo } from '../server/share.js';
 import { shareMessage, factsLine, whenText } from '../shared/eventShare.js';
 import { FAKE_PNG } from './helpers/fakeTickchak.js';
+import { placeholderFlyer } from '../server/importer/placeholder.js';
+import { setSharpLoader } from '../server/ogImage.js';
+let hasSharp = true; try { await import('sharp'); } catch { hasSharp = false; }
 
 const BASE = 'https://nashi-co.com';
 const future = new Date(Date.now() + 10 * 864e5);
@@ -76,6 +79,7 @@ describe('share routes over HTTP (MongoDB)', { skip: !MONGO && 'set MONGO_TEST_U
     const png = Buffer.from(FAKE_PNG); png.writeUInt32BE(800, 16); png.writeUInt32BE(1000, 20);
     ids.live = (await Event.create({ ...EV, _id: undefined, image: `data:image/png;base64,${png.toString('base64')}` }))._id;
     ids.old = (await Event.create({ ...EV, _id: undefined, date: new Date('2026-01-01'), time: '20:00' }))._id;
+    ids.svg = (await Event.create({ ...EV, _id: undefined, title: 'סדנת חלות', image: placeholderFlyer({ title: 'סדנת חלות', kind: 'סדנה', city: 'בית שמש' }) }))._id;
     const express = (await import('express')).default;
     const share = (await import('../server/share.js')).default;
     const routes = (await import('../server/routes.js')).default;
@@ -105,6 +109,23 @@ describe('share routes over HTTP (MongoDB)', { skip: !MONGO && 'set MONGO_TEST_U
     assert.match(await (await fetch(`${base}/s/event/000000000000000000000000`)).text(), /אירועים לנשים · נשי/);
     const r = await fetch(`${base}/s/img/event/${ids.old}`, { redirect: 'manual' });
     assert.equal(r.status, 200, 'the stored flyer still serves (only the preview switches to the site image)');
+  });
+  test('SVG placeholder flyer: converted to JPEG for the preview (sharp), site image without sharp', { skip: !hasSharp && 'sharp not installed' }, async () => {
+    const html = await (await fetch(`${base}/s/event/${ids.svg}`)).text();
+    assert.ok(html.includes(`/s/img/event/${ids.svg}"`));
+    assert.ok(html.includes('<meta property="og:image:type" content="image/jpeg">'));
+    assert.ok(html.includes('<meta property="og:image:width" content="600">'));
+    const img = await fetch(`${base}/s/img/event/${ids.svg}`);
+    assert.equal(img.headers.get('content-type'), 'image/jpeg');
+    setSharpLoader(() => Promise.reject(new Error('no sharp')));
+    try {
+      const html2 = await (await fetch(`${base}/s/event/${ids.svg}`)).text();
+      assert.ok(html2.includes('/og-image.jpg"'), 'falls back to the site image');
+      const r = await fetch(`${base}/s/img/event/${ids.svg}`, { redirect: 'manual' });
+      assert.equal(r.status, 302);
+      const png = await fetch(`${base}/s/img/event/${ids.live}`);
+      assert.equal(png.headers.get('content-type'), 'image/png', 'raster flyers: stored bytes as before');
+    } finally { setSharpLoader(() => import('sharp').then(m => m.default)); }
   });
   test('GET /api/events/:id — the event, or 410 with a summary when it ended', async () => {
     const ok = await fetch(`${base}/api/events/${ids.live}`);

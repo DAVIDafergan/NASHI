@@ -4,6 +4,7 @@ import { HDate } from '@hebcal/core';
 import { Story, Personality, Event } from './models.js';
 import { isEventExpired } from '../shared/eventTime.js';
 import { factsLine, eventDeepLink } from '../shared/eventShare.js';
+import { derivePreview } from './ogImage.js';
 
 /**
  * Link-preview pages for WhatsApp / Facebook / Telegram.
@@ -43,6 +44,18 @@ export const page = ({ title, description, image, url, redirect, imageMeta }) =>
 const sendPage = (res, data) => {
   res.set('Cache-Control', 'public, max-age=300');
   res.type('html').send(page(data));
+};
+
+/** Serve the small preview JPEG (sharp); falls back to the stored bytes when sharp is missing or fails. */
+const sendPreview = async (res, key, dataUrl) => {
+  const d = await derivePreview(key, dataUrl);
+  if (d) {
+    res.set({ 'Content-Type': d.type, 'Content-Length': d.buf.length, 'Cache-Control': 'public, max-age=86400' });
+    res.end(d.buf);
+    return true;
+  }
+  if (/^data:image\/svg/i.test(dataUrl || '')) return false; // WhatsApp can't show SVG: caller falls back
+  return sendDataUrl(res, dataUrl);
 };
 
 const sendDataUrl = (res, dataUrl) => {
@@ -90,8 +103,7 @@ router.get('/s/img/event/:id', async (req, res) => {
     const ev = await Event.findById(req.params.id).select('image hidden');
     if (!ev || ev.hidden || !ev.image) return res.redirect('/og-image.jpg');
     if (/^https:\/\//.test(ev.image)) return res.redirect(ev.image);
-    if (/^data:image\/svg/i.test(ev.image)) return res.redirect('/og-image.jpg');
-    if (!sendDataUrl(res, ev.image)) res.redirect('/og-image.jpg');
+    if (!(await sendPreview(res, `event:${ev._id}`, ev.image))) res.redirect('/og-image.jpg');
   } catch { res.redirect('/og-image.jpg'); }
 });
 
@@ -101,7 +113,7 @@ router.get('/s/img/personality/:id', async (req, res) => {
     const p = await Personality.findById(req.params.id).select('image status externalToken isTemplate');
     if (!p || p.isTemplate || p.externalToken || p.status === 'submitted' || !p.image) return res.redirect('/og-image.jpg');
     if (/^https?:\/\//.test(p.image)) return res.redirect(p.image);
-    if (!sendDataUrl(res, p.image)) res.redirect('/og-image.jpg');
+    if (!(await sendPreview(res, `personality:${p._id}`, p.image))) res.redirect('/og-image.jpg');
   } catch { res.redirect('/og-image.jpg'); }
 });
 
@@ -110,7 +122,7 @@ router.get('/s/img/story/:id', async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/og-image.jpg');
     const s = await Story.findById(req.params.id).select('type content status');
     if (!s || s.status !== 'approved' || s.type !== 'image') return res.redirect('/og-image.jpg');
-    if (!sendDataUrl(res, s.content)) res.redirect('/og-image.jpg');
+    if (!(await sendPreview(res, `story:${s._id}`, s.content))) res.redirect('/og-image.jpg');
   } catch { res.redirect('/og-image.jpg'); }
 });
 
@@ -158,13 +170,14 @@ const hebrewDay = (ev) => {
 const firstLine = (text = '', skip = '') => String(text).split('\n').map(l => l.trim()).filter(l => l && l !== skip && !/^[📅📍🎟️]/u.test(l) && !/^הכרטיסים נמכרים/.test(l))[0] || '';
 
 /** The preview data for one event (pure — tested). ended: past its 48h window, archived or hidden. */
-export function eventPreview(ev, base, { now = Date.now() } = {}) {
+export function eventPreview(ev, base, { now = Date.now(), svgOk = false } = {}) {
   const id = String(ev._id || ev.id);
   const ended = !!(ev.archived || ev.hidden || isEventExpired(ev, now));
   const facts = factsLine(ev, hebrewDay(ev));
   const blurb = firstLine(ev.description, ev.title);
   const img = typeof ev.image === 'string' ? ev.image : '';
-  const raster = img && !/^data:image\/svg/i.test(img);
+  // SVG placeholder flyers only when they can be converted to JPEG (sharp) — WhatsApp ignores SVG
+  const raster = img && (svgOk || !/^data:image\/svg/i.test(img));
   return {
     title: ended ? `האירוע הסתיים · ${ev.title}` : `${ev.title} · נשי`,
     description: ended ? 'האירוע הזה כבר הסתיים — היכנסי לאירועים הקרובים באזור שלך בנשי' : clip(blurb ? `${facts} — ${blurb}` : facts, 290),
@@ -182,11 +195,12 @@ router.get('/s/event/:id', async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return sendPage(res, fallback);
     const ev = await Event.findById(req.params.id).select('-attendees').lean();
     if (!ev) return sendPage(res, fallback);
-    const data = eventPreview(ev, base);
-    // image size for WhatsApp (og:image:width/height/type) when the flyer is stored with us
+    // the derived preview JPEG (also warms its cache for WhatsApp's image request) → og:image:width/height/type
+    const derived = typeof ev.image === 'string' && ev.image.startsWith('data:') ? await derivePreview(`event:${ev._id}`, ev.image) : null;
+    const data = eventPreview(ev, base, { svgOk: !!derived });
     if (data.image.includes('/s/img/event/')) {
-      const d = dataUrlBuffer(ev.image);
-      if (d) data.imageMeta = imageInfo(d.buf);
+      if (derived) data.imageMeta = { type: derived.type, width: derived.width, height: derived.height };
+      else { const d = dataUrlBuffer(ev.image); if (d) data.imageMeta = imageInfo(d.buf); }
     }
     sendPage(res, data);
   } catch { sendPage(res, fallback); }
