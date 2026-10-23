@@ -4,6 +4,7 @@ import { isRestNow } from '../calendar.js';
 import { createHttp } from './http.js';
 import { activeAdapters } from './adapters/index.js';
 import { runImport } from './pipeline.js';
+import { reclassifyImported } from './reclassify.js';
 
 /**
  * The events agent ("סוכן אירועים") inside the Express app.
@@ -41,6 +42,12 @@ export function runImporterNow({ trigger = 'manual', triggeredBy, adapters, http
 export async function startImporter() {
   // a run that was cut by a restart is not "running" anymore
   try { await ImportRun.updateMany({ status: 'running' }, { $set: { status: 'failed', finishedAt: new Date() }, $push: { errorMessages: 'הריצה נקטעה (השרת הופעל מחדש)' } }); } catch { /* db not ready yet */ }
+  // re-check what's already on the site against the current rules (e.g. after switching to strict Haredi)
+  if (process.env.IMPORTER_PURGE_ON_START !== '0') {
+    setTimeout(() => reclassifyImported({ Event, ImportBlock, log: console.log })
+      .then(r => console.log(`[importer] startup re-check: ${r.checked} imported events, removed ${r.removed.length}, duplicates ${r.duplicates}`))
+      .catch(e => console.warn('[importer] startup re-check failed', e.message)), 15 * 1000).unref?.();
+  }
   const { enabled, intervalHours } = importerConfig();
   if (!enabled) { console.log('ℹ️  events importer schedule is off (IMPORTER_ENABLED != 1)'); return; }
   const every = intervalHours * 3600 * 1000;

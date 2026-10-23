@@ -93,26 +93,28 @@ describe('women + Haredi/religious classification', () => {
     [{ title: 'הצגת חנוכה לכל המשפחה' }, /לכל המשפחה/],
     [{ title: 'ערב בנות עם קוקטיילים', description: 'לנשים בלבד' }, /קוקטיילים/],
     [{ title: 'הופעה של אריאל זילבר' }, /לנשים/],
-    [{ title: 'ערב נשים בתל אביב', description: 'ערב כיף עם מוזיקה וריקודים', mode: 'haredi' }, /דתי\/חרדי/],
+    [{ title: 'ערב נשים בתל אביב', description: 'ערב כיף עם מוזיקה וריקודים', mode: 'haredi' }, /ריקודים|חרדי/],
     [{ title: 'כנס', description: 'גברים ונשים מוזמנים' }, /מעורב/],
     [{ title: 'ערב לנשים', description: 'קהל מעורב' }, /מעורב/],
     [{ title: 'הופעה לגברים בלבד', strong: true }, /גברים/],
   ];
-  for (const e of yes) test(`✓ ${e.title}`, () => assert.equal(classifyEvent(e).ok, true, JSON.stringify(classifyEvent(e))));
+  // (these cases describe the 'broad' rules; the strict Haredi rules have their own suite in tests/strict.test.js)
+  for (const e of yes) test(`✓ ${e.title}`, () => assert.equal(classifyEvent({ mode: 'broad', ...e }).ok, true, JSON.stringify(classifyEvent({ mode: 'broad', ...e }))));
   for (const [e, why] of no) test(`✗ ${e.title}`, () => {
-    const r = classifyEvent(e);
+    const r = classifyEvent({ mode: 'broad', ...e });
     assert.equal(r.ok, false);
     assert.match(r.reason, why);
   });
-  test('broad mode (default): women events without religious markers are in, party/mixed signals still out', () => {
-    assert.equal(classifyEvent({ title: 'ערב נשים בתל אביב', description: 'ערב כיף עם מוזיקה' }).ok, true);
-    assert.equal(classifyEvent({ title: 'סדנת קרמיקה לנשים' }).ok, true);
-    assert.equal(classifyEvent({ title: 'בוקר כיף לאמהות וילדים' }).ok, true);
-    assert.equal(classifyEvent({ title: 'מסיבת בריכה לנשים עם DJ' }).ok, false);
-    assert.equal(classifyEvent({ title: 'ערב סטנדאפ לנשים' }).ok, false);
-    assert.equal(classifyEvent({ title: 'הופעה של אריאל זילבר' }).ok, false);
+  test('broad mode: women events without religious markers are in, party/mixed signals still out', () => {
+    const b = (x) => classifyEvent({ mode: 'broad', ...x }).ok;
+    assert.equal(b({ title: 'ערב נשים בתל אביב', description: 'ערב כיף עם מוזיקה' }), true);
+    assert.equal(b({ title: 'סדנת קרמיקה לנשים' }), true);
+    assert.equal(b({ title: 'בוקר כיף לאמהות וילדים' }), true);
+    assert.equal(b({ title: 'מסיבת בריכה לנשים עם DJ' }), false);
+    assert.equal(b({ title: 'ערב סטנדאפ לנשים' }), false);
+    assert.equal(b({ title: 'הופעה של אריאל זילבר' }), false);
   });
-  test('niqqud does not hide a marker', () => assert.equal(classifyEvent({ title: 'עֶרֶב לְנָשִׁים בִּלְבַד' }).ok, true));
+  test('niqqud does not hide a marker', () => assert.equal(classifyEvent({ mode: 'broad', title: 'עֶרֶב לְנָשִׁים בִּלְבַד' }).ok, true));
   test('category + audience mapping', () => {
     assert.equal(categoryFor('שיעור עם הרבנית'), 'תורה ויהדות');
     assert.equal(categoryFor('סדנת שזירת חלות'), 'סדנאות');
@@ -302,11 +304,11 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     const reasons = Object.fromEntries(run.skipped.map(s => [s.sourceId, s.reason]));
     assert.match(reasons["900003"], /לא מתאים/);
     assert.match(reasons["900004"], /מחיר/);
-    assert.match(reasons["900005"], /עיר/);
+    assert.match(reasons["900005"], /עיר|חרדי/);
     assert.equal(reasons["900006"], 'עבר');
     assert.equal(reasons["900007"], 'אזלו הכרטיסים');
     assert.match(reasons["900008"], /פלייר/);
-    assert.match(reasons["900010"], /דתי\/חרדי/);
+    assert.match(reasons["900010"], /ריקודים|חרדי/);
     assert.equal(run.counts.created, 2);
     assert.ok(run.errorMessages.some(e => /900009/.test(e)), 'a broken event page is an error, not a crash');
     assert.equal((await Event.findById(manual._id).lean()).title, 'אירוע ידני');

@@ -122,7 +122,9 @@ const EventSchema = new mongoose.Schema({
   sourceName: { type: String },      // shown as "יובא מ…"
   sourceUrl: { type: String },       // event page on the source (also the ticket link)
   sourceImageUrl: { type: String },  // flyer URL on the source (we store our own copy in `image`)
-  generatedFlyer: { type: Boolean },  // no flyer on the source: NASHI-branded placeholder (server/importer/placeholder.js)
+  generatedFlyer: { type: Boolean },
+  sourceCategory: { type: String },  // the source's category (SmarTicket: נשים / חרדיוות …) — kept for re-checks
+  harediSource: { type: Boolean },   // came from a Haredi source / category (Glatticket, חרדיוות)  // no flyer on the source: NASHI-branded placeholder (server/importer/placeholder.js)
   importedAt: { type: Date },
   lastSeenAt: { type: Date },
   importEdited: { type: Boolean },   // a manager edited it on NASHI: the agent keeps her text and only refreshes status
@@ -169,6 +171,7 @@ const ImportBlockSchema = new mongoose.Schema({
   source: { type: String, required: true },
   sourceId: { type: String, required: true },
   title: { type: String },
+  reason: { type: String },
   blockedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now },
 });

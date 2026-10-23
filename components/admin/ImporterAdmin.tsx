@@ -140,6 +140,14 @@ const ImporterAdmin: React.FC = () => {
     catch (e: any) { toast(e?.message || 'ההרצה נכשלה', 'bad'); }
     finally { setStarting(false); }
   };
+  const [rechecking, setRechecking] = useState(false);
+  const recheck = async () => {
+    if (!window.confirm('לבדוק מחדש את כל האירועים המיובאים לפי הכללים (נשים בלבד + סימן חרדי)? מה שלא עומד בכללים יימחק ולא ייובא שוב.')) return;
+    setRechecking(true);
+    try { const r = await importerApi.reclassify(); toast(`נבדקו ${r.checked} · הוסרו ${r.removed.length} · כפילויות ${r.duplicates}`); load(); }
+    catch (e: any) { toast(e?.message || 'הבדיקה נכשלה', 'bad'); }
+    finally { setRechecking(false); }
+  };
   const setHidden = async (ev: any, hide: boolean) => {
     try { await importerApi.setHidden(idOf(ev), hide); toast(hide ? 'האירוע הוסתר מהאתר' : 'האירוע מוצג שוב'); load(); }
     catch (e: any) { toast(e?.message || 'הפעולה נכשלה', 'bad'); }
@@ -193,7 +201,8 @@ const ImporterAdmin: React.FC = () => {
 
       {/* imported events */}
       <section>
-        <SectionTitle title="אירועים שיובאו" count={events.length} icon={<Calendar size={17} />} />
+        <SectionTitle title="אירועים שיובאו" count={events.length} icon={<Calendar size={17} />}
+          action={<button onClick={recheck} disabled={rechecking} className="btn-ghost !px-4 !py-2 text-[13px] disabled:opacity-60">{rechecking ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} בדיקה מחדש לפי הכללים</button>} />
         <div className="mb-4 max-w-md"><Segmented value={filter} onChange={(v) => setFilter(v as any)} options={[{ id: 'visible', label: 'מוצגים' }, { id: 'hidden', label: 'מוסתרים' }, { id: 'all', label: 'הכול' }]} /></div>
         {shown.length === 0 ? <EmptyState icon={<Calendar size={26} />} title="אין אירועים להצגה" /> : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -236,7 +245,7 @@ const ImporterAdmin: React.FC = () => {
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[12.5px] text-slate-400">נכנס רק אירוע לנשים שמתאים לציבור הדתי/חרדי, עתידי, ועם שם, תאריך ושעה, מקום ועיר מוכרת, מחיר (או חינם), קישור לרכישה ופלייר (אם אין במקור — פלייר אוטומטי בעיצוב נשי, מסומן "פלייר אוטומטי"). אירוע שמחקת לא ייובא שוב.</p>
+        <p className="mt-3 text-[12.5px] text-slate-400">נכנס רק אירוע שמסומן במפורש לנשים ושיש בו סימן חרדי (מקור חרדי, קטגוריה חרדית, עיר או שכונה חרדית, מארגן חרדי). מסיבות, ריקודים, קהל מעורב, סרטים שלא לנשים בלבד ומקומות חילוניים — נדחים. ובנוסף: עתידי, ועם שם, תאריך ושעה, מקום ועיר מוכרת, מחיר (או חינם), קישור לרכישה ופלייר (אם אין במקור — פלייר אוטומטי בעיצוב נשי, מסומן "פלייר אוטומטי"). אירוע שמחקת לא ייובא שוב.</p>
       </section>
     </div>
   );

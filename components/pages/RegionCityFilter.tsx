@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { MapPin, Globe2, Wifi, Check } from 'lucide-react';
 import { REGIONS, regionName } from '../../shared/regions';
-import { useMyPlace } from '../../hooks/useMyPlace';
+import { useMyPlace, setGuestCity } from '../../hooks/useMyPlace';
 
 /**
  * "איפה?" — the area picker of the events page, built to be obvious on a phone:
@@ -10,10 +10,12 @@ import { useMyPlace } from '../../hooks/useMyPlace';
  * The choice is remembered on the device; the first time, the visitor's own region is selected.
  * National / online events are for everyone: the page shows them in their own section under any region.
  */
-export type AreaSel = { region: string; city: string }; // region: 'all' | 'online' | <region id>
+// region: 'all' | 'online' | <region id>. manual: the visitor chose it herself → location never overrides it.
+export type AreaSel = { region: string; city: string; manual?: boolean };
 const KEY = 'nashi-events-area';
+const ASKED = 'nashi-events-locate-asked';
 
-const read = (): AreaSel | null => { try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); return v && typeof v.region === 'string' ? { region: v.region, city: v.city || '' } : null; } catch { return null; } };
+const read = (): AreaSel | null => { try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); return v && typeof v.region === 'string' ? { region: v.region, city: v.city || '', manual: !!v.manual } : null; } catch { return null; } };
 
 type Item = { region?: string; city?: string; scope?: string };
 const scopeOf = (x: Item) => x.scope || 'local';
@@ -22,8 +24,15 @@ const cityOf = (x: Item) => x.city || 'מגדל העמק';
 
 export function useRegionCity<T extends Item>(items: T[], isUpcoming: (x: T) => boolean) {
   const { region: myRegion, city: myCity } = useMyPlace(null);
-  const [sel, setSel] = useState<AreaSel>(() => read() || { region: myRegion || 'all', city: '' });
+  const [sel, setSel] = useState<AreaSel>(() => { const r = read(); return r?.manual ? r : { region: myRegion || r?.region || 'all', city: '' }; });
   useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(sel)); } catch { /* ignore */ } }, [sel]);
+
+  // first visit with no choice and no known city: ask the browser for the location once
+  useEffect(() => {
+    if (read()?.manual || myCity) return;
+    try { if (localStorage.getItem(ASKED)) return; localStorage.setItem(ASKED, '1'); } catch { return; }
+    import('../../utils/locate').then(({ locateCity }) => locateCity()).then(r => { if (r?.city) setGuestCity(r.city); }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const upcoming = useMemo(() => items.filter(isUpcoming), [items, isUpcoming]);
   const regionCounts = useMemo(() => {
@@ -35,6 +44,14 @@ export function useRegionCity<T extends Item>(items: T[], isUpcoming: (x: T) => 
     return c;
   }, [upcoming]);
   const everywhereCount = upcoming.filter(x => scopeOf(x) !== 'local').length;
+  // whenever the location is known (detected or saved), select its region and city — unless she chose manually
+  const hasCity = (c: string) => upcoming.some(x => scopeOf(x) === 'local' && cityOf(x) === c);
+  useEffect(() => {
+    if (sel.manual || !myRegion) return;
+    const city = myCity && hasCity(myCity) ? myCity : '';
+    if (sel.region !== myRegion || sel.city !== city) setSel({ region: myRegion, city, manual: false });
+  }, [myRegion, myCity, upcoming.length, sel.manual]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const cityCounts = useMemo(() => {
     if (sel.region === 'all' || sel.region === 'online') return [] as [string, number][];
     const c = new Map<string, number>();
@@ -53,8 +70,8 @@ export function useRegionCity<T extends Item>(items: T[], isUpcoming: (x: T) => 
   };
   return {
     sel, myRegion, myCity, regionCounts, cityCounts, everywhereCount, place,
-    setRegion: (region: string) => setSel({ region, city: '' }),
-    setCity: (city: string) => setSel(s => ({ ...s, city: s.city === city ? '' : city })),
+    setRegion: (region: string) => setSel({ region, city: '', manual: true }),
+    setCity: (city: string) => setSel(s => ({ ...s, city: s.city === city ? '' : city, manual: true })),
   };
 }
 

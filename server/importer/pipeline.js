@@ -4,6 +4,7 @@ import { israelParts, nashiDate } from './time.js';
 import { downloadFlyer } from './images.js';
 import { placeholderFlyer } from './placeholder.js';
 import { kindOf } from './describe.js';
+import { reclassifyImported } from './reclassify.js';
 import { hasRealFlyer, audienceMode } from './classify.js';
 
 /**
@@ -49,12 +50,14 @@ export function toEventFields(n) {
     sourceName: n.sourceName,
     sourceUrl: n.ticketUrl,
     sourceImageUrl: hasRealFlyer(n) ? n.imageUrl : '',
+    sourceCategory: n.category || '',
+    harediSource: !!n.strong,
   };
 }
 
 // fields compared to decide "updated" vs "unchanged"
 const CONTENT = ['title', 'time', 'location', 'city', 'description', 'price', 'notes', 'ticketLink', 'category', 'sourceImageUrl', 'hebrewDate'];
-const FACTS = ['soldOut', 'salesClosed', 'price', 'time', 'endAt'];
+const FACTS = ['soldOut', 'salesClosed', 'price', 'time', 'endAt', 'sourceCategory', 'harediSource'];
 const same = (a, b) => (a instanceof Date || b instanceof Date) ? +new Date(a || 0) === +new Date(b || 0) : JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 /** Which fields to write on an existing imported event (pure, unit-tested). */
@@ -108,7 +111,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
         for (const c of candidates) {
           const before = counts.skipped;
           if (blocked.has(c.sourceId)) { skip(adapter.id, c, 'נמחק ע״י מנהלת'); st.skipped++; continue; }
-          const pre = adapter.prefilter ? adapter.prefilter(c, now()) : '';
+          const pre = adapter.prefilter ? adapter.prefilter(c, now(), audience) : '';
           if (pre && !existingIds.has(c.sourceId)) { skip(adapter.id, c, pre); st.skipped++; continue; }
           // existing events are always refreshed; the budget limits only NEW event pages per run
           if (!existingIds.has(c.sourceId) && detailsBudget-- <= 0) { skip(adapter.id, c, 'הגענו למכסת הבדיקות לריצה'); st.skipped++; continue; }
@@ -117,11 +120,12 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
           catch (e) { if (e.skip) skip(adapter.id, c, e.message); else { st.failed++; fail(`${adapter.name} · ${c.url}: ${e.message}`); } if (counts.skipped > before) st.skipped++; continue; }
           n.sourceId = n.sourceId || c.sourceId;
 
-          const verdict = classifyEvent({ mode: audience, title: n.title, description: `${n.rawDescription ?? n.description}\n${n.extraText || ''}`, location: n.location, strong: n.strong || c.strong, categoryText: c.women ? 'אירוע לנשים' : '' });
+          const verdict = classifyEvent({ mode: audience, title: n.title, description: `${n.rawDescription ?? n.description}\n${n.extraText || ''}`, location: n.location, city: n.city, category: n.category || '', organizer: n.sourceName || '', strong: n.strong || c.strong, categoryText: c.women ? 'אירוע לנשים' : '' });
           const existing = await Event.findOne({ source: adapter.id, sourceId: n.sourceId });
           if (!verdict.ok) {
             skip(adapter.id, c, verdict.reason, n.title); st.skipped++;
-            if (existing && !existing.hidden && !existing.importEdited) { await Event.updateOne({ _id: existing._id }, { hidden: true, hiddenReason: 'gone' }); counts.hidden++; }
+            // no longer passes the rules → removed for good (and never re-imported)
+            if (existing) { await ImportBlock.updateOne({ source: adapter.id, sourceId: n.sourceId }, { $setOnInsert: { title: n.title } }, { upsert: true }); await Event.deleteOne({ _id: existing._id }); counts.hidden++; }
             continue;
           }
           const missing = missingFields(n, now(), { allowNoFlyer });
@@ -132,6 +136,9 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
           const fields = toEventFields(n);
 
           if (!existing) {
+            // the same event listed by two sources / two venue sites (e.g. netivot + netivim): keep one
+            const dup = await Event.findOne({ source: { $type: 'string' }, title: fields.title, startAt: fields.startAt, city: fields.city }).select('_id').lean();
+            if (dup) { skip(adapter.id, c, 'כפילות של אירוע שכבר יובא', n.title); st.skipped++; continue; }
             if (n.soldOut || n.closed) { skip(adapter.id, c, n.soldOut ? 'אזלו הכרטיסים' : 'המכירה סגורה', n.title); st.skipped++; continue; }
             let image;
             let generatedFlyer = false;
@@ -175,6 +182,8 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
       }
     }
     // past events: shown with 'עבר' for 48h, then removed by the cleanup job (server/eventCleanup.js)
+    // everything imported earlier is re-checked against the current rules
+    try { const rc = await reclassifyImported({ Event, ImportBlock, mode: audience, log }); counts.hidden += rc.removed.length + rc.duplicates; } catch (e) { fail(`בדיקה מחדש: ${e.message}`); }
 
     Object.assign(run, { status: 'done', finishedAt: now(), counts, sources, skipped, errorMessages: errors });
     await run.save();

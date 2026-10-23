@@ -10,7 +10,7 @@ import { regionOfCity } from '../shared/regions.js';
 import { createSmarticketFetch, readSmart, SMART_NOW } from './helpers/fakeSmarticket.js';
 
 const norm = (id) => normalizeSmarticket({ html: readSmart(`betshemesh-${id}.html`), url: '', venue: 'betshemesh' });
-const ok = (n) => classifyEvent({ title: n.title, description: `${n.rawDescription}\n${n.extraText}`, location: n.location, strong: n.strong, categoryText: n.women ? 'אירוע לנשים' : '' });
+const ok = (n) => classifyEvent({ title: n.title, description: `${n.rawDescription}\n${n.extraText}`, location: n.location, city: n.city, category: n.category, organizer: n.sourceName, strong: n.strong });
 
 describe('SmarTicket pages', () => {
   test('relative links (no leading slash, Hebrew) resolve against the venue', () => {

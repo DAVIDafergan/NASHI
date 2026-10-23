@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Event, ImportRun, ImportBlock } from './models.js';
 import { authenticate, isAdmin } from './auth.js';
 import { importerConfig, importerRunning, importerNextAt, runImporterNow } from './importer/index.js';
+import { reclassifyImported } from './importer/reclassify.js';
 import { RESEARCHED_SOURCES } from './importer/adapters/index.js';
 import { REGIONS } from '../shared/regions.js';
 
@@ -39,6 +40,11 @@ r.get('/admin/importer/coverage', ...guard, async (req, res) => {
     }
     res.json({ target: Number(process.env.IMPORTER_TARGET_PER_REGION || 20), regions, everywhere });
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// re-check all imported events now (deletes + blocks what fails the current rules)
+r.post('/admin/importer/reclassify', ...guard, async (req, res) => {
+  try { res.json(await reclassifyImported({ Event, ImportBlock })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 r.post('/admin/importer/run', ...guard, (req, res) => {

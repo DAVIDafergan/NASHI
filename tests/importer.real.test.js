@@ -11,7 +11,7 @@ import { createRealFetch, readReal, REAL_NOW } from './helpers/fakeReal.js';
 
 const http = () => createHttp({ fetchImpl: createRealFetch().fetchImpl, minIntervalMs: 0 });
 const details = (eid, url) => createTickchakAdapter({ hubs: [] }).details({ sourceId: eid, url, listItem: { eid } }, http());
-const verdict = (n) => classifyEvent({ title: n.title, description: `${n.description}\n${n.extraText}`, location: n.location, strong: n.strong });
+const verdict = (n) => classifyEvent({ title: n.title, description: `${n.description}\n${n.extraText}`, location: n.location, city: n.city, strong: n.strong });
 
 describe('real page formats', () => {
   test('robots.txt that is really the HTML homepage (200 text/html) = no rules, the site is crawled', async () => {
@@ -78,7 +78,10 @@ describe('real events', () => {
     assert.equal(n.imageUrl, 'https://static.tickchak.co.il/caps/113538_screenshot-1790094494137.jpeg');
     assert.deepEqual(israelParts(n.startAt), { date: '2026-10-22', time: '20:15' });
     assert.deepEqual(missingFields(n, REAL_NOW), []);
-    assert.equal(verdict(n).womenOnly, true);
+    // women-only, but nothing marks it as Haredi (central Jerusalem venue, no Haredi words) → strict rule drops it
+    assert.equal(verdict(n).ok, false);
+    assert.match(verdict(n).reason, /חרדי/);
+    assert.equal(classifyEvent({ mode: 'broad', title: n.title, description: n.description, location: n.location }).womenOnly, true);
   });
 });
 
@@ -95,9 +98,10 @@ describe('real search results ("לנשים", 60 events)', () => {
     assert.equal(list.filter(e => pre(String(e.eid)) === 'עבר').length, 45);
   });
   test('upcoming women/religious events pass the list check; mixed / men / family events do not', () => {
-    for (const ok of ['113538', '115386', '96242']) assert.equal(pre(ok), '', ok);
-    assert.match(pre('66750'), /לגברים/);
-    assert.match(pre('86796'), /לכל המשפחה/);
+    for (const ok of ['113538', '115386']) assert.equal(pre(ok), '', ok);
+    assert.match(pre('96242'), /מסיבה/, '"מסיבת פורים לנשים" — parties are out');
+    assert.match(pre('66750'), /לגברים|קהל מעורב/);
+    assert.match(pre('86796'), /קהל מעורב|לכל המשפחה/);
   });
 });
 
@@ -115,18 +119,17 @@ describe('pipeline over real captures', { skip: !MONGO && 'set MONGO_TEST_URI to
   });
   after(async () => { await mongoose.disconnect(); });
 
-  test('imports exactly the two complete real events, with region and stored flyer', async () => {
+  test('strict Haredi: imports 113204 (Glatticket, women only) — not 113538 (no Haredi signal)', async () => {
     const run = await runImport({
       adapters: [createTickchakAdapter({ searchTerms: ['לנשים'], hubs: [], softHubs: [], detectCategories: false })],
       http: http(), models: { Event, ImportRun, ImportBlock }, now: () => REAL_NOW, trigger: 'test', log: () => {},
     });
     const evs = await Event.find({ source: 'tickchak' }).lean();
-    assert.deepEqual(evs.map(e => e.sourceId).sort(), ['113204', '113538']);
+    assert.deepEqual(evs.map(e => e.sourceId).sort(), ['113204']);
     const g = evs.find(e => e.sourceId === '113204');
     assert.equal(g.city, 'גדרה'); assert.equal(g.region, 'center'); assert.equal(g.price, 40);
     assert.equal(g.ticketLink, 'https://glatticket.co.il/113204');
     assert.match(g.image, /^data:image\/jpeg;base64,/);
-    assert.equal(evs.find(e => e.sourceId === '113538').region, 'jerusalem');
     assert.equal(run.status, 'done');
   });
 });

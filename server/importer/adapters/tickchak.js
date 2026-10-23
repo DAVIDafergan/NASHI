@@ -27,12 +27,11 @@ export const SOFT_HUBS = [
   'https://live.tickchak.co.il/musical', 'https://tickchak.co.il/courses', 'https://tickchak.co.il/festivals', 'https://tickchak.co.il/events',
 ];
 export const SEARCH_TERMS = [
-  // audience
-  'נשים', 'לנשים', 'לנשים בלבד', 'נשות', 'בנות', 'נערות', 'אמהות', 'אמא', 'רבנית', 'ערב נשים', 'כנס נשים',
-  // kinds of events
-  'הצגה', 'מופע', 'מחזמר', 'הפקה', 'ערב', 'כנס', 'התוועדות', 'הרצאה', 'סדנה', 'זמרת', 'ערב שירה', 'יום עיון',
-  'שיעור', 'חוג', 'קורס', 'בית מדרש', 'הפרשת חלה', 'חלות', 'טיול נשים', 'סיור נשים', 'ריקוד נשים', 'זומבה', 'התעמלות',
-  'מחול', 'אומנות', 'יצירה', 'העצמה', 'הקרנה', 'סרט', 'ראש חודש', 'מסיבת סיום', 'שבת', 'חנוכה',
+  // women-only / Haredi audience first
+  'לנשים בלבד', 'לנשים', 'נשים', 'ערב נשים', 'כנס נשים', 'הצגה לנשים', 'מופע לנשים', 'הרצאה לנשים', 'מחזמר לנשים',
+  'לבנות', 'לבנות סמינר', 'סמינר', 'חרדיות', 'לנשים חרדיות', 'חסידי', 'ברוח ההלכה', 'ללא סרטים', 'השלוחה החרדית',
+  'נשות', 'בנות', 'נערות', 'רבנית', 'מחזמר', 'הפקה', 'הצגה', 'מופע', 'התוועדות', 'הרצאה', 'יום עיון', 'שיעור',
+  'בית מדרש', 'הפרשת חלה', 'ראש חודש', 'חנוכה',
 ];
 // Tickchak search matches titles, and titles often carry the city — religious / Haredi cities first
 export const CITY_TERMS = [
@@ -286,15 +285,15 @@ export function createTickchakAdapter({
       return [...found.values()];
     },
     /** Cheap pre-check on listing data, before spending requests on details. → reason string or '' */
-    prefilter(c, now = new Date()) {
+    prefilter(c, now = new Date(), mode) {
       if (c.strong) return '';
       const li = c.listItem || {};
       const start = parseWhen(li.time_start);
       if (start && start <= now) return 'עבר';
       if (li.title || li.description) {
-        const r = classifyEvent({ title: li.title, description: li.description, location: li.location, strong: false });
-        // at list level we only drop clear "no"s; "not sure it's religious" is decided after the details
-        if (!r.ok && r.reason !== 'לא ברור שמתאים לציבור הדתי/חרדי' && !c.women) return r.reason;
+        const r = classifyEvent({ title: li.title, description: li.description, location: li.location, strong: false, ...(mode ? { mode } : {}) });
+        // at list level we only drop clear "no"s (hard rejects); the rest is decided after the details
+        if (!r.ok && (r.hard || (r.reason !== 'לא נמצא סימון שהאירוע לנשים' && !r.reason.startsWith('אין סימן') && !r.reason.startsWith('לא מסומן') && !c.women))) return r.reason;
       }
       return '';
     },
