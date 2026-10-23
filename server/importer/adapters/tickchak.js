@@ -104,6 +104,15 @@ export function parseEventLinks(html = '', { womenHeading = /נשים|לנשים
   return [...out.values()];
 }
 
+/** Regional women pages linked from live.tickchak.co.il/performances-for-women (…/performances-for-women/<region>). */
+export function liveRegionPages(html = '') {
+  const out = new Set();
+  const re = /href=["']((?:https?:\/\/live\.tickchak\.co\.il)?\/performances[-_]for[-_]women\/([a-z0-9-]+))\/?["']/gi;
+  let m;
+  while ((m = re.exec(html))) if (!/^(event|events|today|tomorrow|thisweek|weekend|dates?)$/i.test(m[2])) out.add(`https://live.tickchak.co.il/performances-for-women/${m[2].toLowerCase()}`);
+  return [...out];
+}
+
 /** cat_id values used by Tickchak's homepage script (cat_id: 5, data-cat="7", category_id=12 …). */
 export function detectCatIds(js = '') {
   const out = new Set();
@@ -214,6 +223,7 @@ export function createTickchakAdapter({
   pageSize = 100, maxPerTerm = Number(process.env.IMPORTER_MAX_PER_TERM || 400), glatticketHome = GLATTICKET_HOME, hubs = LIVE_HUBS,
   softHubs = process.env.IMPORTER_SOFT_HUBS === '0' ? [] : SOFT_HUBS,
   catIds = envList('IMPORTER_TICKCHAK_CAT_IDS'), detectCategories = process.env.IMPORTER_DETECT_CATEGORIES !== '0',
+  liveRegions = Number(process.env.IMPORTER_LIVE_REGION_PAGES || 15),
 } = {}) {
   return {
     id: 'tickchak',
@@ -230,15 +240,17 @@ export function createTickchakAdapter({
         const { text } = await http.getText(glatticketHome);
         for (const l of parseEventLinks(text)) add(l.eid, { strong: true, women: l.women, url: `https://glatticket.co.il/${l.eid}`, listItem: { title: l.title, soldOutHint: l.soldOut } });
       });
-      // 2. LIVE hubs (category hint only)
+      // 2. LIVE hubs (category hint only) — and the regional women pages linked from them
+      const regional = new Set();
       for (const hub of hubs) {
         await ctx.channel(`hub ${hub.replace(/^https:\/\//, '')}`, async () => {
           const { text } = await http.getText(hub);
+          for (const r of liveRegionPages(text)) regional.add(r);
           for (const l of parseEventLinks(text, { womenHeading: /./ })) if (!found.has(l.eid)) add(l.eid, { women: /women|tzama/i.test(hub) || l.women, url: `https://${l.host}.co.il/${l.eid}` });
         });
       }
-      // 2b. optional listing pages (LIVE categories, tickchak /courses /festivals /events)
-      for (const hub of softHubs) {
+      // 2b. optional listing pages (LIVE regional women pages, LIVE categories, tickchak /courses /festivals /events)
+      for (const hub of [...[...regional].slice(0, liveRegions), ...softHubs]) {
         await ctx.channel(`page ${hub.replace(/^https:\/\//, '')}`, async () => {
           const { text } = await http.getText(hub);
           for (const l of parseEventLinks(text, { womenHeading: /נשים|לנשים/ })) if (!found.has(l.eid)) add(l.eid, { women: l.women || /women/i.test(hub), url: `https://${l.host}.co.il/${l.eid}` });

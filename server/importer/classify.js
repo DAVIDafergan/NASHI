@@ -31,10 +31,11 @@ const RELIGIOUS = words([
 ]);
 const EXCLUDE = words([
   'גברים', 'לגברים', 'לגברים בלבד', 'גבר', 'קהל מעורב', 'מעורב', 'זוגות', 'לזוגות', 'רווקים', 'רווקות ורווקים', 'היכרויות', 'דייטינג',
-  'סטנדאפ', 'סטנד אפ', 'סטנד-אפ', 'קומדי בר', 'קומדי קלאב', 'בבר', 'הבר', 'בר יין', 'בר קוקטיילים', 'פאב', 'בפאב', 'מועדון', 'במועדון', 'קלאב',
+  'קומדי בר', 'קומדי קלאב', 'בבר', 'הבר', 'בר יין', 'בר קוקטיילים', 'פאב', 'בפאב', 'מועדון', 'במועדון', 'קלאב',
   'אלכוהול', 'בירה קרה', 'בירות', 'קוקטייל', 'קוקטיילים', 'יין חופשי', 'וודקה', 'וויסקי',
   'מסיבת טבע', 'רייב', 'טכנו', 'מסיבת בריכה', 'פול פארטי', 'בגדי ים', 'אפטר פארטי', 'דיג\'יי', 'DJ', 'ריקודי זוגות', 'לזוגות', 'זוגי', 'לכל המשפחה', 'הורים וילדים', 'אבא ובן', 'בגירים', '18\\+', '\\+18', 'מעל גיל 18 בלבד',
 ]);
+const SOFT_EXCLUDE = words(['סטנדאפ', 'סטנד אפ', 'סטנד-אפ'], true);
 // Men singers/performers aren't excluded by name (we can't know), but these phrasings are clearly mixed:
 const MIXED_HINT = /קהל\s+(?:מעורב|כללי)|גברים\s+ונשים|נשים\s+וגברים|ישיבה\s+מעורבת/;
 
@@ -54,6 +55,9 @@ export function classifyEvent({ title = '', description = '', location = '', cat
   if (ex) return { ok: false, reason: `לא מתאים: "${ex[0].trim()}"` };
   // also catches real-world typos like "לנשיםנבלבד" (Glatticket 113204) where word boundaries fail
   const womenOnly = WOMEN_ONLY.test(text) || /נשים\s?נ?בלבד/.test(text);
+  // stand-up: out, unless it's a women-only show or listed by a Haredi source/category ("חרדיוות")
+  const su = SOFT_EXCLUDE.exec(text);
+  if (su && !(strong || womenOnly)) return { ok: false, reason: `לא מתאים: "${su[0].trim()}"` };
   const women = womenOnly || WOMEN.test(text);
   if (!women) return { ok: false, reason: 'לא נמצא סימון שהאירוע לנשים' };
   if (womenOnly) reasons.push('לנשים בלבד');

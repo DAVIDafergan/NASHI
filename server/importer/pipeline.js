@@ -82,6 +82,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
 
   try {
     for (const adapter of adapters) {
+      detailsBudget = maxDetails; // per source, so one big source can't starve the others
       const st = { id: adapter.id, name: adapter.name, discovered: 0, created: 0, updated: 0, skipped: 0, failed: 0, error: '' };
       sources.push(st);
       let channelErrors = 0;
