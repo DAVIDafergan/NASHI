@@ -48,7 +48,7 @@ const EventCard: React.FC<EventCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`group bg-white rounded-[1.75rem] overflow-hidden border border-rose-100/70 shadow-petal hover:shadow-lift hover:-translate-y-1 active:scale-[0.99] transition-all duration-500 cursor-pointer flex flex-col ${isPast ? 'opacity-[0.85]' : ''} ${className}`}
+      className={`group bg-white rounded-[1.75rem] overflow-hidden border border-rose-100/70 shadow-petal hover:shadow-lift hover:-translate-y-1 active:scale-[0.99] transition-all duration-500 cursor-pointer flex flex-col ${isPast ? 'opacity-70 saturate-50' : ''} ${className}`}
     >
       <div className="relative overflow-hidden bg-rose-50 shrink-0 m-2 mb-0 rounded-[1.4rem]" style={{ aspectRatio: String(ratio) }}>
         {/* event images are usually posters with text: show the whole poster over a soft copy of itself */}
@@ -62,8 +62,8 @@ const EventCard: React.FC<EventCardProps> = ({
           className={`relative w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.03] ${isPast ? 'grayscale-[0.35]' : ''}`}
         />
         {isPast ? (
-          <span className="absolute top-3 right-3 inline-flex items-center gap-1.5 bg-white/90 text-slate-600 px-3 py-1.5 rounded-full text-[11px] font-semibold shadow-soft">
-            <CheckCircle2 size={13} /> האירוע הסתיים
+          <span className="absolute top-3 right-3 inline-flex items-center gap-1.5 bg-slate-700/90 text-white px-3 py-1.5 rounded-full text-[12px] font-semibold shadow-soft">
+            <CheckCircle2 size={13} /> עבר
           </span>
         ) : statusLabel ? (
           <span className="absolute top-3 right-3 bg-ink/85 text-white px-3 py-1 rounded-full text-[11px] font-semibold shadow-soft">
@@ -104,7 +104,7 @@ const EventCard: React.FC<EventCardProps> = ({
               : 'bg-rose-50 text-rose-700 group-hover:bg-rose-700 group-hover:text-white'
           }`}
         >
-          {isPast ? 'הסתיים' : ctaLabel}
+          {isPast ? 'עבר' : ctaLabel}
         </button>
       </div>
     </div>

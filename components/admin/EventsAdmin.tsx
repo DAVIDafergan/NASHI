@@ -3,7 +3,8 @@ import { Calendar, Clock, Copy, Info, Pencil, Plus, Sparkles, Star, Ticket, Tras
 import { api } from '../../services/api';
 import {
   Badge, DeleteButton, EmptyState, Field, FormSection, IconButton, ImagePicker, ItemCard, LocationBadges, LocationFields,
-  Pager, SaveBar, Segmented, Sheet, Toggle, fmtDate, idOf, inputCls, matchesRegion, matchesSearch, withSave, useOnCreate, AdminScopeContext } from './ui';
+  Pager, SaveBar, Segmented, Sheet, Toggle, fmtDate, idOf, inputCls, matchesRegion, matchesSearch, withSave, useOnCreate, AdminScopeContext, API_BASE, authHeaders } from './ui';
+import { isEventPast } from '../../shared/eventTime';
 
 const CATEGORIES = ['מוזיקה', 'העשרה', 'סדנאות', 'קהילה', 'בידור', 'אופנה', 'תורה ויהדות', 'אחר'];
 const PAGE = 18;
@@ -18,7 +19,13 @@ const dateOnly = (d?: string) => (d ? String(d).split('T')[0] : '');
 
 const EventsAdmin: React.FC<{ events: any[]; region: string; search: string; createTick: number; reload: () => void }> = ({ events, region, search, createTick, reload }) => {
   const { lockRegion } = React.useContext(AdminScopeContext);
-  const [when, setWhen] = useState<'upcoming' | 'past' | 'all'>('upcoming');
+  const [when, setWhen] = useState<'upcoming' | 'past' | 'all' | 'archive'>('upcoming');
+  // ארכיון: events that ended more than 48h ago (hidden from the site; manual ones are kept here)
+  const [archive, setArchive] = useState<any[] | null>(null);
+  useEffect(() => {
+    if (when !== 'archive' || archive) return;
+    fetch(`${API_BASE}/admin/events/archive`, { headers: authHeaders() }).then(r => r.ok ? r.json() : []).then(a => setArchive(Array.isArray(a) ? a : [])).catch(() => setArchive([]));
+  }, [when, archive]);
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>(blank());
@@ -27,13 +34,12 @@ const EventsAdmin: React.FC<{ events: any[]; region: string; search: string; cre
   useOnCreate(createTick, () => { setForm(blank()); setOpen(true); });
   useEffect(() => { setPage(1); }, [region, search, when]);
 
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const isPast = (e: any) => e.date && new Date(e.date) < today;
+  const isPast = (e: any) => isEventPast(e);
 
-  const list = useMemo(() => events
+  const list = useMemo(() => (when === 'archive' ? (archive || []) : events)
     .filter(e => matchesRegion(e, region) && matchesSearch(search, e.title, e.location, e.city, e.category))
-    .filter(e => when === 'all' ? true : when === 'past' ? isPast(e) : !isPast(e))
-    .sort((a, b) => (when === 'past' ? -1 : 1) * (+new Date(a.date || 0) - +new Date(b.date || 0))), [events, region, search, when]); // eslint-disable-line react-hooks/exhaustive-deps
+    .filter(e => when === 'all' || when === 'archive' ? true : when === 'past' ? isPast(e) : !isPast(e))
+    .sort((a, b) => (when === 'past' ? -1 : 1) * (+new Date(a.date || 0) - +new Date(b.date || 0))), [events, archive, region, search, when]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pages = Math.max(1, Math.ceil(list.length / PAGE));
   const shown = list.slice((page - 1) * PAGE, page * PAGE);
@@ -56,9 +62,9 @@ const EventsAdmin: React.FC<{ events: any[]; region: string; search: string; cre
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="w-full max-w-sm">
-          <Segmented value={when} onChange={(v) => setWhen(v as any)} options={[{ id: 'upcoming', label: 'קרובים' }, { id: 'past', label: 'שעברו' }, { id: 'all', label: 'הכול' }]} />
+          <Segmented value={when} onChange={(v) => setWhen(v as any)} options={[{ id: 'upcoming', label: 'קרובים' }, { id: 'past', label: 'עברו (48 ש׳)' }, { id: 'all', label: 'הכול' }, { id: 'archive', label: 'ארכיון' }]} />
         </div>
-        <span className="text-sm text-slate-500">{list.length} אירועים</span>
+        <span className="text-sm text-slate-500">{list.length} אירועים{when === 'archive' ? ' · מוסתרים מהאתר' : when === 'past' ? ' · יוסרו מהאתר 48 שעות אחרי שהסתיימו' : ''}</span>
       </div>
 
       {list.length === 0 ? (
@@ -68,7 +74,7 @@ const EventsAdmin: React.FC<{ events: any[]; region: string; search: string; cre
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {shown.map(e => (
             <ItemCard key={idOf(e)} image={e.image} title={e.title} onClick={() => edit(e)}
-              badges={<>{e.isHero && <Badge tone="amber"><Star size={11} /> בבאנר הראשי</Badge>}{isPast(e) && <Badge tone="slate">עבר</Badge>}</>}
+              badges={<>{e.isHero && <Badge tone="amber"><Star size={11} /> בבאנר הראשי</Badge>}{e.archived ? <Badge tone="slate">בארכיון</Badge> : isPast(e) && <Badge tone="slate">עבר</Badge>}</>}
               meta={<>
                 <p className="flex items-center gap-1.5"><Calendar size={13} className="text-rose-400" /> {fmtDate(e.date, { weekday: 'short', day: 'numeric', month: 'long' })}{e.time ? ` · ${e.time}` : ''}{e.hebrewDate ? ` · ${e.hebrewDate}` : ''}</p>
                 {e.location && <p className="truncate">{e.location}</p>}

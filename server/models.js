@@ -127,6 +127,10 @@ const EventSchema = new mongoose.Schema({
   lastSeenAt: { type: Date },
   importEdited: { type: Boolean },   // a manager edited it on NASHI: the agent keeps her text and only refreshes status
   startAt: { type: Date },           // exact start instant (date + time, Israel time)
+  endAt: { type: Date },             // end instant when the source gives it
+  // 48h after it ended an event disappears for good: imported → deleted (+ImportBlock), manual → archived
+  archived: { type: Boolean, default: false },
+  archivedAt: { type: Date },
   soldOut: { type: Boolean, default: false },
   salesClosed: { type: Boolean, default: false },
   // hidden events are not served by GET /events. reason: 'admin' (a manager hid it), 'gone' (removed from the source), 'past'

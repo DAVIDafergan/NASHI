@@ -349,12 +349,11 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     assert.equal(run.status, 'done');
   });
 
-  test('past imported events are hidden', async () => {
-    await Event.updateOne({ sourceId: '900001' }, { hidden: false, hiddenReason: null, startAt: new Date('2026-10-01T18:00:00Z') });
+  test('an imported event that already happened is NOT hidden by the agent (it keeps its 48h "עבר" window)', async () => {
+    await Event.updateOne({ sourceId: '900001' }, { hidden: false, hiddenReason: null, startAt: new Date(Date.now() - 3600e3) });
     const { fetchImpl } = createFakeFetch({ search: () => ({ events: [] }), handle: ({ u }) => (u.host.includes('glatticket') || u.host.startsWith('live.')) ? new Response('<html></html>') : null });
-    await runImport({ adapters: [createTickchakAdapter({ searchTerms: ['נשים'], softHubs: [], detectCategories: false })], http: createHttp({ fetchImpl, minIntervalMs: 0 }), models: { Event, ImportRun, ImportBlock }, now: clock, trigger: 'test', log: () => {}, ...strict });
-    const g = await Event.findOne({ sourceId: '900001' }).lean();
-    assert.equal(g.hidden, true);
+    await runImport({ adapters: [createTickchakAdapter({ searchTerms: ['נשים'], softHubs: [], detectCategories: false })], http: createHttp({ fetchImpl, minIntervalMs: 0 }), models: { Event, ImportRun, ImportBlock }, now: () => new Date(), trigger: 'test', log: () => {}, ...strict });
+    assert.equal((await Event.findOne({ sourceId: '900001' }).lean()).hidden, false);
   });
 });
 

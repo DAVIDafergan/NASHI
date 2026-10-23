@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto'; // תוספת עבור ייצור טוקנים מאובטחים
 import mongoose from 'mongoose';
 import { regionOfCity, REGIONS } from '../shared/regions.js';
+import { isEventExpired } from '../shared/eventTime.js';
 const REGION_IDS = REGIONS.map(r => r.id);
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
@@ -373,8 +374,25 @@ router.delete('/users/:id', authenticate, isAdmin, async (req, res) => {
 
 router.get('/events', async (req, res) => {
     // hidden = imported events a manager hid, or that disappeared from the source / already happened
-    try { res.json(await Event.find({ hidden: { $ne: true } }).populate('attendees', 'name avatar')); } 
+    // past events stay 48h (shown as "עבר"), then never again — even before the hourly cleanup gets to them
+    try {
+        const list = await Event.find({ hidden: { $ne: true }, archived: { $ne: true } }).populate('attendees', 'name avatar');
+        const now = Date.now();
+        res.json(list.filter(e => !isEventExpired(e, now)));
+    } 
     catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ארכיון: events that ended more than 48h ago (manual ones are archived, imported ones are deleted).
+// Main admin: all · regional manager: local events of her region.
+router.get('/admin/events/archive', authenticate, async (req, res) => {
+    try {
+        const me = await User.findById(req.user.id).select('isAdmin role adminRegion');
+        if (!me?.isAdmin && !(me?.role === 'regionAdmin' && me.adminRegion)) return res.status(403).json({ error: 'Admin access required' });
+        const q = { archived: true };
+        if (!me.isAdmin) Object.assign(q, { region: me.adminRegion, scope: { $in: ['local', null] } });
+        res.json(await Event.find(q).select('-attendees').sort({ date: -1 }).limit(300));
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/events', authenticate, canManage(Event), async (req, res) => {
@@ -388,7 +406,7 @@ router.post('/events', authenticate, canManage(Event), async (req, res) => {
 });
 
 // fields that only the events agent writes
-const IMPORT_FIELDS = ['source', 'sourceId', 'sourceName', 'sourceUrl', 'sourceImageUrl', 'importedAt', 'lastSeenAt', 'importEdited', 'hidden', 'hiddenReason'];
+const IMPORT_FIELDS = ['source', 'sourceId', 'sourceName', 'sourceUrl', 'sourceImageUrl', 'importedAt', 'lastSeenAt', 'importEdited', 'hidden', 'hiddenReason', 'archivedAt'];
 
 router.put('/events/:id', authenticate, canManage(Event), async (req, res) => {
     try {
@@ -397,7 +415,10 @@ router.put('/events/:id', authenticate, canManage(Event), async (req, res) => {
         const current = await Event.findById(req.params.id).select('source');
         // a manager edited an imported event: the agent keeps her text from now on and only refreshes status/price/time
         if (current?.source) update.importEdited = true;
-        res.json(await Event.findByIdAndUpdate(req.params.id, update, { new: true }));
+        let doc = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
+        // an archived event that was moved to a new date comes back
+        if (doc?.archived && !isEventExpired(doc)) doc = await Event.findByIdAndUpdate(doc._id, { archived: false, $unset: { archivedAt: 1 } }, { new: true });
+        res.json(doc);
     } 
     catch (err) { res.status(500).json({ error: err.message }); }
 });

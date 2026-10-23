@@ -8,6 +8,7 @@ import ScrollReveal from '../components/ScrollReveal';
 import { useRegionCity, RegionCityPicker } from '../components/pages/RegionCityFilter';
 import FlyerView, { FlyerZoom } from '../components/FlyerView';
 import { regionName } from '../shared/regions';
+import { isEventPast, isEventExpired, eventStartMs } from '../shared/eventTime';
 import { PageShell, PageHero, FilterBar, SearchField, Chip, ChipRow, EmptyState, PageLoading, Sheet, IconButton } from '../components/pages/PageKit';
 
 // --- Types ---
@@ -49,9 +50,9 @@ interface EventItem {
   startAt?: string;
 }
 
-// past = 3 hours after the start (or the whole day when there's no exact time)
-const startOf = (e: { startAt?: string; date: string }) => new Date(e.startAt || e.date).getTime();
-const isPastEvent = (e: { startAt?: string; date: string }) => e.startAt ? startOf(e) + 3 * 3600e3 < Date.now() : new Date(e.date).getTime() + 864e5 < Date.now();
+// past = after its end (end time, or start + 3h, or the end of its day) — shown with "עבר" for 48h, then gone (shared/eventTime.js)
+const startOf = (e: any) => { const t = eventStartMs(e); return Number.isFinite(t) ? t : new Date(e.date).getTime(); };
+const isPastEvent = (e: any) => isEventPast(e);
 
 /** "היום / השבוע / בחודש הקרוב / בהמשך" by Israel calendar day. */
 const dayKey = (t: number) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
@@ -59,13 +60,15 @@ function whenGroup(e: { startAt?: string; date: string }) {
   const today = dayKey(Date.now());
   const d = e.startAt ? dayKey(startOf(e)) : String(e.date).slice(0, 10);
   const days = Math.round((Date.parse(d) - Date.parse(today)) / 864e5);
-  if (days <= 0) return 'היום';
+  if (days === -1) return 'אתמול';
+  if (days < -1) return 'לפני יומיים';
+  if (days === 0) return 'היום';
   if (days === 1) return 'מחר';
   if (days <= 7) return 'השבוע';
   if (days <= 31) return 'בחודש הקרוב';
   return 'בהמשך';
 }
-const GROUPS = ['היום', 'מחר', 'השבוע', 'בחודש הקרוב', 'בהמשך'];
+const GROUPS = ['היום', 'מחר', 'השבוע', 'בחודש הקרוב', 'בהמשך', 'אתמול', 'לפני יומיים'];
 
 const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
 
@@ -91,7 +94,7 @@ const EventsPage = () => {
     fetch(`${API_URL}/events`)
       .then(res => res.json())
       .then(data => {
-        const formattedEvents = data.map((item: any) => ({
+        const formattedEvents = data.filter((item: any) => !isEventExpired(item)).map((item: any) => ({
             ...item,
             id: item._id || item.id,
             date: item.date || new Date().toISOString(),
@@ -151,13 +154,13 @@ const EventsPage = () => {
       if (sortBy === 'price-high') return getDisplayPrice(b).value - getDisplayPrice(a).value;
       return 0;
   });
-  const [showPast, setShowPast] = useState(false);
   const [zoom, setZoom] = useState('');
   const [moreText, setMoreText] = useState(false);
   useEffect(() => { setMoreText(false); }, [selectedEvent]);
-  const upcomingHere = filteredEvents.filter(e => !isPastEvent(e) && area.place(e as any) === 'here');
-  const upcomingEverywhere = filteredEvents.filter(e => !isPastEvent(e) && area.place(e as any) === 'everywhere');
-  const pastShown = filteredEvents.filter(e => isPastEvent(e));
+  // events that ended in the last 48h stay in their date group with an "עבר" badge (the server drops them after that)
+  const here = filteredEvents.filter(e => area.place(e as any) === 'here');
+  const upcomingHere = here.filter(e => !isPastEvent(e));
+  const upcomingEverywhere = filteredEvents.filter(e => area.place(e as any) === 'everywhere');
   const areaTitle = area.sel.region === 'all' ? 'בכל הארץ' : area.sel.region === 'online' ? 'במקוון' : area.sel.city ? `ב${area.sel.city}` : `ב${regionName(area.sel.region)}`;
 
   const categories = ['all', 'מוזיקה', 'העשרה', 'סדנאות', 'קהילה', 'בידור', 'תורה ויהדות', 'אופנה'];
@@ -306,7 +309,7 @@ const EventsPage = () => {
         const anyFilter = filter !== '' || selectedCategory !== 'all' || onlyFree;
         return (
           <div className="space-y-10">
-            {upcomingHere.length === 0 ? (
+            {upcomingHere.length === 0 && (
               <EmptyState
                 icon={<MapPin size={28} />}
                 title={anyFilter ? 'לא מצאנו אירועים כאלה' : `עוד אין אירועים קרובים ${areaTitle}`}
@@ -317,24 +320,19 @@ const EventsPage = () => {
                   {!anyFilter && area.sel.region !== 'all' && <a href="#/become-manager" className="btn-ghost">להיות מנהלת תרבות באזור</a>}
                 </div>}
               />
-            ) : sortBy === 'date' ? (
+            )}
+            {here.length > 0 && (sortBy === 'date' ? (
               GROUPS.map(g => {
-                const list = upcomingHere.filter(e => whenGroup(e) === g);
-                return list.length ? <section key={g}>{heading(g, list.length, g === GROUPS[0] ? areaTitle : undefined)}{grid(list)}</section> : null;
+                const list = here.filter(e => whenGroup(e) === g);
+                const upcomingN = list.filter(e => !isPastEvent(e)).length;
+                return list.length ? <section key={g}>{heading(g, upcomingN || list.length, g === 'היום' ? areaTitle : g === 'אתמול' || g === 'לפני יומיים' ? 'עבר · יוסר בתוך 48 שעות' : undefined)}{grid(list)}</section> : null;
               })
-            ) : grid(upcomingHere)}
+            ) : grid(here))}
 
             {upcomingEverywhere.length > 0 && (
               <section>{heading('ארצי ומקוון', upcomingEverywhere.length, 'לכל הנשים, מכל מקום')}{grid(upcomingEverywhere)}</section>
             )}
 
-            {pastShown.length > 0 && (
-              <section>
-                {!showPast ? (
-                  <button onClick={() => setShowPast(true)} className="btn-ghost mx-auto flex"><History size={16} /> אירועים שהיו {areaTitle} ({pastShown.length})</button>
-                ) : (<>{heading('אירועים שהיו', pastShown.length)}{grid(pastShown)}</>)}
-              </section>
-            )}
           </div>
         );
       })()}

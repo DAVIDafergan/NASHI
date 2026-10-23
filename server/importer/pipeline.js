@@ -32,6 +32,7 @@ export function toEventFields(n) {
     date: nashiDate(n.startAt),
     time,
     startAt: n.startAt,
+    endAt: n.endAt && n.endAt > n.startAt ? n.endAt : null,
     hebrewDate: hebrewDay(new Date(`${date}T12:00:00Z`)),
     location: n.location || n.venue,
     city: n.city,
@@ -53,7 +54,7 @@ export function toEventFields(n) {
 
 // fields compared to decide "updated" vs "unchanged"
 const CONTENT = ['title', 'time', 'location', 'city', 'description', 'price', 'notes', 'ticketLink', 'category', 'sourceImageUrl', 'hebrewDate'];
-const FACTS = ['soldOut', 'salesClosed', 'price', 'time'];
+const FACTS = ['soldOut', 'salesClosed', 'price', 'time', 'endAt'];
 const same = (a, b) => (a instanceof Date || b instanceof Date) ? +new Date(a || 0) === +new Date(b || 0) : JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 /** Which fields to write on an existing imported event (pure, unit-tested). */
@@ -163,7 +164,8 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
 
         // listed nowhere anymore → hide (only when discovery fully worked, so a network hiccup never hides events)
         if (channelErrors === 0) {
-          const r = await Event.updateMany({ source: adapter.id, hidden: { $ne: true }, $or: [{ lastSeenAt: { $lt: startedAt } }, { lastSeenAt: { $exists: false } }] }, { $set: { hidden: true, hiddenReason: 'gone' } });
+          // (an event that already happened keeps its 48h 'עבר' window even if the source dropped it)
+          const r = await Event.updateMany({ source: adapter.id, hidden: { $ne: true }, startAt: { $gt: startedAt }, $or: [{ lastSeenAt: { $lt: startedAt } }, { lastSeenAt: { $exists: false } }] }, { $set: { hidden: true, hiddenReason: 'gone' } });
           counts.hidden += r.modifiedCount || 0;
         }
       } catch (e) {
@@ -171,10 +173,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
         fail(`${adapter.name}: ${e.message}`);
       }
     }
-    // imported events that already happened
-    const cutoff = new Date(now().getTime() - 3 * 3600 * 1000);
-    const past = await Event.updateMany({ source: { $type: 'string' }, hidden: { $ne: true }, $or: [{ startAt: { $lt: cutoff } }, { startAt: { $exists: false }, date: { $lt: new Date(cutoff.getTime() - 864e5) } }] }, { $set: { hidden: true, hiddenReason: 'past' } });
-    counts.hidden += past.modifiedCount || 0;
+    // past events: shown with 'עבר' for 48h, then removed by the cleanup job (server/eventCleanup.js)
 
     Object.assign(run, { status: 'done', finishedAt: now(), counts, sources, skipped, errorMessages: errors });
     await run.save();
