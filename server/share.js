@@ -1,6 +1,9 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { Story, Personality } from './models.js';
+import { HDate } from '@hebcal/core';
+import { Story, Personality, Event } from './models.js';
+import { isEventExpired } from '../shared/eventTime.js';
+import { factsLine, eventDeepLink } from '../shared/eventShare.js';
 
 /**
  * Link-preview pages for WhatsApp / Facebook / Telegram.
@@ -9,13 +12,13 @@ import { Story, Personality } from './models.js';
  */
 const router = express.Router();
 
-const esc = (v = '') => String(v)
+export const esc = (v = '') => String(v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const clip = (v = '', n = 180) => { const s = String(v).replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n - 1)}…` : s; };
 const origin = (req) => `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
 
-const page = ({ title, description, image, url, redirect }) => `<!doctype html>
+export const page = ({ title, description, image, url, redirect, imageMeta }) => `<!doctype html>
 <html lang="he" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title>
@@ -26,6 +29,10 @@ const page = ({ title, description, image, url, redirect }) => `<!doctype html>
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:image" content="${esc(image)}">
+<meta property="og:image:secure_url" content="${esc(image)}">${imageMeta?.type ? `
+<meta property="og:image:type" content="${esc(imageMeta.type)}">` : ''}${imageMeta?.width ? `
+<meta property="og:image:width" content="${imageMeta.width}">
+<meta property="og:image:height" content="${imageMeta.height}">` : ''}
 <meta property="og:url" content="${esc(url)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta http-equiv="refresh" content="0;url=${esc(redirect)}">
@@ -47,7 +54,47 @@ const sendDataUrl = (res, dataUrl) => {
   return true;
 };
 
+/** Width/height/type of a JPEG / PNG / WebP / GIF buffer (for og:image:width/height); null if unknown. */
+export function imageInfo(buf) {
+  try {
+    if (!buf || buf.length < 24) return null;
+    if (buf[0] === 0x89 && buf[1] === 0x50) return { type: 'image/png', width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+    if (buf.slice(0, 3).toString() === 'GIF') return { type: 'image/gif', width: buf.readUInt16LE(6), height: buf.readUInt16LE(8) };
+    if (buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP') {
+      const kind = buf.slice(12, 16).toString();
+      if (kind === 'VP8X') return { type: 'image/webp', width: 1 + buf.readUIntLE(24, 3), height: 1 + buf.readUIntLE(27, 3) };
+      if (kind === 'VP8 ') return { type: 'image/webp', width: buf.readUInt16LE(26) & 0x3fff, height: buf.readUInt16LE(28) & 0x3fff };
+      return { type: 'image/webp' };
+    }
+    if (buf[0] === 0xff && buf[1] === 0xd8) {
+      let i = 2;
+      while (i < buf.length - 9) {
+        if (buf[i] !== 0xff) { i++; continue; }
+        const marker = buf[i + 1];
+        const len = buf.readUInt16BE(i + 2);
+        if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) return { type: 'image/jpeg', height: buf.readUInt16BE(i + 5), width: buf.readUInt16BE(i + 7) };
+        i += 2 + len;
+      }
+      return { type: 'image/jpeg' };
+    }
+  } catch { /* unknown */ }
+  return null;
+}
+const dataUrlBuffer = (dataUrl) => { const m = /^data:([\w/+.-]+);base64,(.+)$/.exec(dataUrl || ''); return m ? { mime: m[1], buf: Buffer.from(m[2], 'base64') } : null; };
+
 // ---- images that crawlers can fetch ----
+// event flyer for WhatsApp: raster only (WhatsApp ignores SVG — generated placeholder flyers use the site image)
+router.get('/s/img/event/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/og-image.jpg');
+    const ev = await Event.findById(req.params.id).select('image hidden');
+    if (!ev || ev.hidden || !ev.image) return res.redirect('/og-image.jpg');
+    if (/^https:\/\//.test(ev.image)) return res.redirect(ev.image);
+    if (/^data:image\/svg/i.test(ev.image)) return res.redirect('/og-image.jpg');
+    if (!sendDataUrl(res, ev.image)) res.redirect('/og-image.jpg');
+  } catch { res.redirect('/og-image.jpg'); }
+});
+
 router.get('/s/img/personality/:id', async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/og-image.jpg');
@@ -100,6 +147,48 @@ router.get('/s/story/:id', async (req, res) => {
       url: `${base}/s/story/${s._id}`,
       redirect: `/#/?storyId=${s._id}`,
     });
+  } catch { sendPage(res, fallback); }
+});
+
+// ---- events ----
+const hebrewDay = (ev) => {
+  if (ev.hebrewDate) return ev.hebrewDate;
+  try { const d = new Date(ev.date); return isNaN(d) ? '' : new HDate(new Date(d.getTime() + 12 * 3600e3)).renderGematriya(true).split(' ').slice(0, -1).join(' '); } catch { return ''; }
+};
+const firstLine = (text = '', skip = '') => String(text).split('\n').map(l => l.trim()).filter(l => l && l !== skip && !/^[📅📍🎟️]/u.test(l) && !/^הכרטיסים נמכרים/.test(l))[0] || '';
+
+/** The preview data for one event (pure — tested). ended: past its 48h window, archived or hidden. */
+export function eventPreview(ev, base, { now = Date.now() } = {}) {
+  const id = String(ev._id || ev.id);
+  const ended = !!(ev.archived || ev.hidden || isEventExpired(ev, now));
+  const facts = factsLine(ev, hebrewDay(ev));
+  const blurb = firstLine(ev.description, ev.title);
+  const img = typeof ev.image === 'string' ? ev.image : '';
+  const raster = img && !/^data:image\/svg/i.test(img);
+  return {
+    title: ended ? `האירוע הסתיים · ${ev.title}` : `${ev.title} · נשי`,
+    description: ended ? 'האירוע הזה כבר הסתיים — היכנסי לאירועים הקרובים באזור שלך בנשי' : clip(blurb ? `${facts} — ${blurb}` : facts, 290),
+    image: !ended && raster ? `${base}/s/img/event/${id}` : `${base}/og-image.jpg`,
+    url: `${base}/s/event/${id}`,
+    redirect: eventDeepLink(id),
+  };
+}
+
+// /s/event/:id — WhatsApp / Facebook preview, then the event opens on the site
+router.get('/s/event/:id', async (req, res) => {
+  const base = origin(req);
+  const fallback = { title: 'אירועים לנשים · נשי', description: 'ערבי נשים, סדנאות, הרצאות ומופעים — בכל הארץ', image: `${base}/og-image.jpg`, url: `${base}${req.originalUrl}`, redirect: '/#/events' };
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return sendPage(res, fallback);
+    const ev = await Event.findById(req.params.id).select('-attendees').lean();
+    if (!ev) return sendPage(res, fallback);
+    const data = eventPreview(ev, base);
+    // image size for WhatsApp (og:image:width/height/type) when the flyer is stored with us
+    if (data.image.includes('/s/img/event/')) {
+      const d = dataUrlBuffer(ev.image);
+      if (d) data.imageMeta = imageInfo(d.buf);
+    }
+    sendPage(res, data);
   } catch { sendPage(res, fallback); }
 });
 

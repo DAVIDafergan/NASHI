@@ -1,3 +1,4 @@
+import { shareMessage, eventSharePath } from '../shared/eventShare';
 /** Public site origin used in shared links (the server renders preview cards for /s/* paths). */
 export const SITE_ORIGIN = (() => {
   const o = typeof window !== 'undefined' ? window.location.origin : '';
@@ -46,4 +47,31 @@ export function placeLabel(item: { location?: string; city?: string; scope?: str
   const city = (item.city || '').trim();
   if (!city || loc.includes(city)) return loc || city;
   return loc ? `${loc}, ${city}` : city;
+}
+
+// ---------------- events ----------------
+
+/** /s/event/<id>: WhatsApp builds a preview (flyer, date, place, price) from this link. */
+export const eventShareUrl = (id: string) => `${SITE_ORIGIN}${eventSharePath(id)}`;
+
+/**
+ * Share an event: the phone's share sheet when there is one (title + message + link), otherwise WhatsApp
+ * (web / desktop app) with the whole message — the link goes LAST so WhatsApp renders the preview card.
+ */
+export async function shareEvent(ev: any): Promise<'shared' | 'cancelled' | 'whatsapp'> {
+  const id = ev?._id || ev?.id;
+  const url = eventShareUrl(id);
+  const nav: any = typeof navigator !== 'undefined' ? navigator : null;
+  if (nav?.share && /Android|iPhone|iPad|iPod|Mobile/i.test(nav.userAgent || '')) {
+    try { await nav.share({ title: ev.title, text: shareMessage(ev), url }); return 'shared'; }
+    catch (e: any) { if (e?.name === 'AbortError') return 'cancelled'; }
+  }
+  window.open(whatsappUrl(shareMessage(ev, url)), '_blank', 'noopener');
+  return 'whatsapp';
+}
+
+export async function copyEventLink(ev: any): Promise<boolean> {
+  const url = eventShareUrl(ev?._id || ev?.id);
+  try { await navigator.clipboard.writeText(url); return true; }
+  catch { window.prompt('העתיקי את הקישור:', url); return false; }
 }

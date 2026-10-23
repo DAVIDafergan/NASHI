@@ -1,4 +1,4 @@
-import { placeLabel } from '../utils/share';
+import { placeLabel, shareEvent } from '../utils/share';
 import RichText from '../components/RichText';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
@@ -440,7 +440,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     city={(event as any).scope === 'local' || !(event as any).scope ? (event as any).city : undefined}
                     category={event.category}
                     ctaLabel="לפרטים והרשמה"
-                    onClick={() => navigate('/events')}
+                    onClick={() => navigate(`/events?e=${(event as any)._id || event.id}`)}
+                    onShare={() => shareEvent(event)}
                     className="h-full"
                   />
                 </ScrollReveal>

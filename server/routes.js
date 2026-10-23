@@ -383,6 +383,17 @@ router.get('/events', async (req, res) => {
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// one event (deep links /#/events?e=<id>): 410 with a short summary when it already ended / was removed
+router.get('/events/:id', async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'not found' });
+        const ev = await Event.findById(req.params.id).populate('attendees', 'name avatar');
+        if (!ev) return res.status(404).json({ error: 'not found' });
+        if (ev.hidden || ev.archived || isEventExpired(ev)) return res.status(410).json({ ended: true, title: ev.title, region: ev.region, city: ev.city, scope: ev.scope });
+        res.json(ev);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ארכיון: events that ended more than 48h ago (manual ones are archived, imported ones are deleted).
 // Main admin: all · regional manager: local events of her region.
 router.get('/admin/events/archive', authenticate, async (req, res) => {

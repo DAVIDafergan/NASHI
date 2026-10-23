@@ -1,7 +1,7 @@
 import AdSlot from '../components/AdSlot';
-import { placeLabel } from '../utils/share';
+import { placeLabel, shareEvent, copyEventLink } from '../utils/share';
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2, ExternalLink } from 'lucide-react';
+import { Link2, MessageCircle, Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, Ticket, CheckCircle2, ArrowLeft, Clock, Sparkles, Filter, SortAsc, History, Users2, ExternalLink } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
 import ScrollReveal from '../components/ScrollReveal';
@@ -110,6 +110,21 @@ const EventsPage = () => {
       });
   }, []);
 
+  // deep link from a shared message: /#/events?e=<id> opens that event (or says it already ended)
+  const [ended, setEnded] = useState<{ title: string; region?: string; city?: string } | null>(null);
+  const deepId = new URLSearchParams(location.search).get('e');
+  useEffect(() => {
+    if (!deepId || loading) return;
+    const inList = events.find(e => e.id === deepId);
+    if (inList) { setSelectedEvent(inList); return; }
+    fetch(`${API_URL}/events/${deepId}`).then(async r => {
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) setSelectedEvent({ ...j, id: j._id || j.id, ratings: j.ratings || [] });
+      else setEnded({ title: j.title || '', region: j.region, city: j.city });
+    }).catch(() => setEnded({ title: '' }));
+  }, [deepId, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  const closeDeep = () => { if (deepId) navigate('/events', { replace: true }); };
+
   useEffect(() => {
     if (location.state && location.state.category) {
         setSelectedCategory(location.state.category);
@@ -165,18 +180,13 @@ const EventsPage = () => {
 
   const categories = ['all', 'מוזיקה', 'העשרה', 'סדנאות', 'קהילה', 'בידור', 'תורה ויהדות', 'אופנה'];
 
-  const handleShare = async () => {
+  const [copied, setCopied] = useState(false);
+  const handleShare = async (ev: EventItem | null = selectedEvent) => {
+      if (!ev) return;
       const token = localStorage.getItem('token');
-      const url = window.location.href;
-      
-      if (navigator.share) {
-          try { await navigator.share({ title: 'Nashi Event', url }); } catch {}
-      } else {
-          navigator.clipboard.writeText(url);
-          alert('הקישור הועתק!');
-      }
-
-      if (token && selectedEvent) {
+      // WhatsApp with a preview card: the link is /s/event/<id> (server/share.js)
+      await shareEvent(ev);
+      if (token && ev === selectedEvent) {
           fetch(`${API_URL}/events/${selectedEvent.id}/share`, {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` }
@@ -294,6 +304,7 @@ const EventsPage = () => {
                   isPast={isPast}
                   ctaLabel={isPast ? 'לסיכום' : 'לפרטים והרשמה'}
                   onClick={() => setSelectedEvent(event)}
+                  onShare={() => handleShare(event)}
               />
             </ScrollReveal>
           );
@@ -338,7 +349,22 @@ const EventsPage = () => {
       })()}
 
       {/* --- Detailed Event Modal --- */}
-      <Sheet open={!!selectedEvent} onClose={() => setSelectedEvent(null)} label={selectedEvent?.title}>
+      {/* a shared event that already ended */}
+      <Sheet open={!!ended} onClose={() => { setEnded(null); closeDeep(); }} label="האירוע הסתיים">
+        {ended && (
+          <div className="px-6 pb-8 pt-6 text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500"><History size={26} /></span>
+            <h2 className="mt-4 text-[1.7rem] leading-tight">האירוע הסתיים</h2>
+            {ended.title && <p className="mt-1 text-[15px] text-slate-500">{ended.title}</p>}
+            <p className="mt-3 text-[15px] text-slate-600">אבל יש עוד הרבה מה לראות{ended.region ? ` ב${regionName(ended.region)}` : ''} 💗</p>
+            <button onClick={() => { if (ended.region) area.setRegion(ended.region); setEnded(null); closeDeep(); }} className="btn-primary mt-5 w-full !py-3.5">
+              לאירועים הקרובים{ended.region ? ` ב${regionName(ended.region)}` : ''}
+            </button>
+          </div>
+        )}
+      </Sheet>
+
+      <Sheet open={!!selectedEvent} onClose={() => { setSelectedEvent(null); closeDeep(); }} label={selectedEvent?.title}>
         {selectedEvent && (() => {
           const isPast = isPastEvent(selectedEvent);
           const price = getDisplayPrice(selectedEvent);
@@ -450,9 +476,14 @@ const EventsPage = () => {
                   </div>
                 )}
 
-                <button onClick={handleShare} className="btn-ghost w-full !py-3.5 mb-8">
-                  <Share2 size={18} /> שתפי עם חברות
-                </button>
+                <div className="mb-8 flex gap-2">
+                  <button onClick={() => handleShare()} className="btn-primary flex-1 !py-3.5 !bg-[#1F7A55] hover:!bg-[#17603F]">
+                    <MessageCircle size={18} /> שיתוף בוואטסאפ
+                  </button>
+                  <button onClick={async () => { await copyEventLink(selectedEvent); setCopied(true); setTimeout(() => setCopied(false), 1800); }} className="btn-ghost shrink-0 !px-4 !py-3.5" aria-label="העתקת קישור">
+                    {copied ? <CheckCircle2 size={18} /> : <Link2 size={18} />} <span className="hidden sm:inline">{copied ? 'הועתק' : 'העתקת קישור'}</span>
+                  </button>
+                </div>
 
                 <div className="border-t border-rose-100 pt-6">
                   <h4 className="mb-4 flex items-center gap-2 text-[15px]">

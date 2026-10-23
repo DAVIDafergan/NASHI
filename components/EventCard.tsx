@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, CheckCircle2 } from 'lucide-react';
+import { Calendar, MapPin, CheckCircle2, Share2 } from 'lucide-react';
 
 interface EventCardProps {
   title: string;
@@ -15,6 +15,8 @@ interface EventCardProps {
   statusLabel?: string;
   ctaLabel?: string;
   onClick?: () => void;
+  /** WhatsApp / share-sheet share of this event */
+  onShare?: () => void;
   isPast?: boolean;
   className?: string;
 }
@@ -36,6 +38,7 @@ const EventCard: React.FC<EventCardProps> = ({
   statusLabel,
   ctaLabel = 'לפרטים והרשמה',
   onClick,
+  onShare,
   isPast = false,
   className = '',
 }) => {
@@ -73,6 +76,12 @@ const EventCard: React.FC<EventCardProps> = ({
           <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide text-rose-700 shadow-soft">
             {category}
           </span>
+        )}
+        {onShare && !isPast && (
+          <button type="button" onClick={(e) => { e.stopPropagation(); onShare(); }} aria-label={`שיתוף: ${title}`} title="שיתוף בוואטסאפ"
+            className="absolute top-2.5 left-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-rose-700 shadow-soft backdrop-blur-sm transition hover:bg-rose-700 hover:text-white active:scale-90">
+            <Share2 size={17} />
+          </button>
         )}
         {city && (
           <span className="absolute bottom-2.5 left-2.5 inline-flex max-w-[60%] items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11.5px] font-semibold text-white shadow-soft backdrop-blur-sm">
