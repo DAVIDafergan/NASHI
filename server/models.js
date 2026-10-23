@@ -122,6 +122,7 @@ const EventSchema = new mongoose.Schema({
   sourceName: { type: String },      // shown as "יובא מ…"
   sourceUrl: { type: String },       // event page on the source (also the ticket link)
   sourceImageUrl: { type: String },  // flyer URL on the source (we store our own copy in `image`)
+  generatedFlyer: { type: Boolean },  // no flyer on the source: NASHI-branded placeholder (server/importer/placeholder.js)
   importedAt: { type: Date },
   lastSeenAt: { type: Date },
   importEdited: { type: Boolean },   // a manager edited it on NASHI: the agent keeps her text and only refreshes status

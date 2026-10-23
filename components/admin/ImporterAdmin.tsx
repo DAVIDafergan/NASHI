@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bot, Calendar, ChevronDown, Clock, ExternalLink, Eye, EyeOff, Loader2, Play, RefreshCw, AlertTriangle, CheckCircle2, Ticket } from 'lucide-react';
+import { Bot, MapPinned, Calendar, ChevronDown, Clock, ExternalLink, Eye, EyeOff, Loader2, Play, RefreshCw, AlertTriangle, CheckCircle2, Ticket } from 'lucide-react';
 import { importerApi, ImporterStatus, ImportRun } from '../../services/suppliersApi';
 import { Badge, DeleteButton, EmptyState, IconButton, ItemCard, LocationBadges, Segmented, SectionTitle, fmtDate, idOf, toast } from './ui';
 
@@ -75,17 +75,59 @@ const RunCard: React.FC<{ run: ImportRun; open: boolean; onToggle: () => void }>
   );
 };
 
+type Coverage = Awaited<ReturnType<typeof importerApi.coverage>>;
+
+/** כיסוי לפי אזור — upcoming events per region, manual vs imported, against the target (20). */
+const CoveragePanel: React.FC<{ data: Coverage | null }> = ({ data }) => {
+  if (!data) return <div className="h-40 animate-pulse rounded-[1.6rem] bg-rose-50" />;
+  const max = Math.max(data.target, ...data.regions.map(r => r.manual + r.imported));
+  return (
+    <div className="rounded-[1.6rem] border border-rose-100/80 bg-white p-4 md:p-5">
+      <div className="space-y-3">
+        {data.regions.map(r => {
+          const total = r.manual + r.imported;
+          const short = Math.max(0, data.target - total);
+          return (
+            <div key={r.id}>
+              <div className="mb-1 flex items-baseline justify-between gap-2 text-[13px]">
+                <span className="font-semibold text-ink">{r.name}</span>
+                <span className={`tabular-nums ${short ? 'text-amber-700' : 'text-emerald-700'}`}>{total} / {data.target}{short ? ` · חסרים ${short}` : ' ✓'}</span>
+              </div>
+              <div className="relative h-3 overflow-hidden rounded-full bg-rose-50" role="img" aria-label={`${r.name}: ${r.manual} ידניים, ${r.imported} מיובאים`}>
+                <div className="absolute inset-y-0 right-0 flex" style={{ width: `${(total / max) * 100}%` }}>
+                  <span className="h-full bg-rose-700" style={{ width: `${total ? (r.manual / total) * 100 : 0}%` }} />
+                  <span className="h-full bg-plum-300" style={{ width: `${total ? (r.imported / total) * 100 : 0}%` }} />
+                </div>
+                <span className="absolute inset-y-0 w-px bg-ink/40" style={{ right: `${(data.target / max) * 100}%` }} />
+              </div>
+              <p className="mt-0.5 text-[11.5px] text-slate-400">{r.manual} ידניים · {r.imported} מיובאים</p>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-rose-50 pt-3 text-[12px] text-slate-500">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-rose-700" /> הועלו ידנית</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-plum-300" /> יובאו ע״י הסוכן</span>
+        <span className="flex items-center gap-1.5"><span className="h-3 w-px bg-ink/40" /> יעד {data.target}</span>
+        <span>+ {data.everywhere.national} ארציים · {data.everywhere.online} מקוונים (מוצגים בכל האזורים)</span>
+      </div>
+    </div>
+  );
+};
+
 /** "סוכן אירועים" — automatic import of complete women's events from ticketing sites. Main admin only. */
 const ImporterAdmin: React.FC = () => {
   const [status, setStatus] = useState<ImporterStatus | null>(null);
+  const [coverage, setCoverage] = useState<Coverage | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [filter, setFilter] = useState<'visible' | 'hidden' | 'all'>('visible');
   const [openRun, setOpenRun] = useState<string>('');
   const [starting, setStarting] = useState(false);
 
   const load = useCallback(async () => {
-    const [s, e] = await Promise.all([importerApi.status().catch(() => null), importerApi.events('all').catch(() => [])]);
+    const [s, e, c] = await Promise.all([importerApi.status().catch(() => null), importerApi.events('all').catch(() => []), importerApi.coverage().catch(() => null)]);
     if (s) setStatus(s);
+    if (c) setCoverage(c);
     setEvents(Array.isArray(e) ? e : []);
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -132,6 +174,13 @@ const ImporterAdmin: React.FC = () => {
         </div>
       </section>
 
+      {/* coverage */}
+      <section>
+        <SectionTitle title="כיסוי לפי אזור" icon={<MapPinned size={17} />} />
+        <p className="-mt-1 mb-3 text-[13px] text-slate-500">אירועים קרובים שמוצגים באתר בכל אזור. המטרה: לפחות {coverage?.target ?? 20} בכל אזור.</p>
+        <CoveragePanel data={coverage} />
+      </section>
+
       {/* runs */}
       <section>
         <SectionTitle title="ריצות אחרונות" icon={<Clock size={17} />} action={<IconButton onClick={load} aria-label="רענון" title="רענון"><RefreshCw size={15} /></IconButton>} />
@@ -155,6 +204,7 @@ const ImporterAdmin: React.FC = () => {
                   {e.hidden && <Badge tone="slate"><EyeOff size={11} /> {HIDDEN_LABEL[e.hiddenReason] || 'מוסתר'}</Badge>}
                   {e.soldOut && <Badge tone="red"><Ticket size={11} /> אזל</Badge>}
                   {e.importEdited && <Badge tone="amber">נערך ידנית</Badge>}
+                  {e.generatedFlyer && <Badge tone="sky">פלייר אוטומטי</Badge>}
                 </>}
                 meta={<>
                   <p className="flex items-center gap-1.5"><Calendar size={13} className="text-rose-400" /> {fmtDate(e.date, { weekday: 'short', day: 'numeric', month: 'long' })}{e.time ? ` · ${e.time}` : ''}{e.price ? ` · ₪${e.price}` : ' · חינם'}</p>
@@ -186,7 +236,7 @@ const ImporterAdmin: React.FC = () => {
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[12.5px] text-slate-400">נכנס רק אירוע לנשים שמתאים לציבור הדתי/חרדי, עתידי, ועם שם, תאריך ושעה, מקום ועיר מוכרת, מחיר (או חינם), קישור לרכישה ופלייר. אירוע שמחקת לא ייובא שוב.</p>
+        <p className="mt-3 text-[12.5px] text-slate-400">נכנס רק אירוע לנשים שמתאים לציבור הדתי/חרדי, עתידי, ועם שם, תאריך ושעה, מקום ועיר מוכרת, מחיר (או חינם), קישור לרכישה ופלייר (אם אין במקור — פלייר אוטומטי בעיצוב נשי, מסומן "פלייר אוטומטי"). אירוע שמחקת לא ייובא שוב.</p>
       </section>
     </div>
   );

@@ -295,7 +295,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           {/* phones: one clear "next event" card instead of the floating collage */}
           {upcomingEvents[0] && (
             <Link to="/events" className="lg:hidden flex items-center gap-4 rounded-[1.75rem] bg-white/90 border border-rose-100 p-3 shadow-soft animate-fade-in-up" style={{ animationDelay: '650ms' }}>
-              {upcomingEvents[0].image && <img src={upcomingEvents[0].image} alt="" className="h-24 w-20 shrink-0 rounded-2xl object-cover bg-rose-50" />}
+              {upcomingEvents[0].image && <img src={upcomingEvents[0].image} alt="" className="h-24 w-20 shrink-0 rounded-2xl object-contain bg-rose-50" />}
               <span className="min-w-0 flex-1">
                 <span className="block text-[11px] font-semibold text-rose-600">האירוע הבא</span>
                 <span className="mt-0.5 block font-strong text-[15px] leading-snug text-ink line-clamp-2">{upcomingEvents[0].title}</span>
@@ -332,7 +332,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <div key={i} className={`absolute ${spots[i]}`} style={{ animationDelay: `${i * -2.3}s` }}>
                   <div className="w-full h-full animate-clip-up" style={{ animationDelay: `${500 + i * 220}ms` }}>
                     <div className="w-full h-full rounded-[2rem] overflow-hidden shadow-lift ring-8 ring-white/70 bg-rose-100">
-                      <img src={it.image} alt={it.title || ''} className="w-full h-full object-cover animate-kenburns" />
+                      {/* flyers are posters: show them whole over a blurred copy instead of cropping */}
+                      <div className="relative w-full h-full">
+                        <img src={it.image} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60" />
+                        <img src={it.image} alt={it.title || ''} className="relative w-full h-full object-contain" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -433,6 +437,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     image={event.image}
                     dateLabel={event.date ? new Date(event.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' }) : ''}
                     location={placeLabel(event as any)}
+                    city={(event as any).scope === 'local' || !(event as any).scope ? (event as any).city : undefined}
                     category={event.category}
                     ctaLabel="לפרטים והרשמה"
                     onClick={() => navigate('/events')}

@@ -2,6 +2,9 @@ import { HDate } from '@hebcal/core';
 import { classifyEvent, categoryFor, audienceFor, missingFields } from './classify.js';
 import { israelParts, nashiDate } from './time.js';
 import { downloadFlyer } from './images.js';
+import { placeholderFlyer } from './placeholder.js';
+import { kindOf } from './describe.js';
+import { hasRealFlyer, audienceMode } from './classify.js';
 
 /**
  * One run of the events agent:
@@ -11,6 +14,11 @@ import { downloadFlyer } from './images.js';
 
 const hebrewDay = (d) => { try { return new HDate(d).renderGematriya(true).split(' ').slice(0, -1).join(' '); } catch { return ''; } };
 const money = (n) => `₪${Math.round(n)}`;
+
+export const placeholderFor = (n, fields) => placeholderFlyer({
+  title: n.title, kind: kindOf(`${n.title}\n${n.rawDescription || n.description || ''}`), city: n.city,
+  dateLabel: `${new Date(`${israelParts(n.startAt).date}T12:00:00Z`).toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })} · ${fields.time}`,
+});
 
 /** normalized event → the fields of NASHI's Event model (pure, unit-tested). */
 export function toEventFields(n) {
@@ -39,7 +47,7 @@ export function toEventFields(n) {
     salesClosed: !!n.closed,
     sourceName: n.sourceName,
     sourceUrl: n.ticketUrl,
-    sourceImageUrl: n.imageUrl,
+    sourceImageUrl: hasRealFlyer(n) ? n.imageUrl : '',
   };
 }
 
@@ -57,7 +65,7 @@ export function planUpdate(existing, fields) {
   return { set, changed: Object.keys(set).length > 0, imageChanged: !existing.importEdited && !same(existing.sourceImageUrl, fields.sourceImageUrl) };
 }
 
-export async function runImport({ adapters, http, models, trigger = 'schedule', triggeredBy, now = () => new Date(), maxDetails = Number(process.env.IMPORTER_MAX_DETAILS || 300), log = console.log }) {
+export async function runImport({ adapters, http, models, trigger = 'schedule', triggeredBy, now = () => new Date(), maxDetails = Number(process.env.IMPORTER_MAX_DETAILS || 600), allowNoFlyer = process.env.IMPORTER_PLACEHOLDER_FLYER !== '0', audience = audienceMode(), log = console.log }) {
   const { Event, ImportRun, ImportBlock } = models;
   const run = await ImportRun.create({ trigger, triggeredBy, status: 'running', startedAt: now() });
   const counts = { discovered: 0, created: 0, updated: 0, unchanged: 0, skipped: 0, hidden: 0, failed: 0 };
@@ -77,8 +85,9 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
       sources.push(st);
       let channelErrors = 0;
       const ctx = {
-        channel: async (name, fn) => {
-          try { await fn(); } catch (e) { channelErrors++; st.failed++; fail(`${adapter.name} · ${name}: ${e.message}`); }
+        // soft channels (optional listing pages) may fail without blocking the "gone from the source" check
+        channel: async (name, fn, { soft = false } = {}) => {
+          try { await fn(); } catch (e) { if (!soft) channelErrors++; st.failed++; fail(`${adapter.name} · ${name}${soft ? ' (רשות)' : ''}: ${e.message}`); }
         },
       };
       try {
@@ -99,20 +108,21 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
           if (blocked.has(c.sourceId)) { skip(adapter.id, c, 'נמחק ע״י מנהלת'); st.skipped++; continue; }
           const pre = adapter.prefilter ? adapter.prefilter(c, now()) : '';
           if (pre && !existingIds.has(c.sourceId)) { skip(adapter.id, c, pre); st.skipped++; continue; }
-          if (detailsBudget-- <= 0) { skip(adapter.id, c, 'הגענו למכסת הבדיקות לריצה'); st.skipped++; continue; }
+          // existing events are always refreshed; the budget limits only NEW event pages per run
+          if (!existingIds.has(c.sourceId) && detailsBudget-- <= 0) { skip(adapter.id, c, 'הגענו למכסת הבדיקות לריצה'); st.skipped++; continue; }
           let n;
           try { n = await adapter.details(c, http); }
           catch (e) { if (e.skip) skip(adapter.id, c, e.message); else { st.failed++; fail(`${adapter.name} · ${c.url}: ${e.message}`); } if (counts.skipped > before) st.skipped++; continue; }
           n.sourceId = n.sourceId || c.sourceId;
 
-          const verdict = classifyEvent({ title: n.title, description: `${n.description}\n${n.extraText || ''}`, location: n.location, strong: n.strong || c.strong, categoryText: c.women ? 'אירוע לנשים' : '' });
+          const verdict = classifyEvent({ mode: audience, title: n.title, description: `${n.rawDescription ?? n.description}\n${n.extraText || ''}`, location: n.location, strong: n.strong || c.strong, categoryText: c.women ? 'אירוע לנשים' : '' });
           const existing = await Event.findOne({ source: adapter.id, sourceId: n.sourceId });
           if (!verdict.ok) {
             skip(adapter.id, c, verdict.reason, n.title); st.skipped++;
             if (existing && !existing.hidden && !existing.importEdited) { await Event.updateOne({ _id: existing._id }, { hidden: true, hiddenReason: 'gone' }); counts.hidden++; }
             continue;
           }
-          const missing = missingFields(n, now());
+          const missing = missingFields(n, now(), { allowNoFlyer });
           if (missing.length) {
             skip(adapter.id, c, missing.includes('עבר') ? 'האירוע כבר עבר' : `חסר: ${missing.join(', ')}`, n.title); st.skipped++;
             continue;
@@ -122,10 +132,16 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
           if (!existing) {
             if (n.soldOut || n.closed) { skip(adapter.id, c, n.soldOut ? 'אזלו הכרטיסים' : 'המכירה סגורה', n.title); st.skipped++; continue; }
             let image;
-            try { image = await downloadFlyer(http, n.imageUrl); }
-            catch (e) { skip(adapter.id, c, `פלייר: ${e.message}`, n.title); st.skipped++; continue; }
+            let generatedFlyer = false;
             try {
-              await Event.create({ ...fields, image, source: adapter.id, sourceId: n.sourceId, importedAt: now(), lastSeenAt: now(), hidden: false });
+              if (!hasRealFlyer(n)) throw new Error('אין פלייר במקור');
+              image = await downloadFlyer(http, n.imageUrl);
+            } catch (e) {
+              if (!allowNoFlyer) { skip(adapter.id, c, `פלייר: ${e.message}`, n.title); st.skipped++; continue; }
+              image = placeholderFor(n, fields); generatedFlyer = true; fields.sourceImageUrl = '';
+            }
+            try {
+              await Event.create({ ...fields, image, generatedFlyer, source: adapter.id, sourceId: n.sourceId, importedAt: now(), lastSeenAt: now(), hidden: false });
               counts.created++; st.created++;
             } catch (e) {
               if (e?.code === 11000) { counts.unchanged++; } else { st.failed++; fail(`שמירה: ${n.title}: ${e.message}`); }
@@ -136,8 +152,10 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
           const plan = planUpdate(existing.toObject(), fields);
           const set = { ...plan.set, lastSeenAt: now() };
           if (plan.imageChanged) {
-            try { set.image = await downloadFlyer(http, n.imageUrl); }
-            catch (e) { delete set.sourceImageUrl; fail(`פלייר (עדכון) ${n.title}: ${e.message}`); }
+            if (hasRealFlyer(n)) {
+              try { set.image = await downloadFlyer(http, n.imageUrl); set.generatedFlyer = false; }
+              catch (e) { delete set.sourceImageUrl; fail(`פלייר (עדכון) ${n.title}: ${e.message}`); }
+            } else delete set.sourceImageUrl; // flyer gone on the source: keep what we have
           }
           await Event.updateOne({ _id: existing._id }, { $set: set });
           if (plan.changed) { counts.updated++; st.updated++; } else counts.unchanged++;

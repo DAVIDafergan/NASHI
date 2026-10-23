@@ -4,6 +4,7 @@ import { Event, ImportRun, ImportBlock } from './models.js';
 import { authenticate, isAdmin } from './auth.js';
 import { importerConfig, importerRunning, importerNextAt, runImporterNow } from './importer/index.js';
 import { RESEARCHED_SOURCES } from './importer/adapters/index.js';
+import { REGIONS } from '../shared/regions.js';
 
 /** Admin endpoints of the events agent ("סוכן אירועים"). Main admin only. */
 const r = express.Router();
@@ -18,6 +19,25 @@ r.get('/admin/importer/status', ...guard, async (req, res) => {
       ImportBlock.countDocuments(),
     ]);
     res.json({ ...importerConfig(), running: importerRunning(), nextAt: importerNextAt(), runs, totals: { visible, hidden, blocked }, sources: RESEARCHED_SOURCES });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// כיסוי לפי אזור: upcoming visible events per region, manual vs imported (target: IMPORTER_TARGET_PER_REGION, default 20)
+r.get('/admin/importer/coverage', ...guard, async (req, res) => {
+  try {
+    const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+    const rows = await Event.aggregate([
+      { $match: { hidden: { $ne: true }, date: { $gte: today } } },
+      { $group: { _id: { scope: { $ifNull: ['$scope', 'local'] }, region: { $ifNull: ['$region', 'north'] }, imported: { $cond: [{ $eq: [{ $type: '$source' }, 'string'] }, true, false] } }, n: { $sum: 1 } } },
+    ]);
+    const regions = REGIONS.map(rg => ({ id: rg.id, name: rg.name, manual: 0, imported: 0 }));
+    const everywhere = { national: 0, online: 0 };
+    for (const x of rows) {
+      if (x._id.scope === 'national' || x._id.scope === 'online') { everywhere[x._id.scope] += x.n; continue; }
+      const rg = regions.find(y => y.id === x._id.region);
+      if (rg) rg[x._id.imported ? 'imported' : 'manual'] += x.n;
+    }
+    res.json({ target: Number(process.env.IMPORTER_TARGET_PER_REGION || 20), regions, everywhere });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

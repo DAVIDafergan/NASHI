@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar, MapPin, CheckCircle2 } from 'lucide-react';
 
 interface EventCardProps {
@@ -8,6 +8,8 @@ interface EventCardProps {
   dateLabel: string;
   time?: string;
   location: string;
+  /** shown as a pill on the flyer so the city is obvious at a glance */
+  city?: string;
   category?: string;
   /** e.g. "אזלו הכרטיסים" — shown instead of the category chip */
   statusLabel?: string;
@@ -29,6 +31,7 @@ const EventCard: React.FC<EventCardProps> = ({
   dateLabel,
   time,
   location,
+  city,
   category,
   statusLabel,
   ctaLabel = 'לפרטים והרשמה',
@@ -36,12 +39,18 @@ const EventCard: React.FC<EventCardProps> = ({
   isPast = false,
   className = '',
 }) => {
+  // posters are portrait (4:5 / A4) or square: let the box follow the flyer instead of cropping it
+  const [ratio, setRatio] = useState(4 / 3);
+  const onLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+    if (w && h) setRatio(Math.min(1.6, Math.max(0.8, w / h)));
+  };
   return (
     <div
       onClick={onClick}
       className={`group bg-white rounded-[1.75rem] overflow-hidden border border-rose-100/70 shadow-petal hover:shadow-lift hover:-translate-y-1 active:scale-[0.99] transition-all duration-500 cursor-pointer flex flex-col ${isPast ? 'opacity-[0.85]' : ''} ${className}`}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-rose-50 shrink-0 m-2 mb-0 rounded-[1.4rem]">
+      <div className="relative overflow-hidden bg-rose-50 shrink-0 m-2 mb-0 rounded-[1.4rem]" style={{ aspectRatio: String(ratio) }}>
         {/* event images are usually posters with text: show the whole poster over a soft copy of itself */}
         <img src={image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-50" />
         <img
@@ -49,6 +58,7 @@ const EventCard: React.FC<EventCardProps> = ({
           alt={title}
           loading="lazy"
           decoding="async"
+          onLoad={onLoad}
           className={`relative w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.03] ${isPast ? 'grayscale-[0.35]' : ''}`}
         />
         {isPast ? (
@@ -62,6 +72,11 @@ const EventCard: React.FC<EventCardProps> = ({
         ) : category && (
           <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide text-rose-700 shadow-soft">
             {category}
+          </span>
+        )}
+        {city && (
+          <span className="absolute bottom-2.5 left-2.5 inline-flex max-w-[60%] items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11.5px] font-semibold text-white shadow-soft backdrop-blur-sm">
+            <MapPin size={11} className="shrink-0" /> <span className="truncate">{city}</span>
           </span>
         )}
       </div>

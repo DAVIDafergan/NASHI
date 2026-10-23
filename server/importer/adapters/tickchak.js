@@ -3,6 +3,7 @@ import { clean, metaContent, decodeEntities } from '../text.js';
 import { parseWhen } from '../time.js';
 import { resolveCity } from '../city.js';
 import { classifyEvent } from '../classify.js';
+import { buildDescription, pageSources } from '../describe.js';
 
 /**
  * Tickchak (tickchak.co.il) and its Haredi portal Glatticket (glatticket.co.il — "תרבות ברוח ההלכה").
@@ -20,10 +21,28 @@ import { classifyEvent } from '../classify.js';
 export const TICKCHAK = 'https://tickchak.co.il';
 export const GLATTICKET_HOME = 'https://home.glatticket.co.il/';
 export const LIVE_HUBS = ['https://live.tickchak.co.il/performances-for-women', 'https://live.tickchak.co.il/tzama-5787'];
-export const SEARCH_TERMS = [
-  'נשים', 'לנשים', 'לנשים בלבד', 'נשות', 'בנות', 'נערות', 'אמהות', 'רבנית', 'ערב נשים', 'כנס נשים',
-  'הצגה', 'מופע', 'מחזמר', 'הפקה', 'ערב', 'כנס', 'התוועדות', 'הרצאה', 'סדנה', 'זמרת', 'ערב שירה', 'יום עיון',
+// optional listing pages (failures here never block the "gone from the source" check)
+export const SOFT_HUBS = [
+  'https://live.tickchak.co.il/Performances_for_women', 'https://live.tickchak.co.il/Lectures', 'https://live.tickchak.co.il/presentations',
+  'https://live.tickchak.co.il/musical', 'https://tickchak.co.il/courses', 'https://tickchak.co.il/festivals', 'https://tickchak.co.il/events',
 ];
+export const SEARCH_TERMS = [
+  // audience
+  'נשים', 'לנשים', 'לנשים בלבד', 'נשות', 'בנות', 'נערות', 'אמהות', 'אמא', 'רבנית', 'ערב נשים', 'כנס נשים',
+  // kinds of events
+  'הצגה', 'מופע', 'מחזמר', 'הפקה', 'ערב', 'כנס', 'התוועדות', 'הרצאה', 'סדנה', 'זמרת', 'ערב שירה', 'יום עיון',
+  'שיעור', 'חוג', 'קורס', 'בית מדרש', 'הפרשת חלה', 'חלות', 'טיול נשים', 'סיור נשים', 'ריקוד נשים', 'זומבה', 'התעמלות',
+  'מחול', 'אומנות', 'יצירה', 'העצמה', 'הקרנה', 'סרט', 'ראש חודש', 'מסיבת סיום', 'שבת', 'חנוכה',
+];
+// Tickchak search matches titles, and titles often carry the city — religious / Haredi cities first
+export const CITY_TERMS = [
+  'בני ברק', 'ירושלים', 'אלעד', 'מודיעין עילית', 'קרית ספר', 'ביתר', 'בית שמש', 'צפת', 'טבריה', 'אשדוד', 'נתיבות',
+  'אופקים', 'קרית גת', 'רכסים', 'חיפה', 'פתח תקווה', 'נתניה', 'רחובות', 'באר שבע', 'עמנואל', 'חריש', 'טלזסטון',
+  'בית שאן', 'עפולה', 'מגדל העמק', 'כרמיאל', 'נוף הגליל', 'קרית שמונה', 'אשקלון', 'קרית מלאכי', 'דימונה', 'ערד',
+  'גבעת זאב', 'מעלה אדומים', 'אפרת', 'קרית ארבע', 'אריאל', 'קרני שומרון', 'קדומים', 'יבנה', 'לוד', 'רמלה', 'חדרה',
+  'בת ים', 'חולון', 'רמת גן', 'גבעתיים', 'ראשון לציון', 'אור יהודה', 'קרית אתא', 'קרית ביאליק', 'נהריה', 'עכו',
+];
+const envList = (k) => (process.env[k] || '').split(',').map(x => x.trim()).filter(Boolean);
 
 // Tickchak / Glatticket sale pages are https://<domain>/<numeric eid> (e.g. tickchak.co.il/113538, glatticket.co.il/113204),
 // links often carry ?ref=… / ?_ref=… / #event. (LIVE aggregator ids like "hKpLyNdxl" are NOT sale pages.)
@@ -83,6 +102,15 @@ export function parseEventLinks(html = '', { womenHeading = /נשים|לנשים
     add(u[2], u[1], { women: womenHeading.test(sectionAt(m.index)) });
   }
   return [...out.values()];
+}
+
+/** cat_id values used by Tickchak's homepage script (cat_id: 5, data-cat="7", category_id=12 …). */
+export function detectCatIds(js = '') {
+  const out = new Set();
+  const re = /(?:cat_id|catId|category_id|data-cat(?:egory)?(?:-id)?)\s*[:=]\s*["']?(\d{1,4})\b/g;
+  let m;
+  while ((m = re.exec(js))) if (Number(m[1]) > 0) out.add(m[1]);
+  return [...out].slice(0, 40);
 }
 
 /** event_hash:"…" from the page or its ev_….js script. */
@@ -154,7 +182,7 @@ export function normalizeTickchak({ init, pageUrl, pageHtml = '', listItem = {},
   const imageUrl = metaContent(pageHtml, 'og:image') || metaContent(pageHtml, 'twitter:image:src') || listItem.fb_img || '';
   // clean ticket link (no ?ref=…): the sale page on the domain we actually fetched
   const ticketUrl = isEid(eid) && host ? `https://${host}/${eid}` : (pageUrl && /^https?:/.test(pageUrl) ? pageUrl.replace(/^http:/, 'https:').replace(/[?#].*$/, '') : '');
-  return {
+  const n = {
     sourceId: eid,
     sourceName: glatt ? 'גלאטיקט' : "טיקצ'אק",
     title: clean(ev.title || listItem.title || '', 200),
@@ -175,9 +203,18 @@ export function normalizeTickchak({ init, pageUrl, pageHtml = '', listItem = {},
     // more text for the women/Haredi classifier only (not shown): og:description + what the listing said
     extraText: [metaContent(pageHtml, 'og:description'), listItem.title, listItem.description].filter(Boolean).join('\n').slice(0, 2000),
   };
+  // full description: the fullest source text, or a factual intro when the source says little
+  n.rawDescription = n.description;
+  n.description = buildDescription(n, [...pageSources(pageHtml), listItem.description || '']);
+  return n;
 }
 
-export function createTickchakAdapter({ searchTerms = SEARCH_TERMS, pageSize = 100, maxPerTerm = 400, glatticketHome = GLATTICKET_HOME, hubs = LIVE_HUBS } = {}) {
+export function createTickchakAdapter({
+  searchTerms = [...SEARCH_TERMS, ...(process.env.IMPORTER_CITY_TERMS === '0' ? [] : CITY_TERMS), ...envList('IMPORTER_EXTRA_TERMS')],
+  pageSize = 100, maxPerTerm = Number(process.env.IMPORTER_MAX_PER_TERM || 400), glatticketHome = GLATTICKET_HOME, hubs = LIVE_HUBS,
+  softHubs = process.env.IMPORTER_SOFT_HUBS === '0' ? [] : SOFT_HUBS,
+  catIds = envList('IMPORTER_TICKCHAK_CAT_IDS'), detectCategories = process.env.IMPORTER_DETECT_CATEGORIES !== '0',
+} = {}) {
   return {
     id: 'tickchak',
     name: "טיקצ'אק / גלאטיקט",
@@ -200,11 +237,27 @@ export function createTickchakAdapter({ searchTerms = SEARCH_TERMS, pageSize = 1
           for (const l of parseEventLinks(text, { womenHeading: /./ })) if (!found.has(l.eid)) add(l.eid, { women: /women|tzama/i.test(hub) || l.women, url: `https://${l.host}.co.il/${l.eid}` });
         });
       }
-      // 3. Tickchak search
-      for (const term of searchTerms) {
-        await ctx.channel(`search "${term}"`, async () => {
+      // 2b. optional listing pages (LIVE categories, tickchak /courses /festivals /events)
+      for (const hub of softHubs) {
+        await ctx.channel(`page ${hub.replace(/^https:\/\//, '')}`, async () => {
+          const { text } = await http.getText(hub);
+          for (const l of parseEventLinks(text, { womenHeading: /נשים|לנשים/ })) if (!found.has(l.eid)) add(l.eid, { women: l.women || /women/i.test(hub), url: `https://${l.host}.co.il/${l.eid}` });
+        }, { soft: true });
+      }
+      // 2c. category ids for get_events: IMPORTER_TICKCHAK_CAT_IDS, plus whatever homepage.js uses
+      let cats = [...catIds];
+      if (detectCategories) {
+        await ctx.channel('detect categories (homepage.js)', async () => {
+          const { text } = await http.getText(`${TICKCHAK}/homepage/homepage.js`);
+          cats = [...new Set([...cats, ...detectCatIds(text)])];
+        }, { soft: true });
+      }
+      // 3. Tickchak search: every term with no category, then (empty search) every category
+      const queries = [...searchTerms.map(term => ({ term, cat: '' })), ...cats.map(cat => ({ term: '', cat }))];
+      for (const { term, cat } of queries) {
+        await ctx.channel(term ? `search "${term}"` : `category ${cat}`, async () => {
           for (let offset = 0; offset < maxPerTerm; offset += pageSize) {
-            const json = await http.postForm(`${TICKCHAK}/ajax/homepage/get_events`, { limit: pageSize, offset, search: term, cat_id: '' });
+            const json = await http.postForm(`${TICKCHAK}/ajax/homepage/get_events`, { limit: pageSize, offset, search: term, cat_id: cat });
             const events = Array.isArray(json?.events) ? json.events : [];
             for (const e of events) {
               const eid = String(e.eid || '').trim();
@@ -216,7 +269,7 @@ export function createTickchakAdapter({ searchTerms = SEARCH_TERMS, pageSize = 1
             }
             if (events.length < pageSize) break;
           }
-        });
+        }, { soft: !term });
       }
       return [...found.values()];
     },

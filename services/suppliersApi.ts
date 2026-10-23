@@ -80,6 +80,7 @@ export interface ImporterStatus {
 
 export const importerApi = {
   status: () => call<ImporterStatus>('/admin/importer/status', { headers: auth() }),
+  coverage: () => call<{ target: number; regions: { id: string; name: string; manual: number; imported: number }[]; everywhere: { national: number; online: number } }>('/admin/importer/coverage', { headers: auth() }),
   run: () => call<{ started: boolean }>('/admin/importer/run', { method: 'POST', headers: auth() }),
   events: (status: 'all' | 'visible' | 'hidden' = 'all') => call<any[]>(`/admin/importer/events?status=${status}`, { headers: auth() }),
   setHidden: (id: string, hide: boolean) => call<{ hidden: boolean }>(`/admin/importer/events/${id}/${hide ? 'hide' : 'unhide'}`, { method: 'POST', headers: auth() }),

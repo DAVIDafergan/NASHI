@@ -5,7 +5,9 @@ import { Search, MapPin, Calendar, Tag, Heart, X, Share2, Star, MessageSquare, T
 import { useLocation, useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
 import ScrollReveal from '../components/ScrollReveal';
-import { useArea, AreaChips } from '../components/pages/AreaFilter';
+import { useRegionCity, RegionCityPicker } from '../components/pages/RegionCityFilter';
+import FlyerView, { FlyerZoom } from '../components/FlyerView';
+import { regionName } from '../shared/regions';
 import { PageShell, PageHero, FilterBar, SearchField, Chip, ChipRow, EmptyState, PageLoading, Sheet, IconButton } from '../components/pages/PageKit';
 
 // --- Types ---
@@ -40,7 +42,30 @@ interface EventItem {
   sourceUrl?: string;
   soldOut?: boolean;
   salesClosed?: boolean;
+  description?: string;
+  city?: string;
+  region?: string;
+  scope?: string;
+  startAt?: string;
 }
+
+// past = 3 hours after the start (or the whole day when there's no exact time)
+const startOf = (e: { startAt?: string; date: string }) => new Date(e.startAt || e.date).getTime();
+const isPastEvent = (e: { startAt?: string; date: string }) => e.startAt ? startOf(e) + 3 * 3600e3 < Date.now() : new Date(e.date).getTime() + 864e5 < Date.now();
+
+/** "היום / השבוע / בחודש הקרוב / בהמשך" by Israel calendar day. */
+const dayKey = (t: number) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+function whenGroup(e: { startAt?: string; date: string }) {
+  const today = dayKey(Date.now());
+  const d = e.startAt ? dayKey(startOf(e)) : String(e.date).slice(0, 10);
+  const days = Math.round((Date.parse(d) - Date.parse(today)) / 864e5);
+  if (days <= 0) return 'היום';
+  if (days === 1) return 'מחר';
+  if (days <= 7) return 'השבוע';
+  if (days <= 31) return 'בחודש הקרוב';
+  return 'בהמשך';
+}
+const GROUPS = ['היום', 'מחר', 'השבוע', 'בחודש הקרוב', 'בהמשך'];
 
 const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
 
@@ -107,36 +132,35 @@ const EventsPage = () => {
     return { value: event.price, isEarly: false };
   };
 
-  const { area, setArea, match: matchesArea, myRegion } = useArea();
+  const area = useRegionCity(events, (e: EventItem) => !isPastEvent(e));
   const filteredEvents = events.filter(event => {
-    if (!matchesArea(event)) return false;
-    const matchesSearch = event.title.toLowerCase().includes(filter.toLowerCase()) || event.location.toLowerCase().includes(filter.toLowerCase());
+    if (!area.place(event as any)) return false;
+    const q = filter.trim().toLowerCase();
+    const matchesSearch = !q || [event.title, event.location, event.city].some(f => (f || '').toLowerCase().includes(q));
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
     const matchesFree = onlyFree ? getDisplayPrice(event).value === 0 : true;
-    
     return matchesSearch && matchesCategory && matchesFree;
   }).sort((a, b) => {
       if (sortBy === 'date') {
-          // דואג שאירועי עבר יופיעו תמיד למטה, כדי לא להסתיר אירועים חדשים
-          const isPastA = new Date(a.date) < new Date();
-          const isPastB = new Date(b.date) < new Date();
-
-          if (isPastA && !isPastB) return 1;
-          if (!isPastA && isPastB) return -1;
-
-          // שני האירועים עברו: החדש ביותר (הכי קרוב להיום) קודם, הישן ביותר למטה
-          if (isPastA && isPastB) {
-              return new Date(b.date).getTime() - new Date(a.date).getTime();
-          }
-          // שני האירועים עתידיים: הקרוב ביותר קודם
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
+          // past events always at the bottom: newest first; upcoming: soonest first
+          const pa = isPastEvent(a), pb = isPastEvent(b);
+          if (pa !== pb) return pa ? 1 : -1;
+          return pa ? startOf(b) - startOf(a) : startOf(a) - startOf(b);
       }
       if (sortBy === 'price-low') return getDisplayPrice(a).value - getDisplayPrice(b).value;
       if (sortBy === 'price-high') return getDisplayPrice(b).value - getDisplayPrice(a).value;
       return 0;
   });
+  const [showPast, setShowPast] = useState(false);
+  const [zoom, setZoom] = useState('');
+  const [moreText, setMoreText] = useState(false);
+  useEffect(() => { setMoreText(false); }, [selectedEvent]);
+  const upcomingHere = filteredEvents.filter(e => !isPastEvent(e) && area.place(e as any) === 'here');
+  const upcomingEverywhere = filteredEvents.filter(e => !isPastEvent(e) && area.place(e as any) === 'everywhere');
+  const pastShown = filteredEvents.filter(e => isPastEvent(e));
+  const areaTitle = area.sel.region === 'all' ? 'בכל הארץ' : area.sel.region === 'online' ? 'במקוון' : area.sel.city ? `ב${area.sel.city}` : `ב${regionName(area.sel.region)}`;
 
-  const categories = ['all', 'מוזיקה', 'העשרה', 'סדנאות', 'קהילה', 'בידור', 'אופנה'];
+  const categories = ['all', 'מוזיקה', 'העשרה', 'סדנאות', 'קהילה', 'בידור', 'תורה ויהדות', 'אופנה'];
 
   const handleShare = async () => {
       const token = localStorage.getItem('token');
@@ -194,7 +218,7 @@ const EventsPage = () => {
 
   if (loading) return <PageLoading />;
 
-  const upcomingCount = events.filter(e => new Date(e.date) >= new Date()).length;
+  const upcomingCount = events.filter(e => !isPastEvent(e)).length;
   const hasActiveFilters = filter !== '' || selectedCategory !== 'all' || onlyFree;
 
   return (
@@ -208,9 +232,11 @@ const EventsPage = () => {
           : 'ערבי נשים, סדנאות, הרצאות ומופעים — הכול במקום אחד.'}
       />
 
+      {/* --- Where: regions with counts, then the cities that have events --- */}
+      <RegionCityPicker f={area} className="mb-5" />
+
       {/* --- Filter Bar --- */}
       <FilterBar>
-        <AreaChips area={area} setArea={setArea} myRegion={myRegion} className="mb-3" />
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <SearchField value={filter} onChange={setFilter} placeholder="חפשי אירוע או מקום…" className="lg:w-80 shrink-0" />
           <ChipRow className="flex-1">
@@ -247,50 +273,81 @@ const EventsPage = () => {
 
       <AdSlot placement="events" className="!px-0 mb-6" />
 
-      {/* --- Events Grid --- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7">
-        {filteredEvents.map((event, i) => {
-            const isPast = new Date(event.date) < new Date();
+      {/* --- Events, grouped by when (date order) --- */}
+      {(() => {
+        const card = (event: EventItem, i: number) => {
+          const isPast = isPastEvent(event);
+          return (
+            <ScrollReveal key={event.id} delay={(i % 8) * 60} animation="scale-in">
+              <EventCard
+                  title={event.title}
+                  image={event.image}
+                  dateLabel={event.hebrewDate || new Date(event.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}
+                  time={formatEventTime(event)}
+                  location={placeLabel(event as any)}
+                  city={event.scope === 'online' ? 'מקוון' : event.scope === 'national' ? '' : event.city}
+                  category={event.category}
+                  statusLabel={!isPast && event.soldOut ? 'אזלו הכרטיסים' : !isPast && event.salesClosed ? 'המכירה נסגרה' : undefined}
+                  isPast={isPast}
+                  ctaLabel={isPast ? 'לסיכום' : 'לפרטים והרשמה'}
+                  onClick={() => setSelectedEvent(event)}
+              />
+            </ScrollReveal>
+          );
+        };
+        const grid = (list: EventItem[]) => <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7">{list.map(card)}</div>;
+        const heading = (title: string, n: number, sub?: string) => (
+          <div className="mb-4 mt-2 flex items-baseline gap-2 border-b border-rose-100 pb-2">
+            <h2 className="text-[1.5rem] md:text-[1.8rem]">{title}</h2>
+            <span className="text-[13px] text-slate-400 tabular-nums">{n}</span>
+            {sub && <span className="mr-auto text-[12.5px] text-slate-400">{sub}</span>}
+          </div>
+        );
+        const anyFilter = filter !== '' || selectedCategory !== 'all' || onlyFree;
+        return (
+          <div className="space-y-10">
+            {upcomingHere.length === 0 ? (
+              <EmptyState
+                icon={<MapPin size={28} />}
+                title={anyFilter ? 'לא מצאנו אירועים כאלה' : `עוד אין אירועים קרובים ${areaTitle}`}
+                text={anyFilter ? 'נסי מילה אחרת או קטגוריה אחרת.' : 'אפשר להציץ במה שקורה בכל הארץ — ומנהלת תרבות באזור יכולה להעלות אירועים בקלות.'}
+                action={<div className="flex flex-wrap justify-center gap-2">
+                  {anyFilter && <button onClick={() => { setFilter(''); setSelectedCategory('all'); setOnlyFree(false); }} className="btn-ghost">ניקוי סינונים</button>}
+                  {area.sel.region !== 'all' && <button onClick={() => area.setRegion('all')} className="btn-primary">לאירועים בכל הארץ</button>}
+                  {!anyFilter && area.sel.region !== 'all' && <a href="#/become-manager" className="btn-ghost">להיות מנהלת תרבות באזור</a>}
+                </div>}
+              />
+            ) : sortBy === 'date' ? (
+              GROUPS.map(g => {
+                const list = upcomingHere.filter(e => whenGroup(e) === g);
+                return list.length ? <section key={g}>{heading(g, list.length, g === GROUPS[0] ? areaTitle : undefined)}{grid(list)}</section> : null;
+              })
+            ) : grid(upcomingHere)}
 
-            return (
-                <ScrollReveal key={event.id} delay={(i % 8) * 60} animation="scale-in">
-                  <EventCard
-                      title={event.title}
-                      image={event.image}
-                      dateLabel={event.hebrewDate || new Date(event.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}
-                      time={formatEventTime(event)}
-                      location={placeLabel(event as any)}
-                      category={event.category}
-                      statusLabel={!isPast && event.soldOut ? 'אזלו הכרטיסים' : !isPast && event.salesClosed ? 'המכירה נסגרה' : undefined}
-                      isPast={isPast}
-                      ctaLabel={isPast ? 'לסיכום' : 'לפרטים והרשמה'}
-                      onClick={() => setSelectedEvent(event)}
-                  />
-                </ScrollReveal>
-            );
-        })}
-      </div>
+            {upcomingEverywhere.length > 0 && (
+              <section>{heading('ארצי ומקוון', upcomingEverywhere.length, 'לכל הנשים, מכל מקום')}{grid(upcomingEverywhere)}</section>
+            )}
 
-      {/* Empty State */}
-      {filteredEvents.length === 0 && (
-          <EmptyState
-            icon={<Calendar size={28} />}
-            title="לא מצאנו אירועים כאלה"
-            text="נסי מילה אחרת או קטגוריה אחרת — ואולי האירוע הבא בדיוק בדרך."
-            action={<button onClick={() => {setFilter(''); setSelectedCategory('all'); setOnlyFree(false);}} className="btn-ghost">ניקוי סינונים</button>}
-          />
-      )}
+            {pastShown.length > 0 && (
+              <section>
+                {!showPast ? (
+                  <button onClick={() => setShowPast(true)} className="btn-ghost mx-auto flex"><History size={16} /> אירועים שהיו {areaTitle} ({pastShown.length})</button>
+                ) : (<>{heading('אירועים שהיו', pastShown.length)}{grid(pastShown)}</>)}
+              </section>
+            )}
+          </div>
+        );
+      })()}
 
       {/* --- Detailed Event Modal --- */}
       <Sheet open={!!selectedEvent} onClose={() => setSelectedEvent(null)} label={selectedEvent?.title}>
         {selectedEvent && (() => {
-          const isPast = new Date(selectedEvent.date) < new Date();
+          const isPast = isPastEvent(selectedEvent);
           const price = getDisplayPrice(selectedEvent);
           return (
             <div className="pb-8">
-              <div className="relative m-2 overflow-hidden rounded-[1.6rem] aspect-[4/3] md:aspect-[16/10]">
-                <img src={selectedEvent.image} alt="" className={`h-full w-full object-cover animate-kenburns ${isPast ? 'grayscale' : ''}`} />
-                <div className="absolute inset-0 bg-gradient-to-t from-plum-950/80 via-plum-950/10 to-transparent" />
+              <div className="relative m-2">
+                <FlyerView src={selectedEvent.image} alt={selectedEvent.title} grayscale={isPast} onZoom={() => setZoom(selectedEvent.image)} />
                 <div className="absolute top-3 left-3 flex gap-2">
                   <IconButton label="סגירה" onClick={() => setSelectedEvent(null)}><X size={18} /></IconButton>
                 </div>
@@ -299,10 +356,13 @@ const EventsPage = () => {
                     <img src={selectedEvent.logo} className="h-full w-full object-contain" alt="Logo" />
                   </div>
                 )}
-                <div className="absolute bottom-0 right-0 left-0 p-5 md:p-6 text-right">
-                  <span className="inline-block rounded-full bg-white/90 px-3 py-1 text-[12px] text-rose-700">{selectedEvent.category}</span>
-                  <h2 className="mt-2 text-[1.9rem] md:text-[2.3rem] leading-[1.1] !text-white">{selectedEvent.title}</h2>
+              </div>
+              <div className="px-5 md:px-7 pt-3 text-right">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {selectedEvent.category && <span className="inline-block rounded-full bg-rose-50 px-3 py-1 text-[12px] text-rose-700">{selectedEvent.category}</span>}
+                  {selectedEvent.scope !== 'online' && selectedEvent.city && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-[12px] text-white"><MapPin size={12} /> {selectedEvent.city}</span>}
                 </div>
+                <h2 className="mt-2 text-[1.8rem] md:text-[2.2rem] leading-[1.12]">{selectedEvent.title}</h2>
               </div>
 
               <div className="px-5 md:px-7 pt-4 text-right">
@@ -342,6 +402,18 @@ const EventsPage = () => {
                     יובא אוטומטית מ<a href={selectedEvent.sourceUrl || selectedEvent.ticketLink} target="_blank" rel="noopener noreferrer" className="text-rose-700 underline underline-offset-2">{selectedEvent.sourceName || 'אתר המכירה'}</a> · הרכישה והפרטים המחייבים באתר המכירה
                   </p>
                 )}
+
+                {selectedEvent.description && selectedEvent.description.trim() && (() => {
+                  const text = selectedEvent.description.trim();
+                  const long = text.length > 420;
+                  return (
+                    <div className="mb-6">
+                      <h4 className="mb-2 text-[15px]">על האירוע</h4>
+                      <p className={`whitespace-pre-line text-[15px] leading-relaxed text-slate-600 ${long && !moreText ? 'line-clamp-[8]' : ''}`}>{text}</p>
+                      {long && <button onClick={() => setMoreText(m => !m)} className="mt-1 text-[13.5px] text-rose-700 underline underline-offset-4">{moreText ? 'פחות' : 'לקריאה המלאה'}</button>}
+                    </div>
+                  );
+                })()}
 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-start gap-3 rounded-2xl bg-white border border-rose-100 p-4">
@@ -419,6 +491,7 @@ const EventsPage = () => {
           );
         })()}
       </Sheet>
+      <FlyerZoom src={zoom} onClose={() => setZoom('')} />
     </PageShell>
   );
 };

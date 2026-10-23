@@ -21,7 +21,7 @@ describe('real page formats', () => {
   test('ev_ script URL (long token + uuid) and event_hash', () => {
     assert.equal(findEventScript(readReal('tc-113538.html')).replace(/^(https?:)?\/\//, 'https://'), readReal('tc-113538.ev-url.txt').trim());
     assert.equal(findEventScript(readReal('glatt-113204.html')).replace(/^(https?:)?\/\//, 'https://'), readReal('glatt-113204.ev-url.txt').trim());
-    assert.equal(findEventHash(readReal('tc-113538.ev.js')), 'F90TUxFjSJZ1RQVUVnR2K6llcuV1MphFe');
+    assert.equal(findEventHash(readReal('tc-113538.ev.js.txt')), 'F90TUxFjSJZ1RQVUVnR2K6llcuV1MphFe');
   });
   test('location_map (PHP-serialized, Hebrew byte lengths)', () => {
     const m = phpUnserialize(JSON.parse(readReal('glatt-113204.form-init.json')).event.location_map);
@@ -117,7 +117,7 @@ describe('pipeline over real captures', { skip: !MONGO && 'set MONGO_TEST_URI to
 
   test('imports exactly the two complete real events, with region and stored flyer', async () => {
     const run = await runImport({
-      adapters: [createTickchakAdapter({ searchTerms: ['לנשים'], hubs: [] })],
+      adapters: [createTickchakAdapter({ searchTerms: ['לנשים'], hubs: [], softHubs: [], detectCategories: false })],
       http: http(), models: { Event, ImportRun, ImportBlock }, now: () => REAL_NOW, trigger: 'test', log: () => {},
     });
     const evs = await Event.find({ source: 'tickchak' }).lean();
@@ -128,5 +128,38 @@ describe('pipeline over real captures', { skip: !MONGO && 'set MONGO_TEST_URI to
     assert.match(g.image, /^data:image\/jpeg;base64,/);
     assert.equal(evs.find(e => e.sourceId === '113538').region, 'jerusalem');
     assert.equal(run.status, 'done');
+  });
+});
+
+describe('descriptions', async () => {
+  const { cleanDescription, buildDescription, kindOf } = await import('../server/importer/describe.js');
+  test('113538: the full text from the page / form, no title repeat, no contacts', async () => {
+    const n = await details('113538', 'https://tickchak.co.il/113538');
+    assert.ok(n.description.length > 300);
+    assert.match(n.description, /לכבוד הילולת רבי שלמה קרליבך/);
+    assert.match(n.description, /שרה קליין \| הודיה נעמי אלימלך/);
+    assert.match(n.description, /\n\n/, 'paragraphs kept');
+    assert.doesNotMatch(n.description, /@|wa\.me|05\d{8}|אינה אחראית/);
+  });
+  test('113204: short source text → a factual intro (kind, audience, when, where, price, seller)', async () => {
+    const n = await details('113204', 'https://glatticket.co.il/113204');
+    const d = n.description;
+    assert.ok(d.length >= 150, d);
+    assert.match(d, /^הצגה נעדרות — הצגה לנשים בלבד באולם רמון, גדרה\./);
+    assert.match(d, /הצגה קומית לנשים בלבד/, 'the page text (correct spelling) wins over the typo');
+    assert.match(d, /יום שלישי, 17 בנובמבר 2026 \(.+כסלו תשפ״ז\) · בשעה 20:00/);
+    assert.match(d, /📍 אולם רמון, שדרות מנחם בגין, 51, גדרה/);
+    assert.match(d, /מחיר כרטיס: ₪40/);
+    assert.match(d, /הכרטיסים נמכרים באתר גלאטיקט\./);
+  });
+  test('never invents: no date → no date line, no price → no price line', () => {
+    const d = buildDescription({ title: 'מפגש', description: '', venue: '', city: '', tickets: [], isFree: false, priceMin: NaN });
+    assert.equal(d, 'מפגש.');
+    assert.equal(kindOf('ערב נחמד'), 'ערב');
+    assert.equal(kindOf('משהו'), '');
+  });
+  test('cleaning drops contact lines and boilerplate', () => {
+    const t = cleanDescription('שרות קרליבך\nמופע מיוחד\nלפרטים: 050-1234567\nmail@x.com\nחברת טיקצ\'אק אינה אחראית על המכירה\n\n\nנגיע עד לב השמיים!', 'שרות קרליבך');
+    assert.equal(t, 'מופע מיוחד\n\nנגיע עד לב השמיים!');
   });
 });

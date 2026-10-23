@@ -21,9 +21,9 @@ const res = (body, { status = 200, type = 'text/html; charset=UTF-8', url } = {}
 
 export function createRealFetch() {
   const calls = [];
-  const evUrls = { [readReal('tc-113538.ev-url.txt').trim()]: 'tc-113538.ev.js', [readReal('glatt-113204.ev-url.txt').trim()]: 'glatt-113204.ev.js' };
+  const evUrls = { [readReal('tc-113538.ev-url.txt').trim()]: 'tc-113538.ev.js.txt', [readReal('glatt-113204.ev-url.txt').trim()]: 'glatt-113204.ev.js.txt' };
   const hashOf = (f) => /event_hash:"([^"]+)"/.exec(readReal(f))[1];
-  const inits = { [hashOf('tc-113538.ev.js')]: 'tc-113538.form-init.json', [hashOf('glatt-113204.ev.js')]: 'glatt-113204.form-init.json' };
+  const inits = { [hashOf('tc-113538.ev.js.txt')]: 'tc-113538.form-init.json', [hashOf('glatt-113204.ev.js.txt')]: 'glatt-113204.form-init.json' };
   const fetchImpl = async (url, init = {}) => {
     const method = (init.method || 'GET').toUpperCase();
     const body = init.body ? Object.fromEntries(new URLSearchParams(String(init.body))) : {};

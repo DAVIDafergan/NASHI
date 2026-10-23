@@ -22,7 +22,7 @@ const WOMEN_ONLY = words([
 const WOMEN = words([
   'נשים', 'לנשים', 'הנשים', 'ונשים', 'נשות', 'לנשות', 'אישה', 'לאישה', 'האישה', 'ערב נשי', 'ערב נשים', 'כנס נשים',
   'בנות', 'לבנות', 'הבנות', 'נערות', 'לנערות', 'הנערות', 'אמהות', 'לאמהות', 'אמא ובת', 'אמהות ובנות', 'אם ובת',
-  'רבנית', 'הרבנית', 'מרת', 'כלות', 'נשי',
+  'רבנית', 'הרבנית', 'מרת', 'כלות', 'נשי', 'אמא', 'לאמא', 'אמהות וילדים', 'אמא וילד', 'נשות הקהילה', 'סבתות',
 ]);
 const RELIGIOUS = words([
   'רבנית', 'הרבנית', 'ברוח ההלכה', 'על טהרת הקודש', 'בהפרדה', 'בהפרדה מלאה', 'התוועדות', 'שיעור', 'שיעורי', 'הרב', 'בס"ד', 'בסייעתא דשמיא',
@@ -33,12 +33,20 @@ const EXCLUDE = words([
   'גברים', 'לגברים', 'לגברים בלבד', 'גבר', 'קהל מעורב', 'מעורב', 'זוגות', 'לזוגות', 'רווקים', 'רווקות ורווקים', 'היכרויות', 'דייטינג',
   'סטנדאפ', 'סטנד אפ', 'סטנד-אפ', 'קומדי בר', 'קומדי קלאב', 'בבר', 'הבר', 'בר יין', 'בר קוקטיילים', 'פאב', 'בפאב', 'מועדון', 'במועדון', 'קלאב',
   'אלכוהול', 'בירה קרה', 'בירות', 'קוקטייל', 'קוקטיילים', 'יין חופשי', 'וודקה', 'וויסקי',
-  'מסיבת טבע', 'רייב', 'טכנו', 'לכל המשפחה', 'הורים וילדים', 'אבא ובן', 'בגירים', '18\\+', '\\+18', 'מעל גיל 18 בלבד',
+  'מסיבת טבע', 'רייב', 'טכנו', 'מסיבת בריכה', 'פול פארטי', 'בגדי ים', 'אפטר פארטי', 'דיג\'יי', 'DJ', 'ריקודי זוגות', 'לזוגות', 'זוגי', 'לכל המשפחה', 'הורים וילדים', 'אבא ובן', 'בגירים', '18\\+', '\\+18', 'מעל גיל 18 בלבד',
 ]);
 // Men singers/performers aren't excluded by name (we can't know), but these phrasings are clearly mixed:
 const MIXED_HINT = /קהל\s+(?:מעורב|כללי)|גברים\s+ונשים|נשים\s+וגברים|ישיבה\s+מעורבת/;
 
-export function classifyEvent({ title = '', description = '', location = '', categoryText = '', strong = false } = {}) {
+/**
+ * mode (IMPORTER_AUDIENCE):
+ *   'broad'  (default) — NASHI's audience is "קהילת נשים דתיות": any women-oriented event (shows, lectures, workshops,
+ *                         courses, classes, בית מדרש, challah, tours, mothers & kids…) with NO secular/mixed/party signal.
+ *   'haredi' — stricter: also needs a strong source, an explicit women-only phrase, or a religious marker.
+ */
+export const audienceMode = () => (process.env.IMPORTER_AUDIENCE === 'haredi' ? 'haredi' : 'broad');
+
+export function classifyEvent({ title = '', description = '', location = '', categoryText = '', strong = false, mode = audienceMode() } = {}) {
   const text = `${title}\n${categoryText}\n${description}\n${location}`.replace(/[֑-ׇ]/g, ''); // drop niqqud
   const reasons = [];
   if (MIXED_HINT.test(text)) return { ok: false, reason: 'קהל מעורב' };
@@ -52,7 +60,11 @@ export function classifyEvent({ title = '', description = '', location = '', cat
   const religious = RELIGIOUS.test(text);
   if (religious) reasons.push('מאפיין דתי');
   if (strong) reasons.push('מקור חרדי / קטגוריית נשים');
-  if (!(strong || womenOnly || religious)) return { ok: false, reason: 'לא ברור שמתאים לציבור הדתי/חרדי' };
+  if (!(strong || womenOnly || religious)) {
+    if (mode === 'haredi') return { ok: false, reason: 'לא ברור שמתאים לציבור הדתי/חרדי' };
+    reasons.push('אירוע לנשים (מצב רחב)');
+    return { ok: true, womenOnly, strength: 'women', reasons };
+  }
   return { ok: true, womenOnly, strength: strong ? 'strong' : womenOnly ? 'women-only' : 'religious', reasons };
 }
 
@@ -80,7 +92,7 @@ export function audienceFor(text = '') {
  * Completeness: we only publish an event that has everything a woman needs to decide and buy.
  * `ev` is the normalized event built by an adapter.
  */
-export function missingFields(ev, now = new Date()) {
+export function missingFields(ev, now = new Date(), { allowNoFlyer = false } = {}) {
   const missing = [];
   if (!ev.title || ev.title.trim().length < 3) missing.push('שם');
   if (!(ev.startAt instanceof Date) || isNaN(ev.startAt.getTime())) missing.push('תאריך ושעה');
@@ -90,6 +102,8 @@ export function missingFields(ev, now = new Date()) {
   const priced = ev.isFree === true || (Number.isFinite(ev.priceMin) && ev.priceMin > 0);
   if (!priced) missing.push('מחיר');
   if (!ev.ticketUrl || !/^https:\/\//i.test(ev.ticketUrl)) missing.push('קישור לרכישה');
-  if (!ev.imageUrl || !/^https?:\/\//i.test(ev.imageUrl) || /\/(?:default|eventNew|no-?image|placeholder)[^/]*$/i.test(ev.imageUrl)) missing.push('פלייר');
+  if (!allowNoFlyer && !hasRealFlyer(ev)) missing.push('פלייר');
   return missing;
 }
+
+export const hasRealFlyer = (ev) => !!ev.imageUrl && /^https?:\/\//i.test(ev.imageUrl) && !/\/(?:default|eventNew|no-?image|placeholder)[^/]*$/i.test(ev.imageUrl);

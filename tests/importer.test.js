@@ -93,7 +93,7 @@ describe('women + Haredi/religious classification', () => {
     [{ title: 'הצגת חנוכה לכל המשפחה' }, /לכל המשפחה/],
     [{ title: 'ערב בנות עם קוקטיילים', description: 'לנשים בלבד' }, /קוקטיילים/],
     [{ title: 'הופעה של אריאל זילבר' }, /לנשים/],
-    [{ title: 'ערב נשים בתל אביב', description: 'ערב כיף עם מוזיקה וריקודים' }, /דתי\/חרדי/],
+    [{ title: 'ערב נשים בתל אביב', description: 'ערב כיף עם מוזיקה וריקודים', mode: 'haredi' }, /דתי\/חרדי/],
     [{ title: 'כנס', description: 'גברים ונשים מוזמנים' }, /מעורב/],
     [{ title: 'ערב לנשים', description: 'קהל מעורב' }, /מעורב/],
     [{ title: 'הופעה לגברים בלבד', strong: true }, /גברים/],
@@ -103,6 +103,14 @@ describe('women + Haredi/religious classification', () => {
     const r = classifyEvent(e);
     assert.equal(r.ok, false);
     assert.match(r.reason, why);
+  });
+  test('broad mode (default): women events without religious markers are in, party/mixed signals still out', () => {
+    assert.equal(classifyEvent({ title: 'ערב נשים בתל אביב', description: 'ערב כיף עם מוזיקה' }).ok, true);
+    assert.equal(classifyEvent({ title: 'סדנת קרמיקה לנשים' }).ok, true);
+    assert.equal(classifyEvent({ title: 'בוקר כיף לאמהות וילדים' }).ok, true);
+    assert.equal(classifyEvent({ title: 'מסיבת בריכה לנשים עם DJ' }).ok, false);
+    assert.equal(classifyEvent({ title: 'ערב סטנדאפ לנשים' }).ok, false);
+    assert.equal(classifyEvent({ title: 'הופעה של אריאל זילבר' }).ok, false);
   });
   test('niqqud does not hide a marker', () => assert.equal(classifyEvent({ title: 'עֶרֶב לְנָשִׁים בִּלְבַד' }).ok, true));
   test('category + audience mapping', () => {
@@ -208,7 +216,7 @@ describe('Tickchak / Glatticket parsing', () => {
     const { fetchImpl } = createFakeFetch();
     const http = createHttp({ fetchImpl, minIntervalMs: 0 });
     const errors = [];
-    const ad = createTickchakAdapter({ searchTerms: ['נשים', 'הצגה'] });
+    const ad = createTickchakAdapter({ searchTerms: ['נשים', 'הצגה'], softHubs: [], detectCategories: false });
     const cands = await ad.discover(http, { channel: async (n, fn) => { try { await fn(); } catch (e) { errors.push(n + e.message); } } });
     assert.deepEqual(errors, []);
     const ids = cands.map(c => c.sourceId).sort();
@@ -270,12 +278,14 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
   });
   after(async () => { await mongoose.disconnect(); });
 
+  // these runs pin the strict settings (haredi audience, real flyers only); broad mode is tested below
+  const strict = { audience: 'haredi', allowNoFlyer: false };
   // the clock moves forward a minute per call, like real time between runs
   let tick = 0;
   const clock = () => new Date(NOW.getTime() + 60000 * tick++);
   const go = (overrides) => {
     const { fetchImpl } = createFakeFetch(overrides);
-    return runImport({ adapters: [createTickchakAdapter({ searchTerms: ['נשים', 'הצגה'] })], http: createHttp({ fetchImpl, minIntervalMs: 0 }), models: { Event, ImportRun, ImportBlock }, now: clock, trigger: 'test', log: () => {} });
+    return runImport({ adapters: [createTickchakAdapter({ searchTerms: ['נשים', 'הצגה'], softHubs: [], detectCategories: false })], http: createHttp({ fetchImpl, minIntervalMs: 0 }), models: { Event, ImportRun, ImportBlock }, now: clock, trigger: 'test', log: () => {}, ...strict });
   };
 
   test('run 1: only complete women/religious events are created', async () => {
@@ -342,7 +352,7 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
   test('past imported events are hidden', async () => {
     await Event.updateOne({ sourceId: '900001' }, { hidden: false, hiddenReason: null, startAt: new Date('2026-10-01T18:00:00Z') });
     const { fetchImpl } = createFakeFetch({ search: () => ({ events: [] }), handle: ({ u }) => (u.host.includes('glatticket') || u.host.startsWith('live.')) ? new Response('<html></html>') : null });
-    await runImport({ adapters: [createTickchakAdapter({ searchTerms: ['נשים'] })], http: createHttp({ fetchImpl, minIntervalMs: 0 }), models: { Event, ImportRun, ImportBlock }, now: clock, trigger: 'test', log: () => {} });
+    await runImport({ adapters: [createTickchakAdapter({ searchTerms: ['נשים'], softHubs: [], detectCategories: false })], http: createHttp({ fetchImpl, minIntervalMs: 0 }), models: { Event, ImportRun, ImportBlock }, now: clock, trigger: 'test', log: () => {}, ...strict });
     const g = await Event.findOne({ sourceId: '900001' }).lean();
     assert.equal(g.hidden, true);
   });
@@ -360,5 +370,30 @@ describe('robots.txt unavailable', () => {
     const fetchImpl = async (url) => url.endsWith('/robots.txt') ? new Response('', { status: 404 }) : new Response('ok');
     const http = createHttp({ fetchImpl, minIntervalMs: 0 });
     assert.equal((await http.getText('https://tickchak.co.il/x')).text, 'ok');
+  });
+});
+
+describe('broad mode + placeholder flyers against MongoDB', { skip: !MONGO && 'set MONGO_TEST_URI to run' }, () => {
+  let mongoose, Event, ImportRun, ImportBlock, runImport;
+  before(async () => {
+    mongoose = (await import('mongoose')).default;
+    await mongoose.connect(MONGO.replace(/\/[^/]*$/, '/nashi_test_broad'));
+    ({ Event, ImportRun, ImportBlock } = await import('../server/models.js'));
+    ({ runImport } = await import('../server/importer/pipeline.js'));
+    await Promise.all([Event.deleteMany({}), ImportRun.deleteMany({}), ImportBlock.deleteMany({})]);
+    await Event.syncIndexes();
+  });
+  after(async () => { await mongoose.disconnect(); });
+  test('women events without religious markers come in; no-flyer events get a branded placeholder', async () => {
+    const { fetchImpl } = createFakeFetch();
+    await runImport({ adapters: [createTickchakAdapter({ searchTerms: ['נשים', 'הצגה'], softHubs: [], detectCategories: false })], http: createHttp({ fetchImpl, minIntervalMs: 0 }), models: { Event, ImportRun, ImportBlock }, now: () => NOW, trigger: 'test', log: () => {}, audience: 'broad', allowNoFlyer: true });
+    const evs = await Event.find({ source: 'tickchak' }).lean();
+    assert.deepEqual(evs.map(e => e.sourceId).sort(), ['900001', '900002', '900008', '900010']);
+    const ph = evs.find(e => e.sourceId === '900008');
+    assert.equal(ph.generatedFlyer, true);
+    assert.match(ph.image, /^data:image\/svg\+xml;base64,/);
+    assert.match(Buffer.from(ph.image.split(',')[1], 'base64').toString(), /סדנת שזירת[\s\S]*חלות לנשים/);
+    assert.ok(!evs.find(e => e.sourceId === '900001').generatedFlyer);
+    assert.ok(ph.description.length >= 150, 'short source text gets a composed intro');
   });
 });
