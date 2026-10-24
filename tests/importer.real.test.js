@@ -78,9 +78,10 @@ describe('real events', () => {
     assert.equal(n.imageUrl, 'https://static.tickchak.co.il/caps/113538_screenshot-1790094494137.jpeg');
     assert.deepEqual(israelParts(n.startAt), { date: '2026-10-22', time: '20:15' });
     assert.deepEqual(missingFields(n, REAL_NOW), []);
-    // women-only, but nothing marks it as Haredi (central Jerusalem venue, no Haredi words) → strict rule drops it
+    // women-only but no Haredi sign (central Jerusalem venue) → out under the strict rule
     assert.equal(verdict(n).ok, false);
-    assert.match(verdict(n).reason, /חרדי/);
+    // the same show without the religious context would not
+    assert.equal(classifyEvent({ mode: 'haredi', title: n.title, description: 'המופע לנשים בלבד! ערב של שירה', location: 'התיאטרון', city: 'תל אביב' }).ok, false);
     assert.equal(classifyEvent({ mode: 'broad', title: n.title, description: n.description, location: n.location }).womenOnly, true);
   });
 });
@@ -119,7 +120,7 @@ describe('pipeline over real captures', { skip: !MONGO && 'set MONGO_TEST_URI to
   });
   after(async () => { await mongoose.disconnect(); });
 
-  test('strict Haredi: imports 113204 (Glatticket, women only) — not 113538 (no Haredi signal)', async () => {
+  test('strict Haredi: imports 113204 (Glatticket, women only), not 113538 (no Haredi sign)', async () => {
     const run = await runImport({
       adapters: [createTickchakAdapter({ searchTerms: ['לנשים'], hubs: [], softHubs: [], detectCategories: false })],
       http: http(), models: { Event, ImportRun, ImportBlock }, now: () => REAL_NOW, trigger: 'test', log: () => {},

@@ -13,7 +13,13 @@ import { buildDescription, pageSources } from '../describe.js';
  *   2. LIVE hubs        → live.tickchak.co.il/performances-for-women, /tzama-5787 (women's category hint).
  *                         NB: LIVE is an aggregator ("updated by AI from the sale sites"), so its ids are only
  *                         candidates — we import only what resolves to a real Tickchak sale page (step 3).
+ *                         The home's section / "הצג הכל" pages (home.glatticket.co.il/<slug>), the LIVE hub pages it links to
+ *                         (performances-for-women + its city pages) and sub-site sale pages (tiferet./restart.glatticket.co.il/<hash>)
+ *                         are followed too — all strong; events listed under a women's heading/page count as women-only.
  *   3. Tickchak search  → POST /ajax/homepage/get_events with many Hebrew search terms, 100 per page.
+ *   4. Bulk scan        → the same call with an empty search, paged until empty (IMPORTER_BULK_MAX, 0 = off);
+ *                         a find only this scan made gets a details request when its listing already looks like a women's event.
+ * An event page with several dates becomes one event per date (splitDates).
  * Details (all channels): GET https://<domain>/<eid> → event_hash (inline or in static.tickchak.co.il/js/ev_….js)
  *   → POST https://<same host>/ajax/form/init {event, lang:'he', source:'landing'} → event + tickets.
  */
@@ -67,23 +73,53 @@ export function jsonLdEvents(html = '') {
   return out;
 }
 
-/** Sale-page event ids found in a Glatticket / LIVE page, with hints (women's event? sold out?). */
-export function parseEventLinks(html = '', { womenHeading = /נשים|לנשים/ } = {}) {
-  const out = new Map(); // eid -> { eid, host, women, soldOut, title, startDate }
-  const add = (eid, host, patch = {}) => {
-    const prev = out.get(eid) || { eid, host, women: false, soldOut: false, title: '', startDate: '' };
-    out.set(eid, { ...prev, ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v)), women: prev.women || !!patch.women });
+// Glatticket sub-sites sell with a hash id instead: https://tiferet.glatticket.co.il/<hash>, https://restart.glatticket.co.il/<hash>
+const HASH_SALE_URL = /https?:\/\/((?!home\.|live\.|www\.|static\.)[a-z0-9-]+\.glatticket\.co\.il)\/([A-Za-z0-9_-]{5,64})(?=[?#"'\s<\\/]|$)/g;
+// listing pages on the Glatticket side: home.glatticket.co.il/<slug> ("הצג הכל" pages) and LIVE hub pages
+const SECTION_URL = /^https?:\/\/(?:home\.glatticket\.co\.il\/[^\s"'#?]+|live\.tickchak\.co\.il\/[^\s"'#?]+)/i;
+const NOT_SECTION = /\.(?:png|jpe?g|gif|webp|svg|css|js|ico|pdf|xml|json)$|\/(?:login|account|cart|privacy|terms|policy|takanon|contact|about|search)(?:\/|$)/i;
+/** Which section heading counts as "women only" on a Glatticket page. */
+export const WOMEN_SECTION = /הופעות לנשים|מופעים לנשים|לנשים בלבד|נשים בלבד|לנשים|נשים|performances[-_]for[-_]women|women/i;
+
+function saleLink(u) {
+  SALE_URL.lastIndex = 0;
+  const a = SALE_URL.exec(u);
+  if (a) return { key: a[2], eid: a[2], host: a[1], url: `https://${a[1]}.co.il/${a[2]}` };
+  HASH_SALE_URL.lastIndex = 0;
+  const b = HASH_SALE_URL.exec(u);
+  if (b && !/^(?:performances|events?|category|categories|search|page|about|contact)$/i.test(b[2])) return { key: `${b[1]}/${b[2]}`, eid: '', host: b[1], url: `https://${b[1]}/${b[2]}` };
+  return null;
+}
+
+/**
+ * Sale pages found in a Glatticket / LIVE page, with hints:
+ *   women (any women hint), section (the heading it is listed under), womenSection (listed under a women-only heading),
+ *   soldOut, title, startDate + dates (every date the page lists for it).
+ */
+export function parseEventLinks(html = '', { womenHeading = /נשים|לנשים/, sectionHint = '' } = {}) {
+  const out = new Map(); // key -> { key, eid, host, url, women, womenSection, section, soldOut, title, startDate, dates }
+  const add = (link, patch = {}) => {
+    const prev = out.get(link.key) || { ...link, women: false, womenSection: false, section: '', soldOut: false, title: '', startDate: '', dates: [] };
+    const dates = [...new Set([...prev.dates, ...(patch.dates || [])])].sort();
+    out.set(link.key, {
+      ...prev, ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v && !Array.isArray(v))),
+      soldOut: prev.title ? prev.soldOut : !!patch.soldOut,
+      women: prev.women || !!patch.women, womenSection: prev.womenSection || !!patch.womenSection,
+      section: prev.section || patch.section || '', dates,
+    });
   };
+  const sectionHintWomen = !!sectionHint && womenHeading.test(sectionHint);
   // 1. structured data (preferred: has the name, date and availability)
   for (const ev of jsonLdEvents(html)) {
-    const urls = [ev['@id'], ev.url, ...(Array.isArray(ev.offers) ? ev.offers : [ev.offers]).map(o => o?.url)].filter(Boolean).join(' ');
-    SALE_URL.lastIndex = 0;
-    const m = SALE_URL.exec(urls);
-    if (!m) continue;
     const offers = (Array.isArray(ev.offers) ? ev.offers : [ev.offers]).filter(Boolean);
-    add(m[2], m[1], {
-      title: clean(ev.name || '', 200), startDate: ev.startDate || '',
-      women: WOMEN_HINT.test(`${ev.name || ''} ${ev.description || ''}`),
+    const link = [ev['@id'], ev.url, ...offers.map(o => o?.url)].filter(Boolean).map(u => saleLink(String(u))).find(Boolean);
+    if (!link) continue;
+    const subs = (Array.isArray(ev.subEvent) ? ev.subEvent : []).map(x => x?.startDate).filter(Boolean);
+    const dates = [...(Array.isArray(ev.startDate) ? ev.startDate : [ev.startDate]), ...subs].filter(Boolean).map(String);
+    add(link, {
+      title: clean(ev.name || '', 200), startDate: dates[0] || '', dates,
+      women: WOMEN_HINT.test(`${ev.name || ''} ${ev.description || ''}`) || sectionHintWomen,
+      womenSection: sectionHintWomen, section: sectionHint,
       soldOut: offers.length > 0 && offers.every(o => /SoldOut/i.test(o.availability || '')),
     });
   }
@@ -95,10 +131,34 @@ export function parseEventLinks(html = '', { womenHeading = /נשים|לנשים
   const sectionAt = (pos) => { let h = ''; for (const x of heads) { if (x.at <= pos) h = x.text; else break; } return h; };
   const lre = /href=["']([^"']+)["']/gi;
   while ((m = lre.exec(html))) {
-    SALE_URL.lastIndex = 0;
-    const u = SALE_URL.exec(m[1].startsWith('//') ? `https:${m[1]}` : m[1]);
-    if (!u) continue;
-    add(u[2], u[1], { women: womenHeading.test(sectionAt(m.index)) });
+    const link = saleLink(m[1].startsWith('//') ? `https:${m[1]}` : m[1]);
+    if (!link) continue;
+    const section = sectionAt(m.index) || sectionHint;
+    const ws = womenHeading.test(section);
+    add(link, { women: ws, womenSection: ws, section });
+  }
+  return [...out.values()];
+}
+
+/** Listing pages linked from a Glatticket page ("הצג הכל" / section pages / LIVE hubs), with the heading they sit under. */
+export function sectionPages(html = '', base = GLATTICKET_HOME) {
+  const heads = [];
+  const hre = /<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/gi;
+  let m;
+  while ((m = hre.exec(html))) heads.push({ at: m.index, text: clean(m[1], 200) });
+  const sectionAt = (pos) => { let h = ''; for (const x of heads) { if (x.at <= pos) h = x.text; else break; } return h; };
+  const out = new Map();
+  const lre = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  while ((m = lre.exec(html))) {
+    let u;
+    try { u = new URL(decodeEntities(m[1]), base).href.replace(/#.*$/, ''); } catch { continue; }
+    if (!SECTION_URL.test(u) || NOT_SECTION.test(u.replace(/[?#].*$/, '')) || saleLink(u)) continue;
+    const clean0 = u.replace(/\/$/, '');
+    if (clean0 === base.replace(/\/$/, '') || /\/(?:hKpLyNdxl)$/.test(clean0)) continue;
+    const label = clean(m[2], 120);
+    const section = [sectionAt(m.index), label].filter(Boolean).join(' · ');
+    const prev = out.get(clean0);
+    out.set(clean0, { url: clean0, section: prev?.section || section, women: (prev?.women) || WOMEN_SECTION.test(`${section} ${clean0}`) });
   }
   return [...out.values()];
 }
@@ -165,8 +225,49 @@ export function isSoldOut(ev = {}, tickets = [], listItem = {}) {
   return false;
 }
 
+/** Every start time an event lists: form/init session arrays, the sale page's JSON-LD, the listing's dates. */
+export function eventDates({ init, pageHtml = '', listDates = [] } = {}) {
+  const ev = init?.event || {};
+  const raw = [];
+  for (const k of ['dates', 'sessions', 'events_dates', 'event_dates', 'times', 'shows', 'performances', 'sub_events']) {
+    const arr = ev[k] ?? init?.[k];
+    if (Array.isArray(arr)) for (const x of arr) raw.push(typeof x === 'object' && x ? (x.time_start ?? x.start ?? x.startDate ?? x.date ?? x.time) : x);
+  }
+  for (const e of jsonLdEvents(pageHtml)) {
+    for (const d of Array.isArray(e.startDate) ? e.startDate : [e.startDate]) raw.push(d);
+    for (const x of Array.isArray(e.subEvent) ? e.subEvent : []) raw.push(x?.startDate);
+  }
+  raw.push(...listDates);
+  const seen = new Map();
+  for (const r of raw) {
+    const d = r == null || r === '' ? null : parseWhen(r);
+    if (d && !Number.isNaN(+d)) seen.set(+d, d);
+  }
+  return [...seen.values()].sort((a, b) => a - b);
+}
+
+/**
+ * One NASHI event per date: an event page listing several start times becomes several events (same flyer/link).
+ * The first date keeps the plain id (so nothing already imported changes id); the others are "<eid>@<ISO start>".
+ */
+export function splitDates(n, opts = {}) {
+  const dates = eventDates(opts);
+  const base = n.startAt ? +n.startAt : null;
+  // dates closer than 3h are the same show written twice (doors vs. start, a rounded listing time)
+  const all = [];
+  for (const d of [...(n.startAt ? [n.startAt] : []), ...dates]) if (!all.some(x => Math.abs(+x - +d) < 3 * 3600e3)) all.push(d);
+  all.sort((a, b) => a - b);
+  if (all.length < 2) return n;
+  const dur = n.startAt && n.endAt ? +n.endAt - +n.startAt : 0;
+  const first = base ?? +all[0];
+  return all.map(d => {
+    if (+d === first) return { ...n, startAt: d };
+    return { ...n, sourceId: `${n.sourceId}@${d.toISOString()}`, startAt: d, endAt: dur > 0 ? new Date(+d + dur) : null };
+  });
+}
+
 /** form/init JSON (+ page data) → normalized event used by the pipeline. Pure: unit-tested on real + synthetic fixtures. */
-export function normalizeTickchak({ init, pageUrl, pageHtml = '', listItem = {}, strong = false, women = false }) {
+export function normalizeTickchak({ init, pageUrl, pageHtml = '', listItem = {}, strong = false, women = false, womenSection = false, section = '' }) {
   const ev = init?.event || {};
   const tickets = Array.isArray(init?.tickets) ? init.tickets : [];
   const loc = locationStrings(ev.location_map);
@@ -207,7 +308,10 @@ export function normalizeTickchak({ init, pageUrl, pageHtml = '', listItem = {},
     ticketUrl,
     imageUrl: imageUrl.startsWith('//') ? `https:${imageUrl}` : imageUrl,
     strong: strong || glatt,
-    women,
+    women: women || womenSection,
+    womenSection,
+    // listed under a women-only section of Glatticket ("הופעות לנשים"): kept as the source category, so re-checks know it too
+    category: womenSection ? (/נשים/.test(section) ? clean(section.split(' · ')[0], 60) || 'לנשים בלבד' : 'לנשים בלבד') : '',
     // more text for the women/Haredi classifier only (not shown): og:description + what the listing said
     extraText: [metaContent(pageHtml, 'og:description'), listItem.title, listItem.description].filter(Boolean).join('\n').slice(0, 2000),
   };
@@ -223,6 +327,8 @@ export function createTickchakAdapter({
   softHubs = process.env.IMPORTER_SOFT_HUBS === '0' ? [] : SOFT_HUBS,
   catIds = envList('IMPORTER_TICKCHAK_CAT_IDS'), detectCategories = process.env.IMPORTER_DETECT_CATEGORIES !== '0',
   liveRegions = Number(process.env.IMPORTER_LIVE_REGION_PAGES || 15),
+  glattSections = Number(process.env.IMPORTER_GLATT_SECTION_PAGES || 40),
+  bulkMax = Number(process.env.IMPORTER_BULK_MAX ?? 10000),
 } = {}) {
   return {
     id: 'tickchak',
@@ -231,28 +337,57 @@ export function createTickchakAdapter({
     async discover(http, ctx) {
       const found = new Map();
       const add = (eid, patch) => {
-        const prev = found.get(eid) || { sourceId: eid, url: `${TICKCHAK}/${eid}`, strong: false, women: false, listItem: { eid } };
-        found.set(eid, { ...prev, ...patch, strong: prev.strong || !!patch.strong, women: prev.women || !!patch.women, listItem: { ...prev.listItem, ...(patch.listItem || {}) } });
+        const prev = found.get(eid) || { sourceId: eid, url: `${TICKCHAK}/${eid}`, strong: false, women: false, womenSection: false, bulk: false, listItem: isEid(eid) ? { eid } : {} };
+        found.set(eid, {
+          ...prev, ...patch,
+          strong: prev.strong || !!patch.strong, women: prev.women || !!patch.women, womenSection: prev.womenSection || !!patch.womenSection,
+          bulk: found.has(eid) ? prev.bulk && !!patch.bulk : !!patch.bulk,
+          section: prev.section || patch.section || '',
+          url: prev.strong && !patch.strong ? prev.url : (patch.url || prev.url),
+          listItem: { ...prev.listItem, ...(patch.listItem || {}), dates: [...new Set([...(prev.listItem.dates || []), ...(patch.listItem?.dates || [])])] },
+        });
       };
-      // 1. Glatticket home (strong)
+      const addGlatt = (l, extra = {}) => add(l.key, {
+        strong: true, women: l.women || extra.women, womenSection: l.womenSection || !!extra.women, section: l.section || extra.section || '',
+        url: l.eid ? `https://glatticket.co.il/${l.eid}` : l.url,
+        listItem: { ...(l.title ? { title: l.title } : {}), soldOutHint: l.soldOut, dates: l.dates },
+      });
+      // 1. Glatticket home (strong) — and every section / "הצג הכל" page / LIVE hub it links to (also strong)
+      const glattPages = [];
       await ctx.channel('glatticket-home', async () => {
         const { text } = await http.getText(glatticketHome);
-        for (const l of parseEventLinks(text)) add(l.eid, { strong: true, women: l.women, url: `https://glatticket.co.il/${l.eid}`, listItem: { title: l.title, soldOutHint: l.soldOut } });
+        for (const l of parseEventLinks(text, { womenHeading: WOMEN_SECTION })) addGlatt(l);
+        glattPages.push(...sectionPages(text, glatticketHome));
       });
+      const seenPages = new Set([glatticketHome.replace(/\/$/, '')]);
+      for (let i = 0; i < glattPages.length && seenPages.size <= glattSections; i++) {
+        const pg = glattPages[i];
+        if (seenPages.has(pg.url)) continue;
+        seenPages.add(pg.url);
+        await ctx.channel(`glatticket ${pg.url.replace(/^https:\/\//, '')}`, async () => {
+          const { text } = await http.getText(pg.url);
+          const hint = `${pg.section} ${pg.url}`;
+          for (const l of parseEventLinks(text, { womenHeading: WOMEN_SECTION, sectionHint: pg.women ? hint : '' })) addGlatt(l, { women: pg.women, section: pg.section });
+          // regional / "show all" pages one level down (e.g. performances-for-women/<city>)
+          for (const r of [...liveRegionPages(text).map(url => ({ url, section: pg.section, women: true })), ...sectionPages(text, pg.url)]) {
+            if (!seenPages.has(r.url) && !glattPages.some(x => x.url === r.url)) glattPages.push({ ...r, women: r.women || pg.women });
+          }
+        }, { soft: true });
+      }
       // 2. LIVE hubs (category hint only) — and the regional women pages linked from them
       const regional = new Set();
       for (const hub of hubs) {
         await ctx.channel(`hub ${hub.replace(/^https:\/\//, '')}`, async () => {
           const { text } = await http.getText(hub);
           for (const r of liveRegionPages(text)) regional.add(r);
-          for (const l of parseEventLinks(text, { womenHeading: /./ })) if (!found.has(l.eid)) add(l.eid, { women: /women|tzama/i.test(hub) || l.women, url: `https://${l.host}.co.il/${l.eid}` });
+          for (const l of parseEventLinks(text, { womenHeading: /./ })) if (!found.has(l.key)) add(l.key, { women: /women|tzama/i.test(hub) || l.women, womenSection: /women/i.test(hub), url: l.url, listItem: { dates: l.dates } });
         });
       }
       // 2b. optional listing pages (LIVE regional women pages, LIVE categories, tickchak /courses /festivals /events)
       for (const hub of [...[...regional].slice(0, liveRegions), ...softHubs]) {
         await ctx.channel(`page ${hub.replace(/^https:\/\//, '')}`, async () => {
           const { text } = await http.getText(hub);
-          for (const l of parseEventLinks(text, { womenHeading: /נשים|לנשים/ })) if (!found.has(l.eid)) add(l.eid, { women: l.women || /women/i.test(hub), url: `https://${l.host}.co.il/${l.eid}` });
+          for (const l of parseEventLinks(text, { womenHeading: /נשים|לנשים/ })) if (!found.has(l.key)) add(l.key, { women: l.women || /women/i.test(hub), womenSection: /women/i.test(hub), url: l.url, listItem: { dates: l.dates } });
         }, { soft: true });
       }
       // 2c. category ids for get_events: IMPORTER_TICKCHAK_CAT_IDS, plus whatever homepage.js uses
@@ -264,10 +399,12 @@ export function createTickchakAdapter({
         }, { soft: true });
       }
       // 3. Tickchak search: every term with no category, then (empty search) every category
-      const queries = [...searchTerms.map(term => ({ term, cat: '' })), ...cats.map(cat => ({ term: '', cat }))];
-      for (const { term, cat } of queries) {
-        await ctx.channel(term ? `search "${term}"` : `category ${cat}`, async () => {
-          for (let offset = 0; offset < maxPerTerm; offset += pageSize) {
+      // 4. bulk scan: the whole catalogue (empty search, paged until it runs dry) — classified like everything else
+      const queries = [...searchTerms.map(term => ({ term, cat: '' })), ...cats.map(cat => ({ term: '', cat })), ...(bulkMax > 0 ? [{ term: '', cat: '', bulk: true }] : [])];
+      for (const { term, cat, bulk } of queries) {
+        await ctx.channel(bulk ? 'סריקה מלאה (get_events)' : term ? `search "${term}"` : `category ${cat}`, async () => {
+          const limit = bulk ? bulkMax : maxPerTerm;
+          for (let offset = 0; offset < limit; offset += pageSize) {
             const json = await http.postForm(`${TICKCHAK}/ajax/homepage/get_events`, { limit: pageSize, offset, search: term, cat_id: cat });
             const events = Array.isArray(json?.events) ? json.events : [];
             for (const e of events) {
@@ -276,9 +413,9 @@ export function createTickchakAdapter({
               const prev = found.get(eid);
               // real `link` is "tickchak.co.il/112712?ref=1B1O" (no scheme) — we use the clean sale page
               const host = /glatticket/i.test(String(e.link || '')) ? 'https://glatticket.co.il' : TICKCHAK;
-              add(eid, { listItem: e, url: prev?.url || `${host}/${eid}` });
+              add(eid, { listItem: e, url: prev?.url || `${host}/${eid}`, bulk: !!bulk });
             }
-            if (events.length < pageSize) break;
+            if (!events.length || (!bulk && events.length < pageSize)) break;
           }
         }, { soft: !term });
       }
@@ -294,6 +431,8 @@ export function createTickchakAdapter({
         const r = classifyEvent({ title: li.title, description: li.description, location: li.location, strong: false, ...(mode ? { mode } : {}) });
         // at list level we only drop clear "no"s (hard rejects); the rest is decided after the details
         if (!r.ok && (r.hard || (r.reason !== 'לא נמצא סימון שהאירוע לנשים' && !r.reason.startsWith('אין סימן') && !r.reason.startsWith('לא מסומן') && !c.women))) return r.reason;
+        // found only by the bulk scan: spend a details request only when the listing already looks like a women's event
+        if (c.bulk && !c.women && !r.ok && !r.reason.startsWith('אין סימן') && !/glatticket/i.test(String(li.link || ''))) return `סריקה מלאה: ${r.reason}`;
       }
       return '';
     },
@@ -309,7 +448,8 @@ export function createTickchakAdapter({
       const origin = new URL(page.url).origin;
       const init = await http.postForm(`${origin}/ajax/form/init`, { event: hash, lang: 'he', source: 'landing' });
       if (!init || !init.event) { const e = new Error('form/init החזיר תשובה ריקה'); e.skip = true; throw e; }
-      return normalizeTickchak({ init, pageUrl: page.url, pageHtml: page.text, listItem: c.listItem, strong: c.strong, women: c.women });
+      const n = normalizeTickchak({ init, pageUrl: page.url, pageHtml: page.text, listItem: c.listItem, strong: c.strong, women: c.women, womenSection: c.womenSection, section: c.section });
+      return splitDates(n, { init, pageHtml: page.text, listDates: c.listItem?.dates || [] });
     },
   };
 }

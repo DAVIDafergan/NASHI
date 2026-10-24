@@ -115,59 +115,63 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
           if (pre && !existingIds.has(c.sourceId)) { skip(adapter.id, c, pre); st.skipped++; continue; }
           // existing events are always refreshed; the budget limits only NEW event pages per run
           if (!existingIds.has(c.sourceId) && detailsBudget-- <= 0) { skip(adapter.id, c, 'הגענו למכסת הבדיקות לריצה'); st.skipped++; continue; }
-          let n;
-          try { n = await adapter.details(c, http); }
+          let got;
+          try { got = await adapter.details(c, http); }
           catch (e) { if (e.skip) skip(adapter.id, c, e.message); else { st.failed++; fail(`${adapter.name} · ${c.url}: ${e.message}`); } if (counts.skipped > before) st.skipped++; continue; }
-          n.sourceId = n.sourceId || c.sourceId;
+          // an event with several dates comes back as one normalized event per date
+          for (const n of Array.isArray(got) ? got : [got]) {
+            n.sourceId = n.sourceId || c.sourceId;
+            if (n.sourceId !== c.sourceId && blocked.has(n.sourceId)) { skip(adapter.id, c, 'נמחק ע״י מנהלת', n.title); st.skipped++; continue; }
 
-          const verdict = classifyEvent({ mode: audience, title: n.title, description: `${n.rawDescription ?? n.description}\n${n.extraText || ''}`, location: n.location, city: n.city, category: n.category || '', organizer: n.sourceName || '', strong: n.strong || c.strong, categoryText: c.women ? 'אירוע לנשים' : '' });
-          const existing = await Event.findOne({ source: adapter.id, sourceId: n.sourceId });
-          if (!verdict.ok) {
-            skip(adapter.id, c, verdict.reason, n.title); st.skipped++;
-            // no longer passes the rules → removed for good (and never re-imported)
-            if (existing) { await ImportBlock.updateOne({ source: adapter.id, sourceId: n.sourceId }, { $setOnInsert: { title: n.title } }, { upsert: true }); await Event.deleteOne({ _id: existing._id }); counts.hidden++; }
-            continue;
-          }
-          const missing = missingFields(n, now(), { allowNoFlyer });
-          if (missing.length) {
-            skip(adapter.id, c, missing.includes('עבר') ? 'האירוע כבר עבר' : `חסר: ${missing.join(', ')}`, n.title); st.skipped++;
-            continue;
-          }
-          const fields = toEventFields(n);
-
-          if (!existing) {
-            // the same event listed by two sources / two venue sites (e.g. netivot + netivim): keep one
-            const dup = await Event.findOne({ source: { $type: 'string' }, title: fields.title, startAt: fields.startAt, city: fields.city }).select('_id').lean();
-            if (dup) { skip(adapter.id, c, 'כפילות של אירוע שכבר יובא', n.title); st.skipped++; continue; }
-            if (n.soldOut || n.closed) { skip(adapter.id, c, n.soldOut ? 'אזלו הכרטיסים' : 'המכירה סגורה', n.title); st.skipped++; continue; }
-            let image;
-            let generatedFlyer = false;
-            try {
-              if (!hasRealFlyer(n)) throw new Error('אין פלייר במקור');
-              image = await downloadFlyer(http, n.imageUrl);
-            } catch (e) {
-              if (!allowNoFlyer) { skip(adapter.id, c, `פלייר: ${e.message}`, n.title); st.skipped++; continue; }
-              image = placeholderFor(n, fields); generatedFlyer = true; fields.sourceImageUrl = '';
+            const verdict = classifyEvent({ mode: audience, title: n.title, description: `${n.rawDescription ?? n.description}\n${n.extraText || ''}`, location: n.location, city: n.city, category: n.category || '', organizer: n.sourceName || '', strong: n.strong || c.strong, womenSection: !!(n.womenSection || c.womenSection), categoryText: c.women ? 'אירוע לנשים' : '' });
+            const existing = await Event.findOne({ source: adapter.id, sourceId: n.sourceId });
+            if (!verdict.ok) {
+              skip(adapter.id, c, verdict.reason, n.title); st.skipped++;
+              // no longer passes the rules → removed for good (and never re-imported)
+              if (existing) { await ImportBlock.updateOne({ source: adapter.id, sourceId: n.sourceId }, { $setOnInsert: { title: n.title } }, { upsert: true }); await Event.deleteOne({ _id: existing._id }); counts.hidden++; }
+              continue;
             }
-            try {
-              await Event.create({ ...fields, image, generatedFlyer, source: adapter.id, sourceId: n.sourceId, importedAt: now(), lastSeenAt: now(), hidden: false });
-              counts.created++; st.created++;
-            } catch (e) {
-              if (e?.code === 11000) { counts.unchanged++; } else { st.failed++; fail(`שמירה: ${n.title}: ${e.message}`); }
+            const missing = missingFields(n, now(), { allowNoFlyer });
+            if (missing.length) {
+              skip(adapter.id, c, missing.includes('עבר') ? 'האירוע כבר עבר' : `חסר: ${missing.join(', ')}`, n.title); st.skipped++;
+              continue;
             }
-            continue;
-          }
+            const fields = toEventFields(n);
 
-          const plan = planUpdate(existing.toObject(), fields);
-          const set = { ...plan.set, lastSeenAt: now() };
-          if (plan.imageChanged) {
-            if (hasRealFlyer(n)) {
-              try { set.image = await downloadFlyer(http, n.imageUrl); set.generatedFlyer = false; }
-              catch (e) { delete set.sourceImageUrl; fail(`פלייר (עדכון) ${n.title}: ${e.message}`); }
-            } else delete set.sourceImageUrl; // flyer gone on the source: keep what we have
+            if (!existing) {
+              // the same event listed by two sources / two venue sites (e.g. netivot + netivim): keep one
+              const dup = await Event.findOne({ source: { $type: 'string' }, title: fields.title, startAt: fields.startAt, city: fields.city }).select('_id').lean();
+              if (dup) { skip(adapter.id, c, 'כפילות של אירוע שכבר יובא', n.title); st.skipped++; continue; }
+              if (n.soldOut || n.closed) { skip(adapter.id, c, n.soldOut ? 'אזלו הכרטיסים' : 'המכירה סגורה', n.title); st.skipped++; continue; }
+              let image;
+              let generatedFlyer = false;
+              try {
+                if (!hasRealFlyer(n)) throw new Error('אין פלייר במקור');
+                image = await downloadFlyer(http, n.imageUrl);
+              } catch (e) {
+                if (!allowNoFlyer) { skip(adapter.id, c, `פלייר: ${e.message}`, n.title); st.skipped++; continue; }
+                image = placeholderFor(n, fields); generatedFlyer = true; fields.sourceImageUrl = '';
+              }
+              try {
+                await Event.create({ ...fields, image, generatedFlyer, source: adapter.id, sourceId: n.sourceId, importedAt: now(), lastSeenAt: now(), hidden: false });
+                counts.created++; st.created++;
+              } catch (e) {
+                if (e?.code === 11000) { counts.unchanged++; } else { st.failed++; fail(`שמירה: ${n.title}: ${e.message}`); }
+              }
+              continue;
+            }
+
+            const plan = planUpdate(existing.toObject(), fields);
+            const set = { ...plan.set, lastSeenAt: now() };
+            if (plan.imageChanged) {
+              if (hasRealFlyer(n)) {
+                try { set.image = await downloadFlyer(http, n.imageUrl); set.generatedFlyer = false; }
+                catch (e) { delete set.sourceImageUrl; fail(`פלייר (עדכון) ${n.title}: ${e.message}`); }
+              } else delete set.sourceImageUrl; // flyer gone on the source: keep what we have
+            }
+            await Event.updateOne({ _id: existing._id }, { $set: set });
+            if (plan.changed) { counts.updated++; st.updated++; } else counts.unchanged++;
           }
-          await Event.updateOne({ _id: existing._id }, { $set: set });
-          if (plan.changed) { counts.updated++; st.updated++; } else counts.unchanged++;
         }
 
         // listed nowhere anymore → hide (only when discovery fully worked, so a network hiccup never hides events)

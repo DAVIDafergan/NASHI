@@ -31,6 +31,7 @@ export function createFakeFetch(overrides = {}) {
 
     if (u.pathname === '/robots.txt') return res(read('robots.txt'), { type: 'text/plain' });
     if (u.host === 'home.glatticket.co.il' && u.pathname === '/') return res(read('glatticket-home.html'), { url });
+    if (u.host === 'home.glatticket.co.il' && u.pathname === '/events') return res(read('glatticket-events.html'), { url });
     if (u.host === 'live.tickchak.co.il' && u.pathname === '/performances-for-women') return res(read('live-women-hub.html'), { url });
     if (u.host === 'live.tickchak.co.il') return res('<html><body><h1>לא נמצאו הופעות</h1></body></html>', { url });
 

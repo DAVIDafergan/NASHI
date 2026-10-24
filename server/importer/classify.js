@@ -1,3 +1,4 @@
+import { regionOfCity } from '../../shared/regions.js';
 /**
  * Is this event for NASHI? — women's audience AND suitable for the Haredi / religious public.
  *
@@ -62,13 +63,22 @@ const SECULAR_UNLESS_HAREDI_WORD = [
   ['נעמ"ת', /נעמ"?ת|נעמ״ת/],
   ['חודש האישה', /חודש האישה|יום האישה הבינלאומי/],
 ];
+// female performers / makers ("הזמרת", "מגישות", "שרות", "תיאטרון נשי" …)
+const FEMALE_STAGE = /הזמרת|הזמרות|זמרות|מגישות|השחקניות|שחקניות|יוצרות|שרות|מנגנות|רוקדות|עולות (?:יחד )?(?:ל|אל )?הבמה|עולות יחד לבמה|תיאטרון נשי|פסטיבל (?:תיאטרון )?נשי|מופע נשי|ערב נשי|אמהות ובנות|אימהות ובנות|הרבנית|בהנחיית (?:ה)?גב'/;
 const FILM = words(['סרט', 'סרטים', 'הקרנה', 'הקרנת', 'הקרנות', 'קולנוע', 'פסטיבל סרטים'], true);
 const HAREDI_WORD = /חרדי|חרדית|חרדיות|חרדיוות|חסידי|חסידית|לבנות סמינר|סמינר|ללא סרטים|השלוחה החרדית|ברוח ההלכה|על טהרת הקודש/;
 export const HAREDI_CITIES = ['בני ברק', 'ביתר עילית', 'מודיעין עילית', 'אלעד', 'בית שמש', 'רכסים', 'עמנואל', 'קריית יערים', 'כפר חב"ד', 'קוממיות', 'תפרח'];
 const HAREDI_PLACES = /רמות|רוממה|גאולה|בנייני האומה|הר נוף|רמת שלמה|קרית צאנז|קריית צאנז|מאה שערים|בית וגן|קרית בעלז|קריית בעלז|רמת אלחנן|קרית ספר|קריית ספר|רמת בית שמש|קרית יערים|טלזסטון|ביתר/;
 const envList = (k) => (process.env[k] || '').split(',').map(x => x.trim()).filter(Boolean);
+// venues that regularly host religious/Haredi women's shows (env IMPORTER_RELIGIOUS_VENUES adds more)
+const RELIGIOUS_VENUE = new RegExp(['בית מזי"א', 'בית מזיא', 'בית מזי״א', 'ירושלים', 'בית תרבות שרת', 'נאוה ביבי', 'בנייני האומה', 'היכל התרבות רמות', ...envList('IMPORTER_RELIGIOUS_VENUES')].map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'));
+const SHOMRON_PLACE = new RegExp(['אריאל', 'קרני שומרון', 'קדומים', 'עלי', 'שילה', 'בית אל', 'אלקנה', 'קריית ארבע', 'כוכב יעקב', 'טלמון', 'אפרת', 'גבעת זאב', 'מעלה אדומים', 'אשכול פיס אריאל'].join('|'));
 const HAREDI_ORGANIZERS = () => [/השלוחה החרדית/, /בית יעקב/, /המתנ"ס החרדי|המתנ״ס החרדי/, /רשת חינוך עצמאי|החינוך העצמאי/, ...envList('IMPORTER_HAREDI_ORGANIZERS').map(x => new RegExp(x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))];
-const WOMEN_IN_TITLE = words(['נשים', 'לנשים', 'הנשים', 'ונשים', 'ולנשים'], false);
+const WOMEN_IN_TITLE = words(['נשים', 'לנשים', 'הנשים', 'ונשים', 'ולנשים', 'נשות'], false);
+// explicit women-only show phrasing (stronger than a bare "נשים"): with a religious context it is enough on its own
+const WOMEN_SHOW_PHRASE = /(?:הצגה|הצגת|מופע|ערב|כנס|הרצאה|מחזמר|התוועדות|סדנה|סדנת|הקרנה|הקרנת|יום עיון)\s+(?:ל|ל?ה)?נשים|נשים\s?נ?בלבד|לנשים ו?(?:ל)?(?:נערות|בנות)/;
+// religious context (narrow on purpose — holidays alone don't count)
+const RELIGIOUS_CONTEXT = /רבנית|הרבנית|ברוח ההלכה|בהפרדה|התוועדות|שיעור תורה|\bהרב\b|בס"ד|בס״ד|בסייעתא דשמיא|צניעות|תורה|תורות|חסידי|אמונה|ראש חודש|סמינר|בית יעקב|חב"ד|חב״ד|עזרת נשים|הלכה|תהילים|קבר רחל|מערת המכפלה|הילולא|הילולת|זצ"ל|זצ״ל|צדיקים|קדושה|בית כנסת|ישיבת|ישיבה|אמא רחל/;
 const WOMEN_CATEGORY = /נשים|חרדיוות|חרדיות/;
 
 /**
@@ -80,7 +90,7 @@ const WOMEN_CATEGORY = /נשים|חרדיוות|חרדיות/;
  * DocAviv, kibbutz venues; pilates/yoga, נעמ"ת and חודש האישה unless explicitly Haredi; films not marked women-only.
  * (Images can't be checked automatically — that stays with the admin's hide/delete.)
  */
-export function strictHaredi({ title = '', description = '', location = '', category = '', city = '', organizer = '', strong = false }) {
+export function strictHaredi({ title = '', description = '', location = '', category = '', city = '', organizer = '', strong = false, womenSection = false }) {
   const text = `${title}\n${category}\n${description}\n${location}\n${organizer}`.replace(/[\u0591-\u05C7]/g, '');
   for (const [why, re] of HARD) if (re.test(text)) return { ok: false, reason: `לא מתאים: ${why}`, hard: true };
   const harediWord = HAREDI_WORD.test(text);
@@ -90,25 +100,32 @@ export function strictHaredi({ title = '', description = '', location = '', cate
   if (ex) return { ok: false, reason: `לא מתאים: "${ex[0].trim()}"`, hard: true };
 
   const explicitOnly = WOMEN_ONLY.test(text) || /נשים\s?נ?בלבד/.test(text) || /לבנות סמינר/.test(text);
-  const womenCategory = WOMEN_CATEGORY.test(category);
-  const womenOnly = explicitOnly || womenCategory || WOMEN_IN_TITLE.test(title.replace(/[\u0591-\u05C7]/g, ''));
+  // a women's section on a Haredi source page (Glatticket "הופעות לנשים") counts like a women's category
+  const womenCategory = WOMEN_CATEGORY.test(category) || womenSection;
+  // on a Haredi source (Glatticket) women on stage mean a women-only audience (קול אשה), and its film screenings are
+  // the Haredi women's cinema circuit — men-only events were already rejected above ("גברים")
+  const film = FILM.test(`${title}\n${category}`);
+  const strongWomen = strong && (FEMALE_STAGE.test(text) || film);
+  const womenOnly = explicitOnly || womenCategory || strongWomen || WOMEN_IN_TITLE.test(title.replace(/[\u0591-\u05C7]/g, ''));
   if (!womenOnly) return { ok: false, reason: 'לא מסומן במפורש כאירוע לנשים' };
-  if (FILM.test(`${title}\n${category}`) && !(explicitOnly || womenCategory)) return { ok: false, reason: 'סרט שלא מסומן לנשים בלבד', hard: true };
+  if (film && !(explicitOnly || womenCategory || strongWomen)) return { ok: false, reason: 'סרט שלא מסומן לנשים בלבד', hard: true };
   if (SOFT_EXCLUDE.test(text) && !(strong || /חרדי/.test(category) || explicitOnly)) return { ok: false, reason: 'סטנדאפ שלא מסומן לנשים חרדיות', hard: true };
 
   const signals = [];
   if (strong) signals.push('מקור חרדי');
   if (/חרדי/.test(category)) signals.push(`קטגוריה "${category}"`);
   if (harediWord) signals.push('מילה חרדית');
-  if (HAREDI_CITIES.includes(city)) signals.push(`עיר חרדית (${city})`);
+  const placeText = `${location}\n${title}\n${organizer}`;
+  const hcity = HAREDI_CITIES.find(c => c === city || placeText.includes(c));
+  if (hcity) signals.push(`עיר חרדית (${hcity})`);
   if (HAREDI_PLACES.test(`${location}\n${title}`)) signals.push('שכונה/מקום חרדי');
   if (HAREDI_ORGANIZERS().some(re => re.test(text))) signals.push('מארגן חרדי');
   if (!signals.length) return { ok: false, reason: 'אין סימן שהאירוע לציבור החרדי' };
-  return { ok: true, womenOnly: true, strength: 'haredi', reasons: [explicitOnly ? 'לנשים בלבד' : womenCategory ? `קטגוריה "${category}"` : '"נשים" בכותרת', ...signals] };
+  return { ok: true, womenOnly: true, strength: 'haredi', reasons: [explicitOnly ? 'לנשים בלבד' : womenCategory ? (womenSection && !WOMEN_CATEGORY.test(category) ? 'במדור לנשים' : `קטגוריה "${category}"`) : WOMEN_IN_TITLE.test(title.replace(/[\u0591-\u05C7]/g, '')) ? '"נשים" בכותרת' : film ? 'הקרנה במקור חרדי' : 'נשים על הבמה במקור חרדי', ...signals] };
 }
 
-export function classifyEvent({ title = '', description = '', location = '', categoryText = '', category = '', city = '', organizer = '', strong = false, mode = audienceMode() } = {}) {
-  if (mode === 'haredi') return strictHaredi({ title, description, location, category, city, organizer, strong });
+export function classifyEvent({ title = '', description = '', location = '', categoryText = '', category = '', city = '', organizer = '', strong = false, womenSection = false, mode = audienceMode() } = {}) {
+  if (mode === 'haredi') return strictHaredi({ title, description, location, category, city, organizer, strong, womenSection });
   const text = `${title}\n${categoryText}\n${category}\n${description}\n${location}`.replace(/[\u0591-\u05C7]/g, ''); // drop niqqud
   const reasons = [];
   if (MIXED_HINT.test(text)) return { ok: false, reason: 'קהל מעורב' };
