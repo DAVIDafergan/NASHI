@@ -6,12 +6,26 @@ import { importerConfig, importerRunning, importerNextAt, runImporterNow } from 
 import { reclassifyImported } from './importer/reclassify.js';
 import { runPushImport, runStructuredPush } from './importer/push.js';
 import crypto from 'node:crypto';
+import { moderate } from './importer/moderate.js';
+import { checkFlyer, modestyEnabled } from './importer/modesty.js';
 import { RESEARCHED_SOURCES } from './importer/adapters/index.js';
 import { REGIONS } from '../shared/regions.js';
 
 /** Admin endpoints of the events agent ("סוכן אירועים"). Main admin only. */
 const r = express.Router();
 const guard = [authenticate, isAdmin];
+
+const pushOk = (req) => { const token = process.env.IMPORTER_PUSH_TOKEN || ''; const got = String(req.get('x-import-token') || ''); return !!token && got.length === token.length && crypto.timingSafeEqual(Buffer.from(got), Buffer.from(token)); };
+
+// owner moderation (same secret): { placeholder: [eventId], remove: [eventId], recheckImages: true }
+r.post('/importer/moderate', async (req, res) => {
+  if (!pushOk(req)) return res.status(403).json({ error: 'forbidden' });
+  try {
+    const { placeholder = [], remove = [], recheckImages = false, probe } = req.body || {};
+    if (probe) { const v = await checkFlyer(probe); return res.json({ enabled: modestyEnabled(), ...v }); }
+    res.json({ enabled: modestyEnabled(), ...(await moderate({ Event, ImportBlock, placeholder, remove, recheckImages })) });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 // pages opened in a normal browser, pushed with the IMPORTER_PUSH_TOKEN secret (no token set → route off)
 r.post('/importer/push', async (req, res) => {

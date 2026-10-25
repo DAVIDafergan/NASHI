@@ -1,6 +1,7 @@
 import { HDate } from '@hebcal/core';
 import { classifyEvent, categoryFor, audienceFor, missingFields } from './classify.js';
 import { israelParts, nashiDate } from './time.js';
+import { checkFlyer, modestyEnabled } from './modesty.js';
 import { downloadFlyer } from './images.js';
 import { placeholderFlyer } from './placeholder.js';
 import { kindOf } from './describe.js';
@@ -109,9 +110,9 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
         counts.discovered += candidates.length;
         // blocks: a manager's delete is final; automatic ones (rule re-check, duplicate, past) are re-checked with the
         // CURRENT rules — so an event purged under older rules comes back once it passes
-        const blocks = await ImportBlock.find({ source: adapter.id }).select('sourceId blockedBy reason').lean();
-        const blocked = new Set(blocks.filter(b => b.blockedBy).map(b => b.sourceId));
-        const autoBlocked = new Set(blocks.filter(b => !b.blockedBy).map(b => b.sourceId));
+        const blocks = await ImportBlock.find({ source: adapter.id }).select('sourceId blockedBy final reason').lean();
+        const blocked = new Set(blocks.filter(b => b.blockedBy || b.final).map(b => b.sourceId));
+        const autoBlocked = new Set(blocks.filter(b => !b.blockedBy && !b.final).map(b => b.sourceId));
         // everything still listed on the source counts as "seen", even if we don't refetch it this time
         await Event.updateMany({ source: adapter.id, sourceId: { $in: candidates.map(c => c.sourceId) } }, { $set: { lastSeenAt: startedAt } });
 
@@ -161,6 +162,11 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
               try {
                 if (!hasRealFlyer(n)) throw new Error('אין פלייר במקור');
                 image = await downloadFlyer(http, n.imageUrl);
+                if (modestyEnabled()) {
+                  let ok = false, why = '';
+                  try { const v = await checkFlyer(image); ok = v.modest; why = v.reason; } catch (e) { why = `בדיקה נכשלה: ${e.message}`; }
+                  if (!ok) { log(`[importer] flyer replaced (${why}): ${n.title}`); throw new Error(`פלייר לא צנוע: ${why}`); }
+                }
               } catch (e) {
                 if (!allowNoFlyer) { skip(adapter.id, c, `פלייר: ${e.message}`, n.title); st.skipped++; continue; }
                 image = placeholderFor(n, fields); generatedFlyer = true; fields.sourceImageUrl = '';

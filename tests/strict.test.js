@@ -31,7 +31,7 @@ describe('strict Haredi rules', () => {
   test('hard rejects win over every Haredi signal', () => {
     for (const t of ['מסיבת חנוכה לנשים בלבד', 'ערב ריקודים לנשים חרדיות', 'רחבה לנשים בבני ברק']) assert.equal(drop({ title: t, city: 'בני ברק' }).hard, true, t);
     assert.equal(drop({ title: 'יוגה לנשים', city: 'בני ברק' }).hard, true, 'yoga needs an explicit Haredi word, a Haredi city is not enough');
-    keep({ title: 'פילאטיס לנשים חרדיות', city: 'בני ברק' });
+    assert.equal(drop({ title: 'פילאטיס לנשים חרדיות', city: 'בני ברק' }).hard, true, 'pilates / yoga are out (owner, 2026-10-25)');
     assert.equal(drop({ title: 'הקרנת סרט לנשים', city: 'אלעד' }).reason, 'סרט שלא מסומן לנשים בלבד');
     keep({ title: 'הקרנת סרט', description: 'לנשים בלבד, ללא סרטים בהפקה', city: 'אלעד' });
   });

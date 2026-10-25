@@ -175,6 +175,7 @@ const ImportBlockSchema = new mongoose.Schema({
   title: { type: String },
   reason: { type: String },
   blockedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  final: { type: Boolean },          // removed by the site owner: never re-imported, whatever the rules say
   createdAt: { type: Date, default: Date.now },
 });
 ImportBlockSchema.index({ source: 1, sourceId: 1 }, { unique: true });
