@@ -25,7 +25,7 @@ interface EventItem {
   time?: string; // הוספת שדה שעה לטיפוס
   location: string;
   category: string;
-  price: number;
+  price: number; // null at runtime = unknown (imported without a price)
   earlyBirdPrice?: number;
   earlyBirdEndDate?: string;
   sessions?: EventSession[];
@@ -165,8 +165,8 @@ const EventsPage = () => {
           if (pa !== pb) return pa ? 1 : -1;
           return pa ? startOf(b) - startOf(a) : startOf(a) - startOf(b);
       }
-      if (sortBy === 'price-low') return getDisplayPrice(a).value - getDisplayPrice(b).value;
-      if (sortBy === 'price-high') return getDisplayPrice(b).value - getDisplayPrice(a).value;
+      if (sortBy === 'price-low') return (getDisplayPrice(a).value ?? 1e9) - (getDisplayPrice(b).value ?? 1e9);
+      if (sortBy === 'price-high') return (getDisplayPrice(b).value ?? -1) - (getDisplayPrice(a).value ?? -1);
       return 0;
   });
   const [zoom, setZoom] = useState('');
@@ -394,7 +394,7 @@ const EventsPage = () => {
                   {[
                     { k: 'מתי', v: selectedEvent.hebrewDate || new Date(selectedEvent.date).toLocaleDateString('he-IL'), icon: <Calendar size={15} /> },
                     { k: 'שעה', v: formatEventTime(selectedEvent), icon: <Clock size={15} /> },
-                    { k: 'מחיר', v: price.value === 0 ? 'בחינם' : `₪${price.value}`, icon: <Ticket size={15} />, hi: true },
+                    { k: 'מחיר', v: price.value == null ? 'בקישור לרכישה' : price.value === 0 ? 'בחינם' : `₪${price.value}`, icon: <Ticket size={15} />, hi: true },
                   ].map((c) => (
                     <div key={c.k} className="rounded-2xl border border-rose-100 bg-rose-50/40 p-3 text-center">
                       <div className="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-full bg-white text-rose-500 shadow-soft">{c.icon}</div>

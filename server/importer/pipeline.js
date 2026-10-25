@@ -27,7 +27,7 @@ export function toEventFields(n) {
   const text = `${n.title}\n${n.description}`;
   const priceLine = n.isFree ? 'הכניסה חופשית' : n.tickets?.length > 1
     ? `כרטיסים: ${n.tickets.filter(t => t.price > 0).map(t => `${t.title || 'כרטיס'} ${money(t.price)}`).join(' · ')}`
-    : `מחיר: ${money(n.priceMin)}`;
+    : Number.isFinite(n.priceMin) && n.priceMin > 0 ? `מחיר: ${money(n.priceMin)}` : 'מחיר: בקישור לרכישה';
   return {
     title: n.title,
     date: nashiDate(n.startAt),
@@ -42,7 +42,8 @@ export function toEventFields(n) {
     audience: audienceFor(text),
     category: categoryFor(text),
     description: n.description,
-    price: n.isFree ? 0 : Math.round(n.priceMin),
+    // unknown price → null (the site shows "בקישור"), never 0 (= free)
+    price: n.isFree ? 0 : Number.isFinite(n.priceMin) && n.priceMin > 0 ? Math.round(n.priceMin) : null,
     notes: priceLine,
     ticketLink: n.ticketUrl,
     soldOut: !!n.soldOut,
@@ -76,9 +77,15 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
   const skipped = [];
   const errors = [];
   const sources = [];
+  const reasons = {};          // skip reason → count (logged after the run)
+  const strongSkipped = [];    // skipped items from strong (Haredi) sources, logged so a bad rule shows up at once
+  let unblocked = 0;
   const skip = (src, c, reason, title) => {
     counts.skipped++;
-    if (skipped.length < 400) skipped.push({ source: src, sourceId: c.sourceId, title: (title || c.listItem?.title || '').slice(0, 140), url: c.url, reason });
+    const key = String(reason).replace(/"[^"]*"/g, '"…"').replace(/https?:\/\/\S+/g, '<url>').slice(0, 80);
+    reasons[key] = (reasons[key] || 0) + 1;
+    if (c?.strong && strongSkipped.length < 30) strongSkipped.push(`${c.sourceId} ${(title || c.listItem?.title || '').slice(0, 60)} → ${reason}`);
+    if (skipped.length < 400 || (c?.strong && skipped.length < 600)) skipped.push({ source: src, sourceId: c.sourceId, title: (title || c.listItem?.title || '').slice(0, 140), url: c.url, reason });
   };
   const fail = (msg) => { counts.failed++; if (errors.length < 150) errors.push(String(msg).slice(0, 400)); };
   let detailsBudget = maxDetails;
@@ -100,7 +107,11 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
         const candidates = await adapter.discover(http, ctx);
         st.discovered = candidates.length;
         counts.discovered += candidates.length;
-        const blocked = new Set((await ImportBlock.find({ source: adapter.id }).select('sourceId').lean()).map(b => b.sourceId));
+        // blocks: a manager's delete is final; automatic ones (rule re-check, duplicate, past) are re-checked with the
+        // CURRENT rules — so an event purged under older rules comes back once it passes
+        const blocks = await ImportBlock.find({ source: adapter.id }).select('sourceId blockedBy reason').lean();
+        const blocked = new Set(blocks.filter(b => b.blockedBy).map(b => b.sourceId));
+        const autoBlocked = new Set(blocks.filter(b => !b.blockedBy).map(b => b.sourceId));
         // everything still listed on the source counts as "seen", even if we don't refetch it this time
         await Event.updateMany({ source: adapter.id, sourceId: { $in: candidates.map(c => c.sourceId) } }, { $set: { lastSeenAt: startedAt } });
 
@@ -128,7 +139,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
             if (!verdict.ok) {
               skip(adapter.id, c, verdict.reason, n.title); st.skipped++;
               // no longer passes the rules → removed for good (and never re-imported)
-              if (existing) { await ImportBlock.updateOne({ source: adapter.id, sourceId: n.sourceId }, { $setOnInsert: { title: n.title } }, { upsert: true }); await Event.deleteOne({ _id: existing._id }); counts.hidden++; }
+              if (existing) { await ImportBlock.updateOne({ source: adapter.id, sourceId: n.sourceId }, { $setOnInsert: { title: n.title, reason: verdict.reason } }, { upsert: true }); await Event.deleteOne({ _id: existing._id }); counts.hidden++; }
               continue;
             }
             const missing = missingFields(n, now(), { allowNoFlyer });
@@ -137,12 +148,14 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
               continue;
             }
             const fields = toEventFields(n);
+            if (autoBlocked.has(n.sourceId)) { await ImportBlock.deleteOne({ source: adapter.id, sourceId: n.sourceId, blockedBy: null }); autoBlocked.delete(n.sourceId); unblocked++; }
 
             if (!existing) {
               // the same event listed by two sources / two venue sites (e.g. netivot + netivim): keep one
               const dup = await Event.findOne({ source: { $type: 'string' }, title: fields.title, startAt: fields.startAt, city: fields.city }).select('_id').lean();
               if (dup) { skip(adapter.id, c, 'כפילות של אירוע שכבר יובא', n.title); st.skipped++; continue; }
-              if (n.soldOut || n.closed) { skip(adapter.id, c, n.soldOut ? 'אזלו הכרטיסים' : 'המכירה סגורה', n.title); st.skipped++; continue; }
+              // sold out is still imported (shown as "אזלו הכרטיסים"); a closed / suspended sale is not
+              if (n.closed && !n.soldOut) { skip(adapter.id, c, 'המכירה סגורה', n.title); st.skipped++; continue; }
               let image;
               let generatedFlyer = false;
               try {
@@ -189,6 +202,11 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
     // everything imported earlier is re-checked against the current rules
     try { const rc = await reclassifyImported({ Event, ImportBlock, mode: audience, log }); counts.hidden += rc.removed.length + rc.duplicates; } catch (e) { fail(`בדיקה מחדש: ${e.message}`); }
 
+    const top = Object.fromEntries(Object.entries(reasons).sort((a, b) => b[1] - a[1]).slice(0, 25));
+    log(`[importer] skip reasons: ${JSON.stringify(top)}`);
+    if (strongSkipped.length) log(`[importer] skipped from strong sources (${strongSkipped.length}):\n  ${strongSkipped.join('\n  ')}`);
+    if (unblocked) log(`[importer] ${unblocked} events blocked by an earlier automatic check pass the current rules and were re-imported`);
+    run.skipReasons = top;
     Object.assign(run, { status: 'done', finishedAt: now(), counts, sources, skipped, errorMessages: errors });
     await run.save();
     log(`[importer] done: ${JSON.stringify(counts)}`);

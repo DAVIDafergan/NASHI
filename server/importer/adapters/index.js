@@ -1,5 +1,6 @@
 import { createTickchakAdapter } from './tickchak.js';
 import { createSmarticketAdapter } from './smarticket.js';
+import { createBinaaAdapter } from './binaa.js';
 
 /**
  * Active sources. Each adapter is { id, name, discover(http, ctx), prefilter?(candidate), details(candidate, http) }.
@@ -7,7 +8,7 @@ import { createSmarticketAdapter } from './smarticket.js';
  * IMPORTER_SOURCES=tickchak,… limits which run (default: all).
  */
 export function activeAdapters() {
-  const all = [createTickchakAdapter(), createSmarticketAdapter()];
+  const all = [createTickchakAdapter(), createSmarticketAdapter(), createBinaaAdapter()];
   const only = (process.env.IMPORTER_SOURCES || '').split(',').map(s => s.trim()).filter(Boolean);
   return only.length ? all.filter(a => only.includes(a.id)) : all;
 }
@@ -21,6 +22,8 @@ export const RESEARCHED_SOURCES = [
   { id: 'tickchak-live', name: "טיקצ'אק LIVE (דפי ריכוז)", status: 'discovery', note: 'משמש רק לגילוי מזהים. האתר עצמו מצהיר שהנתונים "עודכנו ע״י AI מאתרי המכירה" — לכן מייבאים רק אירוע שנפתח כדף מכירה אמיתי של טיקצ\'אק.' },
   { id: 'eventer', name: 'Eventer', status: 'todo', note: 'לא נבדק מהשרת (הרשת בסביבת הפיתוח חסומה). לבדוק robots.txt, תנאי שימוש ונקודת JSON ציבורית לפני כתיבת מתאם.' },
   { id: 'smarticket', name: 'SmarTicket (היכלי תרבות ומתנ"סים)', status: 'active', note: 'במצב חרדי נכנסים רק אירועי קטגוריות נשים/חרדיוות שעוברים את הכללים. היכלים חרדיים נוספים (בני ברק, אלעד, ביתר, מודיעין עילית, רכסים, ירושלים) — להוסיף ל-IMPORTER_SMARTICKET_VENUES כשמאתרים את כתובת המשנה שלהם. אותה תבנית בכל היכל: דף בית + קטגוריות נשים (נשים / ערבי נשים / חרדיוות), דף אירוע עם JSON-LD. רשימת ההיכלים ב-IMPORTER_SMARTICKET_VENUES, עד 15 דפי אירוע להיכל בריצה.' },
+  { id: 'binaa', name: 'אתרי עיריות ומתנ"סים (א.ש בינה)', status: 'active', note: 'אותה מערכת בעשרות אתרים (/events/). רשימת האתרים ועיר לכל אתר ב-IMPORTER_BINAA_SITES (host|עיר|1 לאתר/שלוחה חרדיים). נכנס רק מה שמתויג לנשים ועובר את הכללים — מודיעין עילית, בית שמש, עמנואל והשלוחות החרדיות; אתרי ערים כלליות בעיקר מסוננים. חוגים וקורסים — המפגש הקרוב.' },
+  { id: 'visit-tzfat', name: 'visit-tzfat.co.il', status: 'todo', note: 'וורדפרס + Elementor. לבדוק /wp-json/wp/v2/types לסוג פוסט של אירועים לפני כתיבת מתאם (לא נגיש מסביבת הפיתוח).' },
   { id: 'leaan', name: 'לאן (leaan.co.il)', status: 'skip', note: 'בעיקר תרבות כללית/חילונית ומופעים מעורבים; מעט אירועים לנשים בלבד.' },
   { id: 'kupat', name: 'קופות עירוניות / מתנ״סים', status: 'todo', note: 'כל עירייה במערכת אחרת; עדיף שמנהלות התרבות יעלו ידנית.' },
 ];

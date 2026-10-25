@@ -133,6 +133,29 @@ describe('pipeline over real captures', { skip: !MONGO && 'set MONGO_TEST_URI to
     assert.match(g.image, /^data:image\/jpeg;base64,/);
     assert.equal(run.status, 'done');
   });
+
+  test('automatic blocks are re-checked (a passing event comes back); a manager\'s delete stays; skip reasons are logged', async () => {
+    await Promise.all([Event.deleteMany({}), ImportBlock.deleteMany({})]);
+    const admin = new mongoose.Types.ObjectId();
+    await ImportBlock.create([
+      { source: 'tickchak', sourceId: '113204', title: 'הצגה נעדרות', reason: 'אין סימן שהאירוע לציבור החרדי' }, // old purge
+      { source: 'tickchak', sourceId: '999999', title: 'נמחק', blockedBy: admin },
+    ]);
+    const lines = [];
+    const run = await runImport({
+      adapters: [createTickchakAdapter({ searchTerms: ['לנשים'], hubs: [], softHubs: [], detectCategories: false })],
+      http: http(), models: { Event, ImportRun, ImportBlock }, now: () => REAL_NOW, trigger: 'test', log: (l) => lines.push(l),
+    });
+    assert.ok(await Event.exists({ source: 'tickchak', sourceId: '113204' }), 're-imported');
+    assert.equal(await ImportBlock.countDocuments({ sourceId: '113204' }), 0);
+    assert.equal(await ImportBlock.countDocuments({ sourceId: '999999' }), 1);
+    const hist = lines.find(l => l.startsWith('[importer] skip reasons: '));
+    assert.ok(hist, lines.join('\n'));
+    const counts = JSON.parse(hist.replace('[importer] skip reasons: ', ''));
+    assert.equal(Object.values(counts).reduce((a, b) => a + b, 0), run.counts.skipped);
+    assert.ok(lines.some(l => /re-imported/.test(l)));
+    assert.deepEqual(run.skipReasons, counts);
+  });
 });
 
 describe('descriptions', async () => {

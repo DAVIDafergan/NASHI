@@ -61,7 +61,7 @@ describe('SmarTicket events (real)', () => {
     assert.equal(n.city, 'בית שמש');
     assert.equal(n.closed, true, '"טרם נפתחה רכישת הכרטיסים הבודדים"');
     assert.equal(n.soldOut, false);
-    assert.ok(missingFields(n, SMART_NOW).includes('מחיר'));
+    assert.ok(missingFields(n, SMART_NOW, { requirePrice: true }).includes('מחיר'));
     assert.equal(ok(n).ok, true);
   });
   test('price ranges "מחיר 65 עד 70 ₪"', () => {

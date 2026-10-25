@@ -163,6 +163,8 @@ const ImportRunSchema = new mongoose.Schema({
   sources: [{ _id: false, id: String, name: String, discovered: Number, created: Number, updated: Number, skipped: Number, failed: Number, error: String }],
   skipped: [{ _id: false, source: String, sourceId: String, title: String, url: String, reason: String }],
   errorMessages: [{ type: String }],
+  // skip reason → count (top 25), so a run that created nothing can be explained from the admin
+  skipReasons: { type: mongoose.Schema.Types.Mixed },
 });
 const ImportRun = mongoose.model('ImportRun', ImportRunSchema);
 

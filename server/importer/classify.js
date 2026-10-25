@@ -173,7 +173,7 @@ export function audienceFor(text = '') {
  * Completeness: we only publish an event that has everything a woman needs to decide and buy.
  * `ev` is the normalized event built by an adapter.
  */
-export function missingFields(ev, now = new Date(), { allowNoFlyer = false } = {}) {
+export function missingFields(ev, now = new Date(), { allowNoFlyer = false, requirePrice } = {}) {
   const missing = [];
   if (!ev.title || ev.title.trim().length < 3) missing.push('שם');
   if (!(ev.startAt instanceof Date) || isNaN(ev.startAt.getTime())) missing.push('תאריך ושעה');
@@ -181,7 +181,8 @@ export function missingFields(ev, now = new Date(), { allowNoFlyer = false } = {
   if (!ev.venue || ev.venue.trim().length < 2) missing.push('מקום');
   if (!ev.city) missing.push('עיר מוכרת');
   const priced = ev.isFree === true || (Number.isFinite(ev.priceMin) && ev.priceMin > 0);
-  if (!priced) missing.push('מחיר');
+  // price is shown when known; a missing price alone doesn't keep an event out (IMPORTER_REQUIRE_PRICE=1 restores that)
+  if (!priced && (requirePrice ?? process.env.IMPORTER_REQUIRE_PRICE === '1')) missing.push('מחיר');
   if (!ev.ticketUrl || !/^https:\/\//i.test(ev.ticketUrl)) missing.push('קישור לרכישה');
   if (!allowNoFlyer && !hasRealFlyer(ev)) missing.push('פלייר');
   return missing;

@@ -11,6 +11,9 @@ const SOURCE_LABEL: Record<string, string> = { active: 'פעיל', discovery: '�
 
 /** Group skip reasons ("חסר: מחיר, פלייר" → per reason) to show why events didn't come in. */
 const reasonsOf = (run: ImportRun) => {
+  // full-run counts from the server when present (the stored list is capped)
+  const all = (run as ImportRun & { skipReasons?: Record<string, number> }).skipReasons;
+  if (all && Object.keys(all).length) return Object.entries(all).sort((a, b) => b[1] - a[1]);
   const m = new Map<string, number>();
   for (const s of run.skipped || []) { const k = s.reason.replace(/"[^"]*"/, '"…"'); m.set(k, (m.get(k) || 0) + 1); }
   return [...m.entries()].sort((a, b) => b[1] - a[1]);

@@ -136,7 +136,10 @@ describe('completeness', () => {
     [{ ticketUrl: '' }, 'קישור לרכישה'], [{ ticketUrl: 'http://insecure' }, 'קישור לרכישה'],
     [{ imageUrl: '' }, 'פלייר'], [{ imageUrl: 'https://static.tickchak.co.il/images/live/more/eventNew.jpg' }, 'פלייר'],
   ];
-  for (const [patch, field] of each) test(`missing ${field} (${JSON.stringify(patch)})`, () => assert.ok(missingFields({ ...full, ...patch }, NOW).includes(field)));
+  for (const [patch, field] of each) test(`missing ${field} (${JSON.stringify(patch)})`, () => assert.ok(missingFields({ ...full, ...patch }, NOW, { requirePrice: true }).includes(field)));
+  test('an unknown price alone does not keep an event out (unless required)', () => {
+    assert.deepEqual(missingFields({ ...full, priceMin: NaN }, NOW), []);
+  });
 });
 
 describe('robots.txt + polite client', () => {
@@ -295,7 +298,11 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     const run = await go();
     assert.equal(run.status, 'done');
     const created = await Event.find({ source: 'tickchak' }).lean();
-    assert.deepEqual(created.map(e => e.sourceId).sort(), ['900001', '900002']);
+    // 900004 has no price (shown "בקישור לרכישה"), 900007 is sold out (shown "אזלו הכרטיסים") — both still come in
+    assert.deepEqual(created.map(e => e.sourceId).sort(), ['900001', '900002', '900004', '900007']);
+    assert.equal(created.find(e => e.sourceId === '900004').price, null);
+    assert.match(created.find(e => e.sourceId === '900004').notes, /בקישור/);
+    assert.equal(created.find(e => e.sourceId === '900007').soldOut, true);
     const glatt = created.find(e => e.sourceId === '900001');
     assert.match(glatt.image, /^data:image\/jpeg;base64,/);
     assert.equal(glatt.region, 'center');
@@ -303,13 +310,11 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     assert.equal(glatt.hidden, false);
     const reasons = Object.fromEntries(run.skipped.map(s => [s.sourceId, s.reason]));
     assert.match(reasons["900003"], /לא מתאים/);
-    assert.match(reasons["900004"], /מחיר/);
     assert.match(reasons["900005"], /עיר|חרדי/);
     assert.equal(reasons["900006"], 'עבר');
-    assert.equal(reasons["900007"], 'אזלו הכרטיסים');
     assert.match(reasons["900008"], /פלייר/);
     assert.match(reasons["900010"], /ריקודים|חרדי/);
-    assert.equal(run.counts.created, 2);
+    assert.equal(run.counts.created, 4);
     assert.ok(run.errorMessages.some(e => /900009/.test(e)), 'a broken event page is an error, not a crash');
     assert.equal((await Event.findById(manual._id).lean()).title, 'אירוע ידני');
   });
@@ -318,7 +323,7 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     const run = await go();
     assert.equal(run.counts.created, 0);
     assert.equal(run.counts.updated, 0);
-    assert.equal(await Event.countDocuments({ source: 'tickchak' }), 2);
+    assert.equal(await Event.countDocuments({ source: 'tickchak' }), 4);
   });
 
   test('run 3: price change + sold out are updated; removed event is hidden; manual event untouched', async () => {
@@ -343,7 +348,7 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     assert.equal((await Event.findOne({ sourceId: '900001' }).lean()).hidden, true);
     // delete + block
     const ev = await Event.findOne({ sourceId: '900002' });
-    await ImportBlock.create({ source: 'tickchak', sourceId: '900002' });
+    await ImportBlock.create({ source: 'tickchak', sourceId: '900002', blockedBy: new mongoose.Types.ObjectId() });
     await ev.deleteOne();
     const run2 = await go();
     assert.equal(await Event.countDocuments({ sourceId: '900002' }), 0);
@@ -389,7 +394,7 @@ describe('broad mode + placeholder flyers against MongoDB', { skip: !MONGO && 's
     const { fetchImpl } = createFakeFetch();
     await runImport({ adapters: [createTickchakAdapter({ searchTerms: ['נשים', 'הצגה'], softHubs: [], detectCategories: false })], http: createHttp({ fetchImpl, minIntervalMs: 0 }), models: { Event, ImportRun, ImportBlock }, now: () => NOW, trigger: 'test', log: () => {}, audience: 'broad', allowNoFlyer: true });
     const evs = await Event.find({ source: 'tickchak' }).lean();
-    assert.deepEqual(evs.map(e => e.sourceId).sort(), ['900001', '900002', '900008', '900010']);
+    assert.deepEqual(evs.map(e => e.sourceId).sort(), ['900001', '900002', '900004', '900007', '900008', '900010']);
     const ph = evs.find(e => e.sourceId === '900008');
     assert.equal(ph.generatedFlyer, true);
     assert.match(ph.image, /^data:image\/svg\+xml;base64,/);
