@@ -79,6 +79,8 @@ const WOMEN_IN_TITLE = words(['נשים', 'לנשים', 'הנשים', 'ונשי�
 const WOMEN_SHOW_PHRASE = /(?:הצגה|הצגת|מופע|ערב|כנס|הרצאה|מחזמר|התוועדות|סדנה|סדנת|הקרנה|הקרנת|יום עיון)\s+(?:ל|ל?ה)?נשים|נשים\s?נ?בלבד|לנשים ו?(?:ל)?(?:נערות|בנות)/;
 // religious context (narrow on purpose — holidays alone don't count)
 const RELIGIOUS_CONTEXT = /רבנית|הרבנית|ברוח ההלכה|בהפרדה|התוועדות|שיעור תורה|\bהרב\b|בס"ד|בס״ד|בסייעתא דשמיא|צניעות|תורה|תורות|חסידי|אמונה|ראש חודש|סמינר|בית יעקב|חב"ד|חב״ד|עזרת נשים|הלכה|תהילים|קבר רחל|מערת המכפלה|הילולא|הילולת|זצ"ל|זצ״ל|צדיקים|קדושה|בית כנסת|ישיבת|ישיבה|אמא רחל/;
+// a class / group for women named in the title ("חוג ציור נשים", "התעמלות נשים", "מפגשי בוקר לאמא ולתינוק")
+const WOMEN_CLASS_TITLE = /(?:חוג|חוגי|קורס|סדנ[הת]|סדנאות|קבוצ[הת]|מפגש|מפגשי|מועדון|בוקר|התעמלות|פיטנס|כושר|שיעור|שיעורי|לימוד|מעגל)[^|\n]{0,30}?(?:\s|^)(?:ל|ה)?נשים(?:\s|$|[-–,:|])|(?:ל|ה)?אמא ו?(?:ל|ה)?תינוק|אימא,? תינוק|לאמהות(?! ו)|לאימהות(?! ו)/;
 const WOMEN_CATEGORY = /נשים|חרדיוות|חרדיות/;
 
 /**
@@ -106,7 +108,8 @@ export function strictHaredi({ title = '', description = '', location = '', cate
   // the Haredi women's cinema circuit — men-only events were already rejected above ("גברים")
   const film = FILM.test(`${title}\n${category}`);
   const strongWomen = strong && (FEMALE_STAGE.test(text) || film);
-  const womenOnly = explicitOnly || womenCategory || strongWomen || WOMEN_IN_TITLE.test(title.replace(/[\u0591-\u05C7]/g, ''));
+  const motherBaby = /(?:ל|ה)?אמא ו?(?:ל|ה)?תינוק|אימא,? תינוק|אמהות ותינוקות|אימהות ותינוקות/.test(title);
+  const womenOnly = explicitOnly || womenCategory || strongWomen || motherBaby || WOMEN_IN_TITLE.test(title.replace(/[\u0591-\u05C7]/g, ''));
   if (!womenOnly) return { ok: false, reason: 'לא מסומן במפורש כאירוע לנשים' };
   if (film && !(explicitOnly || womenCategory || strongWomen)) return { ok: false, reason: 'סרט שלא מסומן לנשים בלבד', hard: true };
   if (SOFT_EXCLUDE.test(text) && !(strong || /חרדי/.test(category) || explicitOnly)) return { ok: false, reason: 'סטנדאפ שלא מסומן לנשים חרדיות', hard: true };
@@ -123,7 +126,7 @@ export function strictHaredi({ title = '', description = '', location = '', cate
   // owner's decision (2026-10-25): every city counts as Haredi — a women-only event with a known place passes
   // (hard rejects above still apply: parties, mixed audiences, kibbutz venues, church music, films not for women…)
   if (!signals.length && process.env.IMPORTER_ALL_CITIES_HAREDI === '1' && (city || location)
-    && (explicitOnly || womenCategory || WOMEN_SHOW_PHRASE.test(text))) signals.push('כל הערים מסומנות כחרדיות');
+    && (explicitOnly || womenCategory || WOMEN_SHOW_PHRASE.test(text) || WOMEN_CLASS_TITLE.test(title.replace(/[\u0591-\u05C7]/g, '')))) signals.push('כל הערים מסומנות כחרדיות');
   if (!signals.length) return { ok: false, reason: 'אין סימן שהאירוע לציבור החרדי' };
   return { ok: true, womenOnly: true, strength: 'haredi', reasons: [explicitOnly ? 'לנשים בלבד' : womenCategory ? (womenSection && !WOMEN_CATEGORY.test(category) ? 'במדור לנשים' : `קטגוריה "${category}"`) : WOMEN_IN_TITLE.test(title.replace(/[\u0591-\u05C7]/g, '')) ? '"נשים" בכותרת' : film ? 'הקרנה במקור חרדי' : 'נשים על הבמה במקור חרדי', ...signals] };
 }

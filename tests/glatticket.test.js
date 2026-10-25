@@ -169,3 +169,16 @@ describe('IMPORTER_ALL_CITIES_HAREDI=1 (every city counts as Haredi)', () => {
     } finally { delete process.env.IMPORTER_ALL_CITIES_HAREDI; }
   });
 });
+
+describe('all-cities mode: women classes and mother-baby groups', () => {
+  test('pass', () => {
+    process.env.IMPORTER_ALL_CITIES_HAREDI = '1';
+    try {
+      keep({ title: 'חוג ציור נשים בוקר', city: 'נתיבות', location: 'מרכז יסודות' });
+      keep({ title: 'התעמלות נשים', city: 'אשדוד', location: 'מרכז קהילתי' });
+      keep({ title: 'השלוחה החרדית | מפגשי בוקר לאמא ולתינוק', city: 'נתיבות', location: 'עולם הילד' });
+      drop({ title: 'נשות הפנתיאון מרצה', city: 'חיפה', location: 'בית אבא חושי' });
+      drop({ title: 'צעדת העגלות לאמהות ואבות', city: 'פתח תקווה' });
+    } finally { delete process.env.IMPORTER_ALL_CITIES_HAREDI; }
+  });
+});
