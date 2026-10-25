@@ -266,7 +266,7 @@ export function createBinaaAdapter({
                 const merged = prev ? { ...prev, sessions: [...prev.sessions, ...it.sessions.filter(s => !prev.sessions.some(x => +x.startAt === +s.startAt))].sort((a, b) => a.startAt - b.startAt), tags: [...new Set([...prev.tags, ...it.tags, ...(hint.tags || [])])] } : { ...it, tags: [...new Set([...it.tags, ...(hint.tags || [])])] };
                 found.set(it.key, { ...merged, strong: !!(prev?.strong || hint.haredi) });
               }
-              if (p === 0 && !hint.filtered) for (const f of filterPages(text, got || next)) await read(f.url, { filtered: true, haredi: f.haredi, tags: [f.label] });
+              if (p === 0 && !hint.filtered) for (const f of filterPages(text, got || next)) { try { await read(f.url, { filtered: true, haredi: f.haredi, tags: [f.label] }); } catch { /* optional filtered view */ } }
               next = nextPage(text, got || next);
             }
           };

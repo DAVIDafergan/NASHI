@@ -70,7 +70,7 @@ export function planUpdate(existing, fields) {
   return { set, changed: Object.keys(set).length > 0, imageChanged: !existing.importEdited && !same(existing.sourceImageUrl, fields.sourceImageUrl) };
 }
 
-export async function runImport({ adapters, http, models, trigger = 'schedule', triggeredBy, now = () => new Date(), maxDetails = Number(process.env.IMPORTER_MAX_DETAILS || 600), allowNoFlyer = process.env.IMPORTER_PLACEHOLDER_FLYER !== '0', audience = audienceMode(), log = console.log }) {
+export async function runImport({ adapters, http, models, trigger = 'schedule', triggeredBy, now = () => new Date(), maxDetails = Number(process.env.IMPORTER_MAX_DETAILS || 600), allowNoFlyer = process.env.IMPORTER_PLACEHOLDER_FLYER !== '0', audience = audienceMode(), log = console.log, markGone = true }) {
   const { Event, ImportRun, ImportBlock } = models;
   const run = await ImportRun.create({ trigger, triggeredBy, status: 'running', startedAt: now() });
   const counts = { discovered: 0, created: 0, updated: 0, unchanged: 0, skipped: 0, hidden: 0, failed: 0 };
@@ -188,7 +188,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
         }
 
         // listed nowhere anymore → hide (only when discovery fully worked, so a network hiccup never hides events)
-        if (channelErrors === 0) {
+        if (markGone && channelErrors === 0) {
           // (an event that already happened keeps its 48h 'עבר' window even if the source dropped it)
           const r = await Event.updateMany({ source: adapter.id, hidden: { $ne: true }, startAt: { $gt: startedAt }, $or: [{ lastSeenAt: { $lt: startedAt } }, { lastSeenAt: { $exists: false } }] }, { $set: { hidden: true, hiddenReason: 'gone' } });
           counts.hidden += r.modifiedCount || 0;

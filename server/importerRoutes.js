@@ -4,12 +4,27 @@ import { Event, ImportRun, ImportBlock } from './models.js';
 import { authenticate, isAdmin } from './auth.js';
 import { importerConfig, importerRunning, importerNextAt, runImporterNow } from './importer/index.js';
 import { reclassifyImported } from './importer/reclassify.js';
+import { runPushImport } from './importer/push.js';
+import crypto from 'node:crypto';
 import { RESEARCHED_SOURCES } from './importer/adapters/index.js';
 import { REGIONS } from '../shared/regions.js';
 
 /** Admin endpoints of the events agent ("סוכן אירועים"). Main admin only. */
 const r = express.Router();
 const guard = [authenticate, isAdmin];
+
+// pages opened in a normal browser, pushed with the IMPORTER_PUSH_TOKEN secret (no token set → route off)
+r.post('/importer/push', async (req, res) => {
+  const token = process.env.IMPORTER_PUSH_TOKEN || '';
+  const got = String(req.get('x-import-token') || '');
+  if (!token || got.length !== token.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(token))) return res.status(403).json({ error: 'forbidden' });
+  try {
+    const { pages, sites } = req.body || {};
+    const logs = [];
+    const run = await runPushImport({ pages, sites, models: { Event, ImportRun, ImportBlock }, log: (m) => { logs.push(String(m)); console.log(m); } });
+    res.json({ ok: true, counts: run?.counts, logs: logs.slice(-12) });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 r.get('/admin/importer/status', ...guard, async (req, res) => {
   try {

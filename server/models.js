@@ -146,7 +146,7 @@ const Event = mongoose.model('Event', EventSchema);
 
 // One run of the events agent — shown in the admin "סוכן אירועים" panel.
 const ImportRunSchema = new mongoose.Schema({
-  trigger: { type: String, enum: ['schedule', 'manual', 'test'], default: 'schedule' },
+  trigger: { type: String, enum: ['schedule', 'manual', 'test', 'push'], default: 'schedule' },
   triggeredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   status: { type: String, enum: ['running', 'done', 'failed'], default: 'running' },
   startedAt: { type: Date, default: Date.now },
