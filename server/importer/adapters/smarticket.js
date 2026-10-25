@@ -20,6 +20,7 @@ export const DEFAULT_VENUES = [
   'betshemesh', 'netivot', 'netivim', 'matnasgan', 'matnaskg', 'harish', 'petah-tikva', 'makefet', 'mama', 'htma', 'm-zion',
   'netanya', 'kivunimb7', 'eilatmuni', 'menashe', 'eyz', 'maalot', 't-hazafon', 'ksaba', 'batyam', 'lod', 'tarbut-nz',
   'habama', 'telmond', 'mifgashim-mb', 'phk', 'oryehuda', 'arava', 'ramathasharon',
+  'matnasbs', 'ashdod', 'etzion', 'matnas8', 'even-yehuda', 'misgav', 'zfatarbut', 'afula', 'htbeithaam',
 ];
 
 /**
@@ -30,7 +31,7 @@ export const VENUE_CITY = {
   betshemesh: 'בית שמש', netivot: 'נתיבות', netivim: 'נתיבות', matnasgan: 'נתניה', matnaskg: 'קריית גת', harish: 'חריש',
   'petah-tikva': 'פתח תקווה', netanya: 'נתניה', kivunimb7: 'באר שבע', eilatmuni: 'אילת', maalot: 'מעלות-תרשיחא',
   't-hazafon': 'חיפה', ksaba: 'כפר סבא', batyam: 'בת ים', lod: 'לוד', 'tarbut-nz': 'נס ציונה', telmond: 'תל מונד',
-  oryehuda: 'אור יהודה', ramathasharon: 'רמת השרון', 'mifgashim-mb': 'מבשרת ציון',
+  oryehuda: 'אור יהודה', matnasbs: 'בית שמש', ashdod: 'אשדוד', matnas8: 'קריית שמונה', 'even-yehuda': 'אבן יהודה', zfatarbut: 'צפת', afula: 'עפולה', htbeithaam: 'ירושלים', etzion: '', misgav: '', ramathasharon: 'רמת השרון', 'mifgashim-mb': 'מבשרת ציון',
   // regional councils / unclear names: no single city
   menashe: '', eyz: '', arava: '', makefet: '', mama: '', htma: '', 'm-zion': '', habama: '', phk: '',
 };
