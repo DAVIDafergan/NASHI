@@ -82,6 +82,8 @@ export function parseItemText(text = '') {
   return { title: title.slice(0, 200), startAt, endAt, place: place.slice(0, 160), tags, untimed: /ללא תאריך/.test(body) };
 }
 
+// binaa pages set <base href="https://site/"> and use relative links like "./events/306/"
+export const docBase = (html = '', fallback = '') => { const m = /<base\b[^>]*href=["']([^"']+)["']/i.exec(html); if (!m) return fallback; try { return new URL(m[1], fallback || undefined).href; } catch { return fallback; } };
 const absUrl = (href, base) => { try { return new URL(decodeEntities(href), base).href.replace(/#.*$/, ''); } catch { return ''; } };
 
 /**
@@ -89,6 +91,7 @@ const absUrl = (href, base) => { try { return new URL(decodeEntities(href), base
  * → [{ key, kind: 'binaa'|'smarticket', id, url, venue?, sessions: [{ startAt, endAt }], title, place, tags }]
  */
 export function parseBinaaList(html = '', base = 'https://example.org/events/') {
+  base = docBase(html, base);
   const origin = (() => { try { return new URL(base).origin; } catch { return ''; } })();
   const anchors = [];
   const re = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
