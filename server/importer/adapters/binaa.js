@@ -21,10 +21,10 @@ import { normalizeSmarticket } from './smarticket.js';
 
 /** host[/path] | city | haredi (1 = the site / branch itself serves the Haredi public). Override: IMPORTER_BINAA_SITES. */
 export const DEFAULT_BINAA_SITES = [
-  'modil.org.il|מודיעין עילית|1', 'netivim.org.il|נתיבות|', 'betshemesh.muni.il|בית שמש|', 'meytarim-j.org.il/events/?branch=2|ירושלים|1',
-  'ofektivi.org.il||', 'qiryat-gat.muni.il|קריית גת|', 'k-m.org.il|קריית מלאכי|', 'matnasgan.org.il|נתניה|', 'matnasyavne.co.il|יבנה|',
-  'yavne.muni.il|יבנה|', 'ganeytikva.org.il|גני תקווה|', 'emanuel.muni.il|עמנואל|1', 'nof-hagalil.muni.il|נוף הגליל|', 'arad.muni.il|ערד|',
-  'mama.org.il||', 'bney-ayish.muni.il|בני עי"ש|', 'rosh-haayin.muni.il|ראש העין|',
+  'www.modil.org.il|מודיעין עילית|1', 'www.netivim.org.il|נתיבות|', 'www.betshemesh.muni.il|בית שמש|', 'www.meytarim-j.org.il/events/?branch=2|ירושלים|1',
+  'ofektivi.org.il||', 'www.qiryat-gat.muni.il|קריית גת|', 'www.k-m.org.il|קריית מלאכי|', 'matnasgan.org.il|נתניה|', 'www.matnasyavne.co.il|יבנה|',
+  'www.yavne.muni.il|יבנה|', 'www.ganeytikva.org.il|גני תקווה|', 'www.emanuel.muni.il|עמנואל|1', 'www.nof-hagalil.muni.il|נוף הגליל|', 'www.arad.muni.il|ערד|',
+  'www.mama.org.il||', 'www.bney-ayish.muni.il|בני עי"ש|', 'www.rosh-haayin.muni.il|ראש העין|',
 ];
 
 /** "modil.org.il|מודיעין עילית|1" → { id, url, origin, city, haredi } */

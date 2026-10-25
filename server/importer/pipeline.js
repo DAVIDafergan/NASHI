@@ -206,6 +206,8 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
     log(`[importer] skip reasons: ${JSON.stringify(top)}`);
     if (strongSkipped.length) log(`[importer] skipped from strong sources (${strongSkipped.length}):\n  ${strongSkipped.join('\n  ')}`);
     if (unblocked) log(`[importer] ${unblocked} events blocked by an earlier automatic check pass the current rules and were re-imported`);
+    if (errors.length) log(`[importer] errors (${errors.length}):\n  ${errors.slice(0, 25).join('\n  ')}`);
+    log(`[importer] per source: ${JSON.stringify((sources || []).map(x => ({ id: x.id, d: x.discovered, c: x.created, s: x.skipped, f: x.failed, e: (x.error || '').slice(0, 120) })))}`);
     run.skipReasons = top;
     Object.assign(run, { status: 'done', finishedAt: now(), counts, sources, skipped, errorMessages: errors });
     await run.save();
