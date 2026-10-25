@@ -156,3 +156,16 @@ describe('Tickchak bulk scan', () => {
     assert.equal(pre['880201'], '');          // Glatticket link → details decide
   });
 });
+
+describe('IMPORTER_ALL_CITIES_HAREDI=1 (every city counts as Haredi)', () => {
+  test('explicit women-only events anywhere pass; bare "נשות" in a lecture title and hard rejects do not', () => {
+    process.env.IMPORTER_ALL_CITIES_HAREDI = '1';
+    try {
+      keep({ title: 'ערב נשים: סדנת נרות', location: 'מתנ"ס גן', city: 'נתניה' });
+      keep({ title: 'הלל ראש חודש – תפילה מוזיקלית לנשים', description: 'לנשים בלבד', city: 'צפת' });
+      drop({ title: 'נשות הפנתיאון מרצה סבין יעקובוביץ', location: 'בית אבא חושי', city: 'חיפה' });
+      drop({ title: 'מסיבת בחירות לנשים בלבד', city: 'כרמים' });
+      drop({ title: 'מופע לנשים', description: 'לנשים בלבד', location: 'קיבוץ עלומים' });
+    } finally { delete process.env.IMPORTER_ALL_CITIES_HAREDI; }
+  });
+});

@@ -120,6 +120,10 @@ export function strictHaredi({ title = '', description = '', location = '', cate
   if (hcity) signals.push(`עיר חרדית (${hcity})`);
   if (HAREDI_PLACES.test(`${location}\n${title}`)) signals.push('שכונה/מקום חרדי');
   if (HAREDI_ORGANIZERS().some(re => re.test(text))) signals.push('מארגן חרדי');
+  // owner's decision (2026-10-25): every city counts as Haredi — a women-only event with a known place passes
+  // (hard rejects above still apply: parties, mixed audiences, kibbutz venues, church music, films not for women…)
+  if (!signals.length && process.env.IMPORTER_ALL_CITIES_HAREDI === '1' && (city || location)
+    && (explicitOnly || womenCategory || WOMEN_SHOW_PHRASE.test(text))) signals.push('כל הערים מסומנות כחרדיות');
   if (!signals.length) return { ok: false, reason: 'אין סימן שהאירוע לציבור החרדי' };
   return { ok: true, womenOnly: true, strength: 'haredi', reasons: [explicitOnly ? 'לנשים בלבד' : womenCategory ? (womenSection && !WOMEN_CATEGORY.test(category) ? 'במדור לנשים' : `קטגוריה "${category}"`) : WOMEN_IN_TITLE.test(title.replace(/[\u0591-\u05C7]/g, '')) ? '"נשים" בכותרת' : film ? 'הקרנה במקור חרדי' : 'נשים על הבמה במקור חרדי', ...signals] };
 }
