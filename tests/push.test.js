@@ -36,3 +36,11 @@ describe('push import over real modil.org.il pages', { skip: !MONGO && 'set MONG
     assert.equal(evs.find(e => e.sourceId === 'modil.org.il:306').city, 'מודיעין עילית');
   });
 });
+
+test('normalizePushed: a visit-tzfat card → event in Safed, Israel time', async () => {
+  const { normalizePushed } = await import('../server/importer/push.js');
+  const n = normalizePushed({ id: '2083', title: 'סדנת כתיבה לנשים', date: "ג' 27.10.26", time: '20', place: 'מיליא, גלריית הספרים, רחוב ט"ו 1, צפת', price: '', audience: 'נשים בלבד', description: 'ארבעה מפגשים', link: 'https://visit-tzfat.co.il/events/x/' }, { id: 'visit-tzfat.co.il', city: 'צפת' });
+  assert.equal(n.city, 'צפת');
+  assert.equal(n.startAt.toISOString(), '2026-10-27T18:00:00.000Z');
+  assert.equal(n.ticketUrl, 'https://visit-tzfat.co.il/events/x/');
+});

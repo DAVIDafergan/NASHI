@@ -4,7 +4,7 @@ import { Event, ImportRun, ImportBlock } from './models.js';
 import { authenticate, isAdmin } from './auth.js';
 import { importerConfig, importerRunning, importerNextAt, runImporterNow } from './importer/index.js';
 import { reclassifyImported } from './importer/reclassify.js';
-import { runPushImport } from './importer/push.js';
+import { runPushImport, runStructuredPush } from './importer/push.js';
 import crypto from 'node:crypto';
 import { RESEARCHED_SOURCES } from './importer/adapters/index.js';
 import { REGIONS } from '../shared/regions.js';
@@ -19,9 +19,11 @@ r.post('/importer/push', async (req, res) => {
   const got = String(req.get('x-import-token') || '');
   if (!token || got.length !== token.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(token))) return res.status(403).json({ error: 'forbidden' });
   try {
-    const { pages, sites } = req.body || {};
+    const { pages, sites, site, events } = req.body || {};
     const logs = [];
-    const run = await runPushImport({ pages, sites, models: { Event, ImportRun, ImportBlock }, log: (m) => { logs.push(String(m)); console.log(m); } });
+    const run = events ? await runStructuredPush({ site, events, pages,
+      models: { Event, ImportRun, ImportBlock }, log: (m) => { logs.push(String(m)); console.log(m); } })
+      : await runPushImport({ pages, sites, models: { Event, ImportRun, ImportBlock }, log: (m) => { logs.push(String(m)); console.log(m); } });
     res.json({ ok: true, counts: run?.counts, logs: logs.slice(-12) });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
