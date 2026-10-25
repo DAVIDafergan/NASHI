@@ -20,7 +20,7 @@ export async function checkFlyer(dataUrl, { fetchImpl = fetch } = {}) {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: m[1], data: m[2] } }] }], generationConfig: { temperature: 0, responseMimeType: 'application/json' } }),
   });
-  if (!res.ok) throw new Error(`gemini HTTP ${res.status}`);
+  if (!res.ok) { let msg = ''; try { msg = (await res.text()).slice(0, 300); } catch { /* none */ } throw new Error(`gemini HTTP ${res.status} ${msg}`); }
   const j = await res.json();
   const text = j?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
   const parsed = JSON.parse(text.replace(/^```(?:json)?|```$/g, '').trim());
