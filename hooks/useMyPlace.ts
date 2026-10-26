@@ -30,8 +30,12 @@ export function useMyPlace(user?: { city?: string; region?: string } | null) {
     window.addEventListener('storage', on);
     return () => { window.removeEventListener(EVT, on); window.removeEventListener('storage', on); };
   }, []);
-  const city = user?.city || guestCity || '';
-  const region = (user?.region || regionOfCity(city) || '') as string;
+  // a place chosen on this device (header picker / detected location) wins over the profile city,
+  // so switching city always changes what the site shows
+  let chosen = '';
+  try { chosen = localStorage.getItem(KEY) || ''; } catch { /* ignore */ }
+  const city = chosen || user?.city || guestCity || '';
+  const region = (regionOfCity(city) || (!chosen ? user?.region : '') || '') as string;
   const set = useCallback((c: string) => setGuestCity(c), []);
   return { city, region, setCity: set };
 }
