@@ -16,19 +16,19 @@ const ROLE = [
 
 const STEPS = [
   { icon: <UserPlus size={20} />, title: 'נרשמות לאתר', text: 'משתמש רגיל, חינם, בחצי דקה.' },
-  { icon: <Send size={20} />, title: 'שולחות בקשה', text: 'ממלאות את הטופס כאן: עיר, טלפון וקצת עלייך.' },
+  { icon: <Send size={20} />, title: 'שולחות בקשה', text: 'ממלאות את הטופס כאן: פרטים, תפקיד והיקף פעילות.' },
   { icon: <ShieldCheck size={20} />, title: 'אישור הנהלה', text: 'צוות נשי עובר על הבקשה ויוצר קשר.' },
   { icon: <PartyPopper size={20} />, title: 'מתחילות לנהל', text: 'בתפריט מופיע "ניהול האזור שלי", ומשם הכול.' },
 ];
 
 const BecomeManagerPage: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user, onOpenLogin }) => {
   const [mine, setMine] = useState<any>(undefined);
-  const [form, setForm] = useState({ city: '', phone: '', about: '', experience: '', hoursPerWeek: '' });
+  const [form, setForm] = useState({ fullName: '', email: '', city: '', address: '', phone: '', jobTitle: '', employer: '', employerOther: '', activityScope: '', about: '', experience: '', hoursPerWeek: '' });
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setForm(f => ({ ...f, city: f.city || user?.city || '', phone: f.phone || user?.phone || '' }));
+    setForm(f => ({ ...f, fullName: f.fullName || user?.name || '', email: f.email || user?.email || '', city: f.city || user?.city || '', phone: f.phone || user?.phone || '' }));
     if (!user) { setMine(null); return; }
     api.getMyManagerApplication().then(setMine).catch(() => setMine(null));
   }, [user]);
@@ -37,8 +37,14 @@ const BecomeManagerPage: React.FC<{ user: any; onOpenLogin: () => void }> = ({ u
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!form.city) { setError('בחרי עיר'); return; }
-    if (!form.phone.trim()) { setError('חסר מספר טלפון'); return; }
+    // everything is required except experience
+    const miss = [
+      !form.fullName.trim() && 'שם מלא', !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim()) && 'מייל תקין', !form.phone.trim() && 'טלפון',
+      !form.city && 'עיר', !form.address.trim() && 'כתובת', !form.jobTitle.trim() && 'תפקיד', !form.employer && 'מקום העסקה',
+      form.employer === 'other' && !form.employerOther.trim() && 'פירוט מקום העסקה', !form.activityScope.trim() && 'היקף פעילות',
+      !form.about.trim() && 'קצת עלייך', !form.hoursPerWeek && 'זמינות בשבוע',
+    ].filter(Boolean);
+    if (miss.length) { setError(`חסר: ${miss.join(', ')}`); return; }
     setSending(true);
     try { setMine(await api.applyAsManager(form)); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     catch (err: any) { setError(err?.message || 'השליחה נכשלה'); }
@@ -136,17 +142,49 @@ const BecomeManagerPage: React.FC<{ user: any; onOpenLogin: () => void }> = ({ u
               </div>
             ) : (
               <form onSubmit={submit} className="mt-6 space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">שם מלא *</label>
+                    <input className={input} value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} autoComplete="name" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">מייל *</label>
+                    <input dir="ltr" type="email" className={`${input} text-left`} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} autoComplete="email" />
+                  </div>
+                </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-slate-700">באיזו עיר את גרה? *</label>
                   <CityPicker value={form.city} onChange={city => setForm(f => ({ ...f, city }))} />
                   {form.city && <p className="mt-1.5 text-xs text-rose-700">תנהלי את אזור {regionName(regionOfCity(form.city))}</p>}
                 </div>
                 <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">כתובת *</label>
+                  <input className={input} value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="רחוב ומספר" autoComplete="street-address" />
+                </div>
+                <div>
                   <label className="mb-1.5 block text-sm font-semibold text-slate-700">טלפון *</label>
                   <input dir="ltr" type="tel" className={`${input} text-left`} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="05X-XXXXXXX" />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">ספרי לנו קצת עלייך</label>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">תפקיד *</label>
+                  <input className={input} value={form.jobTitle} onChange={e => setForm(f => ({ ...f, jobTitle: e.target.value }))} placeholder="לדוגמה: רכזת תרבות, מנהלת מתנ״ס, רכזת קהילה" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">מועסקת דרך *</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[['matnas', 'מתנ״ס'], ['municipality', 'עירייה / מועצה'], ['other', 'אחר']].map(([id, label]) => (
+                      <button type="button" key={id} onClick={() => setForm(f => ({ ...f, employer: id }))}
+                        className={`rounded-full border px-4 py-2 text-sm transition ${form.employer === id ? 'border-rose-700 bg-rose-700 text-white' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{label}</button>
+                    ))}
+                  </div>
+                  {form.employer === 'other' && <input className={`${input} mt-2`} value={form.employerOther} onChange={e => setForm(f => ({ ...f, employerOther: e.target.value }))} placeholder="פרטי: עמותה, ארגון, עצמאית…" />}
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">היקף פעילות *</label>
+                  <textarea rows={3} className={input} value={form.activityScope} onChange={e => setForm(f => ({ ...f, activityScope: e.target.value }))} placeholder="כמה אירועים / חוגים בחודש, לאיזה קהל, באילו שכונות…" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">ספרי לנו קצת עלייך *</label>
                   <textarea rows={3} className={input} value={form.about} onChange={e => setForm(f => ({ ...f, about: e.target.value }))} placeholder="במה את עוסקת, משפחה, קהילה…" />
                 </div>
                 <div>
@@ -154,7 +192,7 @@ const BecomeManagerPage: React.FC<{ user: any; onOpenLogin: () => void }> = ({ u
                   <textarea rows={3} className={input} value={form.experience} onChange={e => setForm(f => ({ ...f, experience: e.target.value }))} placeholder="לא חובה ניסיון. מספיק רצון טוב 🙂" />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">כמה זמן תוכלי להקדיש בשבוע?</label>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">כמה זמן תוכלי להקדיש בשבוע? *</label>
                   <div className="flex flex-wrap gap-2">
                     {['עד שעה', '1-3 שעות', '3-5 שעות', 'יותר'].map(h => (
                       <button type="button" key={h} onClick={() => setForm(f => ({ ...f, hoursPerWeek: h }))}

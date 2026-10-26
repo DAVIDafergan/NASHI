@@ -248,7 +248,7 @@ const envList = (k) => (process.env[k] || '').split(',').map(x => x.trim()).filt
 
 export function createBinaaAdapter({
   sites = (envList('IMPORTER_BINAA_SITES').length ? envList('IMPORTER_BINAA_SITES') : DEFAULT_BINAA_SITES).map(parseSite).filter(Boolean),
-  perSite = Number(process.env.IMPORTER_BINAA_PER_SITE || 40), maxPages = 3,
+  perSite = Number(process.env.IMPORTER_BINAA_PER_SITE || 40), maxPages = 3, clock = () => Date.now(),
 } = {}) {
   return {
     id: 'binaa',
@@ -272,7 +272,7 @@ export function createBinaaAdapter({
             }
           };
           await read(site.url);
-          const now = Date.now();
+          const now = clock();
           const list = [];
           for (const it of found.values()) {
             const course = COURSE.test(`${it.title} ${it.tags.join(' ')}`) || it.sessions.length > 3;

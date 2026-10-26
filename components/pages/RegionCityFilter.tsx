@@ -36,7 +36,7 @@ export function useRegionCity<T extends Item>(items: T[], isUpcoming: (x: T) => 
 
   const upcoming = useMemo(() => items.filter(isUpcoming), [items, isUpcoming]);
   const regionCounts = useMemo(() => {
-    const c: Record<string, number> = { all: upcoming.length, online: 0 };
+    const c: Record<string, number> = { all: upcoming.filter((x: any) => !x.regionOnly).length, online: 0 };
     for (const x of upcoming) {
       if (scopeOf(x) === 'online') c.online++;
       else if (scopeOf(x) === 'local') c[regionOf(x)] = (c[regionOf(x)] || 0) + 1;
@@ -62,7 +62,8 @@ export function useRegionCity<T extends Item>(items: T[], isUpcoming: (x: T) => 
   /** 'here' = belongs to the chosen region/city · 'everywhere' = national/online shown under every region · false = hidden */
   const place = (x: T): 'here' | 'everywhere' | false => {
     const scope = scopeOf(x);
-    if (sel.region === 'all') return 'here';
+    // uploaded by a regional manager → shown only in her region (not under "the whole country")
+    if (sel.region === 'all') return (x as any).regionOnly ? false : 'here';
     if (sel.region === 'online') return scope === 'online' ? 'here' : false;
     if (scope !== 'local') return 'everywhere';
     if (regionOf(x) !== sel.region) return false;

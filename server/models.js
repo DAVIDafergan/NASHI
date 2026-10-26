@@ -75,6 +75,7 @@ const ForumPost = mongoose.model('ForumPost', ForumPostSchema);
 
 // --- סכמת קהילה מעודכנת ---
 const CommunitySchema = new mongoose.Schema({
+  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her region
   ...locationFields,
   // הוספתי את "עסקים" לרשימה כדי לכסות את כל האפשרויות
   category: { type: String, enum: ['שיעורי תורה', 'גמ"חים', 'עסקים מקומיים', 'עסק מקומי', 'עסקים'], required: true },
@@ -94,6 +95,7 @@ const Community = mongoose.model('Community', CommunitySchema);
 
 // --- סכמת אירוע מעודכנת ---
 const EventSchema = new mongoose.Schema({
+  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her region
   ...locationFields,
   audience: { type: [String], default: [] },
   onlineLink: { type: String },
@@ -182,6 +184,7 @@ ImportBlockSchema.index({ source: 1, sourceId: 1 }, { unique: true });
 const ImportBlock = mongoose.model('ImportBlock', ImportBlockSchema);
 
 const ClassSchema = new mongoose.Schema({
+  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her region
   ...locationFields,
   audience: { type: [String], default: [] },
   onlineLink: { type: String },
@@ -203,6 +206,7 @@ ClassSchema.plugin(locationPlugin);
 const Class = mongoose.model('Class', ClassSchema);
 
 const LotterySchema = new mongoose.Schema({
+  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her region
   ...locationFields,
   title: { type: String, required: true },
   prize: { type: String }, 
@@ -417,6 +421,13 @@ const ManagerApplicationSchema = new mongoose.Schema({
   about: { type: String },        // קצת עלייך
   experience: { type: String },   // ניסיון בהפקה / קהילה
   hoursPerWeek: { type: String },
+  fullName: { type: String },
+  email: { type: String },
+  address: { type: String },
+  jobTitle: { type: String },      // תפקיד
+  employer: { type: String },      // מתנ"ס / עירייה / אחר
+  employerOther: { type: String },
+  activityScope: { type: String }, // היקף פעילות
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   decidedAt: { type: Date },
   decidedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

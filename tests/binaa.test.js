@@ -89,7 +89,7 @@ describe('binaa: event page + adapter', () => {
     const http = { async getText(u) { if (!(u in pages)) throw new Error(`404 ${u}`); return { text: pages[u], url: u }; } };
     const errors = [];
     const ctx = { async channel(name, fn) { try { await fn(); } catch (e) { errors.push(e.message); } } };
-    const ad = createBinaaAdapter({ sites: [site] });
+    const ad = createBinaaAdapter({ sites: [site], clock: () => +new Date('2026-10-24T08:00:00Z') });
     const cands = await ad.discover(http, ctx);
     assert.deepEqual(errors, []);
     const now = new Date('2026-10-25T08:00:00Z');

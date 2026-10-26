@@ -136,6 +136,7 @@ const canManage = (Model) => async (req, res, next) => {
             delete body.isHero; // the homepage banner stays with the main admin
             delete body.createdBy;
             if (req.method === 'POST') body.createdBy = me._id;
+            body.regionOnly = true; // her items show only in her region
         }
         next();
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -166,20 +167,27 @@ router.get('/manager-applications/mine', authenticate, async (req, res) => {
 
 router.post('/manager-applications', authenticate, async (req, res) => {
     try {
-        const me = await User.findById(req.user.id).select('name phone city role isAdmin');
+        const me = await User.findById(req.user.id).select('name email phone city role isAdmin');
         if (!me) return res.status(404).json({ error: 'not found' });
         if (me.isAdmin || me.role === 'regionAdmin') return res.status(400).json({ error: 'את כבר מנהלת 🙂' });
         const open = await ManagerApplication.findOne({ user: me._id, status: 'pending' });
         if (open) return res.status(400).json({ error: 'הבקשה שלך כבר בבדיקה' });
-        const city = clip(req.body.city, 60) || me.city || '';
-        const region = regionOfCity(city) || (REGION_IDS.includes(req.body.region) ? req.body.region : '');
-        if (!region) return res.status(400).json({ error: 'בחרי עיר' });
-        const phone = clip(req.body.phone, 30) || me.phone || '';
-        if (!phone) return res.status(400).json({ error: 'חסר טלפון' });
-        const appl = await new ManagerApplication({
-            user: me._id, name: me.name, phone, city, region,
-            about: clip(req.body.about, 1500), experience: clip(req.body.experience, 1500), hoursPerWeek: clip(req.body.hoursPerWeek, 40),
-        }).save();
+        const b = req.body || {};
+        const city = clip(b.city, 60) || me.city || '';
+        const region = regionOfCity(city) || (REGION_IDS.includes(b.region) ? b.region : '');
+        const f = {
+            fullName: clip(b.fullName, 80), email: clip(b.email, 120).toLowerCase(), phone: clip(b.phone, 30) || me.phone || '',
+            address: clip(b.address, 200), jobTitle: clip(b.jobTitle, 80), employer: clip(b.employer, 20), employerOther: clip(b.employerOther, 120),
+            activityScope: clip(b.activityScope, 1500), about: clip(b.about, 1500), experience: clip(b.experience, 1500), hoursPerWeek: clip(b.hoursPerWeek, 40),
+        };
+        // everything is required except experience
+        const missing = [
+            !f.fullName && 'שם מלא', !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email) && 'מייל תקין', !f.phone && 'טלפון', !region && 'עיר',
+            !f.address && 'כתובת', !f.jobTitle && 'תפקיד', !['matnas', 'municipality', 'other'].includes(f.employer) && 'מקום העסקה',
+            f.employer === 'other' && !f.employerOther && 'פירוט מקום העסקה', !f.activityScope && 'היקף פעילות', !f.about && 'קצת עלייך', !f.hoursPerWeek && 'זמינות',
+        ].filter(Boolean);
+        if (missing.length) return res.status(400).json({ error: `חסר: ${missing.join(', ')}` });
+        const appl = await new ManagerApplication({ user: me._id, name: f.fullName || me.name, city, region, ...f }).save();
         if (!me.city && city) await User.updateOne({ _id: me._id }, { city, region });
         res.status(201).json(appl);
     } catch (err) { res.status(500).json({ error: err.message }); }

@@ -11,6 +11,7 @@ import importerRoutes from './server/importerRoutes.js';
 import { createSuppliersRouter, startSupplierJobs } from './server/suppliers.js';
 import { startImporter } from './server/importer/index.js';
 import { startEventCleanup } from './server/eventCleanup.js';
+import { backfillRegionOnly } from './server/regionOnly.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -65,6 +66,7 @@ mongoose.connect(MONGO_URI)
     console.log('✅ Connected to MongoDB');
     startImporter();       // סוכן האירועים (only when IMPORTER_ENABLED=1)
     startSupplierJobs();   // expires lapsed supplier subscriptions
+    backfillRegionOnly();
     startEventCleanup();   // past events: 48h with 'עבר', then gone
   })
   .catch((err) => {

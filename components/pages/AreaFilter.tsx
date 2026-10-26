@@ -20,7 +20,8 @@ export function useArea() {
   const [area, setArea] = useState<Area>(region ? 'mine' : 'all');
   const match = (item: any) => {
     const scope = item?.scope || 'local';
-    if (area === 'all') return true;
+    // uploaded by a regional manager → shown only in her region (not under "the whole country")
+    if (area === 'all') return !item?.regionOnly;
     if (area === 'online') return scope === 'online';
     if (scope !== 'local') return true;
     if (area === 'mine') return isNear(item, region);

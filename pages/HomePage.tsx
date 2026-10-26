@@ -143,9 +143,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   // If her area has nothing yet, fall back to the whole country so the page is never empty.
   const place = useMyPlace(user);
   const pickNear = <T,>(list: T[]): T[] => {
-    if (!place.region) return list;
+    // items uploaded by a regional manager appear only to visitors of her region
+    const open = list.filter((i: any) => !i.regionOnly);
+    if (!place.region) return open;
     const near = list.filter((i: any) => isNear(i, place.region));
-    if (!near.length) return list;
+    if (!near.length) return open;
     // her own city first, then the rest of the region (stable: keeps the original order inside each group)
     const mine = near.filter((i: any) => (i.scope || 'local') === 'local' && i.city === place.city);
     return mine.length ? [...mine, ...near.filter(i => !mine.includes(i))] : near;

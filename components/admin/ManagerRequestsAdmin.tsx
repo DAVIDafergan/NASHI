@@ -45,8 +45,17 @@ const ManagerRequestsAdmin: React.FC<{ items: any[]; reload: () => void }> = ({ 
                   {a.phone && <a href={wa(a.phone)} target="_blank" rel="noreferrer" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-100 text-slate-500 hover:text-emerald-600" aria-label="וואטסאפ"><MessageCircle size={15} /></a>}
                 </div>
               </div>
-              {(a.about || a.experience) && (
+              {(a.email || a.address || a.jobTitle || a.employer) && (
+                <div className="mt-3 grid gap-1 rounded-2xl border border-rose-100 p-3 text-sm text-slate-600 sm:grid-cols-2">
+                  {a.email && <p><b className="text-ink">מייל:</b> <a href={`mailto:${a.email}`} className="underline" dir="ltr">{a.email}</a></p>}
+                  {a.address && <p><b className="text-ink">כתובת:</b> {a.address}</p>}
+                  {a.jobTitle && <p><b className="text-ink">תפקיד:</b> {a.jobTitle}</p>}
+                  {a.employer && <p><b className="text-ink">מועסקת דרך:</b> {({ matnas: 'מתנ״ס', municipality: 'עירייה / מועצה', other: 'אחר' } as any)[a.employer] || a.employer}{a.employerOther ? ` · ${a.employerOther}` : ''}</p>}
+                </div>
+              )}
+              {(a.about || a.experience || a.activityScope) && (
                 <div className="mt-3 space-y-2 rounded-2xl bg-rose-50/50 p-3 text-sm leading-relaxed text-slate-600">
+                  {a.activityScope && <p><b className="text-ink">היקף פעילות:</b> {a.activityScope}</p>}
                   {a.about && <p><b className="text-ink">עליה:</b> {a.about}</p>}
                   {a.experience && <p><b className="text-ink">ניסיון:</b> {a.experience}</p>}
                 </div>
