@@ -188,19 +188,19 @@ type LocationValue = { scope?: string; city?: string; onlineLink?: string; audie
  * chosen); an existing item without the field (or with the old tag array) is shown as 'women' — what it always was.
  * withAudience adds the optional "למי זה מתאים" tags (audienceTags).
  */
-export const LocationFields: React.FC<{ value: LocationValue; onChange: (patch: Partial<LocationValue>) => void; withAudience?: boolean; withOnline?: boolean }> = ({ value, onChange, withAudience, withOnline = true }) => {
+export const LocationFields: React.FC<{ value: LocationValue; onChange: (patch: Partial<LocationValue>) => void; withAudience?: boolean; withOnline?: boolean; noAudience?: boolean }> = ({ value, onChange, withAudience, withOnline = true, noAudience = false }) => {
   const { lockRegion } = React.useContext(AdminScopeContext);
   const scope = (lockRegion ? 'local' : (value.scope || 'local')) as 'local' | 'national' | 'online';
   // regional managers publish local items only
   useEffect(() => { if (lockRegion && value.scope && value.scope !== 'local') onChange({ scope: 'local' }); }, [lockRegion, value.scope]); // eslint-disable-line react-hooks/exhaustive-deps
   // an existing item: missing audience / legacy tag array → 'women' (+ the old tags move to audienceTags)
   useEffect(() => {
-    if (value.audience === '' || AUDIENCE_IDS.includes(value.audience)) return;
+    if (noAudience || value.audience === '' || AUDIENCE_IDS.includes(value.audience)) return;
     onChange({ audience: audienceOf(value), ...(Array.isArray(value.audience) && !value.audienceTags?.length ? { audienceTags: value.audience } : {}) });
   }, [value.audience]); // eslint-disable-line react-hooks/exhaustive-deps
   const aud = AUDIENCE_IDS.includes(value.audience) ? value.audience as string : '';
   const audRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { audRef.current?.setCustomValidity(aud ? '' : 'יש לבחור קהל יעד: לגברים, לנשים או לכולם'); }, [aud]);
+  useEffect(() => { audRef.current?.setCustomValidity(aud || noAudience ? '' : 'יש לבחור קהל יעד: לגברים, לנשים או לכולם'); }, [aud, noAudience]);
   const tags = aud ? AUDIENCE_TAGS[aud as 'men' | 'women' | 'all'] : [];
   const opts = SCOPES.filter(s => withOnline || s.id !== 'online').map(s => ({
     id: s.id,
@@ -209,6 +209,7 @@ export const LocationFields: React.FC<{ value: LocationValue; onChange: (patch: 
   }));
   return (
     <FormSection title="מיקום וקהל" subtitle="קובע למי ואיפה זה יוצג באתר" icon={<MapPin size={17} />}>
+      {!noAudience && (
       <Field label="קהל יעד" required hint={aud ? AUDIENCE_OPTIONS.find(o => o.id === aud)?.hint : 'חובה לבחור: יוצג בסינון "לגברים", "לנשים" או "משפחות/לכולם".'}>
         <div className="relative">
           <Segmented value={aud as any} onChange={(v) => onChange({ audience: v, audienceTags: (value.audienceTags || []).filter(t => AUDIENCE_TAGS[v as 'men' | 'women' | 'all'].includes(t)) })} options={AUDIENCE_OPTIONS.map(o => ({ id: o.id, label: o.label }))} />
@@ -216,6 +217,7 @@ export const LocationFields: React.FC<{ value: LocationValue; onChange: (patch: 
           <input ref={audRef} required value={aud} onChange={() => {}} tabIndex={-1} aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-px w-full opacity-0" />
         </div>
       </Field>
+      )}
       {lockRegion ? (
         <p className="rounded-2xl bg-rose-50/70 px-4 py-3 text-sm text-rose-800">האזור שבניהולך: <b>{regionName(lockRegion)}</b>. התוכן יוצג באזור, ובנוסף בסינון של כל הארץ.</p>
       ) : (

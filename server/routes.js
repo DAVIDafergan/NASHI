@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto'; // תוספת עבור ייצור טוקנים מאובטחים
 import mongoose from 'mongoose';
-import { regionOfCity, REGIONS } from '../shared/regions.js';
+import { regionOfCity, REGIONS, DEFAULT_CITY, DEFAULT_REGION } from '../shared/regions.js';
 import { isEventExpired } from '../shared/eventTime.js';
 import { AUDIENCE_IDS, audienceQuery, normGender, g } from '../shared/audience.js';
 import { BRAND, mailFrom } from '../shared/brand.js';
@@ -1189,6 +1189,8 @@ const FLYER_LIST_FIELDS = '-image -mobileImage';
 const flyerVersion = (f) => new Date(f.updatedAt || f.createdAt || 0).getTime();
 const toPublicFlyer = (f) => ({
     _id: f._id,
+    // flyers saved before they had a place read as Migdal HaEmek / local (like every older item)
+    city: f.city || DEFAULT_CITY, region: f.region || regionOfCity(f.city || DEFAULT_CITY) || DEFAULT_REGION, scope: f.scope || 'local',
     title: f.title,
     link: f.link,
     openInNewTab: f.openInNewTab,
@@ -1210,7 +1212,7 @@ const withHasMobile = async (filter) => {
 };
 const cleanFlyerInput = (body) => {
     const data = {};
-    for (const k of ['title', 'image', 'mobileImage', 'link', 'openInNewTab', 'isActive', 'order', 'startsAt', 'endsAt']) {
+    for (const k of ['title', 'image', 'mobileImage', 'link', 'openInNewTab', 'isActive', 'order', 'startsAt', 'endsAt', 'city', 'scope']) {
         if (body[k] !== undefined) data[k] = body[k];
     }
     if (data.startsAt === '') data.startsAt = null;

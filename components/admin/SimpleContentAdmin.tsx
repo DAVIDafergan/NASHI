@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, CalendarClock, ExternalLink, Image as ImageIcon, Megaphone, Pencil, Plus, Quote, Video } from 'lucide-react';
 import { api } from '../../services/api';
-import { Badge, DeleteButton, EmptyState, Field, FormSection, IconButton, ImagePicker, SaveBar, Segmented, Sheet, fmtDate, inputCls, matchesSearch, withSave, useOnCreate } from './ui';
+import { Badge, DeleteButton, EmptyState, Field, FormSection, IconButton, ImagePicker, LocationFields, SaveBar, Segmented, Sheet, fmtDate, inputCls, matchesSearch, withSave, useOnCreate } from './ui';
 
 /* ------------------------- inspirations ------------------------- */
 const toLocalInput = (d?: string) => { if (!d) return ''; const t = new Date(d); if (isNaN(t.getTime())) return String(d); const p = (n: number) => String(n).padStart(2, '0'); return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}T${p(t.getHours())}:${p(t.getMinutes())}`; };
@@ -63,6 +63,7 @@ export const InspirationsAdmin: React.FC<{ items: any[]; search: string; createT
             <Field label="מי אמרה / אמר" required><input required className={inputCls} value={form.author} onChange={e => setForm({ ...form, author: e.target.value })} placeholder="למשל: רבי נחמן מברסלב" /></Field>
             <Field label="תזמון פרסום" hint="ריק = עולה מיד. אפשר לתזמן השראה לכל יום בשבוע מראש."><input type="datetime-local" className={inputCls} value={form.scheduledAt || ''} onChange={e => setForm({ ...form, scheduledAt: e.target.value })} /></Field>
           </FormSection>
+          <LocationFields value={form} onChange={patch => setForm((f: any) => ({ ...f, ...patch }))} noAudience withOnline={false} />
         </form>
       </Sheet>
     </div>
@@ -129,7 +130,7 @@ export const AdsAdmin: React.FC<{ items: any[]; createTick: number; reload: () =
 
 /* ------------------------- announcements ------------------------- */
 export const AnnouncementsAdmin: React.FC<{ items: any[]; createTick: number; reload: () => void }> = ({ items, createTick, reload }) => {
-  const blank = { _id: '', title: '', content: '' };
+  const blank = { _id: '', title: '', content: '', scope: 'local', city: '' };
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>(blank);
   const [saving, setSaving] = useState(false);

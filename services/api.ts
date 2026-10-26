@@ -23,6 +23,8 @@ export interface FlyerInput {
     order?: number;
     startsAt?: string | null;
     endsAt?: string | null;
+    city?: string;
+    scope?: string;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://nashi-production.up.railway.app/api';

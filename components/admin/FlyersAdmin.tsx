@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Eye, EyeOff, ImagePlus, Link2, Pencil, Plus, Smartphone, Trash2, X } from 'lucide-react';
 import { api, FlyerInput, FlyerItem } from '../../services/api';
+import { LocationFields } from './ui';
 
 /** Downscale + re-encode so a phone photo of a flyer doesn't become a 10MB upload. */
 async function fileToCompressedDataUrl(file: File, maxSide = 2000): Promise<string> {
@@ -34,7 +35,7 @@ const toDateInput = (v?: string | null) => (v ? new Date(v).toISOString().slice(
 
 type Draft = FlyerInput & { _id?: string; previewImage?: string; previewMobile?: string };
 
-const emptyDraft: Draft = { title: '', link: '', openInNewTab: true, isActive: true, startsAt: '', endsAt: '' };
+const emptyDraft: Draft = { title: '', link: '', openInNewTab: true, isActive: true, startsAt: '', endsAt: '', scope: 'local', city: '' };
 
 const FlyersAdmin: React.FC = () => {
   const [flyers, setFlyers] = useState<FlyerItem[]>([]);
@@ -152,7 +153,7 @@ const FlyersAdmin: React.FC = () => {
                     <button onClick={() => move(i, 1)} disabled={i === flyers.length - 1} className="p-2 rounded-full hover:bg-rose-50 text-slate-500 disabled:opacity-30" aria-label="הזזה למטה"><ArrowDown size={16} /></button>
                     <button onClick={() => toggleActive(f)} className="p-2 rounded-full hover:bg-rose-50 text-slate-500" aria-label={f.isActive ? 'הסתרה' : 'הצגה'}>{f.isActive ? <Eye size={16} /> : <EyeOff size={16} />}</button>
                     <span className="flex-1" />
-                    <button onClick={() => setDraft({ _id: f._id, title: f.title, link: f.link, openInNewTab: f.openInNewTab !== false, isActive: f.isActive, startsAt: toDateInput(f.startsAt), endsAt: toDateInput(f.endsAt), previewImage: api.flyerImageSrc(f.imageUrl), previewMobile: f.mobileImageUrl ? api.flyerImageSrc(f.mobileImageUrl) : '' })} className="btn-ghost !px-3 !py-1.5 !text-xs"><Pencil size={13} /> עריכה</button>
+                    <button onClick={() => setDraft({ _id: f._id, city: (f as any).city || '', scope: (f as any).scope || 'local', title: f.title, link: f.link, openInNewTab: f.openInNewTab !== false, isActive: f.isActive, startsAt: toDateInput(f.startsAt), endsAt: toDateInput(f.endsAt), previewImage: api.flyerImageSrc(f.imageUrl), previewMobile: f.mobileImageUrl ? api.flyerImageSrc(f.mobileImageUrl) : '' })} className="btn-ghost !px-3 !py-1.5 !text-xs"><Pencil size={13} /> עריכה</button>
                     <button onClick={() => remove(f)} className="p-2 rounded-full hover:bg-red-50 text-red-500" aria-label="מחיקה"><Trash2 size={16} /></button>
                   </div>
                 </div>
@@ -216,6 +217,7 @@ const FlyersAdmin: React.FC = () => {
                   <input type="date" value={(draft.endsAt as string) || ''} onChange={(e) => setDraft({ ...draft, endsAt: e.target.value })} className="mt-1.5 w-full rounded-2xl border border-rose-100 bg-cream px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-rose-100" />
                 </label>
               </div>
+              <LocationFields value={draft as any} onChange={patch => setDraft(d => d ? { ...d, ...(patch as any) } : d)} noAudience withOnline={false} />
               <label className="flex items-center gap-2 text-sm text-slate-700">
                 <input type="checkbox" checked={draft.isActive !== false} onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })} className="h-4 w-4 rounded" />
                 הצג באתר

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { api, FlyerItem } from '../services/api';
+import { useMyPlace, isNear } from '../hooks/useMyPlace';
 
 const AUTOPLAY_MS = 6000;
 
@@ -12,7 +13,10 @@ const AUTOPLAY_MS = 6000;
  * - A link starting with "/" navigates inside the site; anything else opens as an external link.
  */
 const FlyerCarousel: React.FC<{ className?: string }> = ({ className = '' }) => {
-  const [flyers, setFlyers] = useState<FlyerItem[]>([]);
+  const [all, setAll] = useState<FlyerItem[]>([]);
+  // only flyers of the visitor's area (+ national ones); location unknown → national only
+  const { region } = useMyPlace(null);
+  const flyers = React.useMemo(() => all.filter((f: any) => region ? isNear(f, region) : (f.scope || 'local') !== 'local'), [all, region]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -20,7 +24,7 @@ const FlyerCarousel: React.FC<{ className?: string }> = ({ className = '' }) => 
 
   useEffect(() => {
     let alive = true;
-    api.getFlyers().then((rows) => { if (alive) setFlyers(Array.isArray(rows) ? rows : []); }).catch(() => {});
+    api.getFlyers().then((rows) => { if (alive) setAll(Array.isArray(rows) ? rows : []); }).catch(() => {});
     return () => { alive = false; };
   }, []);
 

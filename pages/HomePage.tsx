@@ -143,14 +143,12 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   // גם אם המשמעות היא רשימה ריקה (הסקשן כולו מוסתר במקרה הזה)
   // ממוין ב-useMemo (לא בכל רינדור) כדי שלא יאפס את אינטרוול הגלילה האוטומטית של הסליידר בכל עדכון state אחר בעמוד
   // national site: show the visitor's area first (local items of her region + all national/online items).
-  // If her area has nothing yet, fall back to the whole country so the page is never empty.
+  // Each visitor sees her/his own area only: local items of other regions never show (owner, 2026-10-26).
+  // Location unknown → only national / online items until a city is chosen.
   const place = useMyPlace(user);
   const pickNear = <T,>(list: T[]): T[] => {
-    // items uploaded by a regional manager appear only to visitors of her region
-    const open = list.filter((i: any) => !i.regionOnly);
-    if (!place.region) return open;
+    if (!place.region) return list.filter((i: any) => (i.scope || 'local') !== 'local' && !i.regionOnly);
     const near = list.filter((i: any) => isNear(i, place.region));
-    if (!near.length) return open;
     // her own city first, then the rest of the region (stable: keeps the original order inside each group)
     const mine = near.filter((i: any) => (i.scope || 'local') === 'local' && i.city === place.city);
     return mine.length ? [...mine, ...near.filter(i => !mine.includes(i))] : near;
@@ -158,6 +156,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   const areaLabel = place.city ? `באזור שלך · ${regionName(place.region) || place.city}` : 'מכל הארץ';
   const shownClasses = useMemo(() => pickNear(classes as any[]), [classes, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
   const shownCommunity = useMemo(() => pickNear(communityItems as any[]), [communityItems, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
+  const shownAnnouncements = useMemo(() => pickNear(announcements as any[]), [announcements, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const upcomingEvents = useMemo(() => {
     const now = new Date();
@@ -268,7 +267,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               className="mt-5 text-[3.4rem] leading-[0.98] sm:text-[4.6rem] lg:text-[6.2rem] text-ink"
               lines={[{ text: 'כל התרבות' }, { text: 'החרדית,', className: 'font-accent text-[1.45em] leading-[0.82] text-rose-600' }, { text: 'במקום אחד, קרוב לבית.' , className: 'text-[0.55em] leading-[1.25] mt-3 text-slate-500 font-light' }]}
             />
-            <p className="mt-5 md:mt-7 max-w-md text-[15.5px] md:text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
+            <p className="hidden sm:block mt-5 md:mt-7 max-w-md text-[15.5px] md:text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
               שיעורים וכנסים, אירועים ומופעים, חוגים, גמ"חים ורגעים של השראה — לגברים, לנשים ולמשפחות, באזור שלכם ובכל הארץ.
             </p>
             <div className="mt-6 md:mt-9 flex flex-nowrap sm:flex-wrap items-center gap-2.5 md:gap-3 animate-fade-in-up" style={{ animationDelay: '550ms' }}>
@@ -288,30 +287,34 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
           </div>
 
-          {/* phones: an animated "spot" — the pin with pulsing rings and floating chips of what's on */}
-          <div className="lg:hidden relative mx-auto -mt-6 h-56 w-full max-w-sm animate-blur-in" style={{ animationDelay: '500ms', animationFillMode: 'both' }} aria-hidden="true">
+          {/* phones: a calm, premium "spot" — the pin with soft pulsing rings and a slow orbit of icons */}
+          <div className="lg:hidden relative mx-auto mt-3 h-64 w-full max-w-[22rem] animate-blur-in" style={{ animationDelay: '450ms', animationFillMode: 'both' }} aria-hidden="true">
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="absolute h-44 w-44 rounded-full bg-gradient-to-br from-plum-200 via-champagne-100 to-rose-100 blur-2xl animate-mesh-drift" />
-              <span className="absolute h-28 w-28 rounded-full border-2 border-plum-300 animate-ring-pulse" />
-              <span className="absolute h-28 w-28 rounded-full border-2 border-plum-300 animate-ring-pulse" style={{ animationDelay: '1.6s' }} />
-              <svg className="absolute h-[15rem] w-[15rem] text-rose-300/60 animate-spin-slow" viewBox="0 0 200 200" fill="none">
-                <circle cx="100" cy="100" r="96" stroke="currentColor" strokeWidth="0.6" strokeDasharray="1 5" />
-              </svg>
-              <svg viewBox="0 0 64 64" className="relative h-20 w-20 drop-shadow-xl animate-float-y">
+              <span className="absolute h-48 w-48 rounded-full bg-gradient-to-br from-plum-200/80 via-champagne-100/70 to-transparent blur-2xl" />
+              <span className="absolute h-24 w-24 rounded-full border border-plum-300 animate-ring-pulse" />
+              <span className="absolute h-24 w-24 rounded-full border border-plum-300 animate-ring-pulse" style={{ animationDelay: '1.6s' }} />
+              <span className="absolute h-[11.5rem] w-[11.5rem] rounded-full border border-champagne-300/50" />
+              <span className="absolute h-[15.5rem] w-[15.5rem] rounded-full border border-dashed border-champagne-300/40" />
+              {/* orbit: the ring turns slowly, each icon counter-turns so it stays upright */}
+              <div className="absolute h-[15.5rem] w-[15.5rem] animate-spin-slow">
+                {[
+                  { I: BookOpen, pos: 'left-1/2 -top-5 -translate-x-1/2' },
+                  { I: Music, pos: '-right-5 top-1/2 -translate-y-1/2' },
+                  { I: Calendar, pos: 'left-1/2 -bottom-5 -translate-x-1/2' },
+                  { I: GraduationCap, pos: '-left-5 top-1/2 -translate-y-1/2' },
+                ].map(({ I, pos }, i) => (
+                  <span key={i} className={`absolute ${pos}`}>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-rose-700 shadow-soft ring-1 ring-champagne-200 [animation:spin-slow_40s_linear_infinite_reverse]">
+                      <I size={17} strokeWidth={1.6} />
+                    </span>
+                  </span>
+                ))}
+              </div>
+              <svg viewBox="0 0 64 64" className="relative h-[4.5rem] w-[4.5rem] drop-shadow-xl animate-float-y">
                 <path d="M32 4C20.4 4 11 13.2 11 24.6 11 40 32 60 32 60s21-20 21-35.4C53 13.2 43.6 4 32 4z" fill="rgb(var(--rose-700))" />
                 <circle cx="32" cy="24.5" r="8.5" fill="rgb(var(--plum-300))" />
               </svg>
             </div>
-            {[
-              { t: 'שיעורים', c: 'right-[4%] top-[14%] bg-white text-ink', d: '0s' },
-              { t: 'מופעים', c: 'left-[2%] top-[30%] bg-plum-300 text-ink', d: '-1.5s' },
-              { t: 'חוגים', c: 'right-[12%] bottom-[10%] bg-rose-700 text-white', d: '-3s' },
-              { t: 'כנסים', c: 'left-[16%] bottom-[4%] bg-champagne-100 text-ink', d: '-2.2s' },
-            ].map((x, i) => (
-              <span key={x.t} className={`absolute ${x.c.split(' ').filter(k => !k.startsWith('bg-') && !k.startsWith('text-')).join(' ')} animate-scale-in`} style={{ animationDelay: `${900 + i * 160}ms`, animationFillMode: 'both' }}>
-                <span className={`block rounded-full px-4 py-2 text-[14px] font-strong shadow-soft animate-float-y-slow ${x.c.split(' ').filter(k => k.startsWith('bg-') || k.startsWith('text-')).join(' ')}`} style={{ animationDelay: x.d }}>{x.t}</span>
-              </span>
-            ))}
           </div>
 
           {/* phones: one clear "next event" card instead of the floating collage */}
@@ -598,7 +601,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         <InviteBand user={user} onOpenLogin={onOpenLogin} />
 
         {/* ============ ANNOUNCEMENTS ============ */}
-        {announcements.length > 0 && (
+        {shownAnnouncements.length > 0 && (
           <section className="px-5 md:px-0">
             <ScrollReveal animation="scale-in" className="card-soft p-5 sm:p-6 md:p-10 grid md:grid-cols-[220px_minmax(0,1fr)] gap-5 md:gap-10">
               <div className="min-w-0">
@@ -607,7 +610,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <p className="mt-1 text-sm text-slate-500">עדכונים מהנהלת הקהילה</p>
               </div>
               <div className="min-w-0 divide-y divide-rose-100">
-                {announcements.slice(0, 3).map((ann: any, i: number) => (
+                {shownAnnouncements.slice(0, 3).map((ann: any, i: number) => (
                   <ScrollReveal key={ann._id || i} delay={i * 120} className="min-w-0 py-4 first:pt-0 last:pb-0">
                     <h3 className="flex items-start gap-2 text-lg leading-snug text-ink break-words [overflow-wrap:anywhere]"><Megaphone size={16} className="mt-1 shrink-0 text-rose-400" strokeWidth={1.6} /> <span className="min-w-0">{ann.title}</span></h3>
                     {ann.content && <RichText text={String(ann.content)} clampLines={5} className="mt-1.5 text-[14.5px] leading-relaxed text-slate-600" />}

@@ -313,11 +313,13 @@ AdSchema.plugin(locationPlugin);
 const Ad = mongoose.model('Ad', AdSchema);
 
 const AnnouncementSchema = new mongoose.Schema({
+  ...locationFields,                 // old ones read as Migdal HaEmek / local — shown only near there
   title: { type: String, required: true },
   content: { type: String, required: true },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
+AnnouncementSchema.plugin(locationPlugin);
 const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 
 // ==========================================
@@ -413,6 +415,7 @@ const ZodiacWheelSpin = mongoose.model('ZodiacWheelSpin', ZodiacWheelSpinSchema)
 
 // --- פליירים לדף הבית (קרוסלה) ---
 const FlyerSchema = new mongoose.Schema({
+  ...locationFields,                 // old ones read as Migdal HaEmek / local — shown only near there
   title: { type: String, default: '' },
   image: { type: String, required: true },      // data URL (base64) — served separately via /flyers/:id/image
   mobileImage: { type: String, default: '' },   // optional portrait version for phones
@@ -425,6 +428,7 @@ const FlyerSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
+FlyerSchema.plugin(locationPlugin);
 const Flyer = mongoose.model('Flyer', FlyerSchema);
 
 // בקשה להיות מנהל/ת תרבות אזורי/ת — נכנסת לתור האישורים של ההנהלה הראשית
