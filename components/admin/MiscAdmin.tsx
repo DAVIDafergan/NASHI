@@ -174,7 +174,7 @@ export const BroadcastAdmin: React.FC<{ recipients: number }> = ({ recipients })
       <aside className="rounded-[1.6rem] border border-rose-100 bg-white p-5 shadow-soft">
         <p className="eyebrow">תצוגה מקדימה</p>
         <div className="mt-3 overflow-hidden rounded-2xl border border-rose-100">
-          <div className="bg-rose-50 p-4 text-center">{form.logo ? <img src={form.logo} alt="" className="mx-auto h-10 object-contain" /> : <span className="font-strong text-3xl text-rose-700">{BRAND.name}</span>}</div>
+          <div className="bg-rose-50 p-4 text-center">{form.logo ? <img src={form.logo} alt="" className="mx-auto h-10 object-contain" /> : <span className="font-accent text-3xl text-rose-700">{BRAND.name}</span>}</div>
           {form.image && <img src={form.image} alt="" className="w-full object-cover" />}
           <div className="p-4">
             <h4 className="font-strong text-lg text-ink">{form.subject || 'נושא המייל'}</h4>
