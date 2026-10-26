@@ -61,7 +61,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
       
       const params = new URLSearchParams(location.search);
-      if (params.get('tab') === 'challenges' || params.get('tab') === 'shabbat') {
+      if (false) { // resilience challenges are switched off (owner, 2026-10-26)
           setActiveTab('challenges');
       }
 
@@ -487,29 +487,11 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   return (
     <PageShell>
       <PageHero
-        eyebrow="הגרלות ואתגרים"
+        eyebrow="הגרלות"
         title="קצת מזל,"
         accent="הרבה פרגון"
-        subtitle="הגרלות לחברי המעגל ואתגרי חוסן משפחתיים עם פרסים אמיתיים. נרשמים בלחיצה ומחכים לגילוי."
+        subtitle="הגרלות לחברי המעגל עם פרסים אמיתיים. נרשמים בלחיצה ומחכים לגילוי."
       >
-        <div className="inline-flex rounded-full border border-rose-100 bg-white/80 p-1 shadow-soft" role="tablist">
-          <button
-            role="tab"
-            aria-selected={activeTab === 'regular'}
-            onClick={() => setActiveTab('regular')}
-            className={`flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[14.5px] transition-all duration-300 ${activeTab === 'regular' ? 'bg-plum-300 text-ink shadow-soft' : 'text-slate-500 hover:text-rose-700'}`}
-          >
-            <Gift size={16} /> הגרלות
-          </button>
-          <button
-            role="tab"
-            aria-selected={activeTab === 'challenges'}
-            onClick={() => setActiveTab('challenges')}
-            className={`flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[14.5px] transition-all duration-300 ${activeTab === 'challenges' ? 'bg-plum-700 text-white shadow-soft' : 'text-slate-500 hover:text-plum-700'}`}
-          >
-            <Target size={16} /> אתגרי החוסן
-          </button>
-        </div>
       </PageHero>
 
       {activeTab === 'regular' ? (
@@ -617,7 +599,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
             )}
 
             {filteredLotteries.length === 0 && (
-              <EmptyState icon={<Gift size={28} />} title="אין הגרלות פעילות כרגע" text="הגרלה חדשה בדרך — כדאי לחזור לבדוק בקרוב, או להצטרף לאתגר החוסן." action={<button onClick={() => setActiveTab('challenges')} className="btn-ghost"><Target size={16}/> לאתגרי החוסן</button>} />
+              <EmptyState icon={<Gift size={28} />} title="אין הגרלות פעילות כרגע" text="הגרלה חדשה בדרך — כדאי לחזור לבדוק בקרוב." />
             )}
         </div>
       ) : (
