@@ -132,7 +132,7 @@ ${card(268, 300, 0, peach, navy, 'השבוע', 'חוגים', 'למשפחות', n
 ${card(436, 340, 9, '#1F3A6B', '#C9A25E', 'כנס', 'שיעורים', 'לגברים', '#FFFFFF')}
 ${mark}
 <g font-family="${F}" text-anchor="start" direction="rtl">
-<text x="975" y="205" font-size="124" font-weight="700" fill="#FFFFFF">${esc(BRAND.name)}</text>
+<text x="975" y="215" font-family="Karantina" font-size="210" font-weight="400" fill="#FFFFFF">${esc(BRAND.name)}</text>
 <text x="1120" y="300" font-size="44" fill="${peach}">${esc(BRAND.tagline)}</text>
 <text x="1120" y="356" font-size="28" fill="#C8D0DF">אירועים, שיעורים, חוגים וקהילה בכל הארץ</text>
 </g>
@@ -147,48 +147,39 @@ ${mark}
 </svg>`;
 }
 let brandJpeg = null;
-router.get(['/s/img/brand.jpg', '/s/img/brand-v2.jpg', '/s/img/brand-v3.jpg'], async (req, res) => {
-  try {
-    if (!brandJpeg) {
-      const d = await derivePreview('brand', `data:image/svg+xml;base64,${Buffer.from(brandCardSvg()).toString('base64')}`, { width: 1200 });
-      if (!d) return res.redirect('/og-image.jpg'); // no sharp: the static site image
-      brandJpeg = d;
-    }
-    res.set({ 'Content-Type': brandJpeg.type, 'Content-Length': brandJpeg.buf.length, 'Cache-Control': 'public, max-age=86400' });
-    res.end(brandJpeg.buf);
-  } catch { res.redirect('/og-image.jpg'); }
-});
-const siteImage = (base) => `${base}/s/img/brand-v3.jpg`;
+// old share-image URLs (WhatsApp may still have them cached) → the site card
+router.get(['/s/img/brand.jpg', '/s/img/brand-v2.jpg', '/s/img/brand-v3.jpg', '/s/img/brand-v4.jpg'], (req, res) => res.redirect(301, '/og-spot.jpg'));
+const siteImage = (base) => `${base}/og-spot.jpg`; // the NASHI-style card (public/og-spot.jpg)
 
 // ---- images that crawlers can fetch ----
 // event flyer for WhatsApp: raster only (WhatsApp ignores SVG — generated placeholder flyers use the site image)
 router.get('/s/img/event/:id', async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/s/img/brand.jpg');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/og-spot.jpg');
     const ev = await Event.findById(req.params.id).select('image hidden');
-    if (!ev || ev.hidden || !ev.image) return res.redirect('/s/img/brand.jpg');
+    if (!ev || ev.hidden || !ev.image) return res.redirect('/og-spot.jpg');
     if (/^https:\/\//.test(ev.image)) return res.redirect(ev.image);
-    if (!(await sendPreview(res, `event:${ev._id}`, ev.image))) res.redirect('/s/img/brand.jpg');
-  } catch { res.redirect('/s/img/brand.jpg'); }
+    if (!(await sendPreview(res, `event:${ev._id}`, ev.image))) res.redirect('/og-spot.jpg');
+  } catch { res.redirect('/og-spot.jpg'); }
 });
 
 router.get('/s/img/personality/:id', async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/s/img/brand.jpg');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/og-spot.jpg');
     const p = await Personality.findById(req.params.id).select('image status externalToken isTemplate');
-    if (!p || p.isTemplate || p.externalToken || p.status === 'submitted' || !p.image) return res.redirect('/s/img/brand.jpg');
+    if (!p || p.isTemplate || p.externalToken || p.status === 'submitted' || !p.image) return res.redirect('/og-spot.jpg');
     if (/^https?:\/\//.test(p.image)) return res.redirect(p.image);
-    if (!(await sendPreview(res, `personality:${p._id}`, p.image))) res.redirect('/s/img/brand.jpg');
-  } catch { res.redirect('/s/img/brand.jpg'); }
+    if (!(await sendPreview(res, `personality:${p._id}`, p.image))) res.redirect('/og-spot.jpg');
+  } catch { res.redirect('/og-spot.jpg'); }
 });
 
 router.get('/s/img/story/:id', async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/s/img/brand.jpg');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/og-spot.jpg');
     const s = await Story.findById(req.params.id).select('type content status');
-    if (!s || s.status !== 'approved' || s.type !== 'image') return res.redirect('/s/img/brand.jpg');
-    if (!(await sendPreview(res, `story:${s._id}`, s.content))) res.redirect('/s/img/brand.jpg');
-  } catch { res.redirect('/s/img/brand.jpg'); }
+    if (!s || s.status !== 'approved' || s.type !== 'image') return res.redirect('/og-spot.jpg');
+    if (!(await sendPreview(res, `story:${s._id}`, s.content))) res.redirect('/og-spot.jpg');
+  } catch { res.redirect('/og-spot.jpg'); }
 });
 
 // ---- preview pages ----

@@ -297,6 +297,30 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
           </div>
 
+          {/* phones: an animated "spot" — the pin with pulsing rings and floating chips of what's on */}
+          <div className="lg:hidden relative mx-auto -mt-2 h-60 w-full max-w-sm animate-fade-in-up" style={{ animationDelay: '600ms' }} aria-hidden="true">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="absolute h-44 w-44 rounded-full bg-gradient-to-br from-plum-200 via-champagne-100 to-rose-100 blur-2xl animate-mesh-drift" />
+              <span className="absolute h-28 w-28 rounded-full border-2 border-plum-300 animate-ring-pulse" />
+              <span className="absolute h-28 w-28 rounded-full border-2 border-plum-300 animate-ring-pulse" style={{ animationDelay: '1.6s' }} />
+              <svg className="absolute h-[15rem] w-[15rem] text-rose-300/60 animate-spin-slow" viewBox="0 0 200 200" fill="none">
+                <circle cx="100" cy="100" r="96" stroke="currentColor" strokeWidth="0.6" strokeDasharray="1 5" />
+              </svg>
+              <svg viewBox="0 0 64 64" className="relative h-20 w-20 drop-shadow-xl animate-float-y">
+                <path d="M32 4C20.4 4 11 13.2 11 24.6 11 40 32 60 32 60s21-20 21-35.4C53 13.2 43.6 4 32 4z" fill="rgb(var(--rose-700))" />
+                <circle cx="32" cy="24.5" r="8.5" fill="rgb(var(--plum-300))" />
+              </svg>
+            </div>
+            {[
+              { t: 'שיעורים', c: 'right-[4%] top-[14%] bg-white text-ink', d: '0s' },
+              { t: 'מופעים', c: 'left-[2%] top-[30%] bg-plum-300 text-ink', d: '-1.5s' },
+              { t: 'חוגים', c: 'right-[12%] bottom-[10%] bg-rose-700 text-white', d: '-3s' },
+              { t: 'כנסים', c: 'left-[16%] bottom-[4%] bg-champagne-100 text-ink', d: '-2.2s' },
+            ].map(x => (
+              <span key={x.t} className={`absolute ${x.c} rounded-full px-4 py-2 text-[14px] font-strong shadow-soft animate-float-y-slow`} style={{ animationDelay: x.d }}>{x.t}</span>
+            ))}
+          </div>
+
           {/* phones: one clear "next event" card instead of the floating collage */}
           {upcomingEvents[0] && (
             <Link to="/events" className="lg:hidden flex items-center gap-4 rounded-[1.75rem] bg-white/90 border border-rose-100 p-3 shadow-soft animate-fade-in-up" style={{ animationDelay: '650ms' }}>

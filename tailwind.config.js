@@ -81,6 +81,7 @@ export default {
         '4.5': '1.125rem',
       },
       keyframes: {
+        'ring-pulse': { '0%': { transform: 'scale(0.6)', opacity: '0.7' }, '100%': { transform: 'scale(1.6)', opacity: '0' } },
         blob: {
           "0%": { transform: "translate(0px, 0px) scale(1)" },
           "33%": { transform: "translate(30px, -50px) scale(1.1)" },
@@ -202,6 +203,7 @@ export default {
         'clip-up': 'clip-up 1200ms cubic-bezier(0.77, 0, 0.18, 1) both',
         'line-grow': 'line-grow 1200ms cubic-bezier(0.77, 0, 0.18, 1) both',
         'spin-slow': 'spin-slow 40s linear infinite',
+        'ring-pulse': 'ring-pulse 3.2s cubic-bezier(.2,.7,.3,1) infinite',
       },
     },
   },
