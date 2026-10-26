@@ -137,3 +137,21 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee { animation: none !important; }
 }
+
+/* ---- the Spot logo drawing itself (components/home/LogoDraw.tsx) ---- */
+.spot-pin-path { stroke-dasharray: 1; stroke-dashoffset: 1; fill-opacity: 0;
+  animation: spot-trace 1.3s cubic-bezier(.6,.05,.3,1) 200ms forwards, spot-fill .6s ease-out 1.2s forwards; }
+.spot-pin-dot { transform-box: fill-box; transform-origin: center; transform: scale(0);
+  animation: spot-pop .55s cubic-bezier(.3,1.6,.5,1) 1.55s forwards; }
+.spot-pin { animation: spot-float 6s ease-in-out 2.4s infinite; }
+.spot-letter { transform: translateY(110%); animation: spot-rise .7s cubic-bezier(.2,.9,.2,1) forwards; }
+.spot-ripple { opacity: 0; animation: spot-ripple 7.2s cubic-bezier(.2,.7,.3,1) 2.2s infinite; }
+@keyframes spot-trace { to { stroke-dashoffset: 0; } }
+@keyframes spot-fill { to { fill-opacity: 1; } }
+@keyframes spot-pop { 0% { transform: scale(0); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@keyframes spot-rise { to { transform: translateY(0); } }
+@keyframes spot-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes spot-ripple { 0% { transform: scale(.7); opacity: .7; } 45% { transform: scale(1.9); opacity: 0; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .spot-pin-path, .spot-pin-dot, .spot-letter, .spot-pin, .spot-ripple { animation: none !important; stroke-dashoffset: 0; fill-opacity: 1; transform: none; }
+}

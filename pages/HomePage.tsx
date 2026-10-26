@@ -21,6 +21,7 @@ import { regionName } from '../shared/regions';
 import EventCard from '../components/EventCard';
 import AudienceBadge from '../components/AudienceBadge';
 import Logo from '../components/Logo';
+import LogoDraw from '../components/home/LogoDraw';
 import { BRAND } from '../shared/brand';
 
 // --- Interfaces ---
@@ -287,35 +288,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </div>
           </div>
 
-          {/* phones: a calm, premium "spot" — the pin with soft pulsing rings and a slow orbit of icons */}
-          <div className="lg:hidden relative mx-auto mt-3 h-64 w-full max-w-[22rem] animate-blur-in" style={{ animationDelay: '450ms', animationFillMode: 'both' }} aria-hidden="true">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="absolute h-48 w-48 rounded-full bg-gradient-to-br from-plum-200/80 via-champagne-100/70 to-transparent blur-2xl" />
-              <span className="absolute h-24 w-24 rounded-full border border-plum-300 animate-ring-pulse" />
-              <span className="absolute h-24 w-24 rounded-full border border-plum-300 animate-ring-pulse" style={{ animationDelay: '1.6s' }} />
-              <span className="absolute h-[11.5rem] w-[11.5rem] rounded-full border border-champagne-300/50" />
-              <span className="absolute h-[15.5rem] w-[15.5rem] rounded-full border border-dashed border-champagne-300/40" />
-              {/* orbit: the ring turns slowly, each icon counter-turns so it stays upright */}
-              <div className="absolute h-[15.5rem] w-[15.5rem] animate-spin-slow">
-                {[
-                  { I: BookOpen, pos: 'left-1/2 -top-5 -translate-x-1/2' },
-                  { I: Music, pos: '-right-5 top-1/2 -translate-y-1/2' },
-                  { I: Calendar, pos: 'left-1/2 -bottom-5 -translate-x-1/2' },
-                  { I: GraduationCap, pos: '-left-5 top-1/2 -translate-y-1/2' },
-                ].map(({ I, pos }, i) => (
-                  <span key={i} className={`absolute ${pos}`}>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-rose-700 shadow-soft ring-1 ring-champagne-200 [animation:spin-slow_40s_linear_infinite_reverse]">
-                      <I size={17} strokeWidth={1.6} />
-                    </span>
-                  </span>
-                ))}
-              </div>
-              <svg viewBox="0 0 64 64" className="relative h-[4.5rem] w-[4.5rem] drop-shadow-xl animate-float-y">
-                <path d="M32 4C20.4 4 11 13.2 11 24.6 11 40 32 60 32 60s21-20 21-35.4C53 13.2 43.6 4 32 4z" fill="rgb(var(--rose-700))" />
-                <circle cx="32" cy="24.5" r="8.5" fill="rgb(var(--plum-300))" />
-              </svg>
-            </div>
-          </div>
+          {/* phones: the Spot logo draws itself */}
+          <LogoDraw className="lg:hidden mx-auto mt-2 h-48 w-full" />
 
           {/* phones: one clear "next event" card instead of the floating collage */}
           {upcomingEvents[0] && (
@@ -330,35 +304,9 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </Link>
           )}
 
-          {/* desktop: the Spot orbit — the pin with soft pulsing rings and a slow orbit of icons (always there) */}
-          <div className="relative hidden lg:block h-[560px]" aria-hidden="true">
-            <div className="absolute inset-0 flex items-center justify-center animate-blur-in" style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
-              <span className="absolute h-[26rem] w-[26rem] rounded-full bg-gradient-to-br from-plum-200/70 via-champagne-100/60 to-transparent blur-3xl" />
-              <span className="absolute h-40 w-40 rounded-full border border-plum-300 animate-ring-pulse" />
-              <span className="absolute h-40 w-40 rounded-full border border-plum-300 animate-ring-pulse" style={{ animationDelay: '1.6s' }} />
-              <span className="absolute h-[19rem] w-[19rem] rounded-full border border-champagne-300/60" />
-              <span className="absolute h-[27rem] w-[27rem] rounded-full border border-dashed border-champagne-300/40" />
-              <div className="absolute h-[27rem] w-[27rem] animate-spin-slow">
-                {[
-                  { I: BookOpen, pos: 'left-1/2 -top-7 -translate-x-1/2', t: 'שיעורים' },
-                  { I: Music, pos: '-right-7 top-1/2 -translate-y-1/2', t: 'מופעים' },
-                  { I: Calendar, pos: 'left-1/2 -bottom-7 -translate-x-1/2', t: 'אירועים' },
-                  { I: GraduationCap, pos: '-left-7 top-1/2 -translate-y-1/2', t: 'חוגים' },
-                ].map(({ I, pos, t }, i) => (
-                  <span key={i} className={`absolute ${pos}`}>
-                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-rose-700 shadow-lift ring-1 ring-champagne-200 [animation:spin-slow_40s_linear_infinite_reverse]" title={t}>
-                      <I size={22} strokeWidth={1.6} />
-                    </span>
-                  </span>
-                ))}
-              </div>
-              <div className="relative flex flex-col items-center animate-float-y">
-                <svg viewBox="0 0 64 64" className="h-28 w-28 drop-shadow-2xl">
-                  <path d="M32 4C20.4 4 11 13.2 11 24.6 11 40 32 60 32 60s21-20 21-35.4C53 13.2 43.6 4 32 4z" fill="rgb(var(--rose-700))" />
-                  <circle cx="32" cy="24.5" r="8.5" fill="rgb(var(--plum-300))" />
-                </svg>
-              </div>
-            </div>
+          {/* desktop: the Spot logo draws itself */}
+          <div className="relative hidden lg:block h-[560px]">
+            <div className="absolute inset-0 flex items-center justify-center"><LogoDraw big /></div>
             {upcomingEvents[0] && (
               <Link to="/events" className="absolute left-[2%] bottom-[8%] z-10 animate-scale-in" style={{ animationDelay: '1300ms' }}>
                 <div className="rounded-3xl bg-white/85 backdrop-blur-xl border border-white shadow-lift px-5 py-4 max-w-[230px] hover:-translate-y-1 transition-transform duration-500">
