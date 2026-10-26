@@ -85,11 +85,11 @@
      mauve-* (slate/gray) = neutrals */
 :root {
   --rose-50: 244 246 250; --rose-100: 232 236 243; --rose-200: 210 217 230; --rose-300: 216 191 140; --rose-400: 198 161 92; --rose-500: 168 130 56; --rose-600: 138 104 40; --rose-700: 30 51 84; --rose-800: 23 41 67; --rose-900: 17 31 53; --rose-950: 10 20 36;
-  --plum-50: 252 246 246; --plum-100: 248 234 234; --plum-200: 240 213 214; --plum-300: 228 182 185; --plum-400: 210 149 154; --plum-500: 189 122 129; --plum-600: 165 99 107; --plum-700: 138 80 88; --plum-800: 111 65 72; --plum-900: 90 54 60; --plum-950: 58 34 38;
+  --plum-50: 255 247 241; --plum-100: 254 236 223; --plum-200: 252 216 192; --plum-300: 248 190 156; --plum-400: 242 163 122; --plum-500: 232 138 96; --plum-600: 210 112 72; --plum-700: 176 88 56; --plum-800: 140 70 46; --plum-900: 112 57 40; --plum-950: 64 31 21; /* peach (owner, 2026-10-26) */
   --mauve-50: 248 248 247; --mauve-100: 239 239 237; --mauve-200: 225 225 222; --mauve-300: 201 202 198; --mauve-400: 156 158 162; --mauve-500: 118 122 130; --mauve-600: 91 95 104; --mauve-700: 71 75 84; --mauve-800: 49 53 61; --mauve-900: 34 37 44; --mauve-950: 21 23 28;
   --ink: 18 28 46; --cream: 247 245 240;
-  --color-primary: #1E3354; --color-background: #F7F5F0; --color-blush: #E8ECF3; --color-ink: #121C2E; --color-text: #474B54; --color-muted: #767A82;
-  --ambient-1: 214 221 233; --ambient-2: 240 213 214; --ambient-3: 236 226 204; --ambient-top: #F1F2F5;
+  --color-primary: #1E3354; --color-background: #F7F5F0; --color-blush: #FDEBDD; --color-ink: #121C2E; --color-text: #474B54; --color-muted: #767A82;
+  --ambient-1: 214 221 233; --ambient-2: 252 216 192; --ambient-3: 236 226 204; --ambient-top: #F1F2F5;
 }
 
 @layer components {
