@@ -21,7 +21,11 @@ const pushOk = (req) => { const token = process.env.IMPORTER_PUSH_TOKEN || ''; c
 r.post('/importer/moderate', async (req, res) => {
   if (!pushOk(req)) return res.status(403).json({ error: 'forbidden' });
   try {
-    const { placeholder = [], remove = [], recheckImages = false, probe } = req.body || {};
+    const { placeholder = [], remove = [], recheckImages = false, probe, removeAllImported } = req.body || {};
+    if (removeAllImported === 'yes') {
+      const r = await Event.deleteMany({ source: { $type: 'string' } });
+      return res.json({ removedAllImported: r.deletedCount });
+    }
     if (probe) { const v = await checkFlyer(probe); return res.json({ enabled: modestyEnabled(), ...v }); }
     res.json({ enabled: modestyEnabled(), ...(await moderate({ Event, ImportBlock, placeholder, remove, recheckImages })) });
   } catch (err) { res.status(500).json({ error: err.message }); }
