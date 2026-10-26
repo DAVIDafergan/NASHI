@@ -13,7 +13,7 @@ export const getSmartRecommendation = async (userQuery: string): Promise<string>
     // בדיקה אם התגובה חזרה בצורה תקינה מהשרת
     if (!response.ok) {
       console.warn(`Server responded with status: ${response.status}`);
-      return "מצטערת, שירות ה-AI זמין כרגע רק חלקית. נסי שוב מאוחר יותר.";
+      return "מצטערים, שירות ה-AI זמין כרגע רק חלקית. כדאי לנסות שוב מאוחר יותר.";
     }
 
     const data = await response.json();

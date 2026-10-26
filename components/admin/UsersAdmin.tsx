@@ -3,6 +3,7 @@ import { Award, Check, Copy, Download, Mail, MapPin, Phone, Plus, ShieldCheck, S
 import { api } from '../../services/api';
 import { regionName, regionOfCity, REGIONS } from '../../shared/regions';
 import { Badge, DeleteButton, EmptyState, Field, IconButton, Pager, Sheet, fmtDate, idOf, inputCls, matchesRegion, matchesSearch, regionOfItem, toast } from './ui';
+import { BRAND } from '../../shared/brand';
 
 const PAGE = 25;
 type Filter = 'all' | 'members' | 'requested' | 'regular' | 'nocity' | 'managers';
@@ -30,7 +31,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
     const headers = ['שם', 'דוא"ל', 'טלפון', 'עיר', 'אזור', 'נקודות', 'סטטוס', 'תאריך הרשמה'];
     let c = 'data:text/csv;charset=utf-8,﻿' + headers.join(',') + '\n';
     list.forEach(u => {
-      c += [u.name, u.email, u.phone, u.city || '', regionName(regionOfItem(u)), u.points || 0, u.isMemberApproved ? 'חברת מעגל' : u.isMemberRequested ? 'ממתינה' : 'רשומה', fmtDate(u.createdAt)]
+      c += [u.name, u.email, u.phone, u.city || '', regionName(regionOfItem(u)), u.points || 0, u.isMemberApproved ? 'חבר/ת מעגל' : u.isMemberRequested ? 'ממתין/ה' : 'רשום/ה', fmtDate(u.createdAt)]
         .map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',') + '\n';
     });
     const a = document.createElement('a'); a.href = encodeURI(c); a.download = 'nashi_users.csv'; document.body.appendChild(a); a.click(); a.remove();
@@ -42,7 +43,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
     catch { setGift({ open: true, user: u }); toast('יצירת ההטבה נכשלה', 'bad'); }
   };
 
-  const filters: [Filter, string][] = [['all', 'כולן'], ['members', 'חברות מעגל'], ['requested', 'ביקשו להצטרף'], ['regular', 'רשומות'], ['nocity', 'בלי עיר'], ['managers', 'מנהלות תרבות']];
+  const filters: [Filter, string][] = [['all', 'כולם'], ['members', 'חברי מעגל'], ['requested', 'ביקשו להצטרף'], ['regular', 'רשומים'], ['nocity', 'בלי עיר'], ['managers', 'מנהלי תרבות']];
 
   return (
     <div className="space-y-4">
@@ -55,12 +56,12 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
           ))}
         </div>
         <select value={sort} onChange={e => setSort(e.target.value as any)} className="rounded-full border border-rose-100 bg-white px-3 py-2 text-[13px] text-slate-600 outline-none">
-          <option value="new">חדשות קודם</option><option value="points">הכי הרבה נקודות</option><option value="name">לפי שם</option>
+          <option value="new">חדשים קודם</option><option value="points">הכי הרבה נקודות</option><option value="name">לפי שם</option>
         </select>
         <button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-white px-3.5 py-2 text-[13px] text-emerald-700 hover:bg-emerald-50"><Download size={14} /> ייצוא לאקסל</button>
       </div>
 
-      {list.length === 0 ? <EmptyState icon={<Users size={24} />} title="לא נמצאו משתמשות" text="נסי לשנות את הסינון או החיפוש." /> : (
+      {list.length === 0 ? <EmptyState icon={<Users size={24} />} title="לא נמצאו משתמשים" text="אפשר לשנות את הסינון או החיפוש." /> : (
         <>
           {/* desktop table */}
           <div className="hidden overflow-hidden rounded-[1.6rem] border border-rose-100 bg-white shadow-soft md:block">
@@ -82,14 +83,14 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
                     </td>
                     <td className="p-3.5">{u.city ? <span>{u.city}<span className="block text-[11px] text-slate-400">{regionName(regionOfItem(u))}</span></span> : <span className="text-xs text-slate-400">לא נבחרה</span>}</td>
                     <td className="p-3.5 font-strong text-rose-700 tabular-nums">{(u.points || 0).toLocaleString('he-IL')}</td>
-                    <td className="p-3.5">{u.isAdmin ? <Badge tone="plum">מנהלת</Badge> : u.role === 'regionAdmin' ? <Badge tone="plum"><ShieldCheck size={10} /> מנהלת {regionName(u.adminRegion)}</Badge> : u.isMemberApproved ? <Badge tone="green"><Sparkles size={10} /> חברת מעגל</Badge> : u.isMemberRequested ? <Badge tone="amber">ממתינה לאישור</Badge> : <Badge tone="slate">רשומה</Badge>}</td>
+                    <td className="p-3.5">{u.isAdmin ? <Badge tone="plum">הנהלה</Badge> : u.role === 'regionAdmin' ? <Badge tone="plum"><ShieldCheck size={10} /> ניהול {regionName(u.adminRegion)}</Badge> : u.isMemberApproved ? <Badge tone="green"><Sparkles size={10} /> חברת מעגל</Badge> : u.isMemberRequested ? <Badge tone="amber">ממתינה לאישור</Badge> : <Badge tone="slate">רשומה</Badge>}</td>
                     <td className="p-3.5 text-xs text-slate-500">{fmtDate(u.createdAt)}</td>
                     <td className="p-3.5">
                       <div className="flex justify-end gap-1.5">
                         {u.isMemberRequested && !u.isMemberApproved && <IconButton tone="good" title="אישור למעגל" aria-label="אישור" onClick={async () => { await api.approveMember(idOf(u)); toast(`${u.name} אושרה ✨`); reload(); }}><Check size={15} /></IconButton>}
                         <IconButton title="הוספת נקודות" aria-label="נקודות" onClick={() => setPointsFor({ user: u, amount: 50 })}><Plus size={15} /></IconButton>
                         <IconButton title="קישור להטבה אישית" aria-label="הטבה" onClick={() => makeGift(u)}><Award size={15} /></IconButton>
-                        {!u.isAdmin && <IconButton title="מנהלת תרבות" aria-label="מנהלת תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
+                        {!u.isAdmin && <IconButton title="ניהול תרבות" aria-label="ניהול תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
                         {!u.isAdmin && <DeleteButton name={u.name} onConfirm={async () => { await api.deleteUser(idOf(u)); reload(); }} />}
                       </div>
                     </td>
@@ -117,7 +118,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
                   {u.isMemberRequested && !u.isMemberApproved && <IconButton tone="good" aria-label="אישור" onClick={async () => { await api.approveMember(idOf(u)); toast(`${u.name} אושרה ✨`); reload(); }}><Check size={15} /></IconButton>}
                   <IconButton aria-label="נקודות" onClick={() => setPointsFor({ user: u, amount: 50 })}><Plus size={15} /></IconButton>
                   <IconButton aria-label="הטבה" onClick={() => makeGift(u)}><Award size={15} /></IconButton>
-                  {!u.isAdmin && <IconButton aria-label="מנהלת תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
+                  {!u.isAdmin && <IconButton aria-label="ניהול תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
                   {!u.isAdmin && <DeleteButton name={u.name} onConfirm={async () => { await api.deleteUser(idOf(u)); reload(); }} />}
                 </div>
               </li>
@@ -127,14 +128,14 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
       )}
       <Pager page={page} total={pages} onPage={setPage} />
 
-      <Sheet open={!!roleFor} onClose={() => setRoleFor(null)} title="מנהלת תרבות" subtitle={roleFor?.user?.name}
+      <Sheet open={!!roleFor} onClose={() => setRoleFor(null)} title="ניהול תרבות" subtitle={roleFor?.user?.name}
         footer={roleFor && (
           <div className="flex gap-2">
             <button disabled={roleBusy || !roleFor.region} className="btn-primary flex-1 disabled:opacity-50" onClick={async () => {
               setRoleBusy(true);
-              try { await api.setUserRole(idOf(roleFor.user), 'regionAdmin', roleFor.region); toast(`${roleFor.user.name} מנהלת עכשיו את ${regionName(roleFor.region)} ✨`); setRoleFor(null); reload(); }
+              try { await api.setUserRole(idOf(roleFor.user), 'regionAdmin', roleFor.region); toast(`${roleFor.user.name} — ניהול תרבות ב${regionName(roleFor.region)} ✨`); setRoleFor(null); reload(); }
               catch (e: any) { toast(e?.message || 'השמירה נכשלה', 'bad'); } finally { setRoleBusy(false); }
-            }}>{roleFor.user.role === 'regionAdmin' ? 'שמירת שינוי' : 'מינוי למנהלת תרבות'}</button>
+            }}>{roleFor.user.role === 'regionAdmin' ? 'שמירת שינוי' : 'מינוי לניהול תרבות'}</button>
             {roleFor.user.role === 'regionAdmin' && (
               <button disabled={roleBusy} className="btn-ghost" onClick={async () => {
                 setRoleBusy(true);
@@ -146,8 +147,8 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
         )}>
         {roleFor && (
           <div className="space-y-4">
-            <p className="text-sm leading-relaxed text-slate-600">מנהלת תרבות נכנסת ל"ניהול" עם המשתמש הרגיל שלה, ויכולה להעלות, לערוך ולמחוק <b>אירועים, חוגים, פריטי קהילה והגרלות</b> באזור שלה בלבד. היא לא רואה משתמשות, פניות או הגדרות.</p>
-            <Field label="איזה אזור היא מנהלת?" required>
+            <p className="text-sm leading-relaxed text-slate-600">מנהל/ת תרבות נכנס/ת ל"ניהול" עם המשתמש הרגיל, ויכול/ה להעלות, לערוך ולמחוק <b>אירועים, חוגים, פריטי קהילה והגרלות</b> באזור הזה בלבד, ובוחר/ת לכל פריט אם הוא לגברים, לנשים או לכולם. אין גישה למשתמשים, לפניות או להגדרות.</p>
+            <Field label="איזה אזור לנהל?" required>
               <div className="grid grid-cols-2 gap-2">
                 {REGIONS.map(r => (
                   <button key={r.id} type="button" onClick={() => setRoleFor(x => (x ? { ...x, region: r.id } : x))}
@@ -162,11 +163,11 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
       <Sheet open={gift.open} onClose={() => setGift({ open: false })} title="קישור להטבה אישית" subtitle={gift.user?.name}>
         {gift.busy ? <p className="p-6 text-center text-slate-500">יוצרת קישור…</p> : gift.link ? (
           <div className="space-y-3">
-            <p className="text-sm text-slate-600">קישור חד־פעמי שמעניק 100 נקודות. שלחי אותו ל{gift.user?.name}:</p>
+            <p className="text-sm text-slate-600">קישור חד־פעמי שמעניק 100 נקודות. לשליחה ל{gift.user?.name}:</p>
             <p className="break-all rounded-2xl bg-white p-3 text-left text-xs text-slate-600" dir="ltr">{gift.link}</p>
             <div className="grid gap-2 sm:grid-cols-2">
               <button onClick={async () => { try { await navigator.clipboard.writeText(gift.link!); toast('הועתק ✔'); } catch { window.prompt('העתיקי:', gift.link); } }} className="btn-ghost"><Copy size={15} /> העתקה</button>
-              {gift.user?.phone && <a href={`https://wa.me/972${String(gift.user.phone).replace(/\D/g, '').replace(/^0/, '')}?text=${encodeURIComponent(`היי ${gift.user.name} 💗 הכנו לך הטבה אישית בנשי: ${gift.link}`)}`} target="_blank" rel="noreferrer" className="btn-primary !bg-[#1FA855]">שליחה בוואטסאפ</a>}
+              {gift.user?.phone && <a href={`https://wa.me/972${String(gift.user.phone).replace(/\D/g, '').replace(/^0/, '')}?text=${encodeURIComponent(`שלום ${gift.user.name}, הכנו לך הטבה אישית ב${BRAND.name}: ${gift.link}`)}`} target="_blank" rel="noreferrer" className="btn-primary !bg-[#1FA855]">שליחה בוואטסאפ</a>}
             </div>
           </div>
         ) : <p className="p-6 text-center text-slate-500">לא נוצר קישור.</p>}

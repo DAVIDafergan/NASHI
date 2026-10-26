@@ -4,10 +4,11 @@ import { ArrowLeft, Share2 } from 'lucide-react';
 import { api } from '../services/api';
 import ScrollReveal from '../components/ScrollReveal';
 import { shareLink } from '../utils/share';
+import { BRAND } from '../shared/brand';
 
 const initial = (name?: string) => (name || '?').trim().charAt(0);
 
-/** "נשות השבוע": the full interview of the selected woman + the archive of previous ones. */
+/** "אישיות השבוע": the full interview of the selected person + the archive of previous ones. */
 const PersonalityArchivePage = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -41,7 +42,7 @@ const PersonalityArchivePage = () => {
 
   if (!current) return (
     <div className="mx-auto max-w-md px-5 py-24 text-center" dir="rtl">
-      <p className="eyebrow">נשות השבוע</p>
+      <p className="eyebrow">אישיות השבוע</p>
       <h1 className="mt-3 text-4xl">בקרוב כאן</h1>
       <p className="mt-3 text-slate-500">הראיון הראשון בדרך אלינו.</p>
       <button onClick={() => navigate('/')} className="btn-primary mt-8">לדף הבית</button>
@@ -51,8 +52,8 @@ const PersonalityArchivePage = () => {
   const pid = current._id || current.id;
   const answers = (current.questions || []).filter((q: any) => (q.answer || '').trim());
   const share = () => shareLink({
-    title: `${current.name} — אשת השבוע בנשי`,
-    text: `הכירו את ${current.name}${current.role ? `, ${current.role}` : ''} — אשת השבוע בקהילת נשי 💗`,
+    title: `${current.name} — אישיות השבוע ב${BRAND.name}`,
+    text: `הכירו את ${current.name}${current.role ? `, ${current.role}` : ''} — אישיות השבוע ב${BRAND.name}`,
     path: `/s/personality/${pid}`,
   });
 
@@ -74,7 +75,7 @@ const PersonalityArchivePage = () => {
               </div>
             </ScrollReveal>
             <div className="text-center md:text-right">
-              <p className="eyebrow">{current.isActive ? 'אשת השבוע' : 'מנשות השבוע'}</p>
+              <p className="eyebrow">{current.isActive ? 'אישיות השבוע' : 'מהראיונות הקודמים'}</p>
               <h1 key={pid} className="mt-3 text-[3rem] leading-[1] md:text-[4.6rem] animate-blur-in">{current.name}</h1>
               {current.role && <p className="mt-4 text-lg leading-relaxed text-slate-600">{current.role}</p>}
               {current.motto && (
@@ -106,9 +107,9 @@ const PersonalityArchivePage = () => {
           ))}
         </div>
         <div className="mt-10 rounded-[2rem] bg-gradient-to-l from-rose-100 via-rose-50 to-white p-7 text-center md:p-10">
-          <p className="font-accent text-3xl text-rose-700">מכירה אישה מעוררת השראה?</p>
-          <p className="mt-2 text-slate-600">ספרי לנו עליה, ואולי היא תהיה אשת השבוע הבאה.</p>
-          <button onClick={() => navigate('/contact')} className="btn-primary mt-5">להמליץ על אישה</button>
+          <p className="font-accent text-3xl text-rose-700">מכירים מישהו או מישהי מעוררי השראה?</p>
+          <p className="mt-2 text-slate-600">ספרו לנו, ואולי זו תהיה אישיות השבוע הבאה.</p>
+          <button onClick={() => navigate('/contact')} className="btn-primary mt-5">להמלצה</button>
         </div>
       </section>
 
@@ -116,7 +117,7 @@ const PersonalityArchivePage = () => {
       {others.length > 0 && (
         <section className="mx-auto mt-20 max-w-5xl px-5">
           <p className="eyebrow">ארכיון</p>
-          <h2 className="mt-2 text-[2rem] md:text-[2.6rem]">נשות השבוע הקודמות</h2>
+          <h2 className="mt-2 text-[2rem] md:text-[2.6rem]">ראיונות קודמים</h2>
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 md:gap-6">
             {others.map((p, i) => (
               <ScrollReveal key={p._id || i} animation="scale-in" delay={(i % 4) * 70}>

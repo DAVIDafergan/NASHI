@@ -9,11 +9,11 @@ import {
 const CATS = [
   { id: 'שיעורי תורה', label: 'שיעורי תורה', icon: <BookOpen size={14} /> },
   { id: 'גמ"חים', label: 'גמ"חים', icon: <HeartHandshake size={14} /> },
-  { id: 'עסקים מקומיים', label: 'עסקים של נשים', icon: <Store size={14} /> },
+  { id: 'עסקים מקומיים', label: 'עסקים מקומיים', icon: <Store size={14} /> },
 ];
 const catOf = (c?: string) => (c && c.includes('עסק') ? 'עסקים מקומיים' : c || 'גמ"חים');
 
-const blank = (category = 'גמ"חים') => ({ category, title: '', description: '', phone: '', location: '', image: '', startTime: '', targetAudience: '', isPaid: false, price: 0, scope: 'local', city: '' });
+const blank = (category = 'גמ"חים') => ({ category, title: '', description: '', phone: '', location: '', image: '', startTime: '', targetAudience: '', isPaid: false, price: 0, scope: 'local', city: '', audience: '' });
 
 const CommunityAdmin: React.FC<{ items: any[]; region: string; search: string; createTick: number; reload: () => void }> = ({ items, region, search, createTick, reload }) => {
   const [cat, setCat] = useState<string>('all');
@@ -54,7 +54,7 @@ const CommunityAdmin: React.FC<{ items: any[]; region: string; search: string; c
       </div>
 
       {list.length === 0 ? (
-        <EmptyState icon={<HeartHandshake size={26} />} title="אין פריטים להצגה" text="שיעורי תורה, גמ״חים ועסקים של נשים מופיעים בעמוד הקהילה."
+        <EmptyState icon={<HeartHandshake size={26} />} title="אין פריטים להצגה" text="שיעורי תורה, גמ״חים ועסקים מקומיים מופיעים בעמוד הקהילה."
           action={<button onClick={() => { setForm(blank(cat === 'all' ? 'גמ"חים' : cat)); setOpen(true); }} className="btn-primary"><Plus size={16} /> הוספה</button>} />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -92,7 +92,7 @@ const CommunityAdmin: React.FC<{ items: any[]; region: string; search: string; c
               <Field label="טלפון (לוואטסאפ)"><input dir="ltr" className={`${inputCls} text-left`} value={form.phone || ''} onChange={e => set({ phone: e.target.value })} /></Field>
               <Field label="שעה" hint="לשיעורים"><input type="time" className={inputCls} value={form.startTime || ''} onChange={e => set({ startTime: e.target.value })} /></Field>
             </div>
-            <Field label="למי מיועד"><input className={inputCls} value={form.targetAudience || ''} onChange={e => set({ targetAudience: e.target.value })} placeholder="למשל: נשים ונערות" /></Field>
+            <Field label="למי מיועד"><input className={inputCls} value={form.targetAudience || ''} onChange={e => set({ targetAudience: e.target.value })} placeholder="למשל: אברכים, נשים ונערות, משפחות" /></Field>
             <Toggle checked={!!form.isPaid} onChange={isPaid => set({ isPaid })} label="בתשלום" />
             {form.isPaid && <Field label="מחיר (₪)"><input type="number" min={0} className={inputCls} value={form.price ?? 0} onChange={e => set({ price: Number(e.target.value) })} /></Field>}
           </FormSection>

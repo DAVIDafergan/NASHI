@@ -4,6 +4,7 @@ import { CheckCircle2, Clock, Loader2, Mail, PauseCircle, Save, Send, AlertCircl
 import { suppliersApi, Supplier, Checkout } from '../services/suppliersApi';
 import { SupplierForm, PaymentStep, fromSupplier, validateSupplier, SupplierFormValue } from '../components/suppliers/SupplierParts';
 import { SUPPLIER_STATUS_LABELS } from '../shared/suppliers';
+import { BRAND } from '../shared/brand';
 
 const TOKEN_KEY = 'nashi-supplier-token';
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
@@ -83,7 +84,7 @@ const SupplierEditPage: React.FC = () => {
     active: { icon: <CheckCircle2 size={22} />, cls: 'border-sage-100 bg-sage-50 text-sage-700', text: supplier.listed ? `הכרטיס מופיע במאגר. המנוי בתוקף עד ${fmt(end)}.` : 'הכרטיס פעיל.' },
     pending_payment: { icon: <Clock size={22} />, cls: 'border-amber-100 bg-amber-50 text-amber-800', text: 'הכרטיס שמור וממתין לתשלום. אחרי התשלום הוא יופיע במאגר.' },
     expired: { icon: <AlertCircle size={22} />, cls: 'border-rose-100 bg-rose-50 text-rose-800', text: `המנוי הסתיים${end ? ` ב-${fmt(end)}` : ''}. לחידוש — המשיכו לתשלום.` },
-    suspended: { icon: <PauseCircle size={22} />, cls: 'border-slate-200 bg-slate-50 text-slate-700', text: `הכרטיס מושהה ע״י הנהלת נשי${supplier.statusNote ? `: ${supplier.statusNote}` : ''}.` },
+    suspended: { icon: <PauseCircle size={22} />, cls: 'border-slate-200 bg-slate-50 text-slate-700', text: `הכרטיס מושהה ע״י הנהלת ${BRAND.name}${supplier.statusNote ? `: ${supplier.statusNote}` : ''}.` },
   }[status];
   const needsPayment = status === 'pending_payment' || status === 'expired';
 

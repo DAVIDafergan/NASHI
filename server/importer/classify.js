@@ -1,14 +1,16 @@
 import { regionOfCity } from '../../shared/regions.js';
 /**
- * Is this event for NASHI? — women's audience AND suitable for the Haredi / religious public.
+ * Is this event for the site, and for WHICH section? — men's, women's or both ('all'), and always suitable for the
+ * Haredi public.
  *
- * Rules (in order):
- *   1. any EXCLUDE marker (men / mixed audience, bars & clubs, alcohol, dating…) → reject
- *   2. a WOMEN marker is required (לנשים, נשים, נשות, בנות, נערות, אמהות, רבנית…)
- *   3. suitability: a strong signal (Glatticket = "תרבות ברוח ההלכה", or a women's category on the source)
- *      OR an explicit women-only phrase (לנשים בלבד / לנשים ולנערות בלבד)
- *      OR a religious marker (רבנית, ברוח ההלכה, בהפרדה מלאה, התוועדות, שיעור…)
- * Pure function — tested in tests/importer.test.js.
+ * Strict Haredi rules (default, see strictHaredi below) return { ok, audience: 'women' | 'men' | 'all', reasons }:
+ *   1. hard rejects (parties & dancing, church music, kibbutz / secular venues, owner-removed titles, bars, dating…)
+ *   2. the audience must be explicit: women-only → 'women', men-only (גברים, אברכים, בחורים, a shiur by a Rav…) →
+ *      'men', a Haredi family / general event (הצגת ילדים, משפחות, כנס, הופעה on a Haredi source) → 'all'
+ *   3. a Haredi signal (Haredi source, category, word, city, organiser — or the all-cities flag for women / men).
+ *      Family / general events need a GENUINE Haredi signal (source, category, word or organiser); otherwise they stay
+ *      rejected as "קהל מעורב".
+ * Pure function — tested in tests/strict.test.js, tests/glatticket.test.js and tests/importer.test.js.
  */
 
 const W = '(?:^|[^\\u0590-\\u05FF])'; // word start (Hebrew has no \b)
@@ -50,16 +52,28 @@ export const audienceMode = () => (process.env.IMPORTER_AUDIENCE === 'broad' ? '
 // ---------- strict Haredi rules ----------
 // hard rejects, whatever else the event says
 const HARD = [
-  ['מסיבה / ריקודים', words(['מסיבה', 'מסיבת', 'מסיבות', 'רחבה', 'רחבת ריקודים', 'ריקודים', 'רוקדות', 'ריקוד', 'דאנס', 'dance', 'party'], true)],
+  ['מסיבה / ריקודים', words(['מסיבה', 'מסיבת', 'מסיבות', 'רחבה', 'רחבת ריקודים', 'ריקודים', 'ריקודי', 'רוקדות', 'ריקוד', 'דאנס', 'dance', 'party'], true)],
   ['קאלמה', /קאלמה/],
   ['מוזיקה נוצרית / כנסייה', /סטבט|stabat|מאטר\s|כנסיי?ה|כנסיית|נוצרי|מיסה\b|רקוויאם|requiem|גוספל|gospel|חג המולד|כריסטמס/i],
-  ['קהל מעורב', words(['אמהות ואבות', 'אבות ואמהות', 'אבות', 'לאבות', 'הורים', 'להורים', 'הורים וילדים', 'זוגות', 'לזוגות', 'משפחות', 'למשפחות', 'לכל המשפחה', 'משפחתי'], true)],
+  ['זוגות', words(['זוגות', 'לזוגות', 'זוגי', 'ריקודי זוגות'], true)],
   ['פסטיבל סרטים / דוקאביב', /דוקאביב|docaviv/i],
   ['קיבוץ / מקום חילוני', words(['קיבוץ', 'בקיבוץ', 'כרמים', 'עלומים'], true)],
   ['ריקוד / זומבה / יוגה', /זומבה|zumba|מחול|יוגה|ליוגה|ביוגה|פילאטיס|yoga|pilates/i],
   // removed by the site owner as not suitable (2026-10-23) — never back, whatever mode
   ['נפסל ע"י הנהלת האתר', /כשפולק פוגשות|צבעים של שירה|סטבט|קאלמה|נשות הפנתיאון|הפרדוקס הפרסי|מעצמה בדעיכה|האישה בלבן|האישה שלא ידעה לאהוב|ליבילנד|ריספקט|נשים כובשות עולם|חשבונות שמיים|האמת שמתחת לגלימה|פנינה רוזנבלום|צעדת העגלות|מחול טלאים/],
 ];
+// mixed adults (parents, families): rejected as "קהל מעורב" — EXCEPT a genuinely Haredi family event (→ audience 'all')
+const MIXED_FAMILY = words(['אמהות ואבות', 'אבות ואמהות', 'אבות', 'לאבות', 'הורים', 'להורים', 'הורים וילדים', 'משפחות', 'למשפחות', 'לכל המשפחה', 'משפחתי', 'משפחתית', 'כל המשפחה'], true);
+// always out (the strict list of the broad EXCLUDE, minus the men / family words that now pick a section)
+const HARD_EXCLUDE = words([
+  'רווקים', 'רווקות ורווקים', 'היכרויות', 'דייטינג',
+  'קומדי בר', 'קומדי קלאב', 'בבר', 'הבר', 'בר יין', 'בר קוקטיילים', 'פאב', 'בפאב', 'מועדון', 'במועדון', 'קלאב',
+  'אלכוהול', 'בירה קרה', 'בירות', 'קוקטייל', 'קוקטיילים', 'יין חופשי', 'וודקה', 'וויסקי',
+  'מסיבת טבע', 'רייב', 'טכנו', 'מסיבת בריכה', 'פול פארטי', 'בגדי ים', 'אפטר פארטי', 'דיג\'יי', 'DJ', 'בגירים', '18\\+', '\\+18', 'מעל גיל 18 בלבד',
+]);
+// mixed seating is never Haredi; "גברים ונשים" / "קהל כללי" is fine only with separate seating on a Haredi source
+const MIXED_SEATING = /קהל\s+מעורב|ישיבה\s+מעורבת|ללא\s+הפרדה/;
+const BOTH_GENDERS = /קהל\s+כללי|גברים\s+ונשים|נשים\s+וגברים/;
 // these are out unless the text itself says it's Haredi (a Haredi city alone is not enough)
 const SECULAR_UNLESS_HAREDI_WORD = [
   ['פילאטיס / יוגה', words(['פילאטיס', 'יוגה', 'pilates', 'yoga'], true)],
@@ -85,53 +99,144 @@ const RELIGIOUS_CONTEXT = /רבנית|הרבנית|ברוח ההלכה|בהפר�
 // a class / group for women named in the title ("חוג ציור נשים", "התעמלות נשים", "מפגשי בוקר לאמא ולתינוק")
 const WOMEN_CLASS_TITLE = /(?:חוג|חוגי|קורס|סדנ[הת]|סדנאות|קבוצ[הת]|מפגש|מפגשי|מועדון|בוקר|התעמלות|פיטנס|כושר|שיעור|שיעורי|לימוד|מעגל)[^|\n]{0,30}?(?:\s|^)(?:ל|ה)?נשים(?:\s|$|[-–,:|])|(?:ל|ה)?אמא ו?(?:ל|ה)?תינוק|אימא,? תינוק|לאמהות(?! ו)|לאימהות(?! ו)/;
 const WOMEN_CATEGORY = /נשים|חרדיוות|חרדיות/;
+// ---- men ----
+// explicit men-only phrasing (always wins over a family word: "אבות ובנים" is a men's event)
+const MEN_ONLY = words([
+  'לגברים בלבד', 'גברים בלבד', 'הכניסה לגברים בלבד', 'מיועד לגברים', 'לגברים', 'לאברכים', 'לבחורים', 'לבחורי ישיבות', 'לבני ישיבות', 'לבני הישיבות',
+  'אבות ובנים', 'אבא ובן', 'לאבות ובנים', 'לאבא ובן', 'אבות ובנים בלבד',
+]);
+const MEN = words([
+  'גברים', 'הגברים', 'וגברים', 'אברכים', 'האברכים', 'אברכי', 'בחורים', 'הבחורים', 'בחורי ישיבות', 'בני ישיבות', 'בני הישיבות', 'בני ישיבה',
+  'אברכי הכולל', 'אברכי כולל', 'בני הכולל', 'דף היומי', 'דף יומי', 'חברותא', 'חברותות', 'קהל גברים', 'ערב גברים', 'מלווה מלכה לגברים', 'שטיבל',
+], true);
+// a shiur / drasha by a Rav with no woman mentioned anywhere → men ("שיעור" for men)
+const SHIUR = words(['שיעור', 'שיעורי', 'שיעורים', 'דרשה', 'דרשת', 'מגיד שיעור', 'סיום מסכת', 'סיום הש"ס', 'הדרן', 'התוועדות'], true);
+const RAV = words(['הרב', 'הגאון', 'הגה"צ', 'הגה״צ', 'ראש הישיבה', 'ראש הכולל', 'המשגיח', 'האדמו"ר', 'האדמו״ר', 'מרן'], true);
+const MEN_CATEGORY = /גברים|לגברים|אברכים|בחורים/;
+// a men's class / show named in the title ("שיעור לגברים", "חוג לבחורים", "ערב לאברכים")
+const MEN_SHOW_PHRASE = /(?:הצגה|הצגת|מופע|ערב|כנס|הרצאה|שיעור|שיעורי|התוועדות|סדנה|סדנת|חוג|קורס|יום עיון)\s+(?:ל|ל?ה)?(?:גברים|אברכים|בחורים)/;
+// ---- both (family / general) ----
+const CHILDREN = words(['הצגת ילדים', 'הצגה לילדים', 'הצגות ילדים', 'לילדים', 'ילדים', 'לגיל הרך', 'לכל הגילאים', 'לכל הגילים'], true);
+// (plays and musicals are left out on purpose: Haredi productions are cast for women or for men — never guess 'all')
+const GENERAL = words(['כנס', 'הופעה', 'מופע', 'קונצרט', 'ערב', 'אירוע', 'הרצאה', 'פסטיבל', 'מעמד', 'סיום', 'הילולא', 'הכנסת ספר תורה'], true);
+const WOMEN_ANYWHERE = words(['נשים', 'לנשים', 'הנשים', 'ונשים', 'ולנשים', 'נשות', 'בנות', 'לבנות', 'נערות', 'לנערות', 'אמהות', 'לאמהות', 'אימהות', 'לאימהות', 'אמא', 'לאמא', 'אימא', 'רבנית', 'הרבנית', 'אישה', 'לאישה'], false);
+const noNiqqud = (t) => String(t || '').replace(/[֑-ׇ]/g, '');
 
 /**
- * Keep an event only when BOTH hold — otherwise reject ("when unsure, reject"):
- *   (a) explicitly for women: "לנשים בלבד"-type phrase, "נשים" in the title, or a women's / Haredi category (נשים, חרדיוות)
- *   (b) a Haredi signal: Haredi source (Glatticket), category חרדיוות, Haredi city or neighbourhood, known Haredi
- *       organiser, or words like חרדי / חסידי / לבנות סמינר / ללא סרטים / השלוחה החרדית
- * Hard rejects first: parties & dancing, קאלמה, church/Christian music, mixed audiences (parents, couples, families),
- * DocAviv, kibbutz venues; pilates/yoga, נעמ"ת and חודש האישה unless explicitly Haredi; films not marked women-only.
- * (Images can't be checked automatically — that stays with the admin's hide/delete.)
+ * Keep an event only when ALL hold — otherwise reject ("when unsure, reject"):
+ *   (a) no hard reject (parties & dancing, קאלמה, church music, couples, DocAviv, kibbutz venues, zumba/yoga/pilates,
+ *       bars & alcohol, dating, mixed seating, the owner-removed titles), pilates/yoga/נעמ"ת/חודש האישה unless Haredi;
+ *   (b) an explicit audience:
+ *       women — "לנשים בלבד"-type phrase, "נשים" in the title, a women's / Haredi category (נשים, חרדיוות), women on
+ *               stage on a Haredi source → 'women'
+ *       men   — לגברים / גברים / אברכים / בחורים / בני ישיבות / כולל / דף יומי, a men's category, or a shiur by a Rav
+ *               with no woman mentioned → 'men'
+ *       both  — a family / children's / general Haredi event (הצגת ילדים, משפחות, כנס, הופעה) → 'all', but ONLY with a
+ *               genuine Haredi signal (Haredi source, Haredi category or word, Haredi organiser); otherwise families and
+ *               parents stay out as "קהל מעורב". Female performers are never 'all' or 'men' (קול אשה).
+ *   (c) a Haredi signal: Haredi source (Glatticket), category חרדיוות, Haredi city or neighbourhood, known Haredi
+ *       organiser, words like חרדי / חסידי / לבנות סמינר / ללא סרטים — or IMPORTER_ALL_CITIES_HAREDI=1 with a known
+ *       place and an explicit women's / men's phrase.
+ * (Images can't be checked here — the modesty check on the flyer is in modesty.js, and the admin can hide/delete.)
  */
 export function strictHaredi({ title = '', description = '', location = '', category = '', city = '', organizer = '', strong = false, womenSection = false }) {
-  const text = `${title}\n${category}\n${description}\n${location}\n${organizer}`.replace(/[\u0591-\u05C7]/g, '');
+  const text = noNiqqud(`${title}\n${category}\n${description}\n${location}\n${organizer}`);
+  const cleanTitle = noNiqqud(title);
   for (const [why, re] of HARD) if (re.test(text)) return { ok: false, reason: `לא מתאים: ${why}`, hard: true };
   const harediWord = HAREDI_WORD.test(text);
   for (const [why, re] of SECULAR_UNLESS_HAREDI_WORD) if (re.test(text) && !harediWord) return { ok: false, reason: `לא מתאים: ${why}`, hard: true };
-  if (MIXED_HINT.test(text)) return { ok: false, reason: 'קהל מעורב', hard: true };
-  const ex = EXCLUDE.exec(text);
+  if (MIXED_SEATING.test(text)) return { ok: false, reason: 'קהל מעורב', hard: true };
+  const ex = HARD_EXCLUDE.exec(text);
   if (ex) return { ok: false, reason: `לא מתאים: "${ex[0].trim()}"`, hard: true };
 
-  const explicitOnly = WOMEN_ONLY.test(text) || /נשים\s?נ?בלבד/.test(text) || /לבנות סמינר/.test(text);
+  // a GENUINE Haredi signal (not just the city): needed for family / general events
+  const harediCategory = /חרדי/.test(category);
+  const harediOrganizer = HAREDI_ORGANIZERS().some(re => re.test(text));
+  const genuine = strong || harediCategory || harediWord || harediOrganizer;
+
+  // ---- women ----
+  const explicitWomen = WOMEN_ONLY.test(text) || /נשים\s?נ?בלבד/.test(text) || /לבנות סמינר/.test(text);
   // a women's section on a Haredi source page (Glatticket "הופעות לנשים") counts like a women's category
   const womenCategory = WOMEN_CATEGORY.test(category) || womenSection;
   // on a Haredi source (Glatticket) women on stage mean a women-only audience (קול אשה), and its film screenings are
-  // the Haredi women's cinema circuit — men-only events were already rejected above ("גברים")
+  // the Haredi women's cinema circuit
   const film = FILM.test(`${title}\n${category}`);
-  const strongWomen = strong && (FEMALE_STAGE.test(text) || film);
+  const femaleStage = FEMALE_STAGE.test(text);
+  const strongWomen = strong && (femaleStage || (film && !MEN.test(text) && !MEN_ONLY.test(text)));
   const motherBaby = /(?:ל|ה)?אמא ו?(?:ל|ה)?תינוק|אימא,? תינוק|אמהות ותינוקות|אימהות ותינוקות/.test(title);
-  const womenOnly = explicitOnly || womenCategory || strongWomen || motherBaby || WOMEN_IN_TITLE.test(title.replace(/[\u0591-\u05C7]/g, ''));
-  if (!womenOnly) return { ok: false, reason: 'לא מסומן במפורש כאירוע לנשים' };
-  if (film && !(explicitOnly || womenCategory || strongWomen)) return { ok: false, reason: 'סרט שלא מסומן לנשים בלבד', hard: true };
-  if (SOFT_EXCLUDE.test(text) && !(strong || /חרדי/.test(category) || explicitOnly)) return { ok: false, reason: 'סטנדאפ שלא מסומן לנשים חרדיות', hard: true };
+  const womenInTitle = WOMEN_IN_TITLE.test(cleanTitle);
+  const women = explicitWomen || womenCategory || strongWomen || motherBaby || womenInTitle;
+  // ---- men ----
+  const explicitMen = MEN_ONLY.test(text) || MEN_SHOW_PHRASE.test(text);
+  const menInTitle = MEN.test(cleanTitle) || MEN_ONLY.test(cleanTitle);
+  const menCategory = MEN_CATEGORY.test(category);
+  const menShiur = SHIUR.test(text) && RAV.test(text) && !WOMEN_ANYWHERE.test(text) && !femaleStage;
+  const men = explicitMen || menInTitle || menCategory || MEN.test(text) || menShiur;
+
+  let audience;
+  if (women && men) {
+    // both marked: the explicit / title marker wins; anything else is unclear
+    if (menInTitle && !womenInTitle && !explicitWomen && !femaleStage) audience = 'men';
+    else if ((explicitWomen || womenInTitle) && !explicitMen && !menInTitle) audience = 'women';
+    else return { ok: false, reason: 'קהל לא ברור (גם נשים וגם גברים)', hard: true };
+  } else if (women) audience = 'women';
+  else if (men) {
+    // "2 ימי כיף לגברים, 2 ימי כיף לנשים": women named next to the men's marker, and not in the title → unclear
+    if (!menInTitle && WOMEN_ANYWHERE.test(text)) return { ok: false, reason: 'קהל לא ברור (גם נשים וגם גברים)', hard: true };
+    audience = femaleStage ? null : 'men';
+  }
+  if (men && femaleStage && audience !== 'women') return { ok: false, reason: 'לא מתאים: זמרות / שחקניות באירוע שאינו לנשים', hard: true };
+
+  const mixedFamily = MIXED_FAMILY.test(text) || BOTH_GENDERS.test(text);
+  if (audience === 'women' && mixedFamily && !explicitWomen) return { ok: false, reason: 'קהל מעורב', hard: true };
+  if (audience === 'men' && mixedFamily && !explicitMen) return { ok: false, reason: 'קהל מעורב', hard: true };
+  if (!audience) {
+    const family = mixedFamily || CHILDREN.test(text);
+    if (family && !genuine) return { ok: false, reason: 'קהל מעורב', hard: true };
+    if (femaleStage) return { ok: false, reason: 'לא מתאים: זמרות / שחקניות באירוע שאינו לנשים', hard: true };
+    // a show about mothers / with women named but not marked women-only may have women on stage → not for 'all'
+    if (WOMEN_ANYWHERE.test(text)) return { ok: false, reason: 'לא מסומן במפורש לנשים בלבד' };
+    if (genuine && (family || GENERAL.test(text))) audience = 'all';
+    else return { ok: false, reason: 'לא מסומן במפורש לנשים, לגברים או למשפחות' };
+  }
+
+  if (film) {
+    if (audience === 'women' && !(explicitWomen || womenCategory || strongWomen)) return { ok: false, reason: 'סרט שלא מסומן לנשים בלבד', hard: true };
+    if (audience === 'men' && !(explicitMen || menCategory)) return { ok: false, reason: 'סרט שלא מסומן לגברים בלבד', hard: true };
+    if (audience === 'all') return { ok: false, reason: 'סרט שאינו לנשים בלבד או לגברים בלבד', hard: true };
+  }
+  if (SOFT_EXCLUDE.test(text)) {
+    const fine = audience === 'all' ? strong : (strong || harediCategory || (audience === 'women' ? explicitWomen : explicitMen));
+    if (!fine) return { ok: false, reason: audience === 'men' ? 'סטנדאפ שלא מסומן לגברים חרדים' : 'סטנדאפ שלא מסומן לנשים חרדיות', hard: true };
+  }
 
   const signals = [];
   if (strong) signals.push('מקור חרדי');
-  if (/חרדי/.test(category)) signals.push(`קטגוריה "${category}"`);
+  if (harediCategory) signals.push(`קטגוריה "${category}"`);
   if (harediWord) signals.push('מילה חרדית');
-  const placeText = `${location}\n${title}\n${organizer}`;
-  const hcity = HAREDI_CITIES.find(c => c === city || placeText.includes(c));
-  if (hcity) signals.push(`עיר חרדית (${hcity})`);
-  if (HAREDI_PLACES.test(`${location}\n${title}`)) signals.push('שכונה/מקום חרדי');
-  if (HAREDI_ORGANIZERS().some(re => re.test(text))) signals.push('מארגן חרדי');
-  // owner's decision (2026-10-25): every city counts as Haredi — a women-only event with a known place passes
-  // (hard rejects above still apply: parties, mixed audiences, kibbutz venues, church music, films not for women…)
-  if (!signals.length && process.env.IMPORTER_ALL_CITIES_HAREDI === '1' && (city || location)
-    && (explicitOnly || womenCategory || WOMEN_SHOW_PHRASE.test(text) || WOMEN_CLASS_TITLE.test(title.replace(/[\u0591-\u05C7]/g, '')))) signals.push('כל הערים מסומנות כחרדיות');
+  if (harediOrganizer) signals.push('מארגן חרדי');
+  if (audience !== 'all') {
+    const placeText = `${location}\n${title}\n${organizer}`;
+    const hcity = HAREDI_CITIES.find(c => c === city || placeText.includes(c));
+    if (hcity) signals.push(`עיר חרדית (${hcity})`);
+    if (HAREDI_PLACES.test(`${location}\n${title}`)) signals.push('שכונה/מקום חרדי');
+    // owner's decision (2026-10-25): every city counts as Haredi — a women-only (or men-only) event with a known place
+    // passes (hard rejects above still apply). Family / general events never pass on this flag alone.
+    if (!signals.length && process.env.IMPORTER_ALL_CITIES_HAREDI === '1' && (city || location)) {
+      const explicitEnough = audience === 'women'
+        ? (explicitWomen || womenCategory || WOMEN_SHOW_PHRASE.test(text) || WOMEN_CLASS_TITLE.test(cleanTitle))
+        : (explicitMen || menCategory || MEN_SHOW_PHRASE.test(text));
+      if (explicitEnough) signals.push('כל הערים מסומנות כחרדיות');
+    }
+  }
   if (!signals.length) return { ok: false, reason: 'אין סימן שהאירוע לציבור החרדי' };
-  return { ok: true, womenOnly: true, strength: 'haredi', reasons: [explicitOnly ? 'לנשים בלבד' : womenCategory ? (womenSection && !WOMEN_CATEGORY.test(category) ? 'במדור לנשים' : `קטגוריה "${category}"`) : WOMEN_IN_TITLE.test(title.replace(/[\u0591-\u05C7]/g, '')) ? '"נשים" בכותרת' : film ? 'הקרנה במקור חרדי' : 'נשים על הבמה במקור חרדי', ...signals] };
+
+  const why = audience === 'women'
+    ? (explicitWomen ? 'לנשים בלבד' : womenCategory ? (womenSection && !WOMEN_CATEGORY.test(category) ? 'במדור לנשים' : `קטגוריה "${category}"`) : womenInTitle ? '"נשים" בכותרת' : film ? 'הקרנה במקור חרדי' : motherBaby ? 'אמא ותינוק' : 'נשים על הבמה במקור חרדי')
+    : audience === 'men'
+      ? (explicitMen ? 'לגברים בלבד' : menCategory ? `קטגוריה "${category}"` : menInTitle ? 'גברים / אברכים / בחורים בכותרת' : menShiur ? 'שיעור של רב' : 'גברים')
+      : (mixedFamily || CHILDREN.test(text) ? 'אירוע משפחתי חרדי' : 'אירוע חרדי לכל הציבור');
+  return { ok: true, audience, womenOnly: audience === 'women', strength: 'haredi', reasons: [why, ...signals] };
 }
 
 export function classifyEvent({ title = '', description = '', location = '', categoryText = '', category = '', city = '', organizer = '', strong = false, womenSection = false, mode = audienceMode() } = {}) {
@@ -154,9 +259,9 @@ export function classifyEvent({ title = '', description = '', location = '', cat
   if (strong) reasons.push('מקור חרדי / קטגוריית נשים');
   if (!(strong || womenOnly || religious)) {
     reasons.push('אירוע לנשים (מצב רחב)');
-    return { ok: true, womenOnly, strength: 'women', reasons };
+    return { ok: true, audience: 'women', womenOnly, strength: 'women', reasons };
   }
-  return { ok: true, womenOnly, strength: strong ? 'strong' : womenOnly ? 'women-only' : 'religious', reasons };
+  return { ok: true, audience: 'women', womenOnly, strength: strong ? 'strong' : womenOnly ? 'women-only' : 'religious', reasons };
 }
 
 // NASHI's event categories (components/admin/EventsAdmin.tsx)
@@ -174,7 +279,15 @@ export function categoryFor(text = '') {
   return 'אחר';
 }
 
-export function audienceFor(text = '') {
+/** Free-text "למי זה מתאים" tags (stored as audienceTags) for an event of the given audience. */
+export function audienceFor(text = '', audience = 'women') {
+  if (audience === 'men') {
+    if (words(['אבות ובנים', 'אבא ובן'], true).test(text)) return ['אבות ובנים'];
+    if (words(['אברכים', 'לאברכים', 'אברכי'], true).test(text)) return ['אברכים'];
+    if (words(['בחורים', 'לבחורים', 'בחורי ישיבות', 'בני ישיבות'], true).test(text)) return ['בחורים'];
+    return ['גברים בלבד'];
+  }
+  if (audience === 'all') return words(['ילדים', 'לילדים', 'הצגת ילדים'], true).test(text) ? ['משפחות', 'ילדים'] : ['משפחות'];
   if (words(['בנות', 'לבנות', 'נערות', 'לנערות', 'אמא ובת', 'אמהות ובנות', 'אם ובת'], true).test(text)) return ['נשים ובנות'];
   return ['נשים בלבד'];
 }

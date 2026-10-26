@@ -101,7 +101,7 @@ describe('real search results ("לנשים", 60 events)', () => {
   test('upcoming women/religious events pass the list check; mixed / men / family events do not', () => {
     for (const ok of ['113538', '115386']) assert.equal(pre(ok), '', ok);
     assert.match(pre('96242'), /מסיבה/, '"מסיבת פורים לנשים" — parties are out');
-    assert.match(pre('66750'), /לגברים|קהל מעורב/);
+    assert.match(pre('66750'), /לגברים|קהל מעורב|קהל לא ברור/); // separate men's and women's days in one listing
     assert.match(pre('86796'), /קהל מעורב|לכל המשפחה/);
   });
 });

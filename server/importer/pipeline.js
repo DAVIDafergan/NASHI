@@ -22,10 +22,11 @@ export const placeholderFor = (n, fields) => placeholderFlyer({
   dateLabel: `${new Date(`${israelParts(n.startAt).date}T12:00:00Z`).toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })} · ${fields.time}`,
 });
 
-/** normalized event → the fields of NASHI's Event model (pure, unit-tested). */
+/** normalized event → the fields of the Event model (pure, unit-tested). n.audience = the classifier's verdict. */
 export function toEventFields(n) {
   const { date, time } = israelParts(n.startAt);
   const text = `${n.title}\n${n.description}`;
+  const audience = n.audience === 'men' || n.audience === 'all' ? n.audience : 'women';
   const priceLine = n.isFree ? 'הכניסה חופשית' : n.tickets?.length > 1
     ? `כרטיסים: ${n.tickets.filter(t => t.price > 0).map(t => `${t.title || 'כרטיס'} ${money(t.price)}`).join(' · ')}`
     : Number.isFinite(n.priceMin) && n.priceMin > 0 ? `מחיר: ${money(n.priceMin)}` : 'מחיר: בקישור לרכישה';
@@ -40,7 +41,8 @@ export function toEventFields(n) {
     city: n.city,
     region: n.region,
     scope: 'local',
-    audience: audienceFor(text),
+    audience,                                   // 'women' | 'men' | 'all' — which part of the site shows it
+    audienceTags: audienceFor(text, audience),
     category: categoryFor(text),
     description: n.description,
     // unknown price → null (the site shows "בקישור"), never 0 (= free)
@@ -64,7 +66,7 @@ const same = (a, b) => (a instanceof Date || b instanceof Date) ? +new Date(a ||
 
 /** Which fields to write on an existing imported event (pure, unit-tested). */
 export function planUpdate(existing, fields) {
-  const keys = existing.importEdited ? [...FACTS, 'date', 'startAt'] : [...CONTENT, ...FACTS, 'date', 'startAt', 'region', 'audience', 'sourceName', 'sourceUrl'];
+  const keys = existing.importEdited ? [...FACTS, 'date', 'startAt'] : [...CONTENT, ...FACTS, 'date', 'startAt', 'region', 'audience', 'audienceTags', 'sourceName', 'sourceUrl'];
   const set = {};
   for (const k of new Set(keys)) if (!same(existing[k], fields[k])) set[k] = fields[k];
   if (existing.hidden && existing.hiddenReason === 'gone') { set.hidden = false; set.hiddenReason = null; }
@@ -143,6 +145,7 @@ export async function runImport({ adapters, http, models, trigger = 'schedule', 
               if (existing) { await ImportBlock.updateOne({ source: adapter.id, sourceId: n.sourceId }, { $setOnInsert: { title: n.title, reason: verdict.reason } }, { upsert: true }); await Event.deleteOne({ _id: existing._id }); counts.hidden++; }
               continue;
             }
+            n.audience = verdict.audience || 'women';
             const missing = missingFields(n, now(), { allowNoFlyer });
             if (missing.length) {
               skip(adapter.id, c, missing.includes('עבר') ? 'האירוע כבר עבר' : `חסר: ${missing.join(', ')}`, n.title); st.skipped++;

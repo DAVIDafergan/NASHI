@@ -113,7 +113,7 @@ const App: React.FC = () => {
       handleUpdateUser({ ...user, points: user.points + pointsToAdd });
       alert(`כל הכבוד! צברת ${pointsToAdd} נקודות חדשות.`);
     } else if (user && !user.isMemberApproved) {
-      alert("רק חברות מאושרות במעגל הנשי יכולות לצבור נקודות.");
+      alert("רק חברי מעגל מאושרים יכולים לצבור נקודות.");
     } else {
       handleOpenAuth();
     }
@@ -236,10 +236,10 @@ const App: React.FC = () => {
             <Route path="/forum" element={<ForumPage user={user} searchTerm={globalSearchTerm} />} />
             <Route path="/community" element={<CommunityPage searchTerm={globalSearchTerm} />} />
             
-            {/* נתיב לראיון אשת השבוע */}
+            {/* נתיב לראיון אישיות השבוע */}
             <Route path="/interview/:token" element={<InterviewPage />} />
             
-            {/* נתיב לארכיון נשות השבוע */}
+            {/* נתיב לארכיון אישי ונשות השבוע */}
             <Route path="/personality-archive" element={<PersonalityArchivePage />} />
             <Route path="/personality-archive/:id" element={<PersonalityArchivePage />} />
 

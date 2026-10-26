@@ -9,6 +9,8 @@ import InstallPrompt from './InstallPrompt';
 import SupplierBanner from './SupplierBanner';
 import { PlaceChip, CityPrompt, AutoLocate } from './PlaceControl';
 import { User } from '../types';
+import Logo from './Logo';
+import { BRAND } from '../shared/brand';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -21,14 +23,14 @@ interface LayoutProps {
 }
 
 const MORE_LINKS = [
-  { label: 'נשות השבוע', path: '/personality-archive', hint: 'ראיונות מעוררי השראה' },
-  { label: 'הגרלות', path: '/lottery', hint: 'פרסים לחברות הקהילה' },
-  { label: 'מנהלות תרבות', path: '/become-manager', hint: 'להוביל את הקהילה באזור שלך' },
-  { label: 'לספקים', path: '/suppliers/join', hint: 'הצטרפות למאגר הספקים של נשי' },
-  { label: 'צור קשר', path: '/contact', hint: 'נשמח לשמוע ממך' },
+  { label: 'אישיות השבוע', path: '/personality-archive', hint: 'ראיונות מעוררי השראה' },
+  { label: 'הגרלות', path: '/lottery', hint: 'פרסים לחברי הקהילה' },
+  { label: 'ניהול תרבות', path: '/become-manager', hint: 'להוביל את התרבות באזור שלכם' },
+  { label: 'לספקים', path: '/suppliers/join', hint: `הצטרפות למאגר הספקים של ${BRAND.name}` },
+  { label: 'צור קשר', path: '/contact', hint: 'נשמח לשמוע מכם' },
 ];
 // only for culture managers (regionAdmin) and the main admin
-const MANAGER_LINK = { label: 'מאתרות ספקים', path: '/suppliers', hint: 'מאגר ספקים לאירועים — למנהלות בלבד' };
+const MANAGER_LINK = { label: 'מאגר ספקים', path: '/suppliers', hint: 'ספקים לאירועים — למנהלי תרבות בלבד' };
 
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, searchTerm, setSearchTerm, onUpdateUser }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -105,7 +107,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
     { label: 'ראשי', path: '/' },
     { label: 'אירועים', path: '/events' },
     { label: 'חוגים', path: '/classes' },
-    { label: 'פורום נשי', path: '/forum' },  // חדש
+    { label: 'פורום', path: '/forum' },
     { label: 'קהילה', path: '/community' }, // חדש
     { label: 'צור קשר', path: '/contact' },
   ];
@@ -157,8 +159,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
   };
 
   const invite = () => shareLink({
-    title: 'הצטרפי אליי לקהילת נשי',
-    text: 'מצאתי מקום מקסים לנשים: אירועים, חוגים, הגרלות, קהילה והשראה. ההצטרפות חינם 💗',
+    title: `הצטרפו אליי ל${BRAND.name}`,
+    text: `${BRAND.tagline}: אירועים, שיעורים, חוגים, הגרלות וקהילה — לגברים, לנשים ולמשפחות. ההצטרפות חינם`,
     path: `/s/join${user ? `?ref=${(user as any)._id || user.id}` : ''}`,
   });
 
@@ -174,11 +176,11 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
   ];
 
   return (
-    <div className="flex flex-col min-h-screen w-full font-sans text-slate-600 bg-[#FBF7F4]">
+    <div className="flex flex-col min-h-screen w-full font-sans text-slate-600 bg-cream">
       
       {/* Ambient background — lives here (outside the animated main container) so it truly covers the viewport */}
       <div className="fixed inset-0 -z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(60vmax 45vmax at 0% 0%, rgba(240,213,214,0.55), transparent 70%), radial-gradient(55vmax 45vmax at 100% 45%, rgba(233,221,230,0.45), transparent 70%), radial-gradient(45vmax 35vmax at 30% 100%, rgba(247,237,230,0.7), transparent 70%), linear-gradient(#FBF1F1, #FBF7F4 40%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(60vmax 45vmax at 0% 0%, rgb(var(--ambient-1) / 0.55), transparent 70%), radial-gradient(55vmax 45vmax at 100% 45%, rgb(var(--ambient-2) / 0.35), transparent 70%), radial-gradient(45vmax 35vmax at 30% 100%, rgb(var(--ambient-3) / 0.7), transparent 70%), linear-gradient(var(--ambient-top), rgb(var(--cream)) 40%)' }} />
       </div>
 
       {/* --- Top ribbon --- */}
@@ -186,9 +188,9 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
         <div className="mx-auto flex h-full max-w-7xl items-center justify-center gap-3 px-10 text-[12.5px]">
           <Heart size={13} className="shrink-0 fill-rose-300 text-rose-300" />
           {user ? (
-            <button onClick={invite} className="truncate hover:underline">הקהילה גדלה בזכותך: <span className="font-strong text-rose-200">הזמיני חברה לנשי ←</span></button>
+            <button onClick={invite} className="truncate hover:underline">הקהילה גדלה בזכותכם: <span className="font-strong text-rose-300">הזמינו חברים ל{BRAND.name} ←</span></button>
           ) : (
-            <button onClick={onOpenLogin} className="truncate hover:underline">אירועים, חוגים והגרלות לנשים, וההצטרפות חינם. <span className="font-strong text-rose-200">הצטרפי עכשיו ←</span></button>
+            <button onClick={onOpenLogin} className="truncate hover:underline">אירועים, שיעורים וחוגים לגברים, לנשים ולמשפחות. <span className="font-strong text-rose-300">הצטרפות חינם ←</span></button>
           )}
           <button onClick={closeRibbon} aria-label="סגירה" className="absolute left-3 rounded-full p-1 text-white/60 hover:text-white"><X size={14} /></button>
         </div>
@@ -198,19 +200,18 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
       <header
         className={`fixed left-0 right-0 z-50 transition-all duration-500 ${headerTop} ${hidden && !menuOpen ? '-translate-y-[120%]' : 'translate-y-0'} ${
             scrolled
-              ? 'h-16 bg-[#FBF7F4]/95 md:bg-[#FBF7F4]/85 md:backdrop-blur-xl shadow-[0_1px_0_rgba(189,122,129,0.18),0_10px_30px_-20px_rgba(61,47,55,0.25)]'
-              : 'h-[72px] md:h-20 bg-[#FBF7F4]/90 md:bg-[#FBF7F4]/60 md:backdrop-blur-md'
+              ? 'h-16 bg-cream/95 md:bg-cream/85 md:backdrop-blur-xl shadow-[0_1px_0_rgb(var(--rose-500)/0.18),0_10px_30px_-20px_rgb(var(--mauve-800)/0.25)]'
+              : 'h-[72px] md:h-20 bg-cream/90 md:bg-cream/60 md:backdrop-blur-md'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-full flex items-center justify-between gap-4">
           {/* logo */}
-          <Link to="/" className="flex items-baseline gap-1.5 group z-50 shrink-0" aria-label="נשי — לדף הבית">
-            <span className="font-accent text-[2.4rem] md:text-[2.7rem] leading-none text-ink transition-colors group-hover:text-rose-700">נשי</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-rose-400 group-hover:scale-150 transition-transform duration-500" />
+          <Link to="/" className="group z-50 shrink-0 transition-opacity hover:opacity-85" aria-label={`${BRAND.name} — לדף הבית`}>
+            <Logo />
           </Link>
 
           {/* Desktop Nav — pill with a sliding active indicator */}
-          <nav ref={navRef} className="relative hidden md:flex items-center gap-0.5 rounded-full border border-rose-100/80 bg-white/60 p-1 shadow-[0_8px_30px_-18px_rgba(61,47,55,0.35)] backdrop-blur" aria-label="ניווט ראשי">
+          <nav ref={navRef} className="relative hidden md:flex items-center gap-0.5 rounded-full border border-rose-100/80 bg-white/60 p-1 shadow-[0_8px_30px_-18px_rgb(var(--mauve-800)/0.35)] backdrop-blur" aria-label="ניווט ראשי">
             {indicator && (
               <span className="absolute top-1 bottom-1 rounded-full bg-rose-700 shadow-lift transition-all duration-500 ease-[cubic-bezier(.2,.8,.2,1)]" style={{ left: indicator.left, width: indicator.width }} aria-hidden="true" />
             )}
@@ -264,7 +265,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
             </button>
             {user && (
               <button onClick={invite} className="hidden lg:flex items-center gap-1.5 rounded-full border border-rose-100 bg-white/70 px-4 h-10 text-[13px] text-rose-700 transition hover:border-rose-300 hover:bg-white">
-                <Heart size={15} /> הזמיני חברה
+                <Heart size={15} /> הזמנת חברים
               </button>
             )}
             {user ? (
@@ -297,7 +298,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                           {user.isMemberApproved && <p className="mt-1 text-xs text-rose-700">{user.points} נקודות בקהילה</p>}
                       </div>
                       <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><UserIcon size={16} strokeWidth={1.75} />האזור האישי</Link>
-                      <button onClick={() => { setIsProfileMenuOpen(false); invite(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><Heart size={16} strokeWidth={1.75} />הזמנת חברה</button>
+                      <button onClick={() => { setIsProfileMenuOpen(false); invite(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><Heart size={16} strokeWidth={1.75} />הזמנת חברים</button>
                       {(user.isAdmin || (user as any).role === 'regionAdmin') && <Link to="/admin" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><ShieldCheck size={16} strokeWidth={1.75} />{user.isAdmin ? 'ניהול מערכת' : 'ניהול האזור שלי'}</Link>}
                       <div className="hairline my-1.5" />
                       <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors rounded-2xl"><LogOut size={16} strokeWidth={1.75} />התנתקות</button>
@@ -308,7 +309,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
             ) : (
               <>
                 <button onClick={onOpenLogin} className="hidden sm:inline-flex md:hidden lg:inline-flex h-10 items-center rounded-full px-4 text-[14px] text-slate-600 hover:text-rose-700">כניסה</button>
-                <button onClick={onOpenLogin} className="btn-primary !px-5 !py-2.5 min-h-[40px]">הצטרפי חינם</button>
+                <button onClick={onOpenLogin} className="btn-primary !px-5 !py-2.5 min-h-[40px] whitespace-nowrap">הצטרפות<span className="hidden sm:inline"> חינם</span></button>
               </>
             )}
             <button onClick={() => setMenuOpen(true)} aria-label="תפריט" className="md:hidden flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-white/70">
@@ -322,10 +323,10 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
 
       {/* --- Mobile full-screen menu --- */}
       {menuOpen && (
-        <div className="fixed inset-0 z-[90] flex flex-col bg-[#FBF7F4] animate-fade-in md:hidden" dir="rtl">
+        <div className="fixed inset-0 z-[90] flex flex-col bg-cream animate-fade-in md:hidden" dir="rtl">
           <div className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full bg-rose-200/50 blur-[90px]" aria-hidden="true" />
           <div className="relative flex h-[72px] items-center justify-between px-4">
-            <span className="font-accent text-[2.4rem] leading-none text-ink">נשי</span>
+            <Logo />
             <button onClick={() => setMenuOpen(false)} aria-label="סגירה" className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-soft"><X size={20} /></button>
           </div>
           <div className="relative px-6"><PlaceChip user={user} onUpdateUser={onUpdateUser} className="w-full justify-center !h-12 !text-[15px]" /></div>
@@ -342,9 +343,9 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
               <Link to="/admin" className="btn-ghost w-full !py-3.5"><ShieldCheck size={17} /> {user.isAdmin ? 'ניהול מערכת' : 'ניהול האזור שלי'}</Link>
             )}
             {user ? (
-              <button onClick={() => { setMenuOpen(false); invite(); }} className="btn-primary w-full !py-3.5"><Heart size={17} /> הזמיני חברה לנשי</button>
+              <button onClick={() => { setMenuOpen(false); invite(); }} className="btn-primary w-full !py-3.5"><Heart size={17} /> הזמנת חברים ל{BRAND.name}</button>
             ) : (
-              <button onClick={() => { setMenuOpen(false); onOpenLogin(); }} className="btn-primary w-full !py-3.5">הצטרפי חינם</button>
+              <button onClick={() => { setMenuOpen(false); onOpenLogin(); }} className="btn-primary w-full !py-3.5">הצטרפות חינם</button>
             )}
           </div>
         </div>
@@ -361,7 +362,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { setSearchOpen(false); if (location.pathname === '/') navigate('/events'); } }}
-                placeholder="מה מחפשות? אירוע, חוג, נושא…"
+                placeholder="מה מחפשים? אירוע, שיעור, חוג, נושא…"
                 className="h-14 flex-1 bg-transparent text-[17px] text-ink outline-none placeholder:text-slate-400"
               />
               {searchTerm && <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-rose-600"><X size={18} /></button>}
@@ -423,8 +424,9 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
       <footer className="relative z-10 hidden md:block mt-auto border-t border-rose-100/70 bg-gradient-to-b from-transparent to-rose-50/60">
         <div className="max-w-7xl mx-auto px-8 py-14 grid grid-cols-3 items-start gap-10 text-right">
           <div>
-            <p className="font-accent text-5xl text-ink leading-none">נשי</p>
-            <p className="mt-3 text-sm text-slate-500 leading-relaxed max-w-xs">קהילה ארצית לנשים דתיות: אירועים, חוגים, שיעורים, גמ"חים והשראה, מכל הארץ ובמקום אחד.</p>
+            <Logo size="lg" />
+            <p className="mt-3 font-strong text-[15px] text-rose-800">{BRAND.tagline}</p>
+            <p className="mt-1.5 text-sm text-slate-500 leading-relaxed max-w-xs">{BRAND.about}</p>
           </div>
           <div className="flex flex-col gap-2.5 text-sm">
             <p className="eyebrow mb-1">ניווט</p>
@@ -435,18 +437,18 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
           <div className="flex flex-col gap-2.5 text-sm">
             <p className="eyebrow mb-1">מידע</p>
             <Link to="/contact" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">צור קשר</Link>
-            <Link to="/become-manager" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">רוצה להיות מנהלת תרבות?</Link>
+            <Link to="/become-manager" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">ניהול תרבות באזור שלכם</Link>
             <Link to="/suppliers/join" className="text-slate-600 hover:text-rose-700 transition-colors w-fit">ספקים? הצטרפו למאגר</Link>
             <button onClick={() => setShowTermsModal(true)} className="text-slate-600 hover:text-rose-700 transition-colors w-fit text-right">תקנון ותנאי שימוש</button>
           </div>
         </div>
         <div className="hairline" />
-        <p className="text-center text-[12px] text-slate-400 py-5">© {new Date().getFullYear()} נשי · נבנה באהבה לקהילה</p>
+        <p className="text-center text-[12px] text-slate-400 py-5">© {new Date().getFullYear()} {BRAND.name} · נבנה באהבה לקהילה</p>
       </footer>
 
       {/* מודל תקנון גלובלי - זמין לכל האתר */}
       {showTermsModal && (
-          <div className="fixed inset-0 z-[100] flex items-end md:items-start justify-center bg-[#2B2027]/40 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowTermsModal(false)}>
+          <div className="fixed inset-0 z-[100] flex items-end md:items-start justify-center bg-ink/40 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowTermsModal(false)}>
               <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-[2rem] md:rounded-[2rem] w-full max-w-2xl p-6 md:p-10 relative shadow-lift overflow-hidden flex flex-col max-h-[88vh] animate-slide-up border border-rose-100">
                   <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-4 shrink-0 md:hidden"></div>
                   <div className="flex items-center justify-between mb-6 shrink-0">
@@ -455,26 +457,26 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                   </div>
                   <div className="overflow-y-auto pr-2 space-y-4 text-slate-600 text-right text-xs md:text-sm leading-relaxed font-medium">
                       <p className="font-black text-slate-800 underline">כללי</p>
-                      <p>ברוכות הבאות לאתר. השימוש באתר ובתכניו כפוף לתקנון ולמדיניות שימוש זו, ומהווה הסכמה מלאה לכל תנאיה. הנהלת האתר רשאית לעדכן את התקנון מעת לעת, לפי שיקול דעתה הבלעדי וללא הודעה מוקדמת. נוסח התקנון המעודכן הוא המחייב.</p>
+                      <p>ברוכים הבאים לאתר. השימוש באתר ובתכניו כפוף לתקנון ולמדיניות שימוש זו, ומהווה הסכמה מלאה לכל תנאיה. הנהלת האתר רשאית לעדכן את התקנון מעת לעת, לפי שיקול דעתה הבלעדי וללא הודעה מוקדמת. נוסח התקנון המעודכן הוא המחייב.</p>
                       
                       <p className="font-black text-slate-800 underline">מהות האתר ותכניו</p>
-                      <p>האתר מהווה מרחב קהילתי לנשים ונערות, שמטרתו שיתוף, השראה, חיבור ויצירת שיח פתוח ומכבד. התכנים המפורסמים באתר נכתבים לצורכי שיח, שיתוף דעות וניסיון אישי בלבד.
+                      <p>האתר מהווה מרחב קהילתי ותרבותי לציבור החרדי — גברים, נשים ומשפחות — שמטרתו שיתוף, השראה, חיבור ויצירת שיח פתוח ומכבד. התכנים המפורסמים באתר נכתבים לצורכי שיח, שיתוף דעות וניסיון אישי בלבד.
                       ייתכנו בתכני האתר טעויות, אי־דיוקים או מידע שאינו מעודכן. אין לראות בתכנים המופיעים באתר ייעוץ מקצועי מכל סוג שהוא, לרבות אך לא רק: ייעוץ רפואי, נפשי, משפטי, פיננסי או טיפולי.</p>
                       
                       <p className="font-black text-slate-800 underline">אחריות ושימוש במידע</p>
-                      <p>השימוש בתכני האתר ובמידע המפורסם בו נעשה על אחריות המשתמשת בלבד. הנהלת האתר לא תישא בכל אחריות לנזק, ישיר או עקיף, שעלול להיגרם עקב הסתמכות על מידע המופיע באתר או שימוש בו.</p>
+                      <p>השימוש בתכני האתר ובמידע המפורסם בו נעשה על אחריות המשתמש/ת בלבד. הנהלת האתר לא תישא בכל אחריות לנזק, ישיר או עקיף, שעלול להיגרם עקב הסתמכות על מידע המופיע באתר או שימוש בו.</p>
                       
                       <p className="font-black text-slate-800 underline">פעילות כספית והתקשרויות חיצוניות</p>
-                      <p>האתר אינו עוסק בכספים, תשלומים, תרומות, מכירת מוצרים או קניית כרטיסים, ואינו מהווה צד לכל התקשרות כספית או חוזית המתקיימת מחוץ למסגרת האתר. כל התקשרות בין משתמשות או בין משתמשת לגורם חיצוני נעשית באחריותן הבלעדיות של הצדדים המעורבים.</p>
+                      <p>האתר אינו עוסק בכספים, תשלומים, תרומות, מכירת מוצרים או קניית כרטיסים, ואינו מהווה צד לכל התקשרות כספית או חוזית המתקיימת מחוץ למסגרת האתר. כל התקשרות בין משתמשים או בין משתמש/ת לגורם חיצוני נעשית באחריותם הבלעדית של הצדדים המעורבים.</p>
                       
                       <p className="font-black text-slate-800 underline">קישורים ותכנים חיצוניים</p>
-                      <p>באתר עשויים להופיע קישורים, הפניות או אזכורים לגורמים חיצוניים. הנהלת האתר אינה אחראית לתוכן, לאמינות, לזמינות או לפעילות של אתרים, שירותים או גורמים חיצוניים אלו, והשימוש בהם הוא באחריות המשתמשת בלבד.</p>
+                      <p>באתר עשויים להופיע קישורים, הפניות או אזכורים לגורמים חיצוניים. הנהלת האתר אינה אחראית לתוכן, לאמינות, לזמינות או לפעילות של אתרים, שירותים או גורמים חיצוניים אלו, והשימוש בהם הוא באחריות המשתמש/ת בלבד.</p>
                       
                       <p className="font-black text-slate-800 underline">פרטיות ושמירת מידע</p>
-                      <p>האתר מכבד את פרטיות המשתמשות. מסירת מידע אישי, פרסומו או שיתופו באתר נעשים ביוזמת המשתמשת ובאחריותה בלבד. הנהלת האתר אינה אחראית לשימוש שייעשה במידע אישי שפורסם בפומבי על ידי המשתמשת.</p>
+                      <p>האתר מכבד את פרטיות המשתמשים. מסירת מידע אישי, פרסומו או שיתופו באתר נעשים ביוזמת המשתמש/ת ובאחריותו/ה בלבד. הנהלת האתר אינה אחראית לשימוש שייעשה במידע אישי שפורסם בפומבי על ידי המשתמש/ת.</p>
                       
                       <p className="font-black text-slate-800 underline">התנהלות ושיח קהילתי</p>
-                      <p>המשתמשות מתחייבות לנהל שיח מכבד, אחראי ורגיש. הנהלת האתר שומרת לעצמה את הזכות להסיר תכנים, להגביל גישה או לחסום משתמשת, לפי שיקול דעתה, במקרה של הפרת תקנון זה או פגיעה ברוח הקהילה.</p>
+                      <p>המשתמשים מתחייבים לנהל שיח מכבד, אחראי ורגיש. הנהלת האתר שומרת לעצמה את הזכות להסיר תכנים, להגביל גישה או לחסום משתמש/ת, לפי שיקול דעתה, במקרה של הפרת תקנון זה או פגיעה ברוח הקהילה.</p>
                       
                       <p className="font-black text-slate-800 underline">סמכות שיפוט</p>
                       <p>על תקנון זה ועל השימוש באתר יחולו דיני מדינת ישראל בלבד, וסמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים בישראל.</p>

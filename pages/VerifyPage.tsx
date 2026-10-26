@@ -16,7 +16,7 @@ const VerifyPage: React.FC<{ user: User | null }> = ({ user }) => {
     // 1. קודם כל נוודא שמי שסורק הוא מנהל בלבד
     if (!user || !(user.isAdmin || (user as any).role === 'regionAdmin')) {
       setStatus('error');
-      setMessage('גישה למנהלים בלבד! אנא התחברי למערכת הניהול קודם.');
+      setMessage('גישה למנהלים בלבד! יש להתחבר למערכת הניהול קודם.');
       return;
     }
 
@@ -43,7 +43,7 @@ const VerifyPage: React.FC<{ user: User | null }> = ({ user }) => {
       {status === 'loading' && (
         <div className="flex flex-col items-center gap-4 py-8 text-slate-500" role="status">
           <Loader2 className="animate-spin text-rose-500" size={56} />
-          <p className="font-display text-[1.6rem] text-ink">סורקת את הכרטיס…</p>
+          <p className="font-display text-[1.6rem] text-ink">סורק את הכרטיס…</p>
         </div>
       )}
 
@@ -74,7 +74,7 @@ const VerifyPage: React.FC<{ user: User | null }> = ({ user }) => {
           <div className="mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-red-500 text-white shadow-lift animate-bounce-in">
             <XCircle size={60} />
           </div>
-          <p className="font-accent text-[1.6rem] text-red-500">שימי לב</p>
+          <p className="font-accent text-[1.6rem] text-red-500">שימו לב</p>
           <h1 className="mt-1 text-[2.4rem] leading-tight !text-red-700">הכניסה נדחתה</h1>
           <p className="mt-3 text-[16px] text-slate-600">{message}</p>
           <button onClick={() => navigate('/admin')} className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-rose-700 px-8 py-4 text-[16px] text-white transition hover:bg-rose-800 font-strong">

@@ -23,8 +23,8 @@ export const ApprovalsAdmin: React.FC<{ pendingUsers: any[]; pendingPosts: any[]
     <div className="grid gap-6 xl:grid-cols-2">
       <section>
         <SectionTitle title="בקשות הצטרפות למעגל" count={pendingUsers.length} icon={<UserPlus size={18} />} />
-        <p className="mb-3 text-xs text-slate-500">חברת מעגל מאושרת צוברת נקודות ומשתתפת בהגרלות.</p>
-        {pendingUsers.length === 0 ? <EmptyState icon={<CheckCircle2 size={24} />} title="אין בקשות חדשות" text="כשאישה תבקש להצטרף למעגל, היא תופיע כאן." /> : (
+        <p className="mb-3 text-xs text-slate-500">חבר/ת מעגל מאושר/ת צובר/ת נקודות ומשתתף/ת בהגרלות.</p>
+        {pendingUsers.length === 0 ? <EmptyState icon={<CheckCircle2 size={24} />} title="אין בקשות חדשות" text="בקשות הצטרפות חדשות למעגל יופיעו כאן." /> : (
           <ul className="space-y-2.5">
             {pendingUsers.map(u => (
               <li key={idOf(u)} className="flex items-center gap-3 rounded-[1.4rem] border border-rose-100 bg-white p-3.5 shadow-soft">
@@ -46,7 +46,7 @@ export const ApprovalsAdmin: React.FC<{ pendingUsers: any[]; pendingPosts: any[]
       </section>
       <section>
         <SectionTitle title="פוסטים לפורום" count={pendingPosts.length} icon={<MessageSquare size={18} />} />
-        <p className="mb-3 text-xs text-slate-500">כל פוסט עובר את עינייך לפני שהוא עולה.</p>
+        <p className="mb-3 text-xs text-slate-500">כל פוסט עובר אישור לפני שהוא עולה.</p>
         {pendingPosts.length === 0 ? <EmptyState icon={<CheckCircle2 size={24} />} title="אין פוסטים שממתינים" /> : (
           <ul className="space-y-2.5">
             {pendingPosts.map(p => (
@@ -95,8 +95,8 @@ export const StoriesAdmin: React.FC<{ pending: any[]; active: any[]; reload: () 
     <div className="space-y-8">
       <section>
         <SectionTitle title="ממתינים לאישור" count={pending.length} icon={<Clock size={18} />} />
-        <p className="mb-3 text-xs text-slate-500">סטטוס שאושר עולה לאתר ל־24 שעות. בדקי שהתוכן מכבד וצנוע.</p>
-        {pending.length === 0 ? <EmptyState icon={<PlayCircle size={24} />} title="אין סטטוסים שממתינים" text="כשנשים יעלו סטטוס, הוא יופיע כאן לאישור." /> : (
+        <p className="mb-3 text-xs text-slate-500">סטטוס שאושר עולה לאתר ל־24 שעות. יש לבדוק שהתוכן מכבד וצנוע.</p>
+        {pending.length === 0 ? <EmptyState icon={<PlayCircle size={24} />} title="אין סטטוסים שממתינים" text="סטטוסים חדשים יופיעו כאן לאישור." /> : (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             {pending.map(s => (
               <article key={s._id} className="flex flex-col gap-2 rounded-[1.4rem] border border-rose-100 bg-white p-2.5 shadow-soft">
@@ -147,7 +147,7 @@ export const MessagesAdmin: React.FC<{ messages: any[]; search: string; reload: 
           <button key={id} onClick={() => setFilter(id)} className={`rounded-full border px-4 py-2 text-[13px] transition ${filter === id ? 'border-rose-700 bg-rose-700 text-white' : 'border-rose-100 bg-white text-slate-600'}`}>{label}</button>
         ))}
       </div>
-      {list.length === 0 ? <EmptyState icon={<Mail size={24} />} title={filter === 'unread' ? 'קראת הכול ✨' : 'עוד לא הגיעו פניות'} /> : (
+      {list.length === 0 ? <EmptyState icon={<Mail size={24} />} title={filter === 'unread' ? 'הכול נקרא ✨' : 'עוד לא הגיעו פניות'} /> : (
         <ul className="space-y-3">
           {list.map(m => (
             <li key={m._id} className={`rounded-[1.5rem] border bg-white p-4 shadow-soft md:p-5 ${m.isRead ? 'border-rose-100/70' : 'border-rose-300 ring-2 ring-rose-50'}`}>

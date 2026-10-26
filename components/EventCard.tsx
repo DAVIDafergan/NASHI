@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, MapPin, CheckCircle2, Share2 } from 'lucide-react';
+import AudienceBadge from './AudienceBadge';
 
 interface EventCardProps {
   title: string;
@@ -19,6 +20,8 @@ interface EventCardProps {
   onShare?: () => void;
   isPast?: boolean;
   className?: string;
+  /** the item (or its audience): shows the small "לגברים / לנשים / לכולם" badge on the flyer */
+  audience?: any;
 }
 
 /**
@@ -41,6 +44,7 @@ const EventCard: React.FC<EventCardProps> = ({
   onShare,
   isPast = false,
   className = '',
+  audience,
 }) => {
   // posters are portrait (4:5 / A4) or square: let the box follow the flyer instead of cropping it
   const [ratio, setRatio] = useState(4 / 3);
@@ -83,6 +87,7 @@ const EventCard: React.FC<EventCardProps> = ({
             <Share2 size={17} />
           </button>
         )}
+        <AudienceBadge audience={audience && typeof audience === 'object' ? audience.audience : audience} overlay className="absolute bottom-2.5 right-2.5" />
         {city && (
           <span className="absolute bottom-2.5 left-2.5 inline-flex max-w-[60%] items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11.5px] font-semibold text-white shadow-soft backdrop-blur-sm">
             <MapPin size={11} className="shrink-0" /> <span className="truncate">{city}</span>
@@ -95,11 +100,11 @@ const EventCard: React.FC<EventCardProps> = ({
 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-1.5 text-[13px] text-slate-500">
-            <Calendar size={14} className="text-[#BD7A81] shrink-0" />
+            <Calendar size={14} className="text-rose-500 shrink-0" />
             <span>{dateLabel}{time ? ` • ${time}` : ''}</span>
           </div>
           <div className="flex items-center gap-1.5 text-[13px] text-slate-500">
-            <MapPin size={14} className="text-[#BD7A81] shrink-0" />
+            <MapPin size={14} className="text-rose-500 shrink-0" />
             <span className="truncate">{location}</span>
           </div>
         </div>

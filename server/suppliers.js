@@ -6,6 +6,7 @@ import { REGIONS, ALL_CITIES, regionOfCity } from '../shared/regions.js';
 import { SUPPLIER_CATEGORIES, SUPPLIER_PRICE_RANGES, CATEGORY_IDS, ALL_STYLES, supplierCategoryName } from '../shared/suppliers.js';
 import { authenticate, isAdmin as defaultIsAdmin, cultureManager as defaultCultureManager } from './auth.js';
 import { paymentProvider, getProvider, monthlyPrice, extendPeriod, isListed } from './payments/index.js';
+import { BRAND, mailFrom } from '../shared/brand.js';
 
 /**
  * מאגר ספקים
@@ -95,12 +96,12 @@ async function sendEditLink(req, s, token) {
   }
   try {
     await req.resend.emails.send({
-      from: 'נשי <updates@nashi-co.com>',
+      from: mailFrom(),
       to: s.email,
-      subject: 'הקישור לניהול הכרטיס שלך במאגר הספקים של נשי',
+      subject: `הקישור לניהול הכרטיס שלך במאגר הספקים של ${BRAND.name}`,
       html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.7;color:#2B2027">
         <h2 style="color:#8A5058">שלום ${s.contactName || ''},</h2>
-        <p>זה הקישור האישי לעריכת הכרטיס של <b>${s.businessName}</b> במאגר הספקים של נשי. שמרו אותו — הוא מחליף סיסמה.</p>
+        <p>זה הקישור האישי לעריכת הכרטיס של <b>${s.businessName}</b> במאגר הספקים של ${BRAND.name}. שמרו אותו — הוא מחליף סיסמה.</p>
         <p><a href="${link}" style="background:#8A5058;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none">לעריכת הכרטיס</a></p>
         <p style="color:#888;font-size:13px">אם לא ביקשתם את הקישור, אפשר להתעלם מהמייל.</p></div>`,
     });
@@ -152,7 +153,7 @@ export function createSuppliersRouter({ isAdmin = defaultIsAdmin, cultureManager
       sendEditLink(req, s, token);
       const notify = process.env.SUPPLIERS_NOTIFY_EMAIL;
       if (notify && req.resend && process.env.RESEND_API_KEY) {
-        req.resend.emails.send({ from: 'נשי <updates@nashi-co.com>', to: notify, subject: `ספק חדש נרשם: ${s.businessName}`, html: `<div dir="rtl">${s.businessName} · ${s.contactName} · ${s.phone} · ${(s.categories || []).map(supplierCategoryName).join(', ')}</div>` }).catch(() => {});
+        req.resend.emails.send({ from: mailFrom(), to: notify, subject: `ספק חדש נרשם: ${s.businessName}`, html: `<div dir="rtl">${s.businessName} · ${s.contactName} · ${s.phone} · ${(s.categories || []).map(supplierCategoryName).join(', ')}</div>` }).catch(() => {});
       }
       res.status(201).json({ supplier: ownView(s), token });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -190,7 +191,7 @@ export function createSuppliersRouter({ isAdmin = defaultIsAdmin, cultureManager
   r.post('/suppliers/me/checkout', supplierAuth, async (req, res) => {
     try {
       const s = req.supplier;
-      if (s.status === 'suspended') return res.status(403).json({ error: 'הכרטיס מושהה. צרו קשר עם הנהלת נשי.' });
+      if (s.status === 'suspended') return res.status(403).json({ error: `הכרטיס מושהה. צרו קשר עם הנהלת ${BRAND.name}.` });
       const provider = paymentProvider();
       const base = publicBase(req);
       const checkout = await provider.createCheckout({

@@ -15,7 +15,7 @@ const ManagerRequestsAdmin: React.FC<{ items: any[]; reload: () => void }> = ({ 
     try {
       const region = regionFor[idOf(a)] || a.region;
       await api.decideManagerApplication(idOf(a), decision, region);
-      toast(decision === 'approve' ? `${a.name || a.user?.name} מנהלת עכשיו את ${regionName(region)} ✨` : 'הבקשה נדחתה');
+      toast(decision === 'approve' ? `${a.name || a.user?.name} ${a.gender === 'male' ? 'מנהל' : a.gender === 'female' ? 'מנהלת' : 'מנהל/ת'} עכשיו את ${regionName(region)} ✨` : 'הבקשה נדחתה');
       reload();
     } catch (e: any) { toast(e?.message || 'הפעולה נכשלה', 'bad'); }
     finally { setBusy(''); }
@@ -23,7 +23,7 @@ const ManagerRequestsAdmin: React.FC<{ items: any[]; reload: () => void }> = ({ 
   const wa = (phone?: string) => phone ? `https://wa.me/972${String(phone).replace(/\D/g, '').replace(/^0/, '')}` : '';
   return (
     <section className="space-y-3">
-      <h3 className="flex items-center gap-2 text-xl"><ShieldCheck size={19} className="text-rose-600" /> בקשות להיות מנהלת תרבות <Badge tone="amber">{items.length}</Badge></h3>
+      <h3 className="flex items-center gap-2 text-xl"><ShieldCheck size={19} className="text-rose-600" /> בקשות לניהול תרבות <Badge tone="amber">{items.length}</Badge></h3>
       <div className="grid gap-3 lg:grid-cols-2">
         {items.map(a => {
           const id = idOf(a);
@@ -38,6 +38,7 @@ const ManagerRequestsAdmin: React.FC<{ items: any[]; reload: () => void }> = ({ 
                     <span className="flex items-center gap-1"><MapPin size={12} /> {a.city}</span>
                     <span>נשלח {fmtDate(a.createdAt)}</span>
                     {a.hoursPerWeek && <span>זמינות: {a.hoursPerWeek}</span>}
+                    {a.gender && <span>{a.gender === 'male' ? 'גבר' : 'אישה'}</span>}
                   </p>
                 </div>
                 <div className="flex gap-1.5">
@@ -50,18 +51,18 @@ const ManagerRequestsAdmin: React.FC<{ items: any[]; reload: () => void }> = ({ 
                   {a.email && <p><b className="text-ink">מייל:</b> <a href={`mailto:${a.email}`} className="underline" dir="ltr">{a.email}</a></p>}
                   {a.address && <p><b className="text-ink">כתובת:</b> {a.address}</p>}
                   {a.jobTitle && <p><b className="text-ink">תפקיד:</b> {a.jobTitle}</p>}
-                  {a.employer && <p><b className="text-ink">מועסקת דרך:</b> {({ matnas: 'מתנ״ס', municipality: 'עירייה / מועצה', other: 'אחר' } as any)[a.employer] || a.employer}{a.employerOther ? ` · ${a.employerOther}` : ''}</p>}
+                  {a.employer && <p><b className="text-ink">מקום העסקה:</b> {({ matnas: 'מתנ״ס', municipality: 'עירייה / מועצה', other: 'אחר' } as any)[a.employer] || a.employer}{a.employerOther ? ` · ${a.employerOther}` : ''}</p>}
                 </div>
               )}
               {(a.about || a.experience || a.activityScope) && (
                 <div className="mt-3 space-y-2 rounded-2xl bg-rose-50/50 p-3 text-sm leading-relaxed text-slate-600">
                   {a.activityScope && <p><b className="text-ink">היקף פעילות:</b> {a.activityScope}</p>}
-                  {a.about && <p><b className="text-ink">עליה:</b> {a.about}</p>}
+                  {a.about && <p><b className="text-ink">קצת עליו/ה:</b> {a.about}</p>}
                   {a.experience && <p><b className="text-ink">ניסיון:</b> {a.experience}</p>}
                 </div>
               )}
               <div className="mt-4">
-                <p className="mb-1.5 text-xs font-semibold text-slate-500">האזור שתנהל</p>
+                <p className="mb-1.5 text-xs font-semibold text-slate-500">אזור הניהול</p>
                 <div className="flex flex-wrap gap-1.5">
                   {REGIONS.map(r => (
                     <button key={r.id} type="button" onClick={() => setRegionFor(m => ({ ...m, [id]: r.id }))}
@@ -71,7 +72,7 @@ const ManagerRequestsAdmin: React.FC<{ items: any[]; reload: () => void }> = ({ 
               </div>
               <div className="mt-4 flex gap-2">
                 <button disabled={!!busy} onClick={() => decide(a, 'approve')} className="btn-primary flex-1 disabled:opacity-60">
-                  {busy === id + 'approve' ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} אישור כמנהלת תרבות
+                  {busy === id + 'approve' ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} אישור לניהול תרבות
                 </button>
                 <button disabled={!!busy} onClick={() => decide(a, 'reject')} className="btn-ghost disabled:opacity-60"><X size={16} /> דחייה</button>
               </div>

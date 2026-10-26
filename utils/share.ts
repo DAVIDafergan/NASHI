@@ -73,5 +73,5 @@ export async function shareEvent(ev: any): Promise<'shared' | 'cancelled' | 'wha
 export async function copyEventLink(ev: any): Promise<boolean> {
   const url = eventShareUrl(ev?._id || ev?.id);
   try { await navigator.clipboard.writeText(url); return true; }
-  catch { window.prompt('העתיקי את הקישור:', url); return false; }
+  catch { window.prompt('העתקת הקישור:', url); return false; }
 }

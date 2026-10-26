@@ -79,7 +79,7 @@ describe('binaa: event page + adapter', () => {
     assert.equal(n.strong, true);
   });
 
-  test('discover → prefilter: women-tagged Modiin Illit items pass, girls / men do not; a course → next session only', async () => {
+  test('discover → prefilter: women- and men-tagged Modiin Illit items pass, girls do not; a course → next session only', async () => {
     const pages = {
       'https://modil.org.il/events/': MODIL,
       'https://www.modil.org.il/events/?audience=12': '',
@@ -94,7 +94,8 @@ describe('binaa: event page + adapter', () => {
     assert.deepEqual(errors, []);
     const now = new Date('2026-10-25T08:00:00Z');
     const pass = cands.filter(c => ad.prefilter(c, now, 'haredi') === '').map(c => c.sourceId).sort();
-    assert.deepEqual(pass, ['modil.org.il:306', 'modil.org.il:317', 'modil.org.il:340']);
+    // 351 "ערב גיבוש לגברים #גברים" is a men's event now (men's section)
+    assert.deepEqual(pass, ['modil.org.il:306', 'modil.org.il:317', 'modil.org.il:340', 'modil.org.il:351']);
     const course = cands.filter(c => c.sourceId.startsWith('modil.org.il:340'));
     assert.equal(course.length, 1);
     assert.deepEqual(israelParts(course[0].session.startAt), { date: '2026-11-02', time: '19:00' });

@@ -50,6 +50,65 @@ describe('strict Haredi rules', () => {
   });
 });
 
+describe('audience: men / women / all', () => {
+  const aud = (e) => keep(e).audience;
+  test('women-only → women', () => {
+    assert.equal(aud({ title: 'כנס נשים - אמונה', city: 'אלעד' }), 'women');
+    assert.equal(aud({ title: 'הצגה נעדרות', description: 'הצגה קומית לנשים בלבד', city: 'גדרה', strong: true }), 'women');
+  });
+  test('men-only → men (גברים, אברכים, בחורים, a shiur by a Rav)', () => {
+    assert.equal(aud({ title: 'ערב עיון לאברכים', city: 'בני ברק' }), 'men');
+    assert.equal(aud({ title: 'כנס בחורי ישיבות', description: 'ברוח ההלכה', city: 'ירושלים' }), 'men');
+    assert.equal(aud({ title: 'שיעור בדף היומי', city: 'ביתר עילית' }), 'men');
+    assert.equal(aud({ title: 'שיעור שבועי עם הרב כהן', description: 'בבית הכנסת הגדול', city: 'בני ברק' }), 'men');
+    assert.equal(aud({ title: 'מלווה מלכה לגברים', strong: true }), 'men');
+  });
+  test('Haredi family / general (genuine Haredi signal) → all', () => {
+    assert.equal(aud({ title: 'הצגת ילדים לחנוכה', strong: true }), 'all');
+    assert.equal(aud({ title: 'ערב משפחות', description: 'בהפקת השלוחה החרדית', city: 'נתיבות' }), 'all');
+    assert.equal(aud({ title: 'כנס חיזוק', category: 'אירועים חרדיים', city: 'בית שמש' }), 'all');
+    assert.equal(aud({ title: 'כנס חיזוק', category: 'חרדיוות', city: 'בית שמש' }), 'women', 'חרדיוות is a women\'s category');
+    assert.equal(aud({ title: 'הופעה של מקהלת ילדים', strong: true }), 'all');
+  });
+  test('secular / general mixed events stay out ("קהל מעורב")', () => {
+    assert.equal(drop({ title: 'הצגת ילדים לחנוכה', city: 'פתח תקווה' }).reason, 'קהל מעורב');
+    assert.equal(drop({ title: 'פסטיבל לכל המשפחה', city: 'בני ברק' }).reason, 'קהל מעורב', 'a Haredi city alone is not a genuine signal for families');
+    drop({ title: 'כנס', description: 'קהל מעורב', strong: true });
+    drop({ title: 'ערב לגברים ונשים', city: 'ירושלים' });
+  });
+  test('hard rejects hold for men and families too', () => {
+    for (const e of [
+      { title: 'מסיבת חנוכה לגברים', strong: true },             // party / dancing
+      { title: 'ריקודי חסידים לגברים', strong: true },
+      { title: 'הופעה לגברים בקיבוץ', strong: true },             // kibbutz venue
+      { title: 'יוגה לגברים', strong: true },                     // yoga
+      { title: 'סטבט מאטר', strong: true },                       // church music + owner list
+      { title: 'הצגת ילדים בפאב', strong: true },                  // bar
+      { title: 'ערב לזוגות', strong: true },                      // couples
+    ]) assert.equal(drop(e).hard, true, e.title);
+  });
+  test('female performers are never men / all (קול אשה)', () => {
+    drop({ title: 'הופעה של הזמרת לגברים', strong: true });
+    drop({ title: 'מופע לכל המשפחה עם הזמרת', strong: true });
+  });
+  test('unclear: men and women named, not in the title', () => {
+    assert.match(drop({ title: 'הפנינג ימי כיף בהפרדה למגזר החרדי', description: '2 ימים לגברים\n2 ימים לנשים' }).reason, /לא ברור|מעורב/);
+  });
+  test('films: only marked men-only / women-only', () => {
+    drop({ title: 'הקרנת סרט לכל המשפחה', strong: true });
+    assert.equal(aud({ title: 'הקרנת סרט לגברים בלבד', strong: true }), 'men');
+  });
+  test('the Haredi requirement stays: a men\'s event needs a Haredi signal or the all-cities flag', () => {
+    drop({ title: 'ערב לגברים', city: 'תל אביב' });
+    const old = process.env.IMPORTER_ALL_CITIES_HAREDI;
+    process.env.IMPORTER_ALL_CITIES_HAREDI = '1';
+    try {
+      assert.equal(aud({ title: 'שיעור לגברים', city: 'תל אביב' }), 'men');
+      drop({ title: 'הצגת ילדים', city: 'תל אביב' });          // families never pass on the flag alone
+    } finally { if (old === undefined) delete process.env.IMPORTER_ALL_CITIES_HAREDI; else process.env.IMPORTER_ALL_CITIES_HAREDI = old; }
+  });
+});
+
 const MONGO = process.env.MONGO_TEST_URI;
 describe('purge of what is already live (MongoDB)', { skip: !MONGO && 'set MONGO_TEST_URI to run' }, () => {
   let mongoose, Event, ImportBlock, reclassifyImported;

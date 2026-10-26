@@ -38,22 +38,17 @@
   }
   h3 { color: var(--color-ink); }
   .font-accent { font-family: 'Karantina', 'Noto Serif Hebrew', sans-serif; font-weight: 300; letter-spacing: 0.01em; font-synthesis: none; }
-  ::selection { background: #F0D5D6; color: #3D2F37; }
-  :focus-visible { outline: 2px solid #BD7A81; outline-offset: 3px; border-radius: 10px; }
-  input, textarea, select { accent-color: #A5636B; }
-  input:focus, textarea:focus, select:focus { --tw-ring-color: rgba(189,122,129,0.35); }
+  ::selection { background: rgb(var(--rose-200)); color: rgb(var(--mauve-800)); }
+  :focus-visible { outline: 2px solid rgb(var(--rose-500)); outline-offset: 3px; border-radius: 10px; }
+  input, textarea, select { accent-color: rgb(var(--rose-600)); }
+  input:focus, textarea:focus, select:focus { --tw-ring-color: rgb(var(--rose-500) / 0.35); }
 }
 
 :root {
   /* NASHI refined palette — see tailwind.config.js for the full scales */
-  --color-primary: #A5636B;      /* dusty rose — actions */
+  /* --color-primary / background / blush / ink / text / muted are set per section below */
   --color-secondary: #B8894B;    /* champagne — small accents */
-  --color-background: #FBF7F4;   /* warm cream */
   --color-surface: #FFFFFF;
-  --color-blush: #F8EAEA;
-  --color-ink: #2B2027;          /* headings */
-  --color-text: #54444C;         /* body copy */
-  --color-muted: #85757A;
 
   /* Dark Mode Variables */
   --color-background-dark: #121212;
@@ -80,6 +75,21 @@
   --z-index-dropdown: 1000;
   --z-index-modal: 2000;
   --z-index-tooltip: 3000;
+}
+
+/* ── Spot palette (tokens) ─────────────────────────────────────────────────
+   tailwind.config.js reads the rose / plum / mauve scales, ink and cream from these variables, so the look is
+   changed here, not in components. One neutral palette for the whole site:
+     rose-*  = PRIMARY — light cool tints (50–200), warm gold accents (300–600), deep ink-navy (700–950)
+     plum-*  = secondary accent — the original dusty rose
+     mauve-* (slate/gray) = neutrals */
+:root {
+  --rose-50: 244 246 250; --rose-100: 232 236 243; --rose-200: 210 217 230; --rose-300: 216 191 140; --rose-400: 198 161 92; --rose-500: 168 130 56; --rose-600: 138 104 40; --rose-700: 30 51 84; --rose-800: 23 41 67; --rose-900: 17 31 53; --rose-950: 10 20 36;
+  --plum-50: 252 246 246; --plum-100: 248 234 234; --plum-200: 240 213 214; --plum-300: 228 182 185; --plum-400: 210 149 154; --plum-500: 189 122 129; --plum-600: 165 99 107; --plum-700: 138 80 88; --plum-800: 111 65 72; --plum-900: 90 54 60; --plum-950: 58 34 38;
+  --mauve-50: 248 248 247; --mauve-100: 239 239 237; --mauve-200: 225 225 222; --mauve-300: 201 202 198; --mauve-400: 156 158 162; --mauve-500: 118 122 130; --mauve-600: 91 95 104; --mauve-700: 71 75 84; --mauve-800: 49 53 61; --mauve-900: 34 37 44; --mauve-950: 21 23 28;
+  --ink: 18 28 46; --cream: 247 245 240;
+  --color-primary: #1E3354; --color-background: #F7F5F0; --color-blush: #E8ECF3; --color-ink: #121C2E; --color-text: #474B54; --color-muted: #767A82;
+  --ambient-1: 214 221 233; --ambient-2: 240 213 214; --ambient-3: 236 226 204; --ambient-top: #F1F2F5;
 }
 
 @layer components {

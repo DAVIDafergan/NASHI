@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
+import { BRAND } from '../shared/brand';
 
 /** Android/Chrome "add to home screen" invitation. Shows once a visitor is engaged (2nd visit or 40s), never after dismissal. */
 const InstallPrompt: React.FC = () => {
@@ -36,7 +37,7 @@ const InstallPrompt: React.FC = () => {
       <div className="flex items-center gap-3">
         <img src="/icon-192.png" alt="" className="h-12 w-12 rounded-2xl" />
         <div className="min-w-0 flex-1">
-          <p className="font-strong text-ink">נשי על המסך הראשי</p>
+          <p className="font-strong text-ink">{BRAND.name} על המסך הראשי</p>
           <p className="text-xs text-slate-500">פתיחה בלחיצה, כמו אפליקציה. בלי הורדה מהחנות.</p>
         </div>
         <button onClick={dismiss} aria-label="סגירה" className="self-start rounded-full p-1 text-slate-400 hover:text-rose-600"><X size={16} /></button>

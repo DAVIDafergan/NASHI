@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { compressImageFile } from '../../utils/image';
+import { BRAND } from '../../shared/brand';
 
 type Q = { question: string; answer: string };
 type P = {
@@ -17,7 +18,7 @@ type P = {
 const interviewLink = (token: string) => `${window.location.origin}/#/interview/${token}`;
 const waLink = (text: string) => `https://wa.me/?text=${encodeURIComponent(text)}`;
 const inviteText = (token: string) =>
-  `היי 💗\nבחרנו בך להיות *אשת השבוע* בקהילת נשי!\nזה הקישור לשאלון האישי — לוקח כמה דקות, ואפשר לצרף תמונה:\n${interviewLink(token)}`;
+  `שלום!\nבחרנו בך להיות *אישיות השבוע* ב${BRAND.name}!\nזה הקישור לשאלון האישי — לוקח כמה דקות, ואפשר לצרף תמונה:\n${interviewLink(token)}`;
 const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 
 const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; children: React.ReactNode; wide?: boolean }> = ({ open, onClose, title, children, wide }) => {
@@ -113,7 +114,7 @@ const PersonalityAdmin: React.FC = () => {
 
   const copy = async (text: string) => {
     try { await navigator.clipboard.writeText(text); flash('הועתק ✔'); }
-    catch { window.prompt('העתיקי את הקישור:', text); }
+    catch { window.prompt('העתקת הקישור:', text); }
   };
 
   const openEditor = (p?: P) => setEditor({
@@ -148,8 +149,8 @@ const PersonalityAdmin: React.FC = () => {
       {/* header + actions */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="eyebrow">אשת השבוע</p>
-          <h2 className="mt-1 text-3xl md:text-4xl">ניהול אשת השבוע</h2>
+          <p className="eyebrow">אישיות השבוע</p>
+          <h2 className="mt-1 text-3xl md:text-4xl">ניהול אישיות השבוע</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setLinkModal({ open: true, name: '' })} className="btn-primary"><Send size={16} /> שליחת שאלון</button>
@@ -167,10 +168,10 @@ const PersonalityAdmin: React.FC = () => {
         {guideOpen && (
           <ol className="grid gap-4 px-6 pb-6 md:grid-cols-4">
             {[
-              ['שולחים שאלון', 'לוחצים "שליחת שאלון", ושולחים לה את הקישור בוואטסאפ. השאלות נלקחות מ"השאלות הקבועות".'],
+              ['שולחים שאלון', 'לוחצים "שליחת שאלון", ושולחים את הקישור בוואטסאפ. השאלות נלקחות מ"השאלות הקבועות".'],
               ['היא ממלאת', 'היא עונה מהטלפון ומצרפת תמונה. הטיוטה נשמרת אצלה, ולא הולכת לאיבוד.'],
-              ['את מאשרת', 'הראיון מגיע ל"ממתינות לאישור". אפשר לערוך ניסוח, תמונה ושאלות, ואז ללחוץ "אישור והצגה בדף הבית".'],
-              ['מוצג באתר', 'היא מופיעה בדף הבית כאשת השבוע. כשמאשרים את הבאה, הקודמת עוברת לארכיון. מהארכיון אפשר להחזיר כל אחת לדף הבית.'],
+              ['מאשרים', 'הראיון מגיע ל"ממתינים לאישור". אפשר לערוך ניסוח, תמונה ושאלות, ואז ללחוץ "אישור והצגה בדף הבית".'],
+              ['מוצג באתר', 'הראיון מופיע בדף הבית כאישיות השבוע. כשמאשרים את הבא, הקודם עובר לארכיון. מהארכיון אפשר להחזיר כל ראיון לדף הבית.'],
             ].map(([t, d], i) => (
               <li key={t} className="rounded-2xl bg-white/80 p-4">
                 <span className="font-accent text-3xl text-rose-300">0{i + 1}</span>
@@ -204,13 +205,13 @@ const PersonalityAdmin: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className={`${card} text-center text-slate-500`}>עדיין אין ראיון מאושר. שלחי שאלון, או הוסיפי ידנית.</div>
+              <div className={`${card} text-center text-slate-500`}>עדיין אין ראיון מאושר. אפשר לשלוח שאלון או להוסיף ידנית.</div>
             )}
           </section>
 
           {/* pending approval */}
           <section>
-            <h3 className="mb-3 flex items-center gap-2 text-lg"><Clock size={18} className="text-amber-500" /> ממתינות לאישור <span className="text-sm text-slate-400">({pending.length})</span></h3>
+            <h3 className="mb-3 flex items-center gap-2 text-lg"><Clock size={18} className="text-amber-500" /> ממתינים לאישור <span className="text-sm text-slate-400">({pending.length})</span></h3>
             {pending.length === 0 ? <p className="text-sm text-slate-400">אין ראיונות שממתינים.</p> : (
               <div className="grid gap-3 md:grid-cols-2">
                 {pending.map(p => (
@@ -286,10 +287,10 @@ const PersonalityAdmin: React.FC = () => {
       )}
 
       {/* ---------- send questionnaire ---------- */}
-      <Sheet open={linkModal.open} onClose={() => setLinkModal({ open: false, name: '' })} title="שליחת שאלון אשת השבוע">
+      <Sheet open={linkModal.open} onClose={() => setLinkModal({ open: false, name: '' })} title="שליחת שאלון אישיות השבוע">
         {!linkModal.token ? (
           <div className="space-y-4">
-            <p className="text-sm leading-relaxed text-slate-500">ניצור קישור אישי לשאלון, עם השאלות הקבועות. את הקישור שולחים לה בוואטסאפ, וכל קישור מתאים למילוי אחד.</p>
+            <p className="text-sm leading-relaxed text-slate-500">ניצור קישור אישי לשאלון, עם השאלות הקבועות. את הקישור שולחים בוואטסאפ, וכל קישור מתאים למילוי אחד.</p>
             <input className="w-full rounded-2xl border border-rose-100 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-rose-100" placeholder="שם (רק בשבילך, לא חובה)" value={linkModal.name} onChange={e => setLinkModal(m => ({ ...m, name: e.target.value }))} />
             <button onClick={createLink} disabled={busy === 'link'} className="btn-primary w-full">{busy === 'link' ? <Loader2 size={16} className="animate-spin" /> : <Link2 size={16} />} יצירת קישור</button>
           </div>
@@ -323,7 +324,7 @@ const PersonalityAdmin: React.FC = () => {
       </Sheet>
 
       {/* ---------- editor ---------- */}
-      <Sheet open={editor.open} onClose={() => setEditor({ open: false, draft: null, isNew: false })} title={editor.isNew ? 'הוספת אשת השבוע' : 'עריכת ראיון'} wide>
+      <Sheet open={editor.open} onClose={() => setEditor({ open: false, draft: null, isNew: false })} title={editor.isNew ? 'הוספת אישיות השבוע' : 'עריכת ראיון'} wide>
         {editor.draft && (
           <div className="space-y-5">
             <div className="flex flex-col gap-4 md:flex-row">

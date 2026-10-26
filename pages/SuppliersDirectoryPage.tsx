@@ -10,6 +10,7 @@ import { suppliersApi, Supplier, isCultureManager } from '../services/suppliersA
 import { SUPPLIER_CATEGORIES, supplierCategoryName } from '../shared/suppliers';
 import { REGIONS, regionName } from '../shared/regions';
 import { User } from '../types';
+import { BRAND } from '../shared/brand';
 
 /** "מאתרות ספקים" — only culture managers (regionAdmin) and the main admin. The server enforces it too (403). */
 const SuppliersDirectoryPage: React.FC<{ user: User | null; onOpenLogin: () => void }> = ({ user, onOpenLogin }) => {
@@ -47,9 +48,9 @@ const SuppliersDirectoryPage: React.FC<{ user: User | null; onOpenLogin: () => v
         <div className="mx-auto flex max-w-md flex-col items-center py-20 text-center">
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-500"><Lock size={28} /></span>
           <h1 className="mt-5 text-[2.2rem] leading-tight">מאתרות ספקים</h1>
-          <p className="mt-2 text-[16px] leading-relaxed text-slate-500">האזור הזה פתוח למנהלות התרבות של נשי בלבד: מאגר ספקים לאירועים — מרצות, מופעים, קייטרינג, הגברה ועוד.</p>
-          {!user ? <button onClick={onOpenLogin} className="btn-primary mt-6">כניסה למנהלות</button>
-            : <Link to="/become-manager" className="btn-primary mt-6">רוצה להיות מנהלת תרבות?</Link>}
+          <p className="mt-2 text-[16px] leading-relaxed text-slate-500">האזור הזה פתוח למנהלי התרבות של {BRAND.name} בלבד: מאגר ספקים לאירועים — מרצים, מופעים, קייטרינג, הגברה ועוד.</p>
+          {!user ? <button onClick={onOpenLogin} className="btn-primary mt-6">כניסה למנהלים</button>
+            : <Link to="/become-manager" className="btn-primary mt-6">לניהול תרבות באזור שלכם</Link>}
           <Link to="/suppliers/join" className="mt-4 text-[14px] text-rose-700 underline underline-offset-4">ספקים? הצטרפו למאגר</Link>
         </div>
       </PageShell>
@@ -61,8 +62,8 @@ const SuppliersDirectoryPage: React.FC<{ user: User | null; onOpenLogin: () => v
 
   return (
     <PageShell>
-      <PageHero eyebrow="למנהלות התרבות" title="מאתרות ספקים" accent="לכל אירוע"
-        subtitle={<>מרצות, זמרות, הצגות, סדנאות, קייטרינג, הגברה וצילום — ספקים שמתאימים לאירועי נשים{myRegion ? <> ב<span className="text-rose-700">{regionName(myRegion)}</span></> : ''} ובכל הארץ.</>} />
+      <PageHero eyebrow="למנהלי התרבות" title="מאתרים ספקים" accent="לכל אירוע"
+        subtitle={<>מרצים, מופעים, הצגות, סדנאות, קייטרינג, הגברה וצילום — ספקים לאירועים בציבור החרדי{myRegion ? <> ב<span className="text-rose-700">{regionName(myRegion)}</span></> : ''} ובכל הארץ.</>} />
 
       <FilterBar>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -91,7 +92,7 @@ const SuppliersDirectoryPage: React.FC<{ user: User | null; onOpenLogin: () => v
 
       {list === null ? <CardSkeletonGrid count={6} /> : list.length === 0 ? (
         <EmptyState icon={<Store size={28} />} title={error ? 'לא הצלחנו לטעון את המאגר' : 'עוד אין ספקים שמתאימים לחיפוש'}
-          text={error || 'נסי קטגוריה אחרת, או "כל הארץ". המאגר מתמלא כל הזמן.'}
+          text={error || 'אפשר לנסות קטגוריה אחרת, או "כל הארץ". המאגר מתמלא כל הזמן.'}
           action={filtered ? <button onClick={clear} className="btn-ghost">ניקוי סינונים</button> : undefined} />
       ) : (
         <>
@@ -108,7 +109,7 @@ const SuppliersDirectoryPage: React.FC<{ user: User | null; onOpenLogin: () => v
 
       <div className="mt-12 flex flex-col items-center gap-2 rounded-[1.75rem] border border-dashed border-rose-200 bg-white/60 px-6 py-8 text-center">
         <Sparkles className="text-rose-400" size={22} />
-        <p className="text-[15px] text-slate-600">מכירה ספק טוב שלא מופיע כאן? שלחי לו את הקישור להצטרפות.</p>
+        <p className="text-[15px] text-slate-600">מכירים ספק טוב שלא מופיע כאן? שלחו לו את הקישור להצטרפות.</p>
         <Link to="/suppliers/join" className="text-[14px] font-strong text-rose-700 underline underline-offset-4">nashi-co.com · הצטרפות ספקים</Link>
       </div>
 
@@ -152,7 +153,7 @@ const SuppliersDirectoryPage: React.FC<{ user: User | null; onOpenLogin: () => v
                   </div>
                 )}
               </div>
-              <p className="mt-6 text-center text-[12px] text-slate-400">הספקים משלמים על ההופעה במאגר. נשי אינה צד להתקשרות — מומלץ לבקש המלצות והצעת מחיר בכתב.</p>
+              <p className="mt-6 text-center text-[12px] text-slate-400">הספקים משלמים על ההופעה במאגר. {BRAND.name} אינו צד להתקשרות — מומלץ לבקש המלצות והצעת מחיר בכתב.</p>
             </div>
           </div>
         )}
@@ -165,7 +166,7 @@ const SuppliersDirectoryPage: React.FC<{ user: User | null; onOpenLogin: () => v
               <h3 className="text-2xl">ספקים שעובדים ב…</h3>
               <button onClick={() => setPicking(false)} aria-label="סגירה" className="rounded-full p-2 text-slate-400 hover:bg-rose-50"><X size={20} /></button>
             </div>
-            <p className="mt-2 text-sm text-slate-500">בחרי עיר או יישוב. יוצגו ספקים שעובדים שם, באזור שלה, או בכל הארץ.</p>
+            <p className="mt-2 text-sm text-slate-500">בחירת עיר או יישוב: יוצגו ספקים שעובדים שם, באזור, או בכל הארץ.</p>
             <CityPicker className="mt-2" value={city} placeholder="חיפוש עיר או יישוב…" locate={false} inline onChange={c => { setCity(c); setPicking(false); }} />
           </div>
         </div>,

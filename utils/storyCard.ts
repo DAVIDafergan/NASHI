@@ -1,4 +1,5 @@
 import { loadImage } from './image';
+import { BRAND, BRAND_COLORS } from '../shared/brand';
 
 /** Background themes for text statuses — shared by the composer, the viewer and the WhatsApp card. */
 export const STORY_THEMES: Record<string, { css: string; stops: string[]; ink: string }> = {
@@ -54,11 +55,11 @@ function drawBrand(ctx: CanvasRenderingContext2D, ink: string, author?: string) 
   // top wordmark
   ctx.textAlign = 'center';
   ctx.fillStyle = ink;
-  ctx.font = '400 120px "Karantina", "Secular One", sans-serif';
-  ctx.fillText('נשי', W / 2, 210);
+  ctx.font = '400 110px "Secular One", "Assistant", sans-serif';
+  ctx.fillText(BRAND.name, W / 2, 210);
   ctx.globalAlpha = 0.85;
   ctx.font = '500 34px "Assistant", sans-serif';
-  ctx.fillText('קהילת נשים · תרבות · השראה', W / 2, 268);
+  ctx.fillText(BRAND.tagline, W / 2, 268);
   ctx.globalAlpha = 1;
 
   // bottom pill with the site address
@@ -71,7 +72,7 @@ function drawBrand(ctx: CanvasRenderingContext2D, ink: string, author?: string) 
   ctx.fillStyle = 'rgba(255,255,255,0.92)';
   roundRect(ctx, px, py, pw, 96, 48);
   ctx.fill();
-  ctx.fillStyle = '#A5636B';
+  ctx.fillStyle = BRAND_COLORS.navy;
   ctx.direction = 'ltr';
   ctx.fillText(label, W / 2, py + 64);
   ctx.direction = 'rtl';
@@ -79,7 +80,7 @@ function drawBrand(ctx: CanvasRenderingContext2D, ink: string, author?: string) 
     ctx.fillStyle = ink;
     ctx.globalAlpha = 0.9;
     ctx.font = '500 36px "Assistant", sans-serif';
-    ctx.fillText(`מאת ${author} · מתוך קהילת נשי`, W / 2, H - 245);
+    ctx.fillText(`מאת ${author} · מתוך ${BRAND.name}`, W / 2, H - 245);
     ctx.globalAlpha = 1;
   }
 }

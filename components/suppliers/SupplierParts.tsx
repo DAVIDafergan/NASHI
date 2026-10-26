@@ -8,6 +8,7 @@ import { REGIONS, regionName } from '../../shared/regions';
 import { SUPPLIER_CATEGORIES, SUPPLIER_PRICE_RANGES, supplierCategoryName } from '../../shared/suppliers';
 import { compressImageFile } from '../../utils/image';
 import type { Checkout, Supplier } from '../../services/suppliersApi';
+import { BRAND } from '../../shared/brand';
 
 /* ---------------- shared bits ---------------- */
 
@@ -117,13 +118,13 @@ export const SupplierForm: React.FC<{ value: SupplierFormValue; onChange: (v: Su
 
   return (
     <div className="space-y-4">
-      <Section n={1} title="פרטי העסק" sub="כך יופיע הכרטיס שלכם למנהלות התרבות">
+      <Section n={1} title="פרטי העסק" sub="כך יופיע הכרטיס שלכם למנהלי התרבות">
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block"><Label required>שם העסק</Label><input className={inputCls} value={v.businessName} onChange={e => set({ businessName: e.target.value })} placeholder="למשל: הפקות שירה" maxLength={80} /></label>
           <label className="block"><Label required>איש / אשת קשר</Label><input className={inputCls} value={v.contactName} onChange={e => set({ contactName: e.target.value })} placeholder="שם מלא" maxLength={60} /></label>
           <label className="block"><Label required>טלפון</Label><input dir="ltr" type="tel" className={`${inputCls} text-left`} value={v.phone} onChange={e => set({ phone: e.target.value })} placeholder="05X-XXXXXXX" /></label>
           <label className="block"><Label hint="אם שונה מהטלפון">וואטסאפ</Label><input dir="ltr" type="tel" className={`${inputCls} text-left`} value={v.whatsapp} onChange={e => set({ whatsapp: e.target.value })} placeholder="05X-XXXXXXX" /></label>
-          <label className="block md:col-span-2"><Label required hint={emailLocked ? 'לשינוי המייל פנו להנהלת נשי' : 'לשם נשלח הקישור לעריכת הכרטיס'}>מייל</Label>
+          <label className="block md:col-span-2"><Label required hint={emailLocked ? `לשינוי המייל פנו להנהלת ${BRAND.name}` : 'לשם נשלח הקישור לעריכת הכרטיס'}>מייל</Label>
             <input dir="ltr" type="email" disabled={emailLocked} className={`${inputCls} text-left disabled:bg-slate-50 disabled:text-slate-500`} value={v.email} onChange={e => set({ email: e.target.value })} placeholder="name@example.com" /></label>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
@@ -133,7 +134,7 @@ export const SupplierForm: React.FC<{ value: SupplierFormValue; onChange: (v: Su
         </div>
       </Section>
 
-      <Section n={2} title="מה אתם מציעים" sub="עד 5 קטגוריות. הסגנונות עוזרים למנהלות למצוא בדיוק אתכם">
+      <Section n={2} title="מה אתם מציעים" sub="עד 5 קטגוריות. הסגנונות עוזרים למנהלי התרבות למצוא בדיוק אתכם">
         <div className="flex flex-wrap gap-2">
           {SUPPLIER_CATEGORIES.map(c => <Pill key={c.id} on={v.categories.includes(c.id)} onClick={() => toggle('categories', c.id, 5)} icon={<span className="text-rose-400">{categoryIcon(c.id)}</span>}>{c.name}</Pill>)}
         </div>
@@ -158,7 +159,7 @@ export const SupplierForm: React.FC<{ value: SupplierFormValue; onChange: (v: Su
       <Section n={3} title="איפה אתם עובדים" sub="אזורים שלמים, יישובים מסוימים, או כל הארץ">
         <button type="button" onClick={() => set({ nationwide: !v.nationwide })}
           className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-right transition ${v.nationwide ? 'border-rose-300 bg-rose-50' : 'border-rose-100 bg-white hover:border-rose-200'}`}>
-          <span><span className="block text-[15px] font-semibold text-ink">שירות בכל הארץ</span><span className="block text-[12px] text-slate-500">תופיעו לכל מנהלות התרבות בכל האזורים</span></span>
+          <span><span className="block text-[15px] font-semibold text-ink">שירות בכל הארץ</span><span className="block text-[12px] text-slate-500">תופיעו לכל מנהלי התרבות בכל האזורים</span></span>
           <span className={`relative h-6 w-11 shrink-0 rounded-full transition ${v.nationwide ? 'bg-rose-600' : 'bg-slate-200'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${v.nationwide ? 'left-1' : 'left-6'}`} /></span>
         </button>
         {!v.nationwide && (
@@ -222,7 +223,7 @@ export const PaymentStep: React.FC<{ price: number | null; providerLabel?: strin
           {price ? <><span className="font-display text-[3.4rem] leading-none tabular-nums !text-white">₪{price}</span><span className="text-white/70">לחודש</span></> : <span className="text-2xl">המחיר יימסר בשיחה</span>}
         </div>
         <ul className="mt-5 space-y-2 text-[14.5px] text-white/85">
-          {['הכרטיס שלכם מוצג לכל מנהלות התרבות של נשי', 'חיפוש לפי קטגוריה, סגנון ואזור — מגיעים בדיוק אליכם', 'עריכת הכרטיס בכל זמן בקישור אישי', 'בלי התחייבות: אפשר להפסיק בכל חודש'].map(t => (
+          {[`הכרטיס שלכם מוצג לכל מנהלי התרבות של ${BRAND.name}`, 'חיפוש לפי קטגוריה, סגנון ואזור — מגיעים בדיוק אליכם', 'עריכת הכרטיס בכל זמן בקישור אישי', 'בלי התחייבות: אפשר להפסיק בכל חודש'].map(t => (
             <li key={t} className="flex items-start gap-2"><CheckCircle2 size={17} className="mt-0.5 shrink-0 text-rose-300" />{t}</li>
           ))}
         </ul>
@@ -266,7 +267,7 @@ export const ContactButtons: React.FC<{ s: Supplier; big?: boolean }> = ({ s, bi
     <div className={`flex ${big ? 'flex-wrap gap-2' : 'gap-1.5'}`} onClick={e => e.stopPropagation()}>
       <a href={`tel:${s.phone}`} aria-label={`חיוג ל${s.businessName}`} className={`${cls} bg-rose-700 text-white hover:bg-rose-800`}><Phone size={big ? 17 : 16} />{big && 'חיוג'}</a>
       {wa && <a href={wa} target="_blank" rel="noreferrer" aria-label="וואטסאפ" className={`${cls} bg-emerald-50 text-emerald-700 hover:bg-emerald-100`}><MessageCircle size={big ? 17 : 16} />{big && 'וואטסאפ'}</a>}
-      <a href={`mailto:${s.email}?subject=${encodeURIComponent('פנייה ממנהלת תרבות בנשי')}`} aria-label="מייל" className={`${cls} bg-rose-50 text-rose-700 hover:bg-rose-100`}><Mail size={big ? 17 : 16} />{big && 'מייל'}</a>
+      <a href={`mailto:${s.email}?subject=${encodeURIComponent(`פנייה ממנהל/ת תרבות ב${BRAND.name}`)}`} aria-label="מייל" className={`${cls} bg-rose-50 text-rose-700 hover:bg-rose-100`}><Mail size={big ? 17 : 16} />{big && 'מייל'}</a>
       {big && s.website && <a href={s.website} target="_blank" rel="noreferrer" className={`${cls} border border-rose-100 bg-white text-slate-600 hover:text-rose-700`}><Globe size={17} /> אתר</a>}
       {big && s.instagram && <a href={s.instagram} target="_blank" rel="noreferrer" aria-label="אינסטגרם" className="flex h-12 w-12 items-center justify-center rounded-full border border-rose-100 bg-white text-slate-600 hover:text-rose-700"><Instagram size={17} /></a>}
       {big && s.facebook && <a href={s.facebook} target="_blank" rel="noreferrer" aria-label="פייסבוק" className="flex h-12 w-12 items-center justify-center rounded-full border border-rose-100 bg-white text-slate-600 hover:text-rose-700"><Facebook size={17} /></a>}

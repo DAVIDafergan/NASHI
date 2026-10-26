@@ -131,7 +131,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
       <div className="mx-auto flex max-w-md flex-col items-center px-6 py-24 text-center" dir="rtl">
         <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-500"><ShieldCheck size={30} /></span>
         <h1 className="mt-5 text-3xl">אזור הניהול</h1>
-        <p className="mt-2 text-slate-500">הכניסה למנהלות בלבד. יש להתחבר עם חשבון מנהלת.</p>
+        <p className="mt-2 text-slate-500">הכניסה למנהלים בלבד. יש להתחבר עם חשבון ניהול.</p>
       </div>
     );
   }

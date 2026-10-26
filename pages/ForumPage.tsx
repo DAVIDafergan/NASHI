@@ -7,6 +7,7 @@ import {
 import { api } from '../services/api';
 import ScrollReveal from '../components/ScrollReveal';
 import { PageShell, PageHero, Chip, ChipRow, EmptyState, Skeleton, Sheet, IconButton } from '../components/pages/PageKit';
+import { BRAND } from '../shared/brand';
 
 type SortMode = 'new' | 'popular' | 'mine';
 
@@ -58,13 +59,13 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
         loadPosts(); // רענון הרשימה
       }
     } catch (err) {
-      alert("שגיאה בשליחת הפוסט. נסי שוב מאוחר יותר.");
+      alert("שגיאה בשליחת הפוסט. כדאי לנסות שוב מאוחר יותר.");
     }
     setIsSubmitting(false);
   };
 
   const handleLike = async (postId: string) => {
-    if (!user) return alert("התחברי כדי לעשות לייק");
+    if (!user) return alert("יש להתחבר כדי לעשות לייק");
     try {
       await api.likePost(postId);
       loadPosts(); // רענון כדי לראות את הלייק המעודכן
@@ -101,7 +102,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
   const handleShare = async (post: any) => {
     const shareData = {
       title: post.title,
-      text: `בואי להצטרף לדיון בפורום הנשי: "${post.title}"`,
+      text: `בואו להצטרף לדיון בפורום של ${BRAND.name}: "${post.title}"`,
       url: window.location.href,
     };
 
@@ -136,7 +137,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
   }, [searchedPosts, sortMode, user]);
 
   const tabs: { key: SortMode; label: string }[] = [
-    { key: 'new', label: 'חדשות ביותר' },
+    { key: 'new', label: 'החדשים ביותר' },
     { key: 'popular', label: 'פופולרי ביותר' },
     ...(user ? [{ key: 'mine' as SortMode, label: 'שלי' }] : []),
   ];
@@ -154,10 +155,10 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
   return (
     <PageShell wide={false}>
       <PageHero
-        eyebrow="פורום נשי"
-        title="מדברות,"
-        accent="מתייעצות, מפרגנות"
-        subtitle="מרחב בטוח לשאלות, המלצות ושיתופים. כל פוסט עובר אישור מנהלת לפני שהוא עולה."
+        eyebrow="פורום"
+        title="מדברים,"
+        accent="מתייעצים, מפרגנים"
+        subtitle="מרחב בטוח לשאלות, המלצות ושיתופים. כל פוסט עובר אישור הנהלה לפני שהוא עולה."
       >
         <button onClick={() => setIsModalOpen(true)} className="btn-primary !px-6 !py-3.5">
           <Plus size={18}/> פתיחת נושא חדש
@@ -168,7 +169,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
       {showSuccessMessage && (
         <div role="status" className="mb-5 flex items-center gap-3 rounded-2xl border border-sage-100 bg-sage-50 p-4 text-[14.5px] text-sage-800 animate-bounce-in">
           <CheckCircle size={20} className="shrink-0" />
-          הפוסט שלך נשלח! הוא יופיע בפורום מיד לאחר אישור המנהלת.
+          הפוסט שלך נשלח! הוא יופיע בפורום מיד לאחר אישור ההנהלה.
         </div>
       )}
 
@@ -195,7 +196,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
           <EmptyState
             icon={<MessageSquare size={28} />}
             title={sortMode === 'mine' ? 'עוד לא פתחת נושא' : 'אין עדיין שיחות כאן'}
-            text={sortMode === 'mine' ? 'יש לך שאלה או המלצה? זה המקום.' : 'היי הראשונה לפתוח שיחה — מישהי בדיוק מחכה לשאלה שלך.'}
+            text={sortMode === 'mine' ? 'יש לך שאלה או המלצה? זה המקום.' : 'אפשר לפתוח את השיחה הראשונה — מישהו בדיוק מחכה לשאלה הזאת.'}
             action={<button onClick={() => setIsModalOpen(true)} className="btn-primary"><Plus size={16}/> פתיחת נושא</button>}
           />
         ) : (
@@ -285,12 +286,12 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                           <p className="text-[14.5px] text-ink">{comment.text}</p>
                         </div>
                       </div>
-                    )) : <p className="text-[13.5px] text-slate-400">עדיין אין תגובות — אולי את הראשונה?</p>}
+                    )) : <p className="text-[13.5px] text-slate-400">עדיין אין תגובות — אפשר להגיב ראשונים.</p>}
 
                     {user ? (
                       <div className="flex gap-2 pt-2">
                         <input
-                          placeholder="כתבי תגובה…"
+                          placeholder="תגובה…"
                           className="min-h-[46px] flex-1 rounded-full border border-rose-100 bg-white px-5 text-[15px] outline-none transition focus:border-rose-300 focus:ring-4 focus:ring-rose-100/70"
                           value={commentText[post._id] || ''}
                           onChange={(e) => setCommentText({ ...commentText, [post._id]: e.target.value })}
@@ -351,7 +352,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
               <span className="mb-1.5 block text-[13px] text-slate-500">ההודעה</span>
               <textarea
                 required
-                placeholder="שתפי אותנו בפרטים…"
+                placeholder="הפרטים…"
                 rows={5}
                 className="w-full resize-none rounded-2xl border border-rose-100 bg-rose-50/30 p-4 text-[15px] outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-100/70"
                 value={newPost.content}
@@ -375,9 +376,9 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
             </div>
 
             <button type="submit" disabled={isSubmitting} className="btn-primary w-full !py-4 !text-base disabled:opacity-60">
-              {isSubmitting ? 'שולחת…' : <><Send size={18} className="rotate-180"/> שליחה לאישור</>}
+              {isSubmitting ? 'שולח…' : <><Send size={18} className="rotate-180"/> שליחה לאישור</>}
             </button>
-            <p className="text-center text-[12px] text-slate-400">הפוסט יפורסם אחרי אישור המנהלת</p>
+            <p className="text-center text-[12px] text-slate-400">הפוסט יפורסם אחרי אישור ההנהלה</p>
           </form>
         </div>
       </Sheet>

@@ -36,7 +36,7 @@ export const parseDataUrl = (s) => {
 };
 
 /** → { buf, type: 'image/jpeg', width, height } or null (no sharp / not an image / failed). */
-export async function derivePreview(key, dataUrl) {
+export async function derivePreview(key, dataUrl, { width: maxWidth = PREVIEW.maxWidth } = {}) {
   const src = parseDataUrl(dataUrl);
   if (!src || !/^image\//.test(src.mime)) return null;
   const k = `${key}:${crypto.createHash('sha1').update(src.buf).digest('hex')}`;
@@ -52,8 +52,8 @@ export async function derivePreview(key, dataUrl) {
       .flatten({ background: '#ffffff' })
       .jpeg({ quality, mozjpeg: true, progressive: true })
       .toBuffer({ resolveWithObject: true });
-    let out = await make(PREVIEW.maxWidth, PREVIEW.quality);
-    if (out.data.length > PREVIEW.targetBytes) out = await make(PREVIEW.maxWidth, 60);
+    let out = await make(maxWidth, PREVIEW.quality);
+    if (out.data.length > PREVIEW.targetBytes) out = await make(maxWidth, 60);
     if (out.data.length > PREVIEW.targetBytes) out = await make(480, 60);
     const v = { buf: out.data, type: 'image/jpeg', width: out.info.width, height: out.info.height };
     remember(k, v);

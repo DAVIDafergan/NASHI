@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { DEFAULT_CITY, DEFAULT_REGION, regionOfCity } from '../shared/regions.js';
+import { AUDIENCE_IDS } from '../shared/audience.js';
 
 // Location fields for anything that belongs to a place. Older documents (from the Migdal HaEmek days)
 // have no fields and read as Migdal HaEmek / local — no data migration needed.
@@ -8,6 +9,16 @@ const locationFields = {
   region: { type: String, default: DEFAULT_REGION },
   scope: { type: String, enum: ['local', 'national', 'online'], default: 'local' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+};
+// Who the item is for: 'women' | 'men' | 'all' (shared/audience.js). Missing → 'women' (everything before this field
+// was made for women). Events and classes used to keep free-text tags in `audience` (['נשים בלבד', …]); such legacy
+// arrays are left as they are and read as 'women' — new tags go to `audienceTags`. Mixed (not String) so those old
+// documents still load; writes are cleaned in the routes (cleanAudience).
+const audienceField = {
+  audience: {
+    type: mongoose.Schema.Types.Mixed, default: 'women',
+    validate: { validator: (v) => v == null || Array.isArray(v) || AUDIENCE_IDS.includes(v), message: 'audience: women | men | all' },
+  },
 };
 // keep region in sync with city on create and on admin updates
 function locationPlugin(schema) {
@@ -22,7 +33,8 @@ function locationPlugin(schema) {
 
 // --- סכמת משתמש מעודכנת ---
 const UserSchema = new mongoose.Schema({
-  role: { type: String, enum: ['member', 'regionAdmin'], default: 'member' }, // regionAdmin = מנהלת אזור
+  role: { type: String, enum: ['member', 'regionAdmin'], default: 'member' }, // regionAdmin = מנהל/ת תרבות אזורי/ת
+  gender: { type: String, enum: ['male', 'female'] }, // optional — only for wording emails / texts (missing → neutral)
   adminRegion: { type: String },
   city: { type: String },
   region: { type: String },
@@ -75,8 +87,9 @@ const ForumPost = mongoose.model('ForumPost', ForumPostSchema);
 
 // --- סכמת קהילה מעודכנת ---
 const CommunitySchema = new mongoose.Schema({
-  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her region
+  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her/his region
   ...locationFields,
+  ...audienceField,
   // הוספתי את "עסקים" לרשימה כדי לכסות את כל האפשרויות
   category: { type: String, enum: ['שיעורי תורה', 'גמ"חים', 'עסקים מקומיים', 'עסק מקומי', 'עסקים'], required: true },
   title: { type: String, required: true },
@@ -95,9 +108,10 @@ const Community = mongoose.model('Community', CommunitySchema);
 
 // --- סכמת אירוע מעודכנת ---
 const EventSchema = new mongoose.Schema({
-  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her region
+  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her/his region
   ...locationFields,
-  audience: { type: [String], default: [] },
+  ...audienceField,
+  audienceTags: { type: [String], default: undefined }, // "למי זה מתאים" (נשים ובנות, אברכים, משפחות…)
   onlineLink: { type: String },
   title: { type: String, required: true },
   date: { type: Date, required: true },
@@ -184,9 +198,10 @@ ImportBlockSchema.index({ source: 1, sourceId: 1 }, { unique: true });
 const ImportBlock = mongoose.model('ImportBlock', ImportBlockSchema);
 
 const ClassSchema = new mongoose.Schema({
-  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her region
+  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her/his region
   ...locationFields,
-  audience: { type: [String], default: [] },
+  ...audienceField,
+  audienceTags: { type: [String], default: undefined },
   onlineLink: { type: String },
   title: { type: String, required: true },
   instructor: { type: String },
@@ -206,8 +221,9 @@ ClassSchema.plugin(locationPlugin);
 const Class = mongoose.model('Class', ClassSchema);
 
 const LotterySchema = new mongoose.Schema({
-  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her region
+  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her/his region
   ...locationFields,
+  ...audienceField,
   title: { type: String, required: true },
   prize: { type: String }, 
   prizes: { type: [String], default: [] },
@@ -411,9 +427,10 @@ const FlyerSchema = new mongoose.Schema({
 });
 const Flyer = mongoose.model('Flyer', FlyerSchema);
 
-// בקשה להיות מנהלת תרבות אזורית — נכנסת לתור האישורים של המנהלת הראשית
+// בקשה להיות מנהל/ת תרבות אזורי/ת — נכנסת לתור האישורים של ההנהלה הראשית
 const ManagerApplicationSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  gender: { type: String, enum: ['male', 'female'] }, // optional "אני" (גבר / אישה) — only for wording
   name: { type: String },
   phone: { type: String },
   city: { type: String },

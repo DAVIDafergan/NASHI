@@ -7,6 +7,7 @@ import {
   Search, MapPin, ArrowRight, ExternalLink, Bot, Store,
 } from 'lucide-react';
 import { REGIONS } from '../../shared/regions';
+import Logo from '../Logo';
 
 export type AdminTab =
   | 'dashboard' | 'approvals' | 'stories' | 'messages'
@@ -28,25 +29,25 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: 'תוכן באתר', items: [
       { id: 'events', label: 'אירועים', icon: <Calendar size={18} />, hint: 'כל האירועים, לפי עיר ואזור' },
       { id: 'classes', label: 'חוגים', icon: <GraduationCap size={18} />, hint: 'חוגים וסדנאות קבועים' },
-      { id: 'community', label: 'קהילה וחסד', icon: <HeartHandshake size={18} />, hint: 'שיעורי תורה, גמ"חים ועסקים של נשים' },
+      { id: 'community', label: 'קהילה וחסד', icon: <HeartHandshake size={18} />, hint: 'שיעורי תורה, גמ"חים ועסקים מקומיים' },
       { id: 'lotteries', label: 'הגרלות ואתגרים', icon: <Gift size={18} />, hint: 'הגרלות, משימות והגרלת שולחן שבת' },
-      { id: 'personality', label: 'אשת השבוע', icon: <Sparkles size={18} />, hint: 'שאלונים, אישורים וארכיון' },
+      { id: 'personality', label: 'אישיות השבוע', icon: <Sparkles size={18} />, hint: 'שאלונים, אישורים וארכיון' },
       { id: 'inspirations', label: 'השראה יומית', icon: <Quote size={18} />, hint: 'משפט השראה בדף הבית, עם תזמון' },
       { id: 'flyers', label: 'פליירים', icon: <ImageIcon size={18} />, hint: 'קרוסלת הפליירים בדף הבית' },
       { id: 'ads', label: 'פרסומות', icon: <Megaphone size={18} />, hint: 'באנרים וסרטונים בדף הבית' },
       { id: 'announcements', label: 'הודעות הנהלה', icon: <Bell size={18} />, hint: 'לוח המודעות בדף הבית' },
-      { id: 'importer', label: 'סוכן אירועים', icon: <Bot size={18} />, hint: 'ייבוא אוטומטי של אירועים לנשים מאתרי כרטיסים' },
+      { id: 'importer', label: 'סוכן אירועים', icon: <Bot size={18} />, hint: 'ייבוא אוטומטי של אירועים חרדיים מאתרי כרטיסים (כבוי כרגע)' },
     ],
   },
   { group: 'ספקים', items: [{ id: 'suppliers', label: 'מאגר ספקים', icon: <Store size={18} />, hint: 'ספקים בתשלום חודשי, סטטוס תשלום ואישורים' }] },
   {
     group: 'קהילה', items: [
-      { id: 'users', label: 'משתמשות', icon: <Users size={18} />, hint: 'כל הנרשמות, נקודות וחברות במעגל' },
+      { id: 'users', label: 'משתמשים', icon: <Users size={18} />, hint: 'כל הנרשמים, נקודות וחברות במעגל' },
       { id: 'forum', label: 'פורום', icon: <MessageSquare size={18} />, hint: 'ניהול הדיונים בפורום' },
       { id: 'tickets', label: 'כרטיסים', icon: <Ticket size={18} />, hint: 'כרטיסי כניסה עם ברקוד לאירועים' },
     ],
   },
-  { group: 'תקשורת', items: [{ id: 'broadcast', label: 'דיוור במייל', icon: <Send size={18} />, hint: 'מייל לכל הנרשמות' }] },
+  { group: 'תקשורת', items: [{ id: 'broadcast', label: 'דיוור במייל', icon: <Send size={18} />, hint: 'מייל לכל הנרשמים' }] },
   { group: '', items: [{ id: 'settings', label: 'הגדרות', icon: <Settings size={18} />, hint: 'ניקוד ונקודות' }] },
 ];
 
@@ -108,8 +109,8 @@ const AdminShell: React.FC<{
         <aside className="sticky top-24 hidden h-[calc(100vh-7rem)] w-64 shrink-0 flex-col overflow-y-auto rounded-[2rem] border border-rose-100/80 bg-white/60 p-4 lg:flex">
           <div className="mb-5 flex items-center justify-between px-2">
             <div>
-              <p className="font-accent text-3xl leading-none text-ink">נשי</p>
-              <p className="text-[11px] text-slate-400">{lockedRegionName ? `מנהלת תרבות · ${lockedRegionName}` : 'מערכת ניהול'}</p>
+              <Logo size="sm" />
+              <p className="text-[11px] text-slate-400">{lockedRegionName ? `ניהול תרבות · ${lockedRegionName}` : 'מערכת ניהול'}</p>
             </div>
             <Link to="/" className="flex items-center gap-1 rounded-full border border-rose-100 px-2.5 py-1 text-[11px] text-slate-500 hover:text-rose-700"><ExternalLink size={12} /> לאתר</Link>
           </div>
@@ -170,7 +171,7 @@ const AdminShell: React.FC<{
           <aside onClick={e => e.stopPropagation()} className="absolute inset-y-0 right-0 flex w-[84%] max-w-[320px] flex-col overflow-y-auto bg-[#FBF7F4] p-4 pb-10 shadow-2xl animate-fade-in" dir="rtl">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <p className="font-accent text-3xl leading-none text-ink">נשי</p>
+                <Logo size="sm" />
                 <p className="text-[11px] text-slate-400">מערכת ניהול</p>
               </div>
               <button onClick={() => setDrawer(false)} className="rounded-full bg-white p-2 shadow-soft" aria-label="סגירה"><X size={18} /></button>

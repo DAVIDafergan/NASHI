@@ -26,7 +26,7 @@ const ResetPassword = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setStatus({ type: 'success', message: 'הסיסמה עודכנה בהצלחה! מיד תועברי להתחברות...' });
+        setStatus({ type: 'success', message: 'הסיסמה עודכנה בהצלחה! מיד עוברים להתחברות...' });
         setTimeout(() => navigate('/'), 3000);
       } else {
         setStatus({ type: 'error', message: data.error || 'חלה שגיאה באיפוס הסיסמה' });
@@ -45,7 +45,7 @@ const ResetPassword = () => {
         </div>
         <p className="eyebrow">סיסמה חדשה</p>
         <h1 className="text-[2.3rem] leading-[1.05]">איפוס סיסמה</h1>
-        <p className="text-[15px] text-slate-500">בחרי סיסמה חדשה ומאובטחת.</p>
+        <p className="text-[15px] text-slate-500">סיסמה חדשה ומאובטחת, בבקשה.</p>
       </div>
       {status.type === 'success' ? (
         <div role="status" className="space-y-3 rounded-2xl border border-sage-100 bg-sage-50 p-6 text-center animate-bounce-in">
@@ -66,7 +66,7 @@ const ResetPassword = () => {
           </label>
           {status.type === 'error' && <p role="alert" className="text-center text-[14px] text-rose-700">{status.message}</p>}
           <button disabled={loading} type="submit" className="btn-primary w-full !py-4 !text-base disabled:opacity-60">
-            {loading ? 'מעדכנת…' : 'עדכון סיסמה וכניסה'}
+            {loading ? 'מעדכן…' : 'עדכון סיסמה וכניסה'}
           </button>
         </form>
       )}

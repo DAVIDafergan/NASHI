@@ -8,6 +8,9 @@ import ScrollReveal from '../components/ScrollReveal';
 import { TiltCard } from '../components/home/HomeParts';
 import { useArea, AreaChips } from '../components/pages/AreaFilter';
 import { PageShell, PageHero, FilterBar, SearchField, Chip, ChipRow, EmptyState, PageLoading } from '../components/pages/PageKit';
+import { useAudienceFilter, AudienceChips, audienceCounts } from '../components/AudienceFilter';
+import AudienceBadge from '../components/AudienceBadge';
+import { BRAND } from '../shared/brand';
 
 // הגדרת המבנה של חוג (כולל השדות החדשים)
 interface ClassItem {
@@ -25,9 +28,10 @@ interface ClassItem {
   exceptions?: string;
   category: string;
   image: string;
+  audience?: any;
 }
 
-const API_URL = 'https://nashi-production.up.railway.app/api';
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
 
 const ClassesPage = () => {
   const navigate = useNavigate();
@@ -62,8 +66,9 @@ const ClassesPage = () => {
   }, [classes]);
 
   const { area, setArea, match: matchesArea, myRegion } = useArea();
+  const aud = useAudienceFilter();
   const filteredClasses = classes.filter(cls => {
-    if (!matchesArea(cls)) return false;
+    if (!aud.match(cls) || !matchesArea(cls)) return false;
     const matchesSearch = cls.title.includes(filter) || cls.category.includes(filter) || cls.instructor.includes(filter);
     const matchesDay = selectedDay === 'all' || cls.day === selectedDay;
     const matchesCategory = selectedCategory === 'all' || cls.category === selectedCategory;
@@ -76,8 +81,8 @@ const ClassesPage = () => {
       if (phone) {
           const cleanPhone = phone.replace(/^0/, '972').replace(/\D/g, '');
           const msg = type === 'instructor'
-            ? `היי ${name}, אשמח לפרטים לגבי החוג "${title}" שראיתי באפליקציית נשים.`
-            : `שלום, אשמח להירשם לחוג "${title}" דרך אפליקציית נשים.`;
+            ? `שלום ${name}, אשמח לפרטים לגבי החוג "${title}" שראיתי ב${BRAND.name}.`
+            : `שלום, אשמח להירשם לחוג "${title}" (ראיתי ב${BRAND.name}).`;
           window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
       }
   };
@@ -92,13 +97,14 @@ const ClassesPage = () => {
       <PageHero
         eyebrow="חוגים ופעילויות"
         title="זמן קבוע"
-        accent="רק בשבילך"
-        subtitle="חוגים, שיעורים וסדנאות לנשים ולבנות, בעיר שלך ובזום: ריקוד, יצירה, כושר, לימוד והעשרה. בחרי יום, מצאי חוג והירשמי בוואטסאפ בלחיצה."
+        accent="של לימוד והעשרה"
+        subtitle="חוגים, שיעורים וסדנאות לגברים, לנשים, לבנים ולבנות — בעיר שלכם ובזום: לימוד, יצירה, כושר והעשרה. בוחרים יום, מוצאים חוג ונרשמים בוואטסאפ בלחיצה."
       />
 
       <FilterBar>
+        <AudienceChips value={aud.audience} onChange={aud.setAudience} counts={audienceCounts(classes)} className="mb-3" />
         <AreaChips area={area} setArea={setArea} myRegion={myRegion} className="mb-3" />
-        <SearchField value={filter} onChange={setFilter} placeholder="חפשי חוג או מדריכה…" />
+        <SearchField value={filter} onChange={setFilter} placeholder="חיפוש חוג, מדריך או מדריכה…" />
         <ChipRow className="mt-3">
           {days.map(day => (
             <Chip key={day} active={selectedDay === day} onClick={() => setSelectedDay(day)}>
@@ -136,8 +142,11 @@ const ClassesPage = () => {
               <div className="relative m-2 mb-0 aspect-[16/10] overflow-hidden rounded-[1.4rem] bg-rose-50 shrink-0">
                 <img src={cls.image} alt={cls.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-plum-950/55 via-transparent to-transparent" />
-                <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-[12px] text-rose-700 shadow-soft backdrop-blur">
-                  <Heart size={11} className="fill-current" /> {cls.category || 'כללי'}
+                <span className="absolute top-3 right-3 flex items-center gap-1.5">
+                  <AudienceBadge item={cls} overlay />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-[12px] text-rose-700 shadow-soft backdrop-blur">
+                    <Heart size={11} className="fill-current" /> {cls.category || 'כללי'}
+                  </span>
                 </span>
                 <div className="absolute bottom-3 right-3 left-3 flex items-end justify-between text-white">
                   <span className="font-accent text-[2rem] leading-none">{cls.day}</span>
@@ -193,8 +202,8 @@ const ClassesPage = () => {
         <EmptyState
           icon={<Calendar size={28} />}
           title="לא נמצאו חוגים כאלה"
-          text="אולי ביום אחר? נסי לשנות את היום או את סוג החוג."
-          action={<button onClick={() => {setFilter(''); setSelectedDay('all'); setSelectedCategory('all');}} className="btn-ghost">הצגת כל החוגים</button>}
+          text="אולי ביום אחר? אפשר לשנות את היום, את סוג החוג או את קהל היעד."
+          action={<button onClick={() => {setFilter(''); setSelectedDay('all'); setSelectedCategory('all'); aud.setAudience('any');}} className="btn-ghost">הצגת כל החוגים</button>}
         />
       )}
     </PageShell>

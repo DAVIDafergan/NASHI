@@ -7,13 +7,13 @@ import {
 } from './ui';
 
 const TYPES = [
-  { id: 'everyone', label: 'כל הרשומות', hint: 'כל אחת יכולה להירשם' },
-  { id: 'points', label: 'סף נקודות', hint: 'רק מי שצברה מספיק נקודות' },
-  { id: 'mission', label: 'משימה', hint: 'נכנסות להגרלה אחרי שמסיימות משימה' },
+  { id: 'everyone', label: 'כל הרשומים', hint: 'כל אחד יכול להירשם' },
+  { id: 'points', label: 'סף נקודות', hint: 'רק מי שצבר מספיק נקודות' },
+  { id: 'mission', label: 'משימה', hint: 'נכנסים להגרלה אחרי שמסיימים משימה' },
   { id: 'link_only', label: 'קישור אישי', hint: 'רק מי שקיבלה קישור' },
 ];
 const PRIZE_KEYS = ['prize', 'prize2', 'prize3', 'prize4', 'prize5', 'prize6', 'prize7'];
-const blank = () => ({ title: '', prize: '', prize2: '', prize3: '', prize4: '', prize5: '', prize6: '', prize7: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '', scope: 'national', city: '' });
+const blank = () => ({ title: '', prize: '', prize2: '', prize3: '', prize4: '', prize5: '', prize6: '', prize7: '', drawDate: '', image: '', minPointsToEnter: 0, participationType: 'everyone', missionText: '', scope: 'national', city: '', audience: '' });
 const toLocalInput = (d?: string) => { if (!d) return ''; const t = new Date(d); if (isNaN(t.getTime())) return String(d); const p = (n: number) => String(n).padStart(2, '0'); return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}T${p(t.getHours())}:${p(t.getMinutes())}`; };
 
 const csv = (name: string, headers: string[], rows: any[][]) => {
@@ -59,7 +59,7 @@ const LotteriesAdmin: React.FC<{ lotteries: any[]; region: string; search: strin
     setParticipants({ open: true, title: l.title, list: list || [] });
   };
   const runLive = async (l: any) => {
-    if (!window.confirm(`להפעיל עכשיו את ההגרלה "${l.title}" בשידור חי? הזוכה תפורסם בדף הבית.`)) return;
+    if (!window.confirm(`להפעיל עכשיו את ההגרלה "${l.title}" בשידור חי? הזוכה יפורסם בדף הבית.`)) return;
     await api.runLotteryLive(idOf(l));
     toast('ההגרלה הופעלה 🎉');
     reload();
@@ -69,7 +69,7 @@ const LotteriesAdmin: React.FC<{ lotteries: any[]; region: string; search: strin
     <div className="space-y-8">
       {/* regular lotteries */}
       {list.length === 0 ? (
-        <EmptyState icon={<Gift size={26} />} title="אין הגרלות" text="הגרלות ומשימות מושכות נשים לחזור לאתר."
+        <EmptyState icon={<Gift size={26} />} title="אין הגרלות" text="הגרלות ומשימות מושכות את הקהל לחזור לאתר."
           action={<button onClick={() => { setForm(blank()); setOpen(true); }} className="btn-primary"><Plus size={16} /> הגרלה חדשה</button>} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -84,7 +84,7 @@ const LotteriesAdmin: React.FC<{ lotteries: any[]; region: string; search: strin
               tags={<LocationBadges item={l} />}
               actions={<>
                 <span className="ml-auto" />
-                <IconButton onClick={() => viewParticipants(l)} title="משתתפות" aria-label="משתתפות"><Users size={15} /></IconButton>
+                <IconButton onClick={() => viewParticipants(l)} title="משתתפים" aria-label="משתתפים"><Users size={15} /></IconButton>
                 <IconButton onClick={() => runLive(l)} title="הפעלה בלייב" aria-label="הפעלה בלייב" tone="good"><PlayCircle size={15} /></IconButton>
                 <IconButton onClick={() => { setForm({ ...blank(), ...l, drawDate: toLocalInput(l.drawDate) }); setOpen(true); }} aria-label="עריכה"><Pencil size={15} /></IconButton>
                 <DeleteButton name={l.title} onConfirm={async () => { await api.deleteLottery(idOf(l)); reload(); }} />
@@ -101,14 +101,14 @@ const LotteriesAdmin: React.FC<{ lotteries: any[]; region: string; search: strin
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-plum-600 text-white text-xl">🕯️</span>
             <div>
               <h3 className="text-xl">הגרלת שולחן השבת</h3>
-              <p className="text-xs text-slate-500">נשים מעלות תמונה של שולחן השבת, ואחת זוכה בכל שבוע</p>
+              <p className="text-xs text-slate-500">משתתפים מעלים תמונה של שולחן השבת, ואחד זוכה בכל שבוע</p>
             </div>
           </div>
           <Badge tone={shabbat.isActive ? 'green' : 'slate'}>{shabbat.isActive ? 'פעילה' : 'כבויה'}</Badge>
         </div>
         <div className="grid gap-4 md:grid-cols-[1fr_2fr]">
           <Field label="הפרס השבוע"><input className={inputCls} value={shabbat.prize} onChange={e => setShabbat({ ...shabbat, prize: e.target.value })} placeholder="למשל: סט פמוטים" /></Field>
-          <Field label="הנחיה / כותרת"><input className={inputCls} value={shabbat.notes} onChange={e => setShabbat({ ...shabbat, notes: e.target.value })} placeholder="העלי תמונה של שולחן השבת שלך…" /></Field>
+          <Field label="הנחיה / כותרת"><input className={inputCls} value={shabbat.notes} onChange={e => setShabbat({ ...shabbat, notes: e.target.value })} placeholder="העלו תמונה של שולחן השבת שלך…" /></Field>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
           <Toggle checked={!!shabbat.isActive} onChange={isActive => setShabbat({ ...shabbat, isActive })} label="ההגרלה פתוחה להשתתפות" />
@@ -123,10 +123,10 @@ const LotteriesAdmin: React.FC<{ lotteries: any[]; region: string; search: strin
 
         <div className="mt-6 rounded-[1.5rem] border border-plum-100 bg-white">
           <div className="flex items-center justify-between border-b border-plum-50 px-4 py-3">
-            <h4 className="font-strong text-ink">משתתפות השבוע ({shabbatEntries.length})</h4>
+            <h4 className="font-strong text-ink">משתתפי השבוע ({shabbatEntries.length})</h4>
             <button onClick={() => csv('shabbat_participants.csv', ['שם משפחה', 'טלפון', 'תאריך הרשמה'], shabbatEntries.map(p => [p.familyName, p.phone, fmtDate(p.createdAt)]))} disabled={!shabbatEntries.length} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"><Download size={13} /> ייצוא לאקסל</button>
           </div>
-          {shabbatEntries.length === 0 ? <p className="p-6 text-center text-sm text-slate-400">עוד אין משתתפות השבוע</p> : (
+          {shabbatEntries.length === 0 ? <p className="p-6 text-center text-sm text-slate-400">עוד אין משתתפים השבוע</p> : (
             <ul className="grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">
               {shabbatEntries.map((p, i) => (
                 <li key={i} className="flex items-center gap-3 rounded-2xl bg-plum-50/40 p-2">
@@ -158,7 +158,7 @@ const LotteriesAdmin: React.FC<{ lotteries: any[]; region: string; search: strin
               </div>
             ))}
           </FormSection>
-          <FormSection title="מי יכולה להשתתף" icon={<Target size={17} />}>
+          <FormSection title="מי יכול להשתתף" icon={<Target size={17} />}>
             <div className="grid gap-2 sm:grid-cols-2">
               {TYPES.map(t => (
                 <button key={t.id} type="button" onClick={() => set({ participationType: t.id })} className={`rounded-2xl border p-3 text-right transition ${form.participationType === t.id ? 'border-rose-600 bg-rose-50 ring-2 ring-rose-100' : 'border-rose-100 bg-white hover:border-rose-300'}`}>
@@ -175,9 +175,9 @@ const LotteriesAdmin: React.FC<{ lotteries: any[]; region: string; search: strin
         </form>
       </Sheet>
 
-      <Sheet open={participants.open} onClose={() => setParticipants(p => ({ ...p, open: false }))} title="משתתפות בהגרלה" subtitle={participants.title}
+      <Sheet open={participants.open} onClose={() => setParticipants(p => ({ ...p, open: false }))} title="משתתפים בהגרלה" subtitle={participants.title}
         footer={<button onClick={() => csv('lottery_participants.csv', ['שם', 'טלפון', 'מייל'], participants.list.map(p => [p.name, p.phone, p.email]))} disabled={!participants.list.length} className="btn-ghost w-full"><Download size={16} /> ייצוא לאקסל</button>}>
-        {participants.list.length === 0 ? <EmptyState icon={<Users size={24} />} title="עוד אין משתתפות" /> : (
+        {participants.list.length === 0 ? <EmptyState icon={<Users size={24} />} title="עוד אין משתתפים" /> : (
           <ul className="divide-y divide-rose-50 rounded-2xl bg-white">
             {participants.list.map((p, i) => (
               <li key={i} className="flex items-center justify-between px-4 py-3"><span className="font-strong text-ink">{p.name}</span><span className="text-sm text-slate-500" dir="ltr">{p.phone}</span></li>

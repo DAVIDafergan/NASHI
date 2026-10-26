@@ -21,7 +21,7 @@ export function searchCities(q: string, limit = 60) {
 }
 
 /** Searchable city select, grouped by region. */
-const CityPicker: React.FC<{ value: string; onChange: (city: string) => void; placeholder?: string; required?: boolean; className?: string; compact?: boolean; locate?: boolean; inline?: boolean }> = ({ value, onChange, placeholder = 'באיזו עיר את גרה?', required, className = '', compact, locate = true, inline }) => {
+const CityPicker: React.FC<{ value: string; onChange: (city: string) => void; placeholder?: string; required?: boolean; className?: string; compact?: boolean; locate?: boolean; inline?: boolean }> = ({ value, onChange, placeholder = 'באיזו עיר?', required, className = '', compact, locate = true, inline }) => {
   const [open, setOpen] = useState(false);
   const [finding, setFinding] = useState(false);
   const [geoMsg, setGeoMsg] = useState('');
@@ -57,7 +57,7 @@ const CityPicker: React.FC<{ value: string; onChange: (city: string) => void; pl
                   <span className="min-w-0 truncate">{c}</span>
                   <span className="shrink-0 text-[11px] text-slate-400">{REGIONS.find(x => x.id === r)?.name}</span>
                 </button>
-              )) : <p className="px-3 py-6 text-center text-sm text-slate-400">לא מצאנו יישוב בשם הזה. נסי לכתוב חלק מהשם.</p>
+              )) : <p className="px-3 py-6 text-center text-sm text-slate-400">לא מצאנו יישוב בשם הזה. אפשר לכתוב חלק מהשם.</p>
             ) : (
               <>
                 <p className="px-3 pb-1 pt-2 text-[12px] text-slate-400">כל היישובים בארץ, אפשר לחפש למעלה</p>

@@ -3,6 +3,7 @@ import { Award, Check, Clock, Download, Eye, Heart, Image as ImageIcon, Loader2,
 import { api } from '../../services/api';
 import { API_BASE, Badge, DeleteButton, EmptyState, Field, FormSection, ImagePicker, SectionTitle, authHeaders, fmtDate, idOf, inputCls, toast, withSave } from './ui';
 import { loadImage } from '../../utils/image';
+import { BRAND } from '../../shared/brand';
 
 /* ------------------------- forum ------------------------- */
 export const ForumAdmin: React.FC<{ pending: any[]; posts: any[]; search: string; reload: () => void }> = ({ pending, posts, search, reload }) => {
@@ -82,7 +83,7 @@ export const TicketsAdmin: React.FC<{ tickets: any[]; events: any[]; reload: () 
       reload();
     } catch (e) {
       console.error(e);
-      toast('יצירת הכרטיס נכשלה, נסי שוב', 'bad');
+      toast('יצירת הכרטיס נכשלה, כדאי לנסות שוב', 'bad');
     } finally { setBusy(false); }
   };
   return (
@@ -103,7 +104,7 @@ export const TicketsAdmin: React.FC<{ tickets: any[]; events: any[]; reload: () 
           <ol className="list-inside list-decimal space-y-2 text-sm leading-relaxed text-slate-600">
             <li>מעצבים כרטיס יפה בלי ברקוד ומעלים אותו לכאן.</li>
             <li>המערכת מייצרת קוד ייחודי שאי אפשר לנחש, ומדביקה ברקוד על העיצוב.</li>
-            <li>מורידים את הכרטיס ושולחים לנרשמת.</li>
+            <li>מורידים את הכרטיס ושולחים לנרשמים.</li>
             <li>בכניסה סורקים: ירוק = בתוקף, אדום = כבר נוצל.</li>
           </ol>
         </div>
@@ -140,12 +141,12 @@ export const BroadcastAdmin: React.FC<{ recipients: number }> = ({ recipients })
   const send = async (isTest: boolean) => {
     if (!form.subject || !form.content) { alert('נא למלא נושא ותוכן'); return; }
     if (isTest && !testEmail) { alert('נא להזין מייל לבדיקה'); return; }
-    if (!isTest && !window.confirm(`לשלוח את המייל לכל ${recipients} הנרשמות? אי אפשר לבטל אחרי השליחה.`)) return;
+    if (!isTest && !window.confirm(`לשלוח את המייל לכל ${recipients} הנרשמים? אי אפשר לבטל אחרי השליחה.`)) return;
     setBusy(isTest ? 'test' : 'all');
     try {
       const res = await fetch(`${API_BASE}/admin/broadcast-email`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ ...form, isAdmin: true, ...(isTest ? { isTest: true, targetEmail: testEmail } : {}) }) });
-      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'נסי שוב מאוחר יותר'); }
-      toast(isTest ? `מייל בדיקה נשלח ל-${testEmail} ✔` : 'הדיוור נשלח לכל הנרשמות ✔');
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'כדאי לנסות שוב מאוחר יותר'); }
+      toast(isTest ? `מייל בדיקה נשלח ל-${testEmail} ✔` : 'הדיוור נשלח לכל הנרשמים ✔');
       if (!isTest) setForm({ subject: '', content: '', image: '', logo: '' });
     } catch (e: any) { toast(`שגיאה בשליחה: ${e.message}`, 'bad'); }
     finally { setBusy(''); }
@@ -173,7 +174,7 @@ export const BroadcastAdmin: React.FC<{ recipients: number }> = ({ recipients })
       <aside className="rounded-[1.6rem] border border-rose-100 bg-white p-5 shadow-soft">
         <p className="eyebrow">תצוגה מקדימה</p>
         <div className="mt-3 overflow-hidden rounded-2xl border border-rose-100">
-          <div className="bg-rose-50 p-4 text-center">{form.logo ? <img src={form.logo} alt="" className="mx-auto h-10 object-contain" /> : <span className="font-accent text-3xl text-rose-700">נשי</span>}</div>
+          <div className="bg-rose-50 p-4 text-center">{form.logo ? <img src={form.logo} alt="" className="mx-auto h-10 object-contain" /> : <span className="font-strong text-3xl text-rose-700">{BRAND.name}</span>}</div>
           {form.image && <img src={form.image} alt="" className="w-full object-cover" />}
           <div className="p-4">
             <h4 className="font-strong text-lg text-ink">{form.subject || 'נושא המייל'}</h4>
@@ -191,7 +192,7 @@ export const SettingsAdmin: React.FC<{ settings: any; setSettings: (s: any) => v
   const rows: [string, string, string][] = [
     ['pointsPerRegister', 'נקודות על הרשמה לאתר', 'מתקבלות פעם אחת כשנרשמים'],
     ['pointsPerEventJoin', 'נקודות על הרשמה לאירוע', 'בכל הרשמה לאירוע'],
-    ['pointsPerShare', 'נקודות על שיתוף', 'שיתוף אירוע עם חברה'],
+    ['pointsPerShare', 'נקודות על שיתוף', 'שיתוף אירוע עם חברים'],
   ];
   return (
     <div className="max-w-2xl space-y-4">
@@ -203,7 +204,7 @@ export const SettingsAdmin: React.FC<{ settings: any; setSettings: (s: any) => v
       </FormSection>
       <div className="flex items-start gap-3 rounded-[1.5rem] border border-rose-100 bg-white/70 p-4 text-sm text-slate-600">
         <Sparkles size={18} className="mt-0.5 shrink-0 text-rose-500" />
-        <p>חברה שמזמינה חברה דרך קישור ההזמנה האישי מקבלת 30 נקודות כשהחברה נרשמת.</p>
+        <p>מי שמזמין חברים דרך קישור ההזמנה האישי מקבל 30 נקודות על כל הצטרפות.</p>
       </div>
       <div className="flex items-start gap-3 rounded-[1.5rem] border border-rose-100 bg-white/70 p-4 text-sm text-slate-600">
         <ImageIcon size={18} className="mt-0.5 shrink-0 text-rose-500" />

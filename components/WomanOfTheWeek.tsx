@@ -41,7 +41,7 @@ const WomanOfTheWeek = () => {
     <div className="bg-white rounded-3xl p-6 shadow-xl border border-purple-100 my-8 relative overflow-hidden">
       <div className="absolute top-0 right-0 bg-yellow-400 text-purple-900 text-xs font-bold px-4 py-1 rounded-bl-xl z-10 flex items-center gap-1">
         <Star size={12} fill="currentColor" />
-        אשת השבוע
+        אישיות השבוע
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 items-center">
@@ -69,7 +69,7 @@ const WomanOfTheWeek = () => {
             onClick={() => navigate(personality._id || personality.id ? `/personality-archive/${personality._id || personality.id}` : '/personality-archive')}
             className="text-rose-500 text-sm font-bold flex items-center gap-1 mx-auto md:mx-0 hover:gap-2 transition-all"
           >
-            קראי את הראיון המלא
+            לקריאת הראיון המלא
             <ArrowLeft size={16} />
           </button>
         </div>

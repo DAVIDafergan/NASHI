@@ -9,6 +9,9 @@ import { api } from '../services/api';
 import ScrollReveal from '../components/ScrollReveal';
 import { useArea, AreaChips } from '../components/pages/AreaFilter';
 import { PageShell, PageHero, FilterBar, SearchField, EmptyState, CardSkeletonGrid } from '../components/pages/PageKit';
+import { useAudienceFilter, AudienceChips, audienceCounts } from '../components/AudienceFilter';
+import AudienceBadge from '../components/AudienceBadge';
+import { BRAND } from '../shared/brand';
 
 const tabIcon = (category: string) => {
   if (category === 'גמ"חים') return <Heart size={13} />;
@@ -59,7 +62,9 @@ const CommunityPage = () => {
 
   // סינון פריטים לפי טאב פעיל וחיפוש חופשי (תוקן כדי לתמוך בכל הווריאציות של עסקים מהשרת)
   const { area, setArea, match: matchesArea, myRegion } = useArea();
-  const filteredItems = items.filter(item => {
+  const aud = useAudienceFilter();
+  const forAudience = items.filter(aud.match);
+  const filteredItems = forAudience.filter(item => {
     if (!matchesArea(item)) return false;
     const isBusinessCategory = activeTab === 'עסקים מקומיים' && 
       ['עסקים', 'עסק מקומי', 'עסקים מקומיים'].includes(item.category);
@@ -81,14 +86,14 @@ const CommunityPage = () => {
   const handleContact = (phone: string, title: string) => {
     if (!phone) return;
     const cleanPhone = phone.replace(/\D/g, '');
-    const msg = encodeURIComponent(`היי, הגעתי אלייך דרך אפליקציית "נשי", אשמח לקבל פרטים בנוגע ל${title}.`);
+    const msg = encodeURIComponent(`שלום, הגעתי דרך ${BRAND.name}, אשמח לקבל פרטים בנוגע ל${title}.`);
     window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
   };
 
   const tabBlurb: Record<string, string> = {
-    'שיעורי תורה': 'שיעורים והרצאות לנשים — קרוב לבית, בזמן שנוח לך.',
-    'גמ"חים': 'השאלות, עזרה ונתינה בין שכנות. כי ביחד הכול קל יותר.',
-    'עסקים מקומיים': 'עסקים של נשים מהעיר. מפרגנות, קונות ומרוויחות ביחד.',
+    'שיעורי תורה': 'שיעורים ודרשות — קרוב לבית, בזמן שנוח.',
+    'גמ"חים': 'השאלות, עזרה ונתינה בין שכנים. כי ביחד הכול קל יותר.',
+    'עסקים מקומיים': 'עסקים מהעיר. מפרגנים, קונים ומרוויחים ביחד.',
   };
 
   return (
@@ -96,15 +101,15 @@ const CommunityPage = () => {
       <PageHero
         eyebrow="קהילה וחסד"
         title="הכוח של"
-        accent="נשים ביחד"
-        subtitle="שיעורים, גמ״חים ועסקים של נשים מהעיר. מוצאות, פונות בוואטסאפ ומחברות."
+        accent="קהילה ביחד"
+        subtitle="שיעורים, גמ״חים ועסקים מהעיר. מוצאים, פונים בוואטסאפ ומתחברים."
       />
 
       {/* Tabs as big segmented cards */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5" role="tablist" aria-label="קטגוריות">
         {tabs.map(tab => {
           const active = activeTab === tab.id;
-          const count = items.filter(it => it.category === tab.id || (tab.id === 'עסקים מקומיים' && ['עסקים', 'עסק מקומי', 'עסקים מקומיים'].includes(it.category))).length;
+          const count = forAudience.filter(it => it.category === tab.id || (tab.id === 'עסקים מקומיים' && ['עסקים', 'עסק מקומי', 'עסקים מקומיים'].includes(it.category))).length;
           return (
             <button
               key={tab.id}
@@ -124,8 +129,9 @@ const CommunityPage = () => {
       </div>
 
       <FilterBar>
+        <AudienceChips value={aud.audience} onChange={aud.setAudience} counts={audienceCounts(items)} className="mb-3" />
         <AreaChips area={area} setArea={setArea} myRegion={myRegion} className="mb-3" />
-        <SearchField value={searchTerm} onChange={setSearchTerm} placeholder={`חפשי בתוך ${activeTab}…`} />
+        <SearchField value={searchTerm} onChange={setSearchTerm} placeholder={`חיפוש בתוך ${activeTab}…`} />
         <p className="mt-2 px-1 text-[13px] text-slate-500">{tabBlurb[activeTab]}</p>
       </FilterBar>
 
@@ -149,6 +155,7 @@ const CommunityPage = () => {
                   <span className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-rose-600 shadow-soft">
                     {tabIcon(item.category)}
                   </span>
+                  <AudienceBadge item={item} overlay className="absolute bottom-2 right-2" />
                 </div>
 
                 <div className="flex flex-1 flex-col gap-2 p-3 md:p-4">
@@ -181,8 +188,8 @@ const CommunityPage = () => {
         <EmptyState
           icon={<Search size={28}/>}
           title="לא מצאנו את מה שחיפשת"
-          text="נסי מילה אחרת, או עברי לקטגוריה אחרת למעלה."
-          action={searchTerm ? <button onClick={() => setSearchTerm('')} className="btn-ghost">ניקוי חיפוש</button> : undefined}
+          text="אפשר לנסות מילה אחרת, קטגוריה אחרת למעלה, או קהל יעד אחר."
+          action={searchTerm ? <button onClick={() => setSearchTerm('')} className="btn-ghost">ניקוי חיפוש</button> : aud.audience !== 'any' ? <button onClick={() => aud.setAudience('any')} className="btn-ghost">לכל הקהלים</button> : undefined}
         />
       )}
     </PageShell>

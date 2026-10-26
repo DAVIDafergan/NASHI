@@ -130,7 +130,7 @@ const FlyersAdmin: React.FC = () => {
       ) : flyers.length === 0 ? (
         <div className="card-soft p-10 text-center">
           <ImagePlus className="mx-auto text-rose-300" size={36} strokeWidth={1.5} />
-          <p className="mt-3 text-slate-600">עדיין אין פליירים. הוסיפי את הראשון והוא יופיע מיד בדף הבית.</p>
+          <p className="mt-3 text-slate-600">עדיין אין פליירים. אפשר להוסיף את הראשון והוא יופיע מיד בדף הבית.</p>
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -175,7 +175,7 @@ const FlyersAdmin: React.FC = () => {
                 <p className="text-sm font-semibold text-slate-700 mb-2">תמונת הפלייר <span className="text-rose-500">*</span></p>
                 <button type="button" onClick={() => fileRef.current?.click()} className="relative w-full aspect-[4/3] rounded-3xl border-2 border-dashed border-rose-200 bg-rose-50/50 hover:bg-rose-50 transition overflow-hidden flex items-center justify-center">
                   {draft.previewImage ? <img src={draft.previewImage} alt="" className="absolute inset-0 w-full h-full object-contain" /> : (
-                    <span className="flex flex-col items-center gap-2 text-rose-400"><ImagePlus size={30} strokeWidth={1.5} /><span className="text-sm">לחצי לבחירת תמונה</span></span>
+                    <span className="flex flex-col items-center gap-2 text-rose-400"><ImagePlus size={30} strokeWidth={1.5} /><span className="text-sm">לבחירת תמונה</span></span>
                   )}
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => pickImage(e, 'image')} />

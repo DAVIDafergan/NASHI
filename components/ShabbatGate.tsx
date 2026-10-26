@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useCalendar, hhmm } from '../hooks/useCalendar';
+import { BRAND } from '../shared/brand';
 
 /** While Shabbat or Yom Tov is in, the whole site shows a quiet "Shabbat Shalom" screen. */
 const ShabbatGate: React.FC = () => {
@@ -11,7 +12,7 @@ const ShabbatGate: React.FC = () => {
   if (Date.now() >= new Date(cal.rest.until).getTime()) return null;
   const isHoliday = !!cal.holiday && !/שבת/.test(cal.holiday);
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center overflow-hidden bg-[#FBF7F4] px-6 text-center" dir="rtl" role="dialog" aria-label="שבת שלום">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center overflow-hidden bg-cream px-6 text-center" dir="rtl" role="dialog" aria-label="שבת שלום">
       <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(60vmax 45vmax at 50% 0%, rgba(240,213,214,0.7), transparent 70%), radial-gradient(50vmax 40vmax at 50% 110%, rgba(247,237,230,0.9), transparent 70%)' }} />
       <div className="relative max-w-md">
         <div className="mx-auto flex items-end justify-center gap-5" aria-hidden="true">
@@ -25,7 +26,7 @@ const ShabbatGate: React.FC = () => {
         <p className="mt-10 font-accent text-7xl text-rose-700">{isHoliday ? 'חג שמח' : 'שבת שלום'}</p>
         <p className="mt-3 font-display text-2xl text-ink">{isHoliday ? cal.holiday : cal.parasha}</p>
         <p className="mx-auto mt-5 max-w-sm leading-relaxed text-slate-600">
-          נשי שומרת שבת וחג. נחזור במוצאי {isHoliday ? 'החג' : 'השבת'}, בשעה {hhmm(cal.rest.until)}.
+          {BRAND.name} שומר שבת וחג. נחזור במוצאי {isHoliday ? 'החג' : 'השבת'}, בשעה {hhmm(cal.rest.until)}.
         </p>
         <p className="mt-8 text-xs text-slate-400">{cal.hebrewDate}</p>
       </div>

@@ -123,6 +123,9 @@ describe('women + Haredi/religious classification', () => {
     assert.equal(categoryFor('משהו אחר'), 'אחר');
     assert.deepEqual(audienceFor('לנשים ולנערות'), ['נשים ובנות']);
     assert.deepEqual(audienceFor('לנשים בלבד'), ['נשים בלבד']);
+    assert.deepEqual(audienceFor('ערב עיון לאברכים', 'men'), ['אברכים']);
+    assert.deepEqual(audienceFor('מסיבת חומש אבא ובן', 'men'), ['אבות ובנים']);
+    assert.deepEqual(audienceFor('הצגת ילדים לחנוכה', 'all'), ['משפחות', 'ילדים']);
   });
 });
 
@@ -245,7 +248,10 @@ describe('mapping to NASHI events + update plan', () => {
     assert.equal(f.city, 'בני ברק'); assert.equal(f.region, 'center'); assert.equal(f.scope, 'local');
     assert.equal(f.price, 60);
     assert.equal(f.category, 'מוזיקה');
-    assert.deepEqual(f.audience, ['נשים ובנות']);
+    assert.equal(f.audience, 'women');               // no verdict given → women (the old default)
+    assert.deepEqual(f.audienceTags, ['נשים ובנות']);
+    assert.equal(toEventFields({ ...n, audience: 'men' }).audience, 'men');
+    assert.equal(toEventFields({ ...n, audience: 'all' }).audience, 'all');
     assert.equal(f.ticketLink, 'https://glatticket.co.il/900001');
     assert.match(f.notes, /כרטיס רגיל ₪60 · שורות ראשונות ₪90/);
     assert.ok(f.hebrewDate.length > 3);
@@ -308,6 +314,8 @@ describe('pipeline against MongoDB (dedupe, update, hide, never touch manual eve
     assert.equal(glatt.region, 'center');
     assert.equal(glatt.sourceName, 'גלאטיקט');
     assert.equal(glatt.hidden, false);
+    assert.ok(created.every(e => ['women', 'men', 'all'].includes(e.audience)), 'every imported event has an audience');
+    assert.equal(glatt.audience, 'women');
     const reasons = Object.fromEntries(run.skipped.map(s => [s.sourceId, s.reason]));
     assert.match(reasons["900003"], /לא מתאים/);
     assert.match(reasons["900005"], /עיר|חרדי/);

@@ -12,7 +12,7 @@ const PAGE = 18;
 
 const blank = () => ({
   title: '', instructor: '', contactPhone: '', registrationPhone: '', day: 'ראשון', time: '', location: '', price: 0,
-  ageGroup: '', gender: 'נשים', category: 'יצירה', exceptions: '', image: '', scope: 'local', city: '', onlineLink: '', audience: [] as string[],
+  ageGroup: '', gender: '', category: 'יצירה', exceptions: '', image: '', scope: 'local', city: '', onlineLink: '', audience: '', audienceTags: [] as string[],
 });
 
 const ClassesAdmin: React.FC<{ classes: any[]; region: string; search: string; createTick: number; reload: () => void }> = ({ classes, region, search, createTick, reload }) => {
@@ -80,7 +80,7 @@ const ClassesAdmin: React.FC<{ classes: any[]; region: string; search: string; c
             <Field label="שם החוג" required><input required className={inputCls} value={form.title} onChange={e => set({ title: e.target.value })} placeholder="למשל: ציור באקוורל" /></Field>
             <div className="grid gap-4 md:grid-cols-3">
               <Field label="תחום"><select className={inputCls} value={form.category || ''} onChange={e => set({ category: e.target.value })}>{CATS.map(c => <option key={c}>{c}</option>)}</select></Field>
-              <Field label="מיועד ל"><select className={inputCls} value={form.gender || 'נשים'} onChange={e => set({ gender: e.target.value })}><option>נשים</option><option>בנות</option><option>בנים</option></select></Field>
+              <Field label="קבוצה" hint="לא חובה — קהל היעד נבחר למטה"><select className={inputCls} value={form.gender || ''} onChange={e => set({ gender: e.target.value })}><option value="">—</option><option>גברים</option><option>נשים</option><option>בנים</option><option>בנות</option><option>משפחות</option></select></Field>
               <Field label="גילאים"><input className={inputCls} value={form.ageGroup || ''} onChange={e => set({ ageGroup: e.target.value })} placeholder="למשל: 8-12" /></Field>
             </div>
           </FormSection>

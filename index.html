@@ -3,21 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>נשי · קהילת נשים דתיות מכל הארץ</title>
-    <meta name="description" content="נשי: קהילה ארצית לנשים דתיות. אירועים, שיעורים, חוגים, גמ&quot;חים, פורום והגרלות, באזור שלך ובכל הארץ. ההצטרפות חינם.">
+    <!-- brand tokens (%BRAND_…%) are filled from shared/brand.js by the brand plugin in vite.config.ts -->
+    <title>%BRAND_NAME% · %BRAND_TAGLINE%</title>
+    <meta name="description" content="%BRAND_NAME%: %BRAND_ABOUT% ההצטרפות חינם.">
+    <meta name="application-name" content="%BRAND_LATIN%">
+    <meta name="apple-mobile-web-app-title" content="%BRAND_LATIN%">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="נשי · קהילת נשים">
+    <meta property="og:site_name" content="%BRAND_NAME% · %BRAND_LATIN%">
     <meta property="og:locale" content="he_IL">
-    <meta property="og:title" content="נשי · המקום שלך לפרוח">
-    <meta property="og:description" content="אירועים, חוגים, הגרלות וקהילה תומכת לנשים, והכול במקום אחד. ההצטרפות חינם 💗">
-    <meta property="og:image" content="https://nashi-co.com/og-image.jpg">
+    <meta property="og:title" content="%BRAND_NAME% · %BRAND_TAGLINE%">
+    <meta property="og:description" content="%BRAND_ABOUT%">
+    <meta property="og:image" content="https://nashi-co.com/s/img/brand.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:url" content="https://nashi-co.com/">
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#FBF7F4">
+    <meta name="theme-color" content="%BRAND_BG%">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/icon-192.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,12 +31,12 @@
     <style>
         .ios-install-prompt {
             display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 400px; background-color: #FFFFFF; color: #3D2F37;
-            padding: 15px 20px; border-radius: 20px; box-shadow: 0 18px 40px -18px rgba(138,80,88,0.35);
-            z-index: 9999; text-align: center; font-family: 'Assistant', sans-serif; direction: rtl; border: 1px solid #F0D5D6;
+            width: 90%; max-width: 400px; background-color: #FFFFFF; color: #121C2E;
+            padding: 15px 20px; border-radius: 20px; box-shadow: 0 18px 40px -18px rgba(30,51,84,0.35);
+            z-index: 9999; text-align: center; font-family: 'Assistant', sans-serif; direction: rtl; border: 1px solid #D2D9E6;
         }
         .ios-install-prompt p { margin: 0 0 10px 0; font-size: 15px; line-height: 1.4; }
-        .close-prompt { background: #8A5058; color: #fff; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .close-prompt { background: %BRAND_INK%; color: #fff; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -42,7 +46,7 @@
     <div id="iosPrompt" class="ios-install-prompt">
         <p>
             <strong>רוצה חוויה של אפליקציה?</strong><br>
-            להתקנת NASHI, לחץ על סמל ה<strong>שיתוף</strong> בתחתית המסך, ואז <strong>"הוסף למסך הבית"</strong>.
+            להתקנת %BRAND_NAME%: סמל ה<strong>שיתוף</strong> בתחתית המסך, ואז <strong>"הוסף למסך הבית"</strong>.
         </p>
         <button class="close-prompt" onclick="closeIosPrompt()">הבנתי, תודה</button>
     </div>

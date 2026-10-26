@@ -10,6 +10,8 @@ import FlyerView, { FlyerZoom } from '../components/FlyerView';
 import { regionName } from '../shared/regions';
 import { isEventPast, isEventExpired, eventStartMs } from '../shared/eventTime';
 import { PageShell, PageHero, FilterBar, SearchField, Chip, ChipRow, EmptyState, PageLoading, Sheet, IconButton } from '../components/pages/PageKit';
+import { useAudienceFilter, AudienceChips, audienceCounts } from '../components/AudienceFilter';
+import AudienceBadge from '../components/AudienceBadge';
 
 // --- Types ---
 interface EventSession {
@@ -48,6 +50,7 @@ interface EventItem {
   region?: string;
   scope?: string;
   startAt?: string;
+  audience?: any;
 }
 
 // past = after its end (end time, or start + 3h, or the end of its day) — shown with "עבר" for 48h, then gone (shared/eventTime.js)
@@ -150,8 +153,11 @@ const EventsPage = () => {
     return { value: event.price, isEarly: false };
   };
 
-  const area = useRegionCity(events, (e: EventItem) => !isPastEvent(e));
-  const filteredEvents = events.filter(event => {
+  // who it's for: הכול · לגברים · לנשים · משפחות/לכולם (remembered); the region counts follow the chosen audience
+  const aud = useAudienceFilter();
+  const forAudience = events.filter(aud.match);
+  const area = useRegionCity(forAudience, (e: EventItem) => !isPastEvent(e));
+  const filteredEvents = forAudience.filter(event => {
     if (!area.place(event as any)) return false;
     const q = filter.trim().toLowerCase();
     const matchesSearch = !q || [event.title, event.location, event.city].some(f => (f || '').toLowerCase().includes(q));
@@ -231,8 +237,9 @@ const EventsPage = () => {
 
   if (loading) return <PageLoading />;
 
-  const upcomingCount = events.filter(e => !isPastEvent(e)).length;
+  const upcomingCount = forAudience.filter(e => !isPastEvent(e)).length;
   const hasActiveFilters = filter !== '' || selectedCategory !== 'all' || onlyFree;
+  const audCounts = audienceCounts(events.filter(e => !isPastEvent(e)));
 
   return (
     <PageShell>
@@ -241,17 +248,18 @@ const EventsPage = () => {
         title="רגעים שכדאי"
         accent="לא לפספס"
         subtitle={upcomingCount > 0
-          ? <>ערבי נשים, סדנאות, הרצאות ומופעים. <span className="text-rose-700">{upcomingCount} אירועים קרובים</span> מחכים לך.</>
-          : 'ערבי נשים, סדנאות, הרצאות ומופעים — הכול במקום אחד.'}
+          ? <>כנסים, שיעורים, הרצאות, מופעים וסדנאות. <span className="text-rose-700">{upcomingCount} אירועים קרובים</span> מחכים לכם.</>
+          : 'כנסים, שיעורים, הרצאות, מופעים וסדנאות — הכול במקום אחד.'}
       />
 
-      {/* --- Where: regions with counts, then the cities that have events --- */}
+      {/* --- For whom, then where: regions with counts, then the cities that have events --- */}
+      <AudienceChips value={aud.audience} onChange={aud.setAudience} counts={audCounts} className="mb-3" />
       <RegionCityPicker f={area} className="mb-5" />
 
       {/* --- Filter Bar --- */}
       <FilterBar>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <SearchField value={filter} onChange={setFilter} placeholder="חפשי אירוע או מקום…" className="lg:w-80 shrink-0" />
+          <SearchField value={filter} onChange={setFilter} placeholder="חיפוש אירוע או מקום…" className="lg:w-80 shrink-0" />
           <ChipRow className="flex-1">
             {categories.map(cat => (
               <Chip key={cat} active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)}>
@@ -305,6 +313,7 @@ const EventsPage = () => {
                   ctaLabel={isPast ? 'לסיכום' : 'לפרטים והרשמה'}
                   onClick={() => setSelectedEvent(event)}
                   onShare={() => handleShare(event)}
+                  audience={event.audience}
               />
             </ScrollReveal>
           );
@@ -324,11 +333,12 @@ const EventsPage = () => {
               <EmptyState
                 icon={<MapPin size={28} />}
                 title={anyFilter ? 'לא מצאנו אירועים כאלה' : `עוד אין אירועים קרובים ${areaTitle}`}
-                text={anyFilter ? 'נסי מילה אחרת או קטגוריה אחרת.' : 'אפשר להציץ במה שקורה בכל הארץ — ומנהלת תרבות באזור יכולה להעלות אירועים בקלות.'}
+                text={anyFilter ? 'אפשר לנסות מילה אחרת או קטגוריה אחרת.' : 'אפשר להציץ במה שקורה בכל הארץ — ומנהלי התרבות באזור יכולים להעלות אירועים בקלות.'}
                 action={<div className="flex flex-wrap justify-center gap-2">
                   {anyFilter && <button onClick={() => { setFilter(''); setSelectedCategory('all'); setOnlyFree(false); }} className="btn-ghost">ניקוי סינונים</button>}
                   {area.sel.region !== 'all' && <button onClick={() => area.setRegion('all')} className="btn-primary">לאירועים בכל הארץ</button>}
-                  {!anyFilter && area.sel.region !== 'all' && <a href="#/become-manager" className="btn-ghost">להיות מנהלת תרבות באזור</a>}
+                  {aud.audience !== 'any' && <button onClick={() => aud.setAudience('any')} className="btn-ghost">לכל הקהלים</button>}
+                  {!anyFilter && area.sel.region !== 'all' && <a href="#/become-manager" className="btn-ghost">ניהול תרבות באזור</a>}
                 </div>}
               />
             )}
@@ -341,7 +351,7 @@ const EventsPage = () => {
             ) : grid(here))}
 
             {upcomingEverywhere.length > 0 && (
-              <section>{heading('ארצי ומקוון', upcomingEverywhere.length, 'לכל הנשים, מכל מקום')}{grid(upcomingEverywhere)}</section>
+              <section>{heading('ארצי ומקוון', upcomingEverywhere.length, 'מכל מקום בארץ')}{grid(upcomingEverywhere)}</section>
             )}
 
           </div>
@@ -356,7 +366,7 @@ const EventsPage = () => {
             <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500"><History size={26} /></span>
             <h2 className="mt-4 text-[1.7rem] leading-tight">האירוע הסתיים</h2>
             {ended.title && <p className="mt-1 text-[15px] text-slate-500">{ended.title}</p>}
-            <p className="mt-3 text-[15px] text-slate-600">אבל יש עוד הרבה מה לראות{ended.region ? ` ב${regionName(ended.region)}` : ''} 💗</p>
+            <p className="mt-3 text-[15px] text-slate-600">אבל יש עוד הרבה מה לראות{ended.region ? ` ב${regionName(ended.region)}` : ''}</p>
             <button onClick={() => { if (ended.region) area.setRegion(ended.region); setEnded(null); closeDeep(); }} className="btn-primary mt-5 w-full !py-3.5">
               לאירועים הקרובים{ended.region ? ` ב${regionName(ended.region)}` : ''}
             </button>
@@ -383,6 +393,7 @@ const EventsPage = () => {
               </div>
               <div className="px-5 md:px-7 pt-3 text-right">
                 <div className="flex flex-wrap items-center gap-1.5">
+                  <AudienceBadge item={selectedEvent} />
                   {selectedEvent.category && <span className="inline-block rounded-full bg-rose-50 px-3 py-1 text-[12px] text-rose-700">{selectedEvent.category}</span>}
                   {selectedEvent.scope !== 'online' && selectedEvent.city && <span className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1 text-[12px] text-white"><MapPin size={12} /> {selectedEvent.city}</span>}
                 </div>
@@ -418,7 +429,7 @@ const EventsPage = () => {
                     rel="noopener noreferrer"
                     className="btn-primary w-full !py-4 !text-base mb-5"
                   >
-                    <ExternalLink size={18} /> {selectedEvent.source ? 'לרכישת כרטיסים' : 'שרייני מקום עכשיו'}
+                    <ExternalLink size={18} /> {selectedEvent.source ? 'לרכישת כרטיסים' : 'לשריון מקום'}
                   </a>
                 ))}
                 {selectedEvent.source && (
@@ -488,7 +499,7 @@ const EventsPage = () => {
                 <div className="border-t border-rose-100 pt-6">
                   <h4 className="mb-4 flex items-center gap-2 text-[15px]">
                     <MessageSquare size={16} className="text-rose-400" />
-                    שתפי אותנו בחוויה שלך
+                    איך היה? נשמח לשמוע
                   </h4>
                   {reviewSubmitted ? (
                     <div className="flex items-center justify-center gap-2 rounded-2xl border border-sage-100 bg-sage-50 p-5 text-[15px] text-sage-700 animate-bounce-in">
@@ -505,12 +516,12 @@ const EventsPage = () => {
                       </div>
                       <textarea
                         className="h-24 w-full resize-none rounded-2xl border border-rose-100 bg-white px-4 py-3 text-[15px] outline-none placeholder:text-slate-400 focus:border-rose-300 focus:ring-4 focus:ring-rose-100/70"
-                        placeholder="איך היה האירוע? נשמח לשמוע…"
+                        placeholder="איך היה האירוע? כמה מילים…"
                         value={reviewText}
                         onChange={e => setReviewText(e.target.value)}
                       />
                       <button type="submit" className={`w-full ${userRating > 0 ? 'btn-primary' : 'rounded-full bg-rose-50 py-3 text-sm text-rose-300 cursor-not-allowed'}`}>
-                        {userRating > 0 ? 'שליחת משוב' : 'דרגי בכוכבים כדי לשלוח'}
+                        {userRating > 0 ? 'שליחת משוב' : 'דירוג בכוכבים כדי לשלוח'}
                       </button>
                     </form>
                   )}

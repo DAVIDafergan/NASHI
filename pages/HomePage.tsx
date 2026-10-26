@@ -19,6 +19,9 @@ import HebrewDayLine from '../components/home/HebrewDayLine';
 import { useMyPlace, isNear } from '../hooks/useMyPlace';
 import { regionName } from '../shared/regions';
 import EventCard from '../components/EventCard';
+import AudienceBadge from '../components/AudienceBadge';
+import Logo from '../components/Logo';
+import { BRAND } from '../shared/brand';
 
 // --- Interfaces ---
 interface EventItem {
@@ -40,9 +43,9 @@ const categories = [
   { name: 'קהילה', icon: <HeartHandshake size={12} /> },
 ];
 
-const API_URL = 'https://nashi-production.up.railway.app/api';
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
 
-// פיצ'רי הפלטפורמה המוצגים בסקשן "מה זה נשי?" — קומפקטי: 4 אייקונים עיקריים, אייקון וטקסט, צבע מתחלף
+// פיצ'רי הפלטפורמה המוצגים בסקשן "מה זה ספוט?" — קומפקטי: 4 אייקונים עיקריים, אייקון וטקסט, צבע מתחלף
 const platformFeatures = [
   { icon: Calendar, label: 'אירועים', color: 'green' as const },
   { icon: GraduationCap, label: 'חוגים', color: 'coral' as const },
@@ -228,7 +231,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           if (res.success) {
               if (onUpdateUser) onUpdateUser(res.user);
               setShowMembershipModal(false);
-              alert("הבקשה נשלחה בהצלחה! המתיני לאישור המנהלת.");
+              alert("הבקשה נשלחה בהצלחה! נעדכן כשהיא תאושר.");
           }
       } catch (err) { alert("שגיאה בשליחה"); }
   };
@@ -237,17 +240,17 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
     return (
       <div className="min-h-[70vh] flex items-center justify-center" dir="rtl">
         <div className="text-center space-y-5">
-          <p className="font-accent text-7xl text-ink leading-none animate-pulse">נשי</p>
+          <div className="animate-pulse"><Logo size="xl" /></div>
           <div className="mx-auto h-px w-24 overflow-hidden bg-rose-100">
             <div className="h-full w-1/2 bg-rose-400 animate-[shimmer-sweep_1.6s_ease-in-out_infinite]" />
           </div>
-          <p className="text-sm text-slate-500">רגע, אנחנו מכינות לך את הבית…</p>
+          <p className="text-sm text-slate-500">רגע, מכינים את הבית…</p>
         </div>
       </div>
     );
   }
 
-  const latestInspiration = inspirations[0] || { text: "הכוח האמיתי של אישה נמצא ביכולת שלה להאיר לאחרות את הדרך.", author: "נ.ש" };
+  const latestInspiration = inspirations[0] || { text: "מעט מן האור דוחה הרבה מן החושך.", author: BRAND.name };
 
   return (
     <div className="min-h-screen pb-12 relative font-sans text-right" dir="rtl">
@@ -268,14 +271,14 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         <div className="relative max-w-7xl mx-auto px-5 md:px-8 pt-8 md:pt-16 pb-8 md:pb-20 grid lg:grid-cols-[1.15fr_1fr] gap-8 lg:gap-6 items-center">
           <div className="relative z-10">
-            <p className="eyebrow animate-fade-in-up">קהילת נשים דתיות · מכל הארץ</p>
+            <p className="eyebrow animate-fade-in-up">לגברים · לנשים · למשפחות · מכל הארץ</p>
             <HebrewDayLine className="mt-2 animate-fade-in-up" />
             <AnimatedHeadline
               className="mt-5 text-[3.4rem] leading-[0.98] sm:text-[4.6rem] lg:text-[6.2rem] text-ink"
-              lines={[{ text: 'המקום שלך' }, { text: 'לפרוח,', className: 'font-accent text-[1.45em] leading-[0.82] text-rose-600' }, { text: 'להתחבר ולהשפיע.' , className: 'text-[0.55em] leading-[1.25] mt-3 text-slate-500 font-light' }]}
+              lines={[{ text: 'כל התרבות' }, { text: 'החרדית,', className: 'font-accent text-[1.45em] leading-[0.82] text-rose-600' }, { text: 'במקום אחד, קרוב לבית.' , className: 'text-[0.55em] leading-[1.25] mt-3 text-slate-500 font-light' }]}
             />
             <p className="mt-7 max-w-md text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
-              אירועים, שיעורים, חוגים, גמ"חים ורגעים של השראה. מקום אחד, עדין ומחבק, לנשים מכל הארץ.
+              שיעורים וכנסים, אירועים ומופעים, חוגים, גמ"חים ורגעים של השראה — לגברים, לנשים ולמשפחות, באזור שלכם ובכל הארץ.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3 animate-fade-in-up" style={{ animationDelay: '550ms' }}>
               <Link to="/events" className="btn-primary group !px-7 !py-3.5">
@@ -287,7 +290,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   <Star size={15} className="text-champagne-500" fill="currentColor" /> {(user?.points || 0).toLocaleString()} נקודות במעגל
                 </span>
               ) : !user?.isMemberRequested ? (
-                <button onClick={() => (user ? setShowMembershipModal(true) : onOpenLogin())} className="btn-ghost !px-6 !py-3.5">הצטרפי למעגל</button>
+                <button onClick={() => (user ? setShowMembershipModal(true) : onOpenLogin())} className="btn-ghost !px-6 !py-3.5">הצטרפות למעגל</button>
               ) : (
                 <span className="text-sm text-slate-500">בקשת ההצטרפות שלך בטיפול ✨</span>
               )}
@@ -324,7 +327,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     <div className="relative w-[78%] aspect-square">
                       <div className="absolute inset-0 rounded-[45%_55%_60%_40%/50%_45%_55%_50%] bg-gradient-to-br from-rose-200 via-rose-100 to-plum-200 animate-mesh-drift" />
                       <div className="absolute inset-[12%] rounded-[55%_45%_40%_60%/45%_55%_45%_55%] bg-white/50 backdrop-blur-xl border border-white/70 flex items-center justify-center">
-                        <span className="font-accent text-8xl text-rose-700/80">נשי</span>
+                        <Logo size="xl" />
                       </div>
                     </div>
                   </div>
@@ -376,7 +379,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
 
         {/* ============ BENTO — what is NASHI ============ */}
         <section>
-          <SectionHeader eyebrow="מה זה נשי" title="הכול במקום אחד" />
+          <SectionHeader eyebrow={`מה זה ${BRAND.name}`} title="הכול במקום אחד" />
           <div className="mt-8 px-5 md:px-0 grid grid-cols-2 md:grid-cols-4 md:grid-rows-2 gap-3 md:gap-5 md:h-[520px]">
             <ScrollReveal animation="scale-in" className="col-span-2 md:row-span-2">
               <TiltCard onClick={() => navigate('/events')} className="group relative h-[260px] md:h-full rounded-[2rem] overflow-hidden cursor-pointer bg-rose-700 text-white">
@@ -406,7 +409,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <Trophy size={28} strokeWidth={1.3} className="text-champagne-600 transition-transform duration-500 group-hover:scale-110" />
                 <div>
                   <h3 className="font-accent text-5xl md:text-6xl leading-none text-champagne-800">הגרלות</h3>
-                  <p className="text-xs text-champagne-700 mt-1 tabular-nums">{upcomingLottery ? `ההגרלה בעוד ${timeLeft}` : 'פרסים לחברות המעגל'}</p>
+                  <p className="text-xs text-champagne-700 mt-1 tabular-nums">{upcomingLottery ? `ההגרלה בעוד ${timeLeft}` : 'פרסים לחברי המעגל'}</p>
                 </div>
               </TiltCard>
             </ScrollReveal>
@@ -415,7 +418,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <div>
                   <HeartHandshake size={28} strokeWidth={1.3} className="text-rose-500" />
                   <h3 className="mt-3 font-accent text-5xl md:text-6xl leading-none text-ink">קהילה וחסד</h3>
-                  <p className="text-sm text-slate-500 mt-1 max-w-[16rem]">עסקים, שירותים ויד מושטת — מנשים לנשים.</p>
+                  <p className="text-sm text-slate-500 mt-1 max-w-[16rem]">עסקים, שירותים ויד מושטת — מהקהילה לקהילה.</p>
                 </div>
                 <div className="hidden sm:flex -space-x-4 space-x-reverse">
                   {shownCommunity.filter((c: any) => c.image).slice(0, 3).map((c: any, i: number) => (
@@ -444,6 +447,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     ctaLabel="לפרטים והרשמה"
                     onClick={() => navigate(`/events?e=${(event as any)._id || event.id}`)}
                     onShare={() => shareEvent(event)}
+                    audience={(event as any).audience}
                     className="h-full"
                   />
                 </ScrollReveal>
@@ -481,6 +485,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   <button type="button" onClick={() => navigate('/classes')} className="group relative block w-full text-right aspect-[3/4] rounded-[2rem] overflow-hidden bg-rose-100">
                     <img src={cls.image} alt={cls.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.4s] ease-out group-hover:scale-110" />
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
+                    <AudienceBadge item={cls} overlay className="absolute top-3 right-3" />
                     <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 text-white">
                       {cls.day && <span className="inline-block rounded-full bg-white/20 backdrop-blur px-2.5 py-1 text-[11px] mb-2">{cls.day}</span>}
                       <h3 className="font-strong text-lg md:text-2xl leading-tight text-white">{cls.title}</h3>
@@ -509,11 +514,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   ) : (
                     <span className="absolute inset-0 flex items-center justify-center font-accent text-[9rem] text-white/80">{String(personality.name).trim().charAt(0)}</span>
                   )}
-                  <span className="absolute bottom-5 right-1/2 translate-x-1/2 rounded-full bg-white/90 px-4 py-1.5 font-accent text-xl text-rose-700 shadow-soft backdrop-blur">אשת השבוע</span>
+                  <span className="absolute bottom-5 right-1/2 translate-x-1/2 rounded-full bg-white/90 px-4 py-1.5 font-accent text-xl text-rose-700 shadow-soft backdrop-blur">אישיות השבוע</span>
                 </button>
               </ScrollReveal>
               <div>
-                <ScrollReveal><p className="eyebrow">הכירו את אשת השבוע</p></ScrollReveal>
+                <ScrollReveal><p className="eyebrow">הכירו את אישיות השבוע</p></ScrollReveal>
                 <ScrollReveal animation="blur-in" delay={120}><h2 className="mt-3 font-display text-[2.6rem] md:text-[4rem] leading-[1.02] text-ink">{personality.name}</h2></ScrollReveal>
                 {personality.role && <ScrollReveal delay={200}><p className="mt-4 text-lg text-slate-600 leading-relaxed max-w-md">{personality.role}</p></ScrollReveal>}
                 {personality.motto && (
@@ -532,7 +537,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                     <button type="button" onClick={goRead} className="btn-primary group">
                       לקריאת הראיון המלא <ArrowLeft size={16} className="transition-transform duration-500 group-hover:-translate-x-1.5" />
                     </button>
-                    <button type="button" onClick={() => navigate('/personality-archive')} className="btn-ghost">כל נשות השבוע</button>
+                    <button type="button" onClick={() => navigate('/personality-archive')} className="btn-ghost">לכל הראיונות</button>
                   </div>
                 </ScrollReveal>
               </div>
@@ -549,7 +554,8 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               {shownCommunity.slice(0, 4).map((item: any, i: number) => (
                 <ScrollReveal key={item._id || i} animation="scale-in" delay={i * 90}>
                   <button type="button" onClick={() => navigate('/community', { state: { activeTab: item.category || item.type } })} className="group w-full text-right card-soft overflow-hidden hover:shadow-lift hover:-translate-y-1 transition-all duration-500">
-                    <div className="m-2 mb-0 aspect-[4/3] rounded-[1.4rem] overflow-hidden bg-rose-50">
+                    <div className="relative m-2 mb-0 aspect-[4/3] rounded-[1.4rem] overflow-hidden bg-rose-50">
+                      <AudienceBadge item={item} overlay className="absolute top-2 right-2 z-10" />
                       <img src={item.image} alt={item.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-[1.2s] group-hover:scale-110" />
                     </div>
                     <div className="p-4 md:p-5">
@@ -595,10 +601,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           <div className="flex justify-center items-center gap-5">
             <button onClick={() => setShowTermsModal(true)} className="hover:text-rose-600 transition-colors">תקנון האתר ומדיניות</button>
             <span className="w-1 h-1 bg-rose-200 rounded-full" />
-            <Link to="/contact" className="hover:text-rose-600 transition-colors">צרי קשר</Link>
+            <Link to="/contact" className="hover:text-rose-600 transition-colors">צור קשר</Link>
           </div>
           <p>
-            כל הזכויות שמורות לקהילת נשי &copy; {new Date().getFullYear()} · בנייה ופיתוח ע"י
+            כל הזכויות שמורות ל{BRAND.name} &copy; {new Date().getFullYear()} · בנייה ופיתוח ע"י
             <a href="https://wa.me/message/WZKLTKH4KELMD1" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-semibold mr-1.5 hover:text-rose-800 transition-colors">DA פרויקטים ויזמות</a>
           </p>
         </div>
@@ -609,7 +615,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       {/* 3. מודל בקשת הצטרפות */}
       {showMembershipModal && (
           <div className="fixed inset-0 z-[250] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowMembershipModal(false)}>
-              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-8 md:p-10 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-[#8A5058]">
+              <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg p-8 md:p-10 relative shadow-2xl animate-slide-up max-h-[88vh] overflow-y-auto border-t-4 border-rose-700">
                   <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-4 mb-5 md:hidden"></div>
                   <button onClick={() => setShowMembershipModal(false)} className="absolute top-6 left-6 p-2 hover:bg-rose-50 rounded-full text-slate-400 transition-colors"><X size={20}/></button>
                   <div className="text-right space-y-6">
@@ -627,7 +633,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                           <input required type="tel" placeholder="מספר טלפון" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-sm text-right outline-none focus:ring-2 focus:ring-rose-200 transition-shadow" value={membershipForm.phone} onChange={e=>setMembershipForm({...membershipForm, phone: e.target.value})}/>
                           <div className="flex items-center gap-3 pt-2">
                              <input id="terms" type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="w-5 h-5 text-rose-500 border-slate-300 rounded focus:ring-rose-500 cursor-pointer" />
-                             <label htmlFor="terms" className="text-sm font-medium text-slate-600 cursor-pointer">אני מאשרת את התקנון</label>
+                             <label htmlFor="terms" className="text-sm font-medium text-slate-600 cursor-pointer">קראתי ואני מסכים/ה לתקנון</label>
                           </div>
                           <button type="submit" className="w-full mt-4 py-4 bg-rose-700 hover:bg-rose-500 text-white rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl transition-all active:scale-95">שליחת בקשה</button>
                       </form>
@@ -639,7 +645,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       {/* 4. מודל תקנון */}
       {showTermsModal && (
         <div className="fixed inset-0 z-[300] flex items-end md:items-start justify-center bg-slate-950/50 backdrop-blur-sm animate-fade-in text-right md:pt-24 md:px-4 md:pb-4" onClick={() => setShowTermsModal(false)}>
-           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-2xl p-8 shadow-2xl max-h-[88vh] overflow-hidden flex flex-col animate-slide-up border-t-4 border-[#8A5058]">
+           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-2xl p-8 shadow-2xl max-h-[88vh] overflow-hidden flex flex-col animate-slide-up border-t-4 border-rose-700">
               <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-3 mb-4 shrink-0 md:hidden"></div>
               <div className="flex justify-between items-center mb-6 shrink-0">
                 <h3 className="text-2xl font-black text-slate-800">תקנון ומדיניות</h3>

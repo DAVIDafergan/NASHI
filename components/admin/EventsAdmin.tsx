@@ -12,7 +12,7 @@ const PAGE = 18;
 const blank = () => ({
   title: '', category: 'מוזיקה', description: '', image: '', logo: '', date: '', time: '', hebrewDate: '', location: '',
   price: 0, earlyBirdPrice: 0, earlyBirdEndDate: '', ticketLink: '', registrationLink: '', sessions: [] as { name: string; date: string }[],
-  isHero: false, targetAges: '', notes: '', scope: 'local', city: '', onlineLink: '', audience: [] as string[],
+  isHero: false, targetAges: '', notes: '', scope: 'local', city: '', onlineLink: '', audience: '', audienceTags: [] as string[],
 });
 
 const dateOnly = (d?: string) => (d ? String(d).split('T')[0] : '');
@@ -97,7 +97,7 @@ const EventsAdmin: React.FC<{ events: any[]; region: string; search: string; cre
         footer={<SaveBar formId="event-form" saving={saving} onCancel={() => setOpen(false)} label={idOf(form) ? 'שמירת שינויים' : 'פרסום האירוע'} />}>
         <form id="event-form" onSubmit={save} className="space-y-4">
           <FormSection title="פרטי האירוע" icon={<Info size={17} />}>
-            <Field label="שם האירוע" required><input required className={inputCls} value={form.title} onChange={e => set({ title: e.target.value })} placeholder="למשל: ערב נשים עם הזמרת…" /></Field>
+            <Field label="שם האירוע" required><input required className={inputCls} value={form.title} onChange={e => set({ title: e.target.value })} placeholder="למשל: כנס חיזוק, ערב עיון, הצגה לילדים…" /></Field>
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="קטגוריה">
                 <select className={inputCls} value={form.category} onChange={e => set({ category: e.target.value })}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
@@ -133,7 +133,7 @@ const EventsAdmin: React.FC<{ events: any[]; region: string; search: string; cre
           </FormSection>
 
           <LocationFields value={form} onChange={set} withAudience />
-          <FormSection title="איפה בדיוק" subtitle="שם המקום והכתובת, כפי שיופיעו לנרשמות">
+          <FormSection title="איפה בדיוק" subtitle="שם המקום והכתובת, כפי שיופיעו לנרשמים">
             <Field label="מקום / כתובת" required={form.scope !== 'online'}><input required={form.scope !== 'online'} className={inputCls} value={form.location} onChange={e => set({ location: e.target.value })} placeholder="למשל: אולם התרבות, רח׳ הרצל 5" /></Field>
           </FormSection>
 
@@ -151,7 +151,7 @@ const EventsAdmin: React.FC<{ events: any[]; region: string; search: string; cre
               <Field label="עד תאריך"><input type="date" className={inputCls} value={form.earlyBirdEndDate || ''} onChange={e => set({ earlyBirdEndDate: e.target.value })} /></Field>
             </div>
             <Field label="קישור לרכישת כרטיסים" hint="אם יש מערכת כרטיסים חיצונית"><input dir="ltr" className={`${inputCls} text-left`} value={form.ticketLink || ''} onChange={e => set({ ticketLink: e.target.value })} placeholder="https://…" /></Field>
-            <Field label="הערות לנרשמות"><input className={inputCls} value={form.notes || ''} onChange={e => set({ notes: e.target.value })} placeholder="למשל: יש להביא תעודה מזהה" /></Field>
+            <Field label="הערות לנרשמים"><input className={inputCls} value={form.notes || ''} onChange={e => set({ notes: e.target.value })} placeholder="למשל: יש להביא תעודה מזהה" /></Field>
             {!lockRegion && <Toggle checked={!!form.isHero} onChange={isHero => set({ isHero })} label="להציג בבאנר הראשי בדף הבית" hint="מומלץ לאירוע אחד או שניים בכל פעם" />}
           </FormSection>
           {!lockRegion && <p className="flex items-center gap-1.5 px-1 text-xs text-slate-400"><Ticket size={13} /> כרטיסי כניסה עם ברקוד מפיקים בלשונית "כרטיסים".</p>}

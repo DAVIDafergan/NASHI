@@ -3,10 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Camera, CheckCircle2, Loader2, Send, Sparkles } from 'lucide-react';
 import { api } from '../services/api';
 import { compressImageFile } from '../utils/image';
+import { BRAND } from '../shared/brand';
 
 type Q = { question: string; answer: string };
 
-/** Public questionnaire a woman fills after the admin sends her the "אשת השבוע" link. */
+/** Public questionnaire the interviewee fills after the admin sends the "אישיות השבוע" link. */
 const InterviewPage = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -58,14 +59,14 @@ const InterviewPage = () => {
     if (!file) return;
     setImageBusy(true);
     try { setImage(await compressImageFile(file, 1200, 0.85)); }
-    catch { setError('לא הצלחנו לקרוא את התמונה. נסי תמונה אחרת.'); }
+    catch { setError('לא הצלחנו לקרוא את התמונה. אפשר לנסות תמונה אחרת.'); }
     finally { setImageBusy(false); }
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!name.trim()) { setError('נשמח לדעת איך לקרוא לך 🙂'); return; }
+    if (!name.trim()) { setError('נשמח לדעת את השם 🙂'); return; }
     setSubmitting(true);
     try {
       await api.submitInterview(token!, { name, role, motto, image, questions } as any);
@@ -73,7 +74,7 @@ const InterviewPage = () => {
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      setError(err?.message || 'השליחה נכשלה, נסי שוב.');
+      setError(err?.message || 'השליחה נכשלה, כדאי לנסות שוב.');
     } finally {
       setSubmitting(false);
     }
@@ -86,9 +87,9 @@ const InterviewPage = () => {
   if (invalid) return (
     <div className="min-h-[70vh] flex items-center justify-center px-5" dir="rtl">
       <div className="card-soft max-w-md w-full p-10 text-center">
-        <p className="eyebrow">אשת השבוע</p>
+        <p className="eyebrow">אישיות השבוע</p>
         <h1 className="mt-3 text-3xl">הקישור כבר לא פעיל</h1>
-        <p className="mt-3 text-slate-500 leading-relaxed">ייתכן שהשאלון כבר נשלח, או שהקישור הוחלף. אפשר לבקש קישור חדש מצוות נשי.</p>
+        <p className="mt-3 text-slate-500 leading-relaxed">ייתכן שהשאלון כבר נשלח, או שהקישור הוחלף. אפשר לבקש קישור חדש מצוות {BRAND.name}.</p>
         <button onClick={() => navigate('/')} className="btn-primary mt-7">לדף הבית</button>
       </div>
     </div>
@@ -99,7 +100,7 @@ const InterviewPage = () => {
       <div className="card-soft max-w-md w-full p-10 text-center animate-scale-in">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-50 text-rose-600"><CheckCircle2 size={34} /></div>
         <h1 className="mt-6 text-4xl">תודה, {name.split(' ')[0]}!</h1>
-        <p className="mt-4 text-slate-500 leading-relaxed">הראיון שלך הגיע אלינו. נעבור עליו בקרוב, ותקבלי הודעה כשהוא יעלה לדף הבית של נשי.</p>
+        <p className="mt-4 text-slate-500 leading-relaxed">הראיון שלך הגיע אלינו. נעבור עליו בקרוב, ונעדכן כשהוא יעלה לדף הבית של {BRAND.name}.</p>
         <button onClick={() => navigate('/')} className="btn-ghost mt-7">לביקור באתר</button>
       </div>
     </div>
@@ -111,9 +112,9 @@ const InterviewPage = () => {
     <div className="relative px-4 pb-28 pt-8 md:pt-14" dir="rtl">
       <div className="mx-auto max-w-2xl">
         <header className="text-center animate-fade-in-up">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 shadow-soft"><Sparkles size={14} className="text-rose-500" /><span className="eyebrow">אשת השבוע · נשי</span></span>
-          <h1 className="mt-5 text-[2.6rem] leading-[1.05] md:text-[3.6rem]">נבחרת להיות<br /><span className="font-accent text-[1.3em] text-rose-600">אשת השבוע</span></h1>
-          <p className="mx-auto mt-4 max-w-md text-[17px] leading-relaxed text-slate-500">ספרי לנו על עצמך, במילים שלך. אין תשובות נכונות — כתבי מהלב, כמה שבא לך.</p>
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 shadow-soft"><Sparkles size={14} className="text-rose-500" /><span className="eyebrow">אישיות השבוע · {BRAND.name}</span></span>
+          <h1 className="mt-5 text-[2.6rem] leading-[1.05] md:text-[3.6rem]">נבחרת להיות<br /><span className="font-accent text-[1.3em] text-rose-600">אישיות השבוע</span></h1>
+          <p className="mx-auto mt-4 max-w-md text-[17px] leading-relaxed text-slate-500">ספרו לנו על עצמכם, במילים שלכם. אין תשובות נכונות — כותבים מהלב, כמה שרוצים.</p>
         </header>
 
         {/* progress */}
@@ -128,7 +129,7 @@ const InterviewPage = () => {
 
         <form onSubmit={submit} className="mt-6 space-y-6">
           <section className="card-soft p-6 md:p-8">
-            <h2 className="text-2xl">קצת עלייך</h2>
+            <h2 className="text-2xl">קצת עליך</h2>
             <div className="mt-6 flex flex-col items-center gap-6 md:flex-row md:items-start">
               <label className="group relative flex h-36 w-36 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-[2.2rem] border-2 border-dashed border-rose-200 bg-rose-50/60 transition hover:border-rose-400">
                 {image ? <img src={image} alt="" className="h-full w-full object-cover" /> : (
@@ -142,8 +143,8 @@ const InterviewPage = () => {
               </label>
               <div className="w-full space-y-3">
                 <input required className={input} placeholder="שם מלא" value={name} onChange={e => setName(e.target.value)} />
-                <input className={input} placeholder="במה את עוסקת? (למשל: גננת, אמא ל־4, מעצבת)" value={role} onChange={e => setRole(e.target.value)} />
-                <input className={input} placeholder="המוטו שלך לחיים" value={motto} onChange={e => setMotto(e.target.value)} />
+                <input className={input} placeholder="עיסוק (למשל: מלמד, גננת, הורה ל־4, מעצב/ת)" value={role} onChange={e => setRole(e.target.value)} />
+                <input className={input} placeholder="המוטו לחיים" value={motto} onChange={e => setMotto(e.target.value)} />
               </div>
             </div>
             <p className="mt-4 text-xs text-slate-400">התמונה מוקטנת אוטומטית — אפשר להעלות ישר מהמצלמה.</p>
@@ -172,7 +173,7 @@ const InterviewPage = () => {
               {submitting ? <Loader2 className="animate-spin" size={20} /> : <Send size={18} />}
               שליחת הראיון
             </button>
-            <p className="mt-2 text-center text-[11px] text-slate-400">בשליחה את מאשרת לפרסם את התשובות והתמונה באתר נשי, לאחר עריכה ואישור של הצוות.</p>
+            <p className="mt-2 text-center text-[11px] text-slate-400">השליחה מהווה אישור לפרסם את התשובות והתמונה ב{BRAND.name}, לאחר עריכה ואישור של הצוות.</p>
           </div>
         </form>
       </div>

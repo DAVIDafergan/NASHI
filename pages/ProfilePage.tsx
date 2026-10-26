@@ -6,6 +6,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api'; // ייבוא ה-API לסנכרון משימות
 import ScrollReveal from '../components/ScrollReveal';
 import { PageShell, EmptyState } from '../components/pages/PageKit';
+import { BRAND } from '../shared/brand';
+import { g } from '../shared/audience';
 
 interface ProfilePageProps {
     user: User;
@@ -98,7 +100,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
     ? new Date(user.createdAt).toLocaleDateString('he-IL', { year: 'numeric', month: 'short' })
     : null;
 
-  const firstName = (user.name || '').split(' ')[0] || 'יקרה';
+  const firstName = (user.name || '').split(' ')[0] || '';
+  const gen = (user as any).gender;
   const inputCls = 'w-full min-h-[46px] rounded-2xl border border-rose-100 bg-rose-50/30 px-4 text-[15px] text-right outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-100/70';
 
   return (
@@ -159,6 +162,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                            <span className="mb-1 block text-[12.5px] text-slate-500">כתובת</span>
                            <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className={inputCls} />
                        </label>
+                       <label className="block text-right">
+                           <span className="mb-1 block text-[12.5px] text-slate-500">אני (לא חובה — לפנייה במיילים)</span>
+                           <select value={(editForm as any).gender || ''} onChange={e => setEditForm({ ...editForm, gender: e.target.value } as any)} className={inputCls}>
+                               <option value="">לא צוין</option><option value="male">גבר</option><option value="female">אישה</option>
+                           </select>
+                       </label>
                        <div className="flex gap-2 md:col-span-2 pt-1">
                            <button onClick={handleSave} className="btn-primary flex-1"><Save size={17} /> שמירה</button>
                            <button onClick={() => setIsEditing(false)} className="btn-ghost"><X size={17} /> ביטול</button>
@@ -190,7 +199,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                           <div className="rounded-2xl bg-rose-50/60 px-3 py-2.5 text-center">
                               <Calendar size={15} className="mx-auto text-slate-400" />
                               <p className="font-strong text-[0.95rem] text-ink leading-tight mt-1.5 truncate">{memberSinceLabel || '—'}</p>
-                              <p className="text-[11.5px] text-slate-500">חברה מאז</p>
+                              <p className="text-[11.5px] text-slate-500">{g(gen, { male: 'חבר מאז', female: 'חברה מאז', neutral: 'בקהילה מאז' })}</p>
                           </div>
                       </div>
                   </>
@@ -259,14 +268,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                     <div className="relative z-10 flex h-full flex-col justify-between">
                       <div className="flex items-start justify-between">
                           <div>
-                              <p className="mb-1 text-[12px] tracking-[0.18em] opacity-75">כרטיס תושבת</p>
-                              <p className="font-accent text-[2.6rem] leading-none">נשי קארד</p>
+                              <p className="mb-1 text-[12px] tracking-[0.18em] opacity-75">כרטיס חבר/ה</p>
+                              <p className="font-accent text-[2.6rem] leading-none">{BRAND.name} קארד</p>
                           </div>
                           <Heart className="fill-current text-white/25" size={40} />
                       </div>
                       <div className="flex items-end justify-between">
                           <div>
-                              <p className="mb-1 text-[12px] opacity-70">בעלת הכרטיס</p>
+                              <p className="mb-1 text-[12px] opacity-70">{g(gen, { male: 'בעל הכרטיס', female: 'בעלת הכרטיס', neutral: 'בעלי הכרטיס' })}</p>
                               <p className="font-strong text-[1.2rem] tracking-wide">{user.name}</p>
                               {!user.isMemberApproved && <p className="mt-1 text-[12px] opacity-80">יופעל לאחר אישור החברות</p>}
                           </div>
@@ -325,7 +334,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                     <div className="flex flex-1 flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-rose-200 bg-rose-50/30 p-6 text-center">
                         <Sparkles size={26} className="mb-2 text-rose-300 animate-float-y" />
                         <p className="text-[14.5px] leading-relaxed text-slate-500">
-                          אין כרגע הטבות מוגדרות למעגל. המנהלת תעדכן כאן הטבות חדשות בקרוב.
+                          אין כרגע הטבות מוגדרות למעגל. ההנהלה תעדכן כאן הטבות חדשות בקרוב.
                         </p>
                     </div>
                   ) : (
@@ -337,13 +346,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                           <h4 className="text-[1.1rem]">הטבות המעגל עוד נעולות</h4>
                           <p className="text-[14.5px] leading-relaxed text-slate-500">
                             {user.isMemberRequested
-                              ? "בקשתך בטיפול. מיד לאחר אישור המנהלת, כל ההטבות והנקודות יופיעו כאן עבורך!"
-                              : "הצטרפי למעגל של נשי כדי להתחיל לצבור נקודות וליהנות מהטבות בלעדיות."}
+                              ? "הבקשה שלך בטיפול. מיד לאחר אישור ההנהלה, כל ההטבות והנקודות יופיעו כאן."
+                              : `הצטרפות למעגל של ${BRAND.name} פותחת צבירת נקודות והטבות בלעדיות.`}
                           </p>
                         </div>
                         {!user.isMemberRequested && (
                           <Link to="/" className="btn-primary">
-                            <HeartHandshake size={18} /> הצטרפי למעגל עכשיו
+                            <HeartHandshake size={18} /> הצטרפות למעגל
                           </Link>
                         )}
                     </div>
@@ -352,14 +361,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
 
               {/* הזמנת חברות — נתון אמיתי במקום גרף לדוגמה */}
               <ScrollReveal delay={150} className="rounded-[1.75rem] border border-rose-100/70 bg-white p-6 shadow-petal">
-                  <h3 className="flex items-center gap-2 text-[1.15rem]"><TrendingUp size={20} className="text-plum-500" /> חברות שהזמנת</h3>
+                  <h3 className="flex items-center gap-2 text-[1.15rem]"><TrendingUp size={20} className="text-plum-500" /> חברים שהזמנת</h3>
                   <p className="mt-2 font-accent text-6xl leading-none text-rose-700">{(user as any).referralsCount || 0}</p>
-                  <p className="mt-2 text-sm text-slate-500">על כל חברה שמצטרפת דרך הקישור שלך מקבלים 30 נקודות.</p>
+                  <p className="mt-2 text-sm text-slate-500">על כל חבר/ה שמצטרפים דרך הקישור שלך מקבלים 30 נקודות.</p>
                   <button
                     type="button"
-                    onClick={() => shareLink({ title: 'הצטרפי אליי לקהילת נשי', text: 'מצאתי מקום מקסים לנשים: אירועים, חוגים, הגרלות, קהילה והשראה. ההצטרפות חינם 💗', path: `/s/join?ref=${(user as any)._id || user.id}` })}
+                    onClick={() => shareLink({ title: `הצטרפו אליי ל${BRAND.name}`, text: `${BRAND.tagline}: אירועים, שיעורים, חוגים, הגרלות וקהילה — לגברים, לנשים ולמשפחות. ההצטרפות חינם`, path: `/s/join?ref=${(user as any)._id || user.id}` })}
                     className="btn-primary mt-5 w-full"
-                  >הזמיני חברה</button>
+                  >הזמנת חברים</button>
               </ScrollReveal>
           </div>
         </div>
@@ -387,7 +396,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                 <EmptyState
                   icon={<Heart size={28} />}
                   title="עוד לא שמרת אירועים"
-                  text="סמני לב על אירוע שמעניין אותך — והוא יחכה לך כאן."
+                  text="סימון לב על אירוע מעניין — והוא יחכה כאן."
                   action={<Link to="/events" className="btn-primary">ללוח האירועים</Link>}
                 />
             )}

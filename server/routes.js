@@ -5,6 +5,8 @@ import crypto from 'crypto'; // תוספת עבור ייצור טוקנים מא
 import mongoose from 'mongoose';
 import { regionOfCity, REGIONS } from '../shared/regions.js';
 import { isEventExpired } from '../shared/eventTime.js';
+import { AUDIENCE_IDS, audienceQuery, normGender, g } from '../shared/audience.js';
+import { BRAND, mailFrom } from '../shared/brand.js';
 const REGION_IDS = REGIONS.map(r => r.id);
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
@@ -108,11 +110,35 @@ const createSimpleRateLimiter = (limit, windowMs) => {
 const zodiacWheelRateLimit = createSimpleRateLimiter(10, 60 * 1000);
 
 
-// ---- מנהלות אזור ----
+// ---- קהל יעד (audience) ----
+// Events, classes, community items and lotteries carry audience: 'women' | 'men' | 'all' (shared/audience.js).
+// Old events / classes kept free-text tags in `audience` (['נשים בלבד', …]): an array sent by an older client is
+// moved to `audienceTags`. Returns an error message, or '' when the body is fine. required=true: must be given.
+const cleanAudience = (body, required = false) => {
+    if (!body || typeof body !== 'object') return '';
+    if (Array.isArray(body.audience)) { if (body.audienceTags === undefined) body.audienceTags = body.audience; delete body.audience; }
+    if (body.audienceTags !== undefined && !Array.isArray(body.audienceTags)) delete body.audienceTags;
+    if (body.audience === undefined || body.audience === null || body.audience === '') {
+        delete body.audience;
+        return required ? 'יש לבחור קהל יעד: לגברים, לנשים או לכולם' : '';
+    }
+    return AUDIENCE_IDS.includes(body.audience) ? '' : 'קהל יעד לא תקין';
+};
+// public lists: ?audience=men|women|all narrows the list (the site also filters in the browser); none = everything
+const audienceParam = (req) => audienceQuery(req.query?.audience);
+
+// ---- מנהלי/ות תרבות אזוריים ----
 // A regional manager (role 'regionAdmin' + adminRegion) may create, edit and delete events, classes,
-// community items and lotteries — only local items in her own region. Main admins (isAdmin) can do everything.
+// community items and lotteries — only local items in her/his own region — and picks the audience of each item
+// (required). Main admins (isAdmin) can do everything.
 const canManage = (Model) => async (req, res, next) => {
     try {
+        const writes = ['POST', 'PUT'].includes(req.method) && req.body && typeof req.body === 'object' && !req.path.includes('/run');
+        if (writes) {
+            // the admin's forms always send it; an older client without it gets the default ('women')
+            const err = cleanAudience(req.body, false);
+            if (err) return res.status(400).json({ error: err });
+        }
         if (req.user?.isAdmin) return next();
         const me = await User.findById(req.user?.id).select('role adminRegion isAdmin');
         if (me?.isAdmin) return next();
@@ -126,17 +152,19 @@ const canManage = (Model) => async (req, res, next) => {
                 return res.status(403).json({ error: 'אפשר לערוך רק תוכן מקומי באזור שלך' });
             }
         }
-        if (['POST', 'PUT'].includes(req.method) && req.body && typeof req.body === 'object' && !req.path.includes('/run')) {
+        if (writes) {
             const body = req.body;
+            // a manager always chooses who the item is for
+            if (req.method === 'POST' && !body.audience) return res.status(400).json({ error: 'יש לבחור קהל יעד: לגברים, לנשים או לכולם' });
             if (req.method === 'POST' || body.city !== undefined) {
-                if (regionOfCity(body.city) !== me.adminRegion) return res.status(403).json({ error: 'בחרי עיר מהאזור שלך' });
+                if (regionOfCity(body.city) !== me.adminRegion) return res.status(403).json({ error: 'יש לבחור עיר מהאזור שלך' });
             }
             body.scope = 'local';
             body.region = me.adminRegion;
             delete body.isHero; // the homepage banner stays with the main admin
             delete body.createdBy;
             if (req.method === 'POST') body.createdBy = me._id;
-            body.regionOnly = true; // her items show only in her region
+            body.regionOnly = true; // her/his items show only in that region
         }
         next();
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -147,7 +175,7 @@ router.put('/admin/users/:id/role', authenticate, isAdmin, async (req, res) => {
     try {
         const { role, adminRegion } = req.body || {};
         if (!['member', 'regionAdmin'].includes(role)) return res.status(400).json({ error: 'role' });
-        if (role === 'regionAdmin' && !REGION_IDS.includes(adminRegion)) return res.status(400).json({ error: 'בחרי אזור' });
+        if (role === 'regionAdmin' && !REGION_IDS.includes(adminRegion)) return res.status(400).json({ error: 'יש לבחור אזור' });
         const user = await User.findByIdAndUpdate(req.params.id,
             role === 'regionAdmin' ? { role, adminRegion } : { role: 'member', $unset: { adminRegion: 1 } },
             { new: true }).select('-password -resetPasswordToken -resetPasswordExpires');
@@ -156,7 +184,7 @@ router.put('/admin/users/:id/role', authenticate, isAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ---- בקשות להיות מנהלת תרבות ----
+// ---- בקשות להיות מנהל/ת תרבות ----
 const clip = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 
 // my application (to show its status)
@@ -167,12 +195,13 @@ router.get('/manager-applications/mine', authenticate, async (req, res) => {
 
 router.post('/manager-applications', authenticate, async (req, res) => {
     try {
-        const me = await User.findById(req.user.id).select('name email phone city role isAdmin');
+        const me = await User.findById(req.user.id).select('name email phone city role isAdmin gender');
         if (!me) return res.status(404).json({ error: 'not found' });
-        if (me.isAdmin || me.role === 'regionAdmin') return res.status(400).json({ error: 'את כבר מנהלת 🙂' });
+        const b = req.body || {};
+        const gender = normGender(b.gender) || normGender(me.gender);
+        if (me.isAdmin || me.role === 'regionAdmin') return res.status(400).json({ error: g(gender, { male: 'אתה כבר מנהל 🙂', female: 'את כבר מנהלת 🙂', neutral: 'כבר יש לך הרשאת ניהול 🙂' }) });
         const open = await ManagerApplication.findOne({ user: me._id, status: 'pending' });
         if (open) return res.status(400).json({ error: 'הבקשה שלך כבר בבדיקה' });
-        const b = req.body || {};
         const city = clip(b.city, 60) || me.city || '';
         const region = regionOfCity(city) || (REGION_IDS.includes(b.region) ? b.region : '');
         const f = {
@@ -184,11 +213,12 @@ router.post('/manager-applications', authenticate, async (req, res) => {
         const missing = [
             !f.fullName && 'שם מלא', !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email) && 'מייל תקין', !f.phone && 'טלפון', !region && 'עיר',
             !f.address && 'כתובת', !f.jobTitle && 'תפקיד', !['matnas', 'municipality', 'other'].includes(f.employer) && 'מקום העסקה',
-            f.employer === 'other' && !f.employerOther && 'פירוט מקום העסקה', !f.activityScope && 'היקף פעילות', !f.about && 'קצת עלייך', !f.hoursPerWeek && 'זמינות',
+            f.employer === 'other' && !f.employerOther && 'פירוט מקום העסקה', !f.activityScope && 'היקף פעילות', !f.about && 'קצת עליך', !f.hoursPerWeek && 'זמינות',
         ].filter(Boolean);
         if (missing.length) return res.status(400).json({ error: `חסר: ${missing.join(', ')}` });
-        const appl = await new ManagerApplication({ user: me._id, name: f.fullName || me.name, city, region, ...f }).save();
-        if (!me.city && city) await User.updateOne({ _id: me._id }, { city, region });
+        const appl = await new ManagerApplication({ user: me._id, name: f.fullName || me.name, city, region, ...f, ...(gender ? { gender } : {}) }).save();
+        const meUpdate = { ...(!me.city && city ? { city, region } : {}), ...(gender && !me.gender ? { gender } : {}) };
+        if (Object.keys(meUpdate).length) await User.updateOne({ _id: me._id }, meUpdate);
         res.status(201).json(appl);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -202,7 +232,7 @@ router.get('/admin/manager-applications', authenticate, isAdmin, async (req, res
 
 router.post('/admin/manager-applications/:id/:decision(approve|reject)', authenticate, isAdmin, async (req, res) => {
     try {
-        const appl = await ManagerApplication.findById(req.params.id).populate('user', 'name email');
+        const appl = await ManagerApplication.findById(req.params.id).populate('user', 'name email gender');
         if (!appl) return res.status(404).json({ error: 'not found' });
         const approve = req.params.decision === 'approve';
         const region = approve ? (REGION_IDS.includes(req.body?.region) ? req.body.region : appl.region) : appl.region;
@@ -216,16 +246,18 @@ router.post('/admin/manager-applications/:id/:decision(approve|reject)', authent
         try {
             if (approve && appl.user?.email && req.resend && process.env.RESEND_API_KEY) {
                 const regionLabel = (REGIONS.find(r => r.id === region) || {}).name || '';
+                // worded by the person's own gender (application "אני", else the profile); neutral when unknown
+                const gen = normGender(appl.gender) || normGender(appl.user.gender);
                 await req.resend.emails.send({
-                    from: 'נשי <updates@nashi-co.com>',
+                    from: mailFrom(),
                     to: appl.user.email,
-                    subject: 'ברוכה הבאה למנהלות התרבות של נשי 💗',
-                    html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.7;color:#2B2027">
-                      <h2 style="color:#8A5058">מזל טוב, ${appl.user.name || ''}!</h2>
-                      <p>הבקשה שלך אושרה. מעכשיו את <b>מנהלת התרבות של אזור ${regionLabel}</b> בנשי.</p>
-                      <p>איך מתחילות: נכנסות לאתר עם המשתמש שלך, ובתפריט בוחרות <b>"ניהול האזור שלי"</b>. משם אפשר להעלות אירועים, חוגים, גמ"חים והגרלות, ולהנפיק כרטיסים.</p>
-                      <p><a href="https://nashi-co.com/#/admin" style="background:#8A5058;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none">לניהול האזור שלי</a></p>
-                      <p style="color:#888;font-size:13px">נשלח באהבה מ"נשי" · קהילת נשים דתיות מכל הארץ</p></div>`,
+                    subject: g(gen, { male: `ברוך הבא לצוות מנהלי התרבות של ${BRAND.name}`, female: `ברוכה הבאה לצוות מנהלות התרבות של ${BRAND.name}`, neutral: `ברוכים הבאים לצוות ניהול התרבות של ${BRAND.name}` }),
+                    html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.7;color:#121C2E">
+                      <h2 style="color:#1E3354">מזל טוב, ${appl.user.name || ''}!</h2>
+                      <p>הבקשה שלך אושרה. ${g(gen, { male: 'מעכשיו אתה <b>מנהל התרבות', female: 'מעכשיו את <b>מנהלת התרבות', neutral: 'מעכשיו יש לך <b>ניהול התרבות' })} של אזור ${regionLabel}</b> ב${BRAND.name}.</p>
+                      <p>${g(gen, { male: 'איך מתחילים: נכנסים לאתר עם המשתמש שלך, ובתפריט בוחרים', female: 'איך מתחילות: נכנסות לאתר עם המשתמש שלך, ובתפריט בוחרות', neutral: 'איך מתחילים: נכנסים לאתר עם המשתמש שלך, ובתפריט בוחרים' })} <b>"ניהול האזור שלי"</b>. משם אפשר להעלות אירועים, חוגים, גמ"חים והגרלות — לגברים, לנשים או לכולם — ולהנפיק כרטיסים.</p>
+                      <p><a href="https://nashi-co.com/#/admin" style="background:#1E3354;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none">לניהול האזור שלי</a></p>
+                      <p style="color:#888;font-size:13px">נשלח מ${BRAND.name} · ${BRAND.tagline}</p></div>`,
                 });
             }
         } catch (e) { console.warn('manager approval email failed:', e?.message); }
@@ -273,11 +305,13 @@ router.post('/register', async (req, res) => {
         if (await User.findOne({ email })) return res.status(400).json({ error: 'Email exists' });
         const config = await getPointsConfig();
         const hashedPassword = await bcrypt.hash(password, 10);
+        const gender = normGender(req.body.gender);
         const user = new User({
             name, email, password: hashedPassword, phone,
             city: city || undefined, region: regionOfCity(city) || undefined,
-            // אוואטרים חמודים לנשים - מודל lorelei עם פילטרים לחיוך, הבעות מתוקות וצבעי רקע נעימים
-            avatar: `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(name)}&backgroundColor=ffd5dc,ffdfbf,c0aede,d1d4f9,ffc0cb&mouth=smile,happy,cute&eyes=happy,open,wink`,
+            ...(gender ? { gender } : {}),
+            // a neutral avatar (initials) — fits everyone
+            avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=1e3354,8a6828,5b5f68,a5636b&textColor=ffffff`,
             points: config.pointsPerRegister || 50
         });
         // חברה שהזמינה אותה (קישור הזמנה /s/join?ref=...) מקבלת נקודות
@@ -325,11 +359,11 @@ router.post('/forgot-password', async (req, res) => {
         const resetUrl = `${process.env.FRONTEND_URL || req.protocol + '://' + req.get('host')}/#/reset-password/${token}`;
 
         await req.resend.emails.send({
-            from: 'נשי <updates@nashi-co.com>',
+            from: mailFrom(),
             to: [email],
-            subject: 'איפוס סיסמה - אתר נשי',
-            html: `<h3>שלום לך,</h3><p>לחצי על הכפתור כדי לאפס את הסיסמה שלך. הלינק בתוקף לשעה אחת.</p>
-                   <a href="${resetUrl}" style="background:#fb7185; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block;">איפוס סיסמה</a>`
+            subject: `איפוס סיסמה - ${BRAND.name}`,
+            html: `<div dir="rtl"><h3>שלום ${user.name || ''},</h3><p>${g(user.gender, { male: 'לחץ', female: 'לחצי', neutral: 'יש ללחוץ' })} על הכפתור כדי לאפס את הסיסמה שלך. הלינק בתוקף לשעה אחת.</p>
+                   <a href="${resetUrl}" style="background:#1E3354; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block;">איפוס סיסמה</a></div>`
         });
 
         res.json({ success: true, message: 'מייל איפוס נשלח' });
@@ -364,6 +398,8 @@ router.put('/users/:id', authenticate, async (req, res) => {
             'resetPasswordToken', 'resetPasswordExpires', 'referredBy', 'referralsCount', 'createdAt', 'lastZodiacWheelSpinAt', 'zodiacWheelSpinsCount', 'role', 'adminRegion'];
         const update = { ...req.body };
         if (!req.user.isAdmin) PROTECTED.forEach(k => delete update[k]);
+        // optional gender (only for wording emails / texts): male | female, '' / null clears it
+        if (update.gender !== undefined) { const gn = normGender(update.gender); if (gn) update.gender = gn; else { const clear = update.gender === '' || update.gender === null; delete update.gender; if (clear) update.$unset = { gender: 1 }; } }
         if (typeof update.city === 'string') { update.city = update.city.trim().slice(0, 60); update.region = regionOfCity(update.city) || update.region; }
         else { delete update.password; delete update._id; }
         const updated = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select('-password -resetPasswordToken -resetPasswordExpires');
@@ -384,7 +420,7 @@ router.get('/events', async (req, res) => {
     // hidden = imported events a manager hid, or that disappeared from the source / already happened
     // past events stay 48h (shown as "עבר"), then never again — even before the hourly cleanup gets to them
     try {
-        const list = await Event.find({ hidden: { $ne: true }, archived: { $ne: true } }).populate('attendees', 'name avatar');
+        const list = await Event.find({ hidden: { $ne: true }, archived: { $ne: true }, ...audienceParam(req) }).populate('attendees', 'name avatar');
         const now = Date.now();
         res.json(list.filter(e => !isEventExpired(e, now)));
     } 
@@ -455,7 +491,7 @@ router.delete('/events/:id', authenticate, canManage(Event), async (req, res) =>
 // ================= 4. חוגים (CLASSES) =================
 
 router.get('/classes', async (req, res) => {
-    try { res.json(await Class.find()); } catch (err) { res.status(500).json({ error: err.message }); }
+    try { res.json(await Class.find(audienceParam(req))); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/classes', authenticate, canManage(Class), async (req, res) => {
@@ -477,7 +513,7 @@ router.delete('/classes/:id', authenticate, canManage(Class), async (req, res) =
 // ================= 5. הגרלות (LOTTERIES) =================
 
 router.get('/lotteries', async (req, res) => {
-    try { res.json(await Lottery.find()); } catch (err) { res.status(500).json({ error: err.message }); }
+    try { res.json(await Lottery.find(audienceParam(req))); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/lotteries', authenticate, canManage(Lottery), async (req, res) => {
@@ -756,7 +792,7 @@ router.delete('/admin/zodiac-wheel/prizes/:id', authenticate, isAdmin, zodiacWhe
 // ================= 6. קהילה (COMMUNITY) =================
 
 router.get('/community', async (req, res) => {
-    try { res.json(await Community.find().sort({ createdAt: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
+    try { res.json(await Community.find(audienceParam(req)).sort({ createdAt: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/community', authenticate, canManage(Community), async (req, res) => {
@@ -1326,9 +1362,9 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
   try {
     let recipients = [];
     if (isTest) {
-      recipients = [{ email: targetEmail, name: 'מנהלת (בדיקה)' }];
+      recipients = [{ email: targetEmail, name: 'הנהלה (בדיקה)' }];
     } else {
-      recipients = await User.find({}, 'email name');
+      recipients = await User.find({}, 'email name gender');
     }
 
     if (recipients.length === 0) {
@@ -1344,7 +1380,7 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
           <div style="font-size: 16px; line-height: 1.8; color: #334155; white-space: pre-wrap;">${content}</div>
         </div>
         <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #eee;">
-          נשלח באהבה מ"נשי" · קהילת נשים דתיות מכל הארץ
+          נשלח מ${BRAND.name} · ${BRAND.tagline}
         </div>
       </div>
     `;
@@ -1357,7 +1393,7 @@ router.post('/admin/broadcast-email', authenticate, isAdmin, async (req, res) =>
     for (const batch of batches) {
       await req.resend.batch.send(
         batch.map(u => ({
-          from: 'נשי <updates@nashi-co.com>',
+          from: mailFrom(),
           to: u.email,
           subject: subject,
           html: emailHtml
@@ -1442,7 +1478,7 @@ router.get('/challenges/entries', async (req, res) => {
 router.post('/admin/challenges/:id/run', authenticate, isAdmin, async (req, res) => {
     try {
         const entries = await ChallengeEntry.find({ challengeId: req.params.id });
-        if (entries.length === 0) return res.status(400).json({ error: 'אין משתתפות באתגר זה' });
+        if (entries.length === 0) return res.status(400).json({ error: 'אין משתתפים באתגר זה' });
 
         const randomIndex = Math.floor(Math.random() * entries.length);
         const winner = entries[randomIndex];

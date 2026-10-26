@@ -20,7 +20,7 @@ export function useArea() {
   const [area, setArea] = useState<Area>(region ? 'mine' : 'all');
   const match = (item: any) => {
     const scope = item?.scope || 'local';
-    // uploaded by a regional manager → shown only in her region (not under "the whole country")
+    // uploaded by a regional manager → shown only in that region (not under "the whole country")
     if (area === 'all') return !item?.regionOnly;
     if (area === 'online') return scope === 'online';
     if (scope !== 'local') return true;
@@ -52,12 +52,12 @@ export const AreaChips: React.FC<{ area: Area; setArea: (a: Area) => void; myReg
       </ChipRow>
       {picking && createPortal(
         <div className="fixed inset-0 z-[300] flex items-end justify-center bg-ink/40 backdrop-blur-sm md:items-center md:p-6" dir="rtl" onClick={() => setPicking(false)}>
-          <div className="w-full rounded-t-[2rem] bg-[#FBF7F4] p-6 pb-8 shadow-2xl md:max-w-md md:rounded-[2rem] animate-fade-in-up" onClick={e => e.stopPropagation()}>
+          <div className="w-full rounded-t-[2rem] bg-cream p-6 pb-8 shadow-2xl md:max-w-md md:rounded-[2rem] animate-fade-in-up" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-2xl">מה קורה ב…</h3>
               <button onClick={() => setPicking(false)} aria-label="סגירה" className="rounded-full p-2 text-slate-400 hover:bg-rose-50"><X size={20} /></button>
             </div>
-            <p className="mt-2 text-sm text-slate-500">בחרי כל עיר או יישוב בארץ. יוצג מה שקורה שם, וגם התוכן הארצי והמקוון.</p>
+            <p className="mt-2 text-sm text-slate-500">אפשר לבחור כל עיר או יישוב בארץ. יוצג מה שקורה שם, וגם התוכן הארצי והמקוון.</p>
             <CityPicker className="mt-2" value={other} placeholder="חיפוש עיר או יישוב…" locate={false} inline
               onChange={c => { setArea(c === city ? 'city' : `city:${c}`); setPicking(false); }} />
           </div>

@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, ImagePlus, Loader2, MapPin, Search, Trash2, Wifi, Globe2, X } from 'lucide-react';
-import { REGIONS, CITIES, SCOPES, AUDIENCES, regionName, regionOfCity } from '../../shared/regions';
+import { REGIONS, CITIES, SCOPES, regionName, regionOfCity } from '../../shared/regions';
+import { AUDIENCE_OPTIONS, AUDIENCE_TAGS, AUDIENCE_IDS, audienceOf } from '../../shared/audience';
+import { BRAND } from '../../shared/brand';
+import AudienceBadge from '../AudienceBadge';
 import { compressImageFile } from '../../utils/image';
 
 /* ------------------------------------------------------------------ */
@@ -113,7 +116,7 @@ export const ImagePicker: React.FC<{ value?: string; onChange: (dataUrl: string)
         ) : (
           <span className="flex flex-col items-center gap-2 text-rose-500">
             {busy ? <Loader2 className="animate-spin" /> : <ImagePlus size={26} />}
-            <span className="text-xs font-semibold">לחצי לבחירת תמונה</span>
+            <span className="text-xs font-semibold">לבחירת תמונה</span>
           </span>
         )}
         <input type="file" accept="image/*" className="sr-only" onChange={onFile} />
@@ -125,7 +128,7 @@ export const ImagePicker: React.FC<{ value?: string; onChange: (dataUrl: string)
 
 /* ---------------- location & audience ---------------- */
 
-/** Set by AdminPage for a regional manager: forms only offer her region and local scope. */
+/** Set by AdminPage for a regional manager: forms only offer her/his region and local scope. */
 export const AdminScopeContext = React.createContext<{ lockRegion?: string }>({});
 
 
@@ -177,25 +180,46 @@ export const CityPicker: React.FC<{ value?: string; onChange: (city: string) => 
   );
 };
 
-type LocationValue = { scope?: string; city?: string; onlineLink?: string; audience?: string[] };
+type LocationValue = { scope?: string; city?: string; onlineLink?: string; audience?: any; audienceTags?: string[] };
 
-/** "מיקום וקהל" form section used by events, classes, community and lotteries. */
+/**
+ * "מיקום וקהל" form section used by events, classes, community and lotteries.
+ * Always asks who the item is for (required): לגברים / לנשים / לכולם. A new item starts with audience '' (nothing
+ * chosen); an existing item without the field (or with the old tag array) is shown as 'women' — what it always was.
+ * withAudience adds the optional "למי זה מתאים" tags (audienceTags).
+ */
 export const LocationFields: React.FC<{ value: LocationValue; onChange: (patch: Partial<LocationValue>) => void; withAudience?: boolean; withOnline?: boolean }> = ({ value, onChange, withAudience, withOnline = true }) => {
   const { lockRegion } = React.useContext(AdminScopeContext);
   const scope = (lockRegion ? 'local' : (value.scope || 'local')) as 'local' | 'national' | 'online';
   // regional managers publish local items only
   useEffect(() => { if (lockRegion && value.scope && value.scope !== 'local') onChange({ scope: 'local' }); }, [lockRegion, value.scope]); // eslint-disable-line react-hooks/exhaustive-deps
+  // an existing item: missing audience / legacy tag array → 'women' (+ the old tags move to audienceTags)
+  useEffect(() => {
+    if (value.audience === '' || AUDIENCE_IDS.includes(value.audience)) return;
+    onChange({ audience: audienceOf(value), ...(Array.isArray(value.audience) && !value.audienceTags?.length ? { audienceTags: value.audience } : {}) });
+  }, [value.audience]); // eslint-disable-line react-hooks/exhaustive-deps
+  const aud = AUDIENCE_IDS.includes(value.audience) ? value.audience as string : '';
+  const audRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { audRef.current?.setCustomValidity(aud ? '' : 'יש לבחור קהל יעד: לגברים, לנשים או לכולם'); }, [aud]);
+  const tags = aud ? AUDIENCE_TAGS[aud as 'men' | 'women' | 'all'] : [];
   const opts = SCOPES.filter(s => withOnline || s.id !== 'online').map(s => ({
     id: s.id,
     label: s.id === 'local' ? 'מקומי' : s.id === 'national' ? 'ארצי' : 'מקוון',
     icon: s.id === 'local' ? <MapPin size={14} /> : s.id === 'national' ? <Globe2 size={14} /> : <Wifi size={14} />,
   }));
   return (
-    <FormSection title="מיקום וקהל" subtitle="קובע למי זה יוצג באתר" icon={<MapPin size={17} />}>
+    <FormSection title="מיקום וקהל" subtitle="קובע למי ואיפה זה יוצג באתר" icon={<MapPin size={17} />}>
+      <Field label="קהל יעד" required hint={aud ? AUDIENCE_OPTIONS.find(o => o.id === aud)?.hint : 'חובה לבחור: יוצג בסינון "לגברים", "לנשים" או "משפחות/לכולם".'}>
+        <div className="relative">
+          <Segmented value={aud as any} onChange={(v) => onChange({ audience: v, audienceTags: (value.audienceTags || []).filter(t => AUDIENCE_TAGS[v as 'men' | 'women' | 'all'].includes(t)) })} options={AUDIENCE_OPTIONS.map(o => ({ id: o.id, label: o.label }))} />
+          {/* native "required" for the segmented control: the form won't submit until an audience is chosen */}
+          <input ref={audRef} required value={aud} onChange={() => {}} tabIndex={-1} aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-px w-full opacity-0" />
+        </div>
+      </Field>
       {lockRegion ? (
-        <p className="rounded-2xl bg-rose-50/70 px-4 py-3 text-sm text-rose-800">את מנהלת את אזור <b>{regionName(lockRegion)}</b>. התוכן יוצג לנשים באזור, ובנוסף בסינון של כל הארץ.</p>
+        <p className="rounded-2xl bg-rose-50/70 px-4 py-3 text-sm text-rose-800">האזור שבניהולך: <b>{regionName(lockRegion)}</b>. התוכן יוצג באזור, ובנוסף בסינון של כל הארץ.</p>
       ) : (
-      <Field label="היקף" hint={scope === 'local' ? 'יוצג קודם לנשים מהאזור של העיר שבחרת.' : scope === 'national' ? 'יוצג לכל הנשים בכל הארץ.' : 'מתקיים באונליין — יוצג לכולן, עם קישור הצטרפות.'}>
+      <Field label="היקף" hint={scope === 'local' ? 'יוצג קודם למבקרים מהאזור של העיר שנבחרה.' : scope === 'national' ? 'יוצג לכל המבקרים בכל הארץ.' : 'מתקיים באונליין — יוצג לכולם, עם קישור הצטרפות.'}>
         <Segmented value={scope} onChange={(v) => onChange({ scope: v })} options={opts as any} />
       </Field>
       )}
@@ -209,13 +233,13 @@ export const LocationFields: React.FC<{ value: LocationValue; onChange: (patch: 
           <input dir="ltr" className={`${inputCls} text-left`} placeholder="https://zoom.us/j/…" value={value.onlineLink || ''} onChange={e => onChange({ onlineLink: e.target.value })} />
         </Field>
       )}
-      {withAudience && (
-        <Field label="למי זה מתאים?" hint="אפשר לבחור כמה.">
+      {withAudience && aud && (
+        <Field label="למי זה מתאים?" hint="לא חובה. אפשר לבחור כמה.">
           <div className="flex flex-wrap gap-2">
-            {AUDIENCES.map(a => {
-              const on = (value.audience || []).includes(a);
+            {tags.map(a => {
+              const on = (value.audienceTags || []).includes(a);
               return (
-                <button key={a} type="button" onClick={() => onChange({ audience: on ? (value.audience || []).filter(x => x !== a) : [...(value.audience || []), a] })}
+                <button key={a} type="button" onClick={() => onChange({ audienceTags: on ? (value.audienceTags || []).filter(x => x !== a) : [...(value.audienceTags || []), a] })}
                   className={`flex items-center gap-1 rounded-full border px-3.5 py-2 text-[13px] transition ${on ? 'border-rose-600 bg-rose-600 text-white' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>
                   {on && <Check size={13} />}{a}
                 </button>
@@ -233,7 +257,8 @@ export const LocationBadges: React.FC<{ item: any; showAudience?: boolean }> = (
     {item?.scope === 'national' ? <Badge tone="plum"><Globe2 size={11} /> ארצי</Badge>
       : item?.scope === 'online' ? <Badge tone="sky"><Wifi size={11} /> מקוון</Badge>
       : <Badge tone="rose"><MapPin size={11} /> {cityOfItem(item)}</Badge>}
-    {showAudience && (item?.audience || []).slice(0, 2).map((a: string) => <Badge key={a} tone="slate">{a}</Badge>)}
+    <AudienceBadge item={item} />
+    {showAudience && (item?.audienceTags || (Array.isArray(item?.audience) ? item.audience : [])).slice(0, 2).map((a: string) => <Badge key={a} tone="slate">{a}</Badge>)}
   </div>
 );
 
@@ -372,7 +397,7 @@ export const ItemCard: React.FC<{ image?: string; title: string; meta?: React.Re
   <article className={`group flex flex-col overflow-hidden rounded-[1.6rem] border bg-white shadow-soft transition hover:shadow-lift ${highlight ? 'border-amber-200 ring-2 ring-amber-100' : 'border-rose-100/80'}`}>
     <button type="button" onClick={onClick} className="relative block aspect-[16/9] w-full overflow-hidden bg-rose-50 text-right" tabIndex={onClick ? 0 : -1}>
       {image ? <img src={image} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
-        : <span className="flex h-full items-center justify-center font-accent text-5xl text-rose-200">נשי</span>}
+        : <span className="flex h-full items-center justify-center font-accent text-5xl text-rose-200">{BRAND.name}</span>}
       {badges && <span className="absolute right-3 top-3 flex flex-wrap gap-1">{badges}</span>}
     </button>
     <div className="flex flex-1 flex-col gap-2 p-4">

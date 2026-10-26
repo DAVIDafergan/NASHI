@@ -6,6 +6,8 @@ import { api } from '../services/api'; // ייבוא ה-API
 import ScrollReveal from '../components/ScrollReveal';
 import { SectionHeader } from '../components/home/HomeParts';
 import { PageShell, PageHero, ChipRow, EmptyState, Portal } from '../components/pages/PageKit';
+import AudienceBadge from '../components/AudienceBadge';
+import { BRAND } from '../shared/brand';
 
 interface LotteryPageProps {
     lotteries?: LotteryItem[];
@@ -85,7 +87,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
 
       if (lottery.participants.includes(user.id || user._id)) {
-          alert('את כבר רשומה להגרלה זו!');
+          alert('כבר נרשמת להגרלה זו!');
           return;
       }
 
@@ -97,7 +99,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       }
 
       if (lottery.participationType === 'link_only') {
-          alert('השתתפות בהגרלה זו היא באמצעות לינק אישי שנשלח אליך בלבד.');
+          alert('השתתפות בהגרלה זו היא באמצעות לינק אישי בלבד.');
           return;
       }
       
@@ -118,9 +120,9 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
           onUpdateLottery(updatedLottery);
           
           if(lottery.participationType === 'mission') {
-              alert('🎯 המשימה התחילה! בצעי אותה ולחצי על כפתור "סיימתי" כדי להיכנס להגרלה.');
+              alert('🎯 המשימה התחילה! אחרי ביצוע המשימה, לחיצה על "סיימתי" מכניסה להגרלה.');
           } else {
-              alert('🎉 נרשמת בהצלחה להגרלה! הודעה תישלח אליך במידה ותזכי.');
+              alert('🎉 נרשמת בהצלחה להגרלה! במקרה של זכייה תישלח הודעה.');
           }
       }
   };
@@ -150,8 +152,8 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
   const handleShare = (lottery: LotteryItem) => {
       const shareData = {
-          title: `הגרלת ${lottery.title} ב'נשי'`,
-          text: `בואי להשתתף בהגרלה על ${lottery.prize} באפליקציית נשי!`,
+          title: `הגרלת ${lottery.title} ב${BRAND.name}`,
+          text: `בואו להשתתף בהגרלה על ${lottery.prize} ב${BRAND.name}!`,
           url: window.location.href
       };
       
@@ -295,7 +297,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
   };
 
   const handleAdminDeleteChallenge = async (challengeId: string) => {
-      if (!window.confirm('האם את בטוחה שברצונך למחוק אתגר זה ואת כל התמונות המשויכות אליו?')) return;
+      if (!window.confirm('בטוח למחוק אתגר זה ואת כל התמונות המשויכות אליו?')) return;
       try {
           await api.deleteChallenge(challengeId);
           alert('האתגר נמחק בהצלחה');
@@ -413,7 +415,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       if (isRegistered) {
           return (
               <div className={`${base} border border-sage-200 bg-sage-50 text-sage-700`}>
-                  <CheckCircle2 size={17} /> את בפנים! בהצלחה
+                  <CheckCircle2 size={17} /> נרשמת! בהצלחה
               </div>
           );
       }
@@ -430,7 +432,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
               className={`${base} ${canParticipate ? 'bg-rose-700 text-white shadow-lift hover:bg-rose-800' : 'bg-rose-50 text-rose-300 cursor-not-allowed'}`}
           >
               <Ticket size={17} />
-              {lottery.participationType === 'mission' ? 'התחילי משימה להגרלה' : canParticipate ? 'הירשמי להגרלה עכשיו' : 'חסרות לך נקודות'}
+              {lottery.participationType === 'mission' ? 'התחלת משימה להגרלה' : canParticipate ? 'הרשמה להגרלה' : 'חסרות לך נקודות'}
           </button>
       );
   };
@@ -488,7 +490,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
         eyebrow="הגרלות ואתגרים"
         title="קצת מזל,"
         accent="הרבה פרגון"
-        subtitle="הגרלות לחברות המעגל ואתגרי חוסן משפחתיים עם פרסים אמיתיים. נרשמות בלחיצה ומחכות לגילוי."
+        subtitle="הגרלות לחברי המעגל ואתגרי חוסן משפחתיים עם פרסים אמיתיים. נרשמים בלחיצה ומחכים לגילוי."
       >
         <div className="inline-flex rounded-full border border-rose-100 bg-white/80 p-1 shadow-soft" role="tablist">
           <button
@@ -530,6 +532,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                           <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" /><span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" /></span>
                           ההגרלה הפעילה
                        </span>
+                       <AudienceBadge item={featuredLottery} overlay className="absolute top-4 left-4" />
                        {drawCountdown && (
                          <div className="absolute bottom-4 right-4 left-4 md:left-auto rounded-2xl bg-white/15 px-4 py-3 text-white backdrop-blur-md">
                            <p className="text-[12px] opacity-80">ההגרלה תתקיים בעוד</p>
@@ -544,7 +547,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                           <div className="flex -space-x-2 space-x-reverse">
                             {[0,1,2].map(n => <span key={n} className="h-7 w-7 rounded-full border-2 border-white bg-gradient-to-br from-rose-200 to-champagne-200" />)}
                           </div>
-                          <Users size={15} className="text-rose-400" /> {featuredLottery.participants.length} משתתפות כבר בפנים
+                          <Users size={15} className="text-rose-400" /> {featuredLottery.participants.length} משתתפים כבר בפנים
                        </div>
                        <div className="mt-auto flex items-center gap-2 pt-2">
                           <div className="flex-1">{renderActionButton(featuredLottery)}</div>
@@ -568,13 +571,14 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                             <div className="relative m-2 mb-0 aspect-[16/10] shrink-0 overflow-hidden rounded-[1.4rem] bg-rose-50">
                                 <img src={lottery.image} alt={lottery.title} loading="lazy" className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 ${!lottery.isActive ? 'grayscale-[0.4]' : ''}`} />
                                 <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1.5">
+                                    <AudienceBadge item={lottery} overlay />
                                     {lottery.participationType === 'mission' ? (
                                         <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-3 py-1 text-[11.5px] text-champagne-700 shadow-soft">
                                             <ClipboardList size={12} /> הגרלת משימה
                                         </span>
                                     ) : (
                                         <span className="rounded-full bg-white/95 px-3 py-1 text-[11.5px] text-rose-700 shadow-soft">
-                                            {lottery.participationType === 'everyone' ? 'פתוח לכולן' : `${lottery.minPointsToEnter} נקודות`}
+                                            {lottery.participationType === 'everyone' ? 'פתוח לכולם' : `${lottery.minPointsToEnter} נקודות`}
                                         </span>
                                     )}
                                     {!lottery.isActive && (
@@ -613,7 +617,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
             )}
 
             {filteredLotteries.length === 0 && (
-              <EmptyState icon={<Gift size={28} />} title="אין הגרלות פעילות כרגע" text="הגרלה חדשה בדרך — חזרי לבדוק בקרוב, או הצטרפי לאתגר החוסן." action={<button onClick={() => setActiveTab('challenges')} className="btn-ghost"><Target size={16}/> לאתגרי החוסן</button>} />
+              <EmptyState icon={<Gift size={28} />} title="אין הגרלות פעילות כרגע" text="הגרלה חדשה בדרך — כדאי לחזור לבדוק בקרוב, או להצטרף לאתגר החוסן." action={<button onClick={() => setActiveTab('challenges')} className="btn-ghost"><Target size={16}/> לאתגרי החוסן</button>} />
             )}
         </div>
       ) : (
@@ -773,7 +777,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                         {challenge.winnerFamily ? (
                                             <div className="rounded-2xl bg-gradient-to-l from-champagne-300 to-champagne-400 px-5 py-4 text-center text-champagne-950 shadow-lift animate-bounce-in">
                                                 <Trophy size={22} className="mx-auto mb-1" />
-                                                <span className="block text-[12px] opacity-75">הזוכה המאושרת</span>
+                                                <span className="block text-[12px] opacity-75">הזוכים המאושרים</span>
                                                 <span className="font-strong text-[1.1rem]">משפחת {challenge.winnerFamily}</span>
                                             </div>
                                         ) : challenge.isActive !== false ? (
@@ -781,7 +785,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                                 onClick={() => setSelectedChallengeId(isOpen ? null : (challenge._id || challenge.id))}
                                                 className={`flex w-full min-h-[52px] items-center justify-center gap-2 rounded-full px-6 text-[15.5px] shadow-lift transition-all active:scale-[0.97] font-strong ${isOpen ? 'bg-white/15 text-white backdrop-blur border border-white/30' : 'bg-white text-plum-800 hover:bg-rose-50'}`}
                                             >
-                                                {isOpen ? 'סגירת הטופס' : 'השתתפי באתגר!'}
+                                                {isOpen ? 'סגירת הטופס' : 'להשתתפות באתגר'}
                                                 <Target size={18} />
                                             </button>
                                         ) : (
@@ -813,7 +817,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                         {!user ? (
                                             <div className="mx-auto max-w-md rounded-[1.5rem] border border-dashed border-rose-200 bg-white py-8 text-center">
                                                 <Lock size={30} className="mx-auto mb-3 text-rose-300" />
-                                                <h4 className="text-lg">התחברי כדי להשתתף</h4>
+                                                <h4 className="text-lg">יש להתחבר כדי להשתתף</h4>
                                                 <button onClick={() => window.location.hash = '/login'} className="btn-primary mt-4">כניסה</button>
                                             </div>
                                         ) : (
@@ -831,7 +835,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
 
                                                 <div className="flex flex-col gap-4">
                                                     <div className="flex-1">
-                                                        <span className="mb-1.5 block text-[13px] text-slate-500">התמונה שלכן לאתגר</span>
+                                                        <span className="mb-1.5 block text-[13px] text-slate-500">התמונה שלכם לאתגר</span>
                                                         <div
                                                             onClick={() => document.getElementById('challenge-input')?.click()}
                                                             className={`group relative flex h-32 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed bg-rose-50/30 transition ${entryImage ? 'border-plum-400' : 'border-rose-200 hover:border-plum-300'}`}
@@ -848,7 +852,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                                                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-plum-500 shadow-soft">
                                                                         <Camera size={20} />
                                                                     </div>
-                                                                    <p className="text-[13px] text-slate-500">לחצי לבחירת תמונה</p>
+                                                                    <p className="text-[13px] text-slate-500">לבחירת תמונה</p>
                                                                 </>
                                                             )}
                                                             <input id="challenge-input" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, false)} />
@@ -872,7 +876,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                             <p className="eyebrow">הגלריה</p>
                                             <h4 className="font-display text-[1.8rem] leading-tight text-ink">המשפחות שהשתתפו</h4>
                                         </div>
-                                        <span className="rounded-full bg-rose-50 px-3 py-1 text-[13px] text-rose-700">{currentEntries.length} משתתפות</span>
+                                        <span className="rounded-full bg-rose-50 px-3 py-1 text-[13px] text-rose-700">{currentEntries.length} משתתפים</span>
                                     </div>
 
                                     {currentEntries.length > 0 ? (
@@ -896,7 +900,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                         </div>
                                     ) : (
                                         <div className="rounded-[1.5rem] border border-dashed border-rose-200 bg-rose-50/30 py-10 text-center text-[15px] text-slate-500">
-                                            הגלריה ריקה. תהיי הראשונה להעלות!
+                                            הגלריה ריקה. אפשר להיות הראשונים להעלות!
                                         </div>
                                     )}
                                 </div>
@@ -932,7 +936,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                   </div>
                                   {user?.isAdmin ? (
                                       <div className="space-y-4">
-                                          <p className="text-[15px] text-rose-100">מוכנה להפעיל?</p>
+                                          <p className="text-[15px] text-rose-100">מוכנים להפעיל?</p>
                                           <button onClick={simulateDraw} className="w-full rounded-full bg-gradient-to-l from-champagne-300 via-rose-400 to-rose-500 px-6 py-4 text-lg text-white shadow-lift transition active:scale-95 font-strong">
                                               הפעלת ההגרלה
                                           </button>
@@ -940,7 +944,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                   ) : (
                                       <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                                           <Loader2 size={24} className="mx-auto mb-3 animate-spin text-rose-300" />
-                                          <p className="text-[14.5px] text-white/80">המנהלת עוד לא הפעילה…</p>
+                                          <p className="text-[14.5px] text-white/80">ההנהלה עוד לא הפעילה…</p>
                                       </div>
                                   )}
                               </div>
@@ -951,7 +955,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                   <div className="font-accent text-[7rem] leading-none text-transparent bg-clip-text bg-gradient-to-b from-white via-rose-200 to-rose-400 animate-pulse">
                                       {countdown}
                                   </div>
-                                  <p className="text-[15px] tracking-wide text-rose-200 animate-bounce">מערבבות שמות…</p>
+                                  <p className="text-[15px] tracking-wide text-rose-200 animate-bounce">מערבבים שמות…</p>
                               </div>
                           )}
 
@@ -962,7 +966,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
                                       <p className="mb-2 text-[13px] text-rose-200">יש לנו זוכה!</p>
                                       <div className="rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-md">
                                           <h2 className="text-[1.6rem] !text-white">
-                                              {selectedLottery.winnerId === 'No Participants' ? 'אין משתתפות' : 'חברת המעגל המאושרת'}
+                                              {selectedLottery.winnerId === 'No Participants' ? 'אין משתתפים' : 'מזל טוב לזוכה!'}
                                           </h2>
                                       </div>
                                   </div>

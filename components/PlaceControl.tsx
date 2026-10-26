@@ -4,6 +4,7 @@ import { MapPin, X } from 'lucide-react';
 import CityPicker from './CityPicker';
 import { useMyPlace, setGuestCity } from '../hooks/useMyPlace';
 import { regionName } from '../shared/regions';
+import { BRAND } from '../shared/brand';
 
 type Props = { user: any; onUpdateUser?: (u: any) => void };
 
@@ -24,12 +25,12 @@ export const PlaceChip: React.FC<Props & { className?: string }> = ({ user, onUp
       </button>
       {open && createPortal(
         <div className="fixed inset-0 z-[300] flex items-end justify-center bg-ink/40 backdrop-blur-sm md:items-center md:p-6" dir="rtl" onClick={() => setOpen(false)}>
-          <div className="w-full rounded-t-[2rem] bg-[#FBF7F4] p-6 shadow-2xl md:max-w-md md:rounded-[2rem] animate-fade-in-up" onClick={e => e.stopPropagation()}>
+          <div className="w-full rounded-t-[2rem] bg-cream p-6 shadow-2xl md:max-w-md md:rounded-[2rem] animate-fade-in-up" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="text-2xl">איפה את גרה?</h3>
+              <h3 className="text-2xl">באיזו עיר לחפש?</h3>
               <button onClick={() => setOpen(false)} className="rounded-full p-2 text-slate-400 hover:bg-rose-50"><X size={20} /></button>
             </div>
-            <p className="mt-2 text-sm text-slate-500">נציג לך קודם אירועים, חוגים וגמ"חים באזור שלך. התוכן הארצי והמקוון יוצג תמיד.</p>
+            <p className="mt-2 text-sm text-slate-500">נציג קודם אירועים, חוגים וגמ"חים באזור הזה. התוכן הארצי והמקוון יוצג תמיד.</p>
             <CityPicker className="mt-4" value={city} onChange={pick} inline placeholder="חיפוש עיר או יישוב…" />
             {city && !user && <button onClick={() => pick('')} className="mt-3 w-full text-center text-sm text-slate-500 hover:text-rose-700">הצגת כל הארץ</button>}
           </div>
@@ -55,10 +56,10 @@ export const CityPrompt: React.FC<Props> = ({ user, onUpdateUser }) => {
   const save = () => { if (!city) return; onUpdateUser?.({ ...user, city }); setGuestCity(city); setShow(false); };
   return createPortal(
     <div className="fixed inset-0 z-[300] flex items-end justify-center bg-ink/40 backdrop-blur-sm md:items-center md:p-6" dir="rtl">
-      <div className="w-full rounded-t-[2rem] bg-[#FBF7F4] p-6 shadow-2xl md:max-w-md md:rounded-[2rem] animate-fade-in-up">
-        <p className="eyebrow">נשי מתרחבת לכל הארץ 💗</p>
-        <h3 className="mt-2 text-[1.8rem] leading-tight">היי {String(user.name || '').split(' ')[0]}, באיזו עיר את גרה?</h3>
-        <p className="mt-2 text-sm leading-relaxed text-slate-500">ככה נציג לך קודם את מה שקורה קרוב אלייך.</p>
+      <div className="w-full rounded-t-[2rem] bg-cream p-6 shadow-2xl md:max-w-md md:rounded-[2rem] animate-fade-in-up">
+        <p className="eyebrow">{BRAND.name} בכל הארץ</p>
+        <h3 className="mt-2 text-[1.8rem] leading-tight">שלום {String(user.name || '').split(' ')[0]}, מאיזו עיר?</h3>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">ככה נציג קודם את מה שקורה קרוב לבית.</p>
         <CityPicker className="mt-4" value={city} onChange={setCity} inline placeholder="חיפוש עיר או יישוב…" />
         <button onClick={save} disabled={!city} className="btn-primary mt-4 w-full disabled:opacity-50">שמירה</button>
         <button onClick={skip} className="mt-2 w-full py-2 text-sm text-slate-400 hover:text-slate-600">אחר כך</button>
@@ -97,7 +98,7 @@ export const AutoLocate: React.FC<Props> = ({ user, onUpdateUser }) => {
   return createPortal(
     <div className="fixed inset-x-3 top-24 z-[250] mx-auto flex max-w-sm items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-sm text-white shadow-lift animate-fade-in-up" dir="rtl" role="status">
       <MapPin size={16} className="shrink-0 text-rose-300" />
-      <span className="flex-1">זיהינו שאת ב<b>{note}</b>. מעכשיו נציג לך קודם את מה שקרוב אלייך. <span className="text-white/60">(אפשר לשנות בכל רגע)</span></span>
+      <span className="flex-1">זיהינו את האזור: <b>{note}</b>. מעכשיו נציג קודם את מה שקרוב לשם. <span className="text-white/60">(אפשר לשנות בכל רגע)</span></span>
       <button onClick={() => setNote('')} aria-label="סגירה" className="text-white/60 hover:text-white"><X size={15} /></button>
     </div>,
     document.body

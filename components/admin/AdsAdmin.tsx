@@ -9,6 +9,7 @@ import {
   fmtDate, idOf, inputCls, toast, useOnCreate, withSave,
 } from './ui';
 import { regionName } from '../../shared/regions';
+import { BRAND } from '../../shared/brand';
 
 export const AD_PLACEMENTS: { id: string; label: string; hint: string }[] = [
   { id: 'home-top', label: 'דף הבית · למעלה', hint: 'מתחת לסטטוסים — הכי נצפה' },
@@ -82,8 +83,8 @@ const AdsAdmin: React.FC<{ items: any[]; createTick: number; reload: () => void 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.content) { toast(form.type === 'image' ? 'צריך להעלות באנר' : 'צריך סרטון או קישור', 'bad'); return; }
-    if (!form.placements?.length) { toast('בחרי לפחות מקום אחד באתר', 'bad'); return; }
-    if (form.scope === 'local' && !form.city) { toast('בחרי עיר לפרסום מקומי', 'bad'); return; }
+    if (!form.placements?.length) { toast('יש לבחור לפחות מקום אחד באתר', 'bad'); return; }
+    if (form.scope === 'local' && !form.city) { toast('יש לבחור עיר לפרסום מקומי', 'bad'); return; }
     const data = { ...form };
     if (!data._id) delete data._id;
     const ok = await withSave(setSaving, async () => { if (form._id) await api.updateAd(form._id, data); else await api.createAd(data); }, 'הפרסום נשמר ✔');
@@ -162,7 +163,7 @@ const AdsAdmin: React.FC<{ items: any[]; createTick: number; reload: () => void 
         <form id="ad-form" onSubmit={save} className="space-y-4">
           <FormSection title="הפרסום" icon={<Megaphone size={17} />}>
             <div className="grid gap-3 md:grid-cols-2">
-              <Field label="כותרת" required hint="מופיעה על הפרסום"><input required className={inputCls} value={form.title} onChange={e => set({ title: e.target.value })} placeholder="למשל: 20% הנחה לחברות נשי" /></Field>
+              <Field label="כותרת" required hint="מופיעה על הפרסום"><input required className={inputCls} value={form.title} onChange={e => set({ title: e.target.value })} placeholder={`למשל: 20% הנחה לחברי ${BRAND.name}`} /></Field>
               <Field label="שם המפרסם" hint='יוצג כ"בשיתוף …"'><input className={inputCls} value={form.advertiser || ''} onChange={e => set({ advertiser: e.target.value })} placeholder="למשל: סטודיו שירה" /></Field>
             </div>
             <Segmented value={form.type} onChange={(type) => set({ type, content: '', mobileContent: '' })} options={[{ id: 'image', label: 'באנר', icon: <ImageIcon size={14} /> }, { id: 'video', label: 'סרטון', icon: <Video size={14} /> }]} />
@@ -199,7 +200,7 @@ const AdsAdmin: React.FC<{ items: any[]; createTick: number; reload: () => void 
                 options={[{ id: 'national', label: 'כל הארץ', icon: <Globe2 size={14} /> }, { id: 'local', label: 'עיר / אזור', icon: <MapPin size={14} /> }]} />
             </Field>
             {form.scope === 'local' && (
-              <Field label="עיר" required hint={form.city ? `יוצג לנשים מאזור ${regionName(form.region || '') || 'העיר'}` : 'יוצג רק לנשים מהאזור של העיר'}>
+              <Field label="עיר" required hint={form.city ? `יוצג למבקרים מאזור ${regionName(form.region || '') || 'העיר'}` : 'יוצג רק למבקרים מהאזור של העיר'}>
                 <CityPicker value={form.city} onChange={city => set({ city })} />
               </Field>
             )}

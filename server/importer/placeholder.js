@@ -1,8 +1,10 @@
 /**
- * Branded placeholder flyer for an imported event whose source has no flyer: NASHI colours, the kind of event,
+ * Branded placeholder flyer for an imported event whose source has no flyer: the site's colours, the kind of event,
  * title, date and city — nothing invented. An SVG data: URL, stored like any event image (server/media.js serves it).
  * Events that use it are marked `generatedFlyer: true` so the admin can see them.
  */
+import { BRAND, BRAND_COLORS } from '../../shared/brand.js';
+
 const esc = (s = '') => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /** Greedy word wrap by character count (Hebrew glyphs are ~uniform enough for a poster). */
@@ -21,7 +23,7 @@ export function wrap(text = '', max = 14, maxLines = 4) {
 }
 
 const PALETTES = [
-  ['#8A5058', '#3D2F37'], ['#5B6C8F', '#2B2027'], ['#6E8B74', '#2F3B33'], ['#B98B4E', '#4A3524'], ['#7A4E7F', '#2E2231'],
+  ['#1E3354', '#0A1424'], ['#46576A', '#121C2E'], ['#465E4B', '#1F2A22'], ['#8A6828', '#2F2116'], ['#8A5058', '#3A2226'],
 ];
 const hash = (s) => [...String(s)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
@@ -33,15 +35,15 @@ export function placeholderFlyerSvg({ title = '', kind = '', dateLabel = '', cit
   const tspans = lines.map((l, i) => `<text x="400" y="${Math.round(top + i * size * 1.15)}" font-size="${size}" font-weight="700" fill="#fff" text-anchor="middle" direction="rtl">${esc(l)}</text>`).join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000">
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>
-<radialGradient id="r" cx="0.2" cy="0.1" r="0.7"><stop offset="0" stop-color="#F0D5D6" stop-opacity="0.35"/><stop offset="1" stop-color="#F0D5D6" stop-opacity="0"/></radialGradient></defs>
+<radialGradient id="r" cx="0.2" cy="0.1" r="0.7"><stop offset="0" stop-color="${BRAND_COLORS.gold}" stop-opacity="0.3"/><stop offset="1" stop-color="${BRAND_COLORS.gold}" stop-opacity="0"/></radialGradient></defs>
 <rect width="800" height="1000" fill="url(#g)"/><rect width="800" height="1000" fill="url(#r)"/>
 <rect x="40" y="40" width="720" height="920" rx="36" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="2"/>
 <g font-family="Assistant, 'Noto Sans Hebrew', Arial, sans-serif">
-${kind ? `<text x="400" y="190" font-size="44" fill="#F0D5D6" text-anchor="middle" direction="rtl">${esc(kind)}</text>` : ''}
+${kind ? `<text x="400" y="190" font-size="44" fill="#E7D3A8" text-anchor="middle" direction="rtl">${esc(kind)}</text>` : ''}
 ${tspans}
 ${dateLabel ? `<text x="400" y="770" font-size="40" fill="#fff" fill-opacity="0.92" text-anchor="middle" direction="rtl">${esc(dateLabel)}</text>` : ''}
 ${city ? `<text x="400" y="830" font-size="40" fill="#fff" fill-opacity="0.92" text-anchor="middle" direction="rtl">${esc(city)}</text>` : ''}
-<text x="400" y="915" font-size="46" fill="#fff" fill-opacity="0.85" text-anchor="middle" font-family="Karantina, Assistant, Arial, sans-serif">נשי</text>
+<text x="400" y="915" font-size="46" fill="#fff" fill-opacity="0.85" text-anchor="middle" direction="rtl">${esc(BRAND.name)}</text>
 </g></svg>`;
 }
 

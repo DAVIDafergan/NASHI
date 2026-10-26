@@ -1,7 +1,8 @@
 // WhatsApp share with a preview: /s/event/:id (Open Graph page), /s/img/event/:id (flyer), the message text.
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { eventPreview, page, imageInfo } from '../server/share.js';
+import { eventPreview, page, imageInfo, brandCardSvg } from '../server/share.js';
+import { BRAND } from '../shared/brand.js';
 import { shareMessage, factsLine, whenText } from '../shared/eventShare.js';
 import { FAKE_PNG } from './helpers/fakeTickchak.js';
 import { placeholderFlyer } from '../server/importer/placeholder.js';
@@ -34,15 +35,17 @@ describe('message + preview text', () => {
 describe('/s/event preview page', () => {
   test('fields: title, facts + first line, absolute image, canonical url, deep link', () => {
     const p = eventPreview(EV, BASE);
-    assert.equal(p.title, 'מופע "אמא" <לנשים> · נשי');
-    assert.match(p.description, /^📅 יום .+ · י״א כסלו · 20:30 · 📍 היכל התרבות, בית שמש · 🎟️ ₪49 — מופע מרגש לנשים בלבד\.$/);
+    assert.equal(p.title, `מופע "אמא" <לנשים> · ${BRAND.name}`);
+    // no audience stored → a women's event (everything before the field was made for women)
+    assert.match(p.description, /^לנשים · 📅 יום .+ · י״א כסלו · 20:30 · 📍 היכל התרבות, בית שמש · 🎟️ ₪49 — מופע מרגש לנשים בלבד\.$/);
     assert.equal(p.image, `${BASE}/s/img/event/${EV._id}`);
     assert.equal(p.url, `${BASE}/s/event/${EV._id}`);
     assert.equal(p.redirect, `/#/events?e=${EV._id}`);
   });
   test('HTML is escaped (quotes, angle brackets) and has the WhatsApp tags', () => {
     const html = page({ ...eventPreview(EV, BASE), imageMeta: { type: 'image/jpeg', width: 900, height: 600 } });
-    assert.ok(html.includes('<meta property="og:title" content="מופע &quot;אמא&quot; &lt;לנשים&gt; · נשי">'));
+    assert.ok(html.includes(`<meta property="og:title" content="מופע &quot;אמא&quot; &lt;לנשים&gt; · ${BRAND.name}">`));
+    assert.ok(html.includes(`<meta property="og:site_name" content="${BRAND.name} · ${BRAND.tagline}">`));
     assert.ok(!html.includes('<לנשים>'));
     assert.ok(html.includes('<meta property="og:image" content="https://nashi-co.com/s/img/event/6650a1b2c3d4e5f6a7b8c9d0">'));
     assert.ok(html.includes('<meta property="og:image:width" content="900">'));
@@ -53,12 +56,25 @@ describe('/s/event preview page', () => {
     for (const ev of [{ ...EV, date: new Date('2026-01-01'), time: '20:00' }, { ...EV, archived: true }, { ...EV, hidden: true }]) {
       const p = eventPreview(ev, BASE);
       assert.match(p.title, /^האירוע הסתיים · /);
-      assert.equal(p.image, `${BASE}/og-image.jpg`);
+      assert.equal(p.image, `${BASE}/s/img/brand.jpg`);
       assert.equal(p.redirect, `/#/events?e=${EV._id}`, 'the site explains it ended and links to the region');
     }
   });
   test('generated SVG placeholder flyers are not used as og:image (WhatsApp ignores SVG)', () => {
-    assert.equal(eventPreview({ ...EV, image: 'data:image/svg+xml;base64,PHN2Zz4=' }, BASE).image, `${BASE}/og-image.jpg`);
+    assert.equal(eventPreview({ ...EV, image: 'data:image/svg+xml;base64,PHN2Zz4=' }, BASE).image, `${BASE}/s/img/brand.jpg`);
+  });
+  test('the audience leads the description, and a men\'s / everyone\'s event never says "נשים"', () => {
+    const men = { ...EV, title: 'כנס אברכים', description: 'ערב עיון', audience: 'men' };
+    assert.match(eventPreview(men, BASE).description, /^לגברים · 📅/);
+    assert.ok(!/נשים/.test(eventPreview(men, BASE).description));
+    assert.match(eventPreview({ ...men, audience: 'all' }, BASE).description, /^לכולם · 📅/);
+    assert.match(eventPreview({ ...EV, audience: ['נשים בלבד'] }, BASE).description, /^לנשים · /, 'legacy tag array → women');
+  });
+  test('brand share card: logo mark, name and tagline from shared/brand.js', () => {
+    const svg = brandCardSvg();
+    assert.ok(svg.includes(`>${BRAND.name}</text>`));
+    assert.ok(svg.includes(BRAND.tagline));
+    assert.ok(svg.includes('<circle'), 'the "spot" dot of the pin');
   });
   test('image size sniffing (JPEG SOF / PNG IHDR)', () => {
     const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0, 0, 0xff, 0xc0, 0x00, 0x11, 0x08, 0x02, 0x58, 0x03, 0x84, 0x03, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -106,7 +122,7 @@ describe('share routes over HTTP (MongoDB)', { skip: !MONGO && 'set MONGO_TEST_U
   });
   test('ended / unknown events', async () => {
     assert.match(await (await fetch(`${base}/s/event/${ids.old}`)).text(), /האירוע הסתיים/);
-    assert.match(await (await fetch(`${base}/s/event/000000000000000000000000`)).text(), /אירועים לנשים · נשי/);
+    assert.ok((await (await fetch(`${base}/s/event/000000000000000000000000`)).text()).includes(`אירועים · ${BRAND.name}`));
     const r = await fetch(`${base}/s/img/event/${ids.old}`, { redirect: 'manual' });
     assert.equal(r.status, 200, 'the stored flyer still serves (only the preview switches to the site image)');
   });
@@ -120,7 +136,7 @@ describe('share routes over HTTP (MongoDB)', { skip: !MONGO && 'set MONGO_TEST_U
     setSharpLoader(() => Promise.reject(new Error('no sharp')));
     try {
       const html2 = await (await fetch(`${base}/s/event/${ids.svg}`)).text();
-      assert.ok(html2.includes('/og-image.jpg"'), 'falls back to the site image');
+      assert.ok(html2.includes('/s/img/brand.jpg"'), 'falls back to the site image');
       const r = await fetch(`${base}/s/img/event/${ids.svg}`, { redirect: 'manual' });
       assert.equal(r.status, 302);
       const png = await fetch(`${base}/s/img/event/${ids.live}`);

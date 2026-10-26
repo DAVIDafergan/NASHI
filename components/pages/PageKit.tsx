@@ -144,7 +144,7 @@ export const CardSkeletonGrid: React.FC<{ count?: number; className?: string }> 
   </div>
 );
 
-export const PageLoading: React.FC<{ eyebrow?: string; title?: string }> = ({ eyebrow = 'רגע…', title = 'טוענות בשבילך' }) => (
+export const PageLoading: React.FC<{ eyebrow?: string; title?: string }> = ({ eyebrow = 'רגע…', title = 'טוען…' }) => (
   <PageShell>
     <div className="pt-12 pb-10">
       <Skeleton className="h-5 w-28" />

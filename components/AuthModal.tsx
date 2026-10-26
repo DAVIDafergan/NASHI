@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Mail, Lock, User, Phone, ArrowRight, CheckCircle, ShieldCheck } from 'lucide-react';
 import CityPicker from './CityPicker';
 import { api } from '../services/api';
+import Logo from './Logo';
+import { BRAND } from '../shared/brand';
 import { useNavigate } from 'react-router-dom'; // תוספת לייבוא
 
 interface AuthModalProps {
@@ -23,6 +25,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     password: '',
     phone: '',
     city: '',
+    gender: '',            // optional "אני" — only for wording emails / texts to her/him
     agreedToTerms: false
   });
 
@@ -37,7 +40,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
       return;
     }
     if (isRegister && !formData.city) {
-      alert('בחרי עיר, כדי שנוכל להראות לך מה קורה קרוב אלייך.');
+      alert('יש לבחור עיר, כדי שנוכל להראות מה קורה קרוב לבית.');
       return;
     }
 
@@ -46,7 +49,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
       let res;
       if (isRegister) {
         res = await api.register(formData);
-        alert("נרשמת בהצלחה! ברוכה הבאה למעגל.");
+        alert(`נרשמת בהצלחה! ${formData.gender === 'male' ? 'ברוך הבא' : formData.gender === 'female' ? 'ברוכה הבאה' : 'ברוכים הבאים'} ל${BRAND.name}.`);
       } else {
         res = await api.login({ email: formData.email, password: formData.password });
       }
@@ -56,7 +59,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
       onLogin(res.user);
       onClose();
     } catch (err: any) {
-      alert(isRegister ? (err?.message || "שגיאה בהרשמה") : "שגיאה בהתחברות (בדקי פרטים)");
+      alert(isRegister ? (err?.message || "שגיאה בהרשמה") : "שגיאה בהתחברות (כדאי לבדוק את הפרטים)");
     } finally {
       setLoading(false);
     }
@@ -81,12 +84,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
               <X size={18} />
             </button>
             <div className="relative">
-              <p className="font-accent text-[2.2rem] leading-none text-rose-700">נשי<span className="text-rose-300">.</span></p>
+              <Logo size="md" />
               <h2 key={isRegister ? 'r' : 'l'} className="mt-3 text-[2.2rem] md:text-[2.5rem] leading-[1.05] animate-blur-in">
-                {isRegister ? 'בואי, יש לך מקום כאן' : 'טוב שחזרת'}
+                {isRegister ? 'ברוכים הבאים, יש לכם מקום כאן' : 'טוב לראות אותך שוב'}
               </h2>
               <p className="mt-2 text-[15px] text-slate-500">
-                {isRegister ? 'דקה אחת והצטרפת לקהילה: אירועים, חוגים, הגרלות והשראה.' : 'התחברי כדי לראות מה חדש במעגל.'}
+                {isRegister ? 'דקה אחת והצטרפת: אירועים, שיעורים, חוגים, הגרלות והשראה.' : 'התחברות כדי לראות מה חדש.'}
               </p>
             </div>
 
@@ -136,6 +139,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
               {isRegister && (
                 <div className="animate-fade-in-up">
                   <CityPicker value={formData.city} onChange={city => setFormData({ ...formData, city })} />
+                </div>
+              )}
+
+              {isRegister && (
+                <div className="flex items-center gap-2 animate-fade-in-up" role="radiogroup" aria-label="אני (לא חובה)">
+                  <span className="text-[13px] text-slate-500">אני <span className="text-slate-400">(לא חובה)</span></span>
+                  {[['male', 'גבר'], ['female', 'אישה']].map(([id, label]) => (
+                    <button type="button" key={id} role="radio" aria-checked={formData.gender === id} onClick={() => setFormData({ ...formData, gender: formData.gender === id ? '' : id })}
+                      className={`rounded-full border px-4 py-1.5 text-[13.5px] transition ${formData.gender === id ? 'border-rose-700 bg-rose-700 text-white' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{label}</button>
+                  ))}
                 </div>
               )}
 
@@ -197,7 +210,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                      <CheckCircle size={12} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100" />
                    </div>
                    <label htmlFor="terms-check" className="cursor-pointer select-none text-[13.5px] leading-snug text-slate-500">
-                     קראתי ואני מסכימה ל
+                     קראתי ואני מסכים/ה ל
                      <span
                        className="mr-1 text-rose-700 underline underline-offset-4 hover:text-rose-900"
                        onClick={(e) => { e.preventDefault(); setShowTerms(true); }}
@@ -238,7 +251,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
            <div className="mx-auto mt-2.5 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-rose-100 md:hidden"></div>
            <div className="flex shrink-0 items-center justify-between border-b border-rose-100 px-6 py-5 md:px-8">
               <div>
-                <p className="eyebrow">לפני שמצטרפות</p>
+                <p className="eyebrow">לפני שמצטרפים</p>
                 <h3 className="mt-1 flex items-center gap-2 font-display text-[1.7rem] text-ink"><ShieldCheck className="text-rose-500" size={22}/> תקנון האתר</h3>
               </div>
               <button onClick={() => setShowTerms(false)} aria-label="חזרה" className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-slate-500 transition hover:bg-rose-700 hover:text-white"><X size={18}/></button>
@@ -246,35 +259,35 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
 
            <div className="overflow-y-auto px-6 py-6 md:px-8 text-[14.5px] leading-[1.85] text-slate-600 space-y-3">
              <p className="text-ink font-strong">כללי</p>
-             <p>ברוכות הבאות לאתר. השימוש באתר ובתכניו כפוף לתקנון ולמדיניות שימוש זו, ומהווה הסכמה מלאה לכל תנאיה. הנהלת האתר רשאית לעדכן את התקנון מעת לעת, לפי שיקול דעתה הבלעדי וללא הודעה מוקדמת. נוסח התקנון המעודכן הוא המחייב.</p>
+             <p>ברוכים הבאים לאתר. השימוש באתר ובתכניו כפוף לתקנון ולמדיניות שימוש זו, ומהווה הסכמה מלאה לכל תנאיה. הנהלת האתר רשאית לעדכן את התקנון מעת לעת, לפי שיקול דעתה הבלעדי וללא הודעה מוקדמת. נוסח התקנון המעודכן הוא המחייב.</p>
 
              <p className="text-ink font-strong pt-2">מהות האתר ותכניו</p>
-             <p>האתר מהווה מרחב קהילתי לנשים ונערות, שמטרתו שיתוף, השראה, חיבור ויצירת שיח פתוח ומכבד. התכנים המפורסמים באתר נכתבים לצורכי שיח, שיתוף דעות וניסיון אישי בלבד.</p>
+             <p>האתר מהווה מרחב קהילתי ותרבותי לציבור החרדי — גברים, נשים ומשפחות — שמטרתו שיתוף, השראה, חיבור ויצירת שיח פתוח ומכבד. התכנים המפורסמים באתר נכתבים לצורכי שיח, שיתוף דעות וניסיון אישי בלבד.</p>
              <p>ייתכנו בתכני האתר טעויות, אי־דיוקים או מידע שאינו מעודכן. אין לראות בתכנים המופיעים באתר ייעוץ מקצועי מכל סוג שהוא, לרבות אך לא רק: ייעוץ רפואי, נפשי, משפטי, פיננסי או טיפולי.</p>
 
              <p className="text-ink font-strong pt-2">אחריות ושימוש במידע</p>
-             <p>השימוש בתכני האתר ובמידע המפורסם בו נעשה על אחריות המשתמשת בלבד. הנהלת האתר לא תישא בכל אחריות לנזק, ישיר או עקיף, שעלול להיגרם עקב הסתמכות על מידע המופיע באתר או שימוש בו.</p>
+             <p>השימוש בתכני האתר ובמידע המפורסם בו נעשה על אחריות המשתמש/ת בלבד. הנהלת האתר לא תישא בכל אחריות לנזק, ישיר או עקיף, שעלול להיגרם עקב הסתמכות על מידע המופיע באתר או שימוש בו.</p>
 
              <p className="text-ink font-strong pt-2">פעילות כספית והתקשרויות חיצוניות</p>
-             <p>האתר אינו עוסק בכספים, תשלומים, תרומות, מכירת מוצרים או קניית כרטיסים, ואינו מהווה צד לכל התקשרות כספית או חוזית המתקיימת מחוץ למסגרת האתר. כל התקשרות בין משתמשות או בין משתמשת לגורם חיצוני נעשית באחריותן הבלעדית של הצדדים המעורבים.</p>
+             <p>האתר אינו עוסק בכספים, תשלומים, תרומות, מכירת מוצרים או קניית כרטיסים, ואינו מהווה צד לכל התקשרות כספית או חוזית המתקיימת מחוץ למסגרת האתר. כל התקשרות בין משתמשים או בין משתמש/ת לגורם חיצוני נעשית באחריותם הבלעדית של הצדדים המעורבים.</p>
 
              <p className="text-ink font-strong pt-2">קישורים ותכנים חיצוניים</p>
-             <p>באתר עשויים להופיע קישורים, הפניות או אזכורים לגורמים חיצוניים. הנהלת האתר אינה אחראית לתוכן, לאמינות, לזמינות או לפעילות של אתרים, שירותים או גורמים חיצוניים אלו, והשימוש בהם הוא באחריות המשתמשת בלבד.</p>
+             <p>באתר עשויים להופיע קישורים, הפניות או אזכורים לגורמים חיצוניים. הנהלת האתר אינה אחראית לתוכן, לאמינות, לזמינות או לפעילות של אתרים, שירותים או גורמים חיצוניים אלו, והשימוש בהם הוא באחריות המשתמש/ת בלבד.</p>
 
              <p className="text-ink font-strong pt-2">פרטיות ושמירת מידע</p>
-             <p>האתר מכבד את פרטיות המשתמשות. מסירת מידע אישי, פרסומו או שיתופו באתר נעשים ביוזמת המשתמשת ובאחריותה בלבד. הנהלת האתר אינה אחראית לשימוש שייעשה במידע אישי שפורסם בפומבי על ידי המשתמשת.</p>
+             <p>האתר מכבד את פרטיות המשתמשים. מסירת מידע אישי, פרסומו או שיתופו באתר נעשים ביוזמת המשתמש/ת ובאחריותו/ה בלבד. הנהלת האתר אינה אחראית לשימוש שייעשה במידע אישי שפורסם בפומבי על ידי המשתמש/ת.</p>
              <p>הנהלת האתר תפעל, ככל שניתן, לשמור על סביבה בטוחה ומכבדת, אך אינה יכולה להבטיח הגנה מלאה מפני שימוש לא ראוי במידע שפורסם.</p>
 
              <p className="text-ink font-strong pt-2">התנהלות ושיח קהילתי</p>
-             <p>המשתמשות מתחייבות לנהל שיח מכבד, אחראי ורגיש. הנהלת האתר שומרת לעצמה את הזכות להסיר תכנים, להגביל גישה או לחסום משתמשת, לפי שיקול דעתה, במקרה של הפרת תקנון זה או פגיעה ברוח הקהילה.</p>
+             <p>המשתמשים מתחייבים לנהל שיח מכבד, אחראי ורגיש. הנהלת האתר שומרת לעצמה את הזכות להסיר תכנים, להגביל גישה או לחסום משתמש/ת, לפי שיקול דעתה, במקרה של הפרת תקנון זה או פגיעה ברוח הקהילה.</p>
 
              <p className="text-ink font-strong pt-2">סמכות שיפוט</p>
              <p>על תקנון זה ועל השימוש באתר יחולו דיני מדינת ישראל בלבד, וסמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים בישראל.</p>
-             <p className="italic mt-2 text-xs opacity-70">תקנון זה נועד להבהיר את אופן השימוש באתר ולשמור על קהילה בטוחה, מכבדת ומעצימה.</p>
+             <p className="italic mt-2 text-xs opacity-70">תקנון זה נועד להבהיר את אופן השימוש באתר ולשמור על קהילה בטוחה ומכבדת.</p>
            </div>
 
            <div className="shrink-0 border-t border-rose-100 bg-rose-50/40 p-4">
-             <button onClick={() => { setShowTerms(false); setFormData({...formData, agreedToTerms: true}); }} className="btn-primary w-full !py-3.5">קראתי ואני מאשרת</button>
+             <button onClick={() => { setShowTerms(false); setFormData({...formData, agreedToTerms: true}); }} className="btn-primary w-full !py-3.5">קראתי ואני מאשר/ת</button>
            </div>
         </div>
       )}

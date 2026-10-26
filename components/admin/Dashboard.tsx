@@ -40,7 +40,7 @@ const Dashboard: React.FC<Props> = ({ data, go, create }) => {
     .sort((a, b) => +new Date(a.date) - +new Date(b.date)), [events, now]);
 
   const queue = [
-    { n: managerApps.length, label: 'בקשות להיות מנהלת תרבות', tab: 'approvals' as AdminTab, icon: <ShieldCheck size={18} /> },
+    { n: managerApps.length, label: 'בקשות לניהול תרבות', tab: 'approvals' as AdminTab, icon: <ShieldCheck size={18} /> },
     { n: pendingUsers.length, label: 'בקשות הצטרפות למעגל', tab: 'approvals' as AdminTab, icon: <UserPlus size={18} /> },
     { n: pendingPosts.length, label: 'פוסטים לפורום שממתינים', tab: 'approvals' as AdminTab, icon: <MessageSquare size={18} /> },
     { n: pendingStories.length, label: 'סטטוסים שממתינים לאישור', tab: 'stories' as AdminTab, icon: <PlayCircle size={18} /> },
@@ -77,8 +77,8 @@ const Dashboard: React.FC<Props> = ({ data, go, create }) => {
     <div className="flex flex-col gap-6">
       {/* KPIs (on phones they come after "what's waiting") */}
       <div className="order-2 grid grid-cols-2 gap-3 md:order-none md:grid-cols-3 xl:grid-cols-6">
-        <Kpi label="נשים רשומות" value={users.length.toLocaleString('he-IL')} icon={<Users size={19} />} tone="bg-rose-50 text-rose-600" sub={newThisWeek ? `+${newThisWeek} השבוע` : undefined} onClick={() => go('users')} />
-        <Kpi label="חדשות השבוע" value={newThisWeek} icon={<UserPlus size={19} />} tone="bg-emerald-50 text-emerald-600" onClick={() => go('users')} />
+        <Kpi label="משתמשים רשומים" value={users.length.toLocaleString('he-IL')} icon={<Users size={19} />} tone="bg-rose-50 text-rose-600" sub={newThisWeek ? `+${newThisWeek} השבוע` : undefined} onClick={() => go('users')} />
+        <Kpi label="חדשים השבוע" value={newThisWeek} icon={<UserPlus size={19} />} tone="bg-emerald-50 text-emerald-600" onClick={() => go('users')} />
         <Kpi label="ממתינים לאישור" value={pendingUsers.length + pendingPosts.length} icon={<CheckCircle2 size={19} />} tone="bg-amber-50 text-amber-600" onClick={() => go('approvals')} />
         <Kpi label="סטטוסים באוויר" value={activeStories.length} icon={<PlayCircle size={19} />} tone="bg-plum-50 text-plum-600" onClick={() => go('stories')} />
         <Kpi label="אירועים קרובים" value={upcoming.length} icon={<Calendar size={19} />} tone="bg-sky-50 text-sky-600" onClick={() => go('events')} />
@@ -96,7 +96,7 @@ const Dashboard: React.FC<Props> = ({ data, go, create }) => {
             <div className="flex flex-col items-center rounded-[1.5rem] bg-gradient-to-l from-emerald-50 to-white py-10 text-center">
               <span className="text-4xl">✨</span>
               <p className="mt-3 font-strong text-lg text-ink">הכול מטופל</p>
-              <p className="text-sm text-slate-500">אין אישורים או פניות שמחכים לך כרגע.</p>
+              <p className="text-sm text-slate-500">אין אישורים או פניות שמחכים כרגע.</p>
             </div>
           ) : (
             <ul className="space-y-2">
@@ -106,7 +106,7 @@ const Dashboard: React.FC<Props> = ({ data, go, create }) => {
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-rose-600 shadow-soft">{q.icon}</span>
                     <span className="flex-1">
                       <span className="block font-strong text-[15px] text-ink">{q.label}</span>
-                      <span className="text-xs text-slate-500">לחצי לטיפול</span>
+                      <span className="text-xs text-slate-500">לטיפול</span>
                     </span>
                     <span className="min-w-[34px] rounded-full bg-rose-600 px-2.5 py-1 text-center text-sm font-bold text-white tabular-nums">{q.n}</span>
                     <ArrowLeft size={17} className="text-rose-300 transition group-hover:-translate-x-1 group-hover:text-rose-600" />
@@ -169,7 +169,7 @@ const Dashboard: React.FC<Props> = ({ data, go, create }) => {
       <div className="order-3 grid gap-6 md:order-none xl:grid-cols-2">
         {/* members by region */}
         <section className="rounded-[2rem] border border-rose-100/80 bg-white p-5 shadow-soft md:p-6">
-          <h3 className="mb-1 text-xl">נשים לפי אזור</h3>
+          <h3 className="mb-1 text-xl">משתמשים לפי אזור</h3>
           <p className="mb-4 text-xs text-slate-500">חשבונות ותיקים בלי עיר נספרים כמגדל העמק (צפון ועמקים).</p>
           <ul className="space-y-2.5">
             {byRegion.map(r => (
@@ -196,9 +196,9 @@ const Dashboard: React.FC<Props> = ({ data, go, create }) => {
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { l: 'נרשמות חדשות', v: month.newUsers, i: <UserPlus size={15} /> },
+              { l: 'נרשמים חדשים', v: month.newUsers, i: <UserPlus size={15} /> },
               { l: 'אירועים', v: month.events, i: <Calendar size={15} /> },
-              { l: 'חברות מעגל', v: month.members, i: <Sparkles size={15} /> },
+              { l: 'חברי מעגל', v: month.members, i: <Sparkles size={15} /> },
               { l: 'סטטוסים', v: month.stories, i: <PlayCircle size={15} /> },
               { l: 'צפיות בסטטוסים', v: month.views, i: <Eye size={15} /> },
               { l: 'נקודות בקהילה', v: month.points.toLocaleString('he-IL'), i: <TrendingUp size={15} /> },

@@ -6,6 +6,7 @@ import { api } from '../../services/api';
 import { compressImageFile } from '../../utils/image';
 import { renderStoryCard, STORY_THEMES, themeOf } from '../../utils/storyCard';
 import { downloadBlob, shareImageFile, shareLink } from '../../utils/share';
+import { BRAND } from '../../shared/brand';
 
 type StoryUser = { _id?: string; id?: string; name?: string; avatar?: string };
 export type Story = {
@@ -17,7 +18,7 @@ type Group = { userId: string; user?: StoryUser; stories: Story[] };
 const DURATION = 7000;
 const DAY = 24 * 60 * 60 * 1000;
 const uid = (u?: StoryUser | null) => (u?._id || u?.id || '') as string;
-const firstName = (n?: string) => (n || 'חברה').trim().split(' ')[0];
+const firstName = (n?: string) => (n || 'מהקהילה').trim().split(' ')[0];
 const timeAgo = (d?: string) => {
   if (!d) return '';
   const m = Math.max(1, Math.round((Date.now() - new Date(d).getTime()) / 60000));
@@ -62,7 +63,7 @@ const StoryBody: React.FC<{ s: Pick<Story, 'type' | 'content' | 'caption' | 'bac
   const len = s.content.length;
   return (
     <div className="flex h-full w-full items-center justify-center px-8 text-center" style={{ background: t.css, color: t.ink }}>
-      <p style={{ color: t.ink }} className={`whitespace-pre-line font-display font-light leading-[1.4] ${len < 60 ? 'text-[2.4rem]' : len < 160 ? 'text-[1.9rem]' : 'text-[1.4rem]'}`}>{s.content || 'מה עובר עלייך היום?'}</p>
+      <p style={{ color: t.ink }} className={`whitespace-pre-line font-display font-light leading-[1.4] ${len < 60 ? 'text-[2.4rem]' : len < 160 ? 'text-[1.9rem]' : 'text-[1.4rem]'}`}>{s.content || 'מה חדש היום?'}</p>
     </div>
   );
 };
@@ -191,7 +192,7 @@ const StoriesSection: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user
     setBusy('status');
     try {
       const blob = await renderStoryCard({ ...s, authorName });
-      const r = await shareImageFile(blob, 'nashi-status.jpg', 'מתוך קהילת נשי 💗 nashi-co.com');
+      const r = await shareImageFile(blob, 'nashi-status.jpg', `מתוך ${BRAND.name} · nashi-co.com`);
       if (r === 'unsupported') {
         downloadBlob(blob, 'nashi-status.jpg');
         flash('התמונה ירדה למכשיר. מעלים אותה לסטטוס בוואטסאפ מהטלפון 💚');
@@ -205,8 +206,8 @@ const StoriesSection: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user
   const shareAsLink = async (s: Story) => {
     setPaused(true);
     await shareLink({
-      title: 'סטטוס מקהילת נשי',
-      text: s.type === 'text' ? `״${s.content.slice(0, 120)}״ — מתוך קהילת נשי 💗` : (s.caption || 'תראי מה שותף בקהילת נשי 💗'),
+      title: `סטטוס מ${BRAND.name}`,
+      text: s.type === 'text' ? `״${s.content.slice(0, 120)}״ — מתוך ${BRAND.name}` : (s.caption || `מה שותף ב${BRAND.name}`),
       path: `/s/story/${s._id}`,
     });
     setPaused(false);
@@ -239,7 +240,7 @@ const StoriesSection: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user
     e.target.value = '';
   };
   const submit = async () => {
-    if (!draft.content.trim()) { setError(draft.type === 'text' ? 'כתבי משהו קטן 🙂' : 'בחרי תמונה'); return; }
+    if (!draft.content.trim()) { setError(draft.type === 'text' ? 'כמה מילים, לפחות 🙂' : 'יש לבחור תמונה'); return; }
     setSending(true); setError('');
     try {
       await api.uploadStory({ type: draft.type, content: draft.content, caption: draft.caption, background: draft.type === 'text' ? draft.background : '' });
@@ -306,7 +307,7 @@ const StoriesSection: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user
 
         {loaded && groups.length === 0 && (
           <button type="button" onClick={openComposer} className="flex shrink-0 items-center gap-3 rounded-full border border-rose-100 bg-white/80 px-5 text-right shadow-soft">
-            <span className="text-sm text-slate-600">עוד אין סטטוסים היום, <span className="font-strong text-rose-700">את הראשונה?</span></span>
+            <span className="text-sm text-slate-600">עוד אין סטטוסים היום, <span className="font-strong text-rose-700">אולי הראשון שלך?</span></span>
           </button>
         )}
       </div>
@@ -336,7 +337,7 @@ const StoriesSection: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user
               <div className="mt-3 flex items-center gap-3">
                 <Avatar u={current.user} className="h-10 w-10 border-2 border-white/70 text-base" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-strong text-[15px] text-white">{isMine ? 'הסטטוס שלי' : current.user?.name || 'חברה בקהילה'}</p>
+                  <p className="truncate font-strong text-[15px] text-white">{isMine ? 'הסטטוס שלי' : current.user?.name || 'מהקהילה'}</p>
                   <p className="text-[11px] text-white/70">{timeAgo(current.approvedAt || current.createdAt)}</p>
                 </div>
                 {isMine && <span className="flex items-center gap-1 rounded-full bg-black/30 px-2.5 py-1 text-xs text-white"><Eye size={13} /> {current.views || 0}</span>}
@@ -376,10 +377,10 @@ const StoriesSection: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user
             {sent ? (
               <div className="space-y-4 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><Check /></div>
-                <p className="text-slate-600 leading-relaxed">הסטטוס עבר לאישור הצוות, ויופיע לכולן ל־24 שעות מרגע האישור.</p>
+                <p className="text-slate-600 leading-relaxed">הסטטוס עבר לאישור הצוות, ויופיע לכולם ל־24 שעות מרגע האישור.</p>
                 <div className="rounded-[1.5rem] bg-white p-4 shadow-soft">
-                  <p className="font-strong text-ink">רוצה לשתף אותו גם בוואטסאפ?</p>
-                  <p className="mt-1 text-xs text-slate-500">נכין לך תמונה מעוצבת בגודל של סטטוס, עם הכתובת של נשי.</p>
+                  <p className="font-strong text-ink">לשתף גם בוואטסאפ?</p>
+                  <p className="mt-1 text-xs text-slate-500">נכין תמונה מעוצבת בגודל של סטטוס, עם הכתובת של {BRAND.name}.</p>
                   <button onClick={() => shareToStatus(draft, user?.name)} disabled={busy === 'status'} className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#1FA855] py-3 font-strong text-white hover:bg-[#178a45] disabled:opacity-70">
                     {busy === 'status' ? <Loader2 size={18} className="animate-spin" /> : <WhatsAppIcon />} לסטטוס שלי בוואטסאפ
                   </button>
@@ -399,7 +400,7 @@ const StoriesSection: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user
                   {draft.type === 'text' ? (
                     <div className="relative h-full w-full" style={{ background: themeOf(draft.background).css }}>
                       <textarea autoFocus maxLength={700} value={draft.content} onChange={e => setDraft(d => ({ ...d, content: e.target.value }))}
-                        placeholder="מה עובר עלייך היום?"
+                        placeholder="מה חדש היום?"
                         className="absolute inset-0 h-full w-full resize-none bg-transparent px-6 pt-[30%] text-center font-display text-[1.7rem] font-light leading-[1.4] outline-none placeholder:text-current placeholder:opacity-60"
                         style={{ color: themeOf(draft.background).ink }} />
                       <span className="absolute bottom-3 left-4 text-[11px] opacity-70" style={{ color: themeOf(draft.background).ink }}>{draft.content.length}/700</span>
@@ -427,7 +428,7 @@ const StoriesSection: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user
                     ))}
                   </div>
                 ) : draft.content ? (
-                  <input value={draft.caption} maxLength={300} onChange={e => setDraft(d => ({ ...d, caption: e.target.value }))} placeholder="הוסיפי כיתוב (לא חובה)"
+                  <input value={draft.caption} maxLength={300} onChange={e => setDraft(d => ({ ...d, caption: e.target.value }))} placeholder="כיתוב (לא חובה)"
                     className="mt-4 w-full rounded-2xl border border-rose-100 bg-white px-4 py-3 outline-none focus:ring-4 focus:ring-rose-100" />
                 ) : null}
 

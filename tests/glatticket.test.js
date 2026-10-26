@@ -29,8 +29,14 @@ describe('Glatticket home (real capture)', () => {
     }));
     // עולות לאמא רחל - נשות לוד · אקסטרוז צהריים/ערב · אחותי ×2 · אמא רחל (נאוה ביבי) · אבודות בדרך לעלמא דחלמא
     for (const id of ['114965', '115184', '115191', '115192', '115193', '115247', '115644', '113282', '114487']) assert.equal(verdicts[id].ok, true, `${id} ${JSON.stringify(verdicts[id])}`);
-    // ערב שכולו קרליבך (male singers), no women mark at all
-    assert.equal(verdicts['114981'].ok, false);
+    for (const id of ['114965', '115184', '115644', '113282']) assert.equal(verdicts[id].audience, 'women', id);
+    // ערב שכולו קרליבך (male singers), no women mark at all: a Haredi show for everyone → both sections
+    assert.equal(verdicts['114981'].ok, true);
+    assert.equal(verdicts['114981'].audience, 'all');
+    // a show about mothers with women named, not marked women-only: never guessed as 'all' (women may be on stage)
+    assert.equal(verdicts['115182'].ok, false);
+    // a Haredi musical without a women / men mark: productions are cast for one audience → not guessed
+    assert.equal(verdicts['114477'].ok, false);
   });
 
   test('a women section counts as women-only even without "נשים" in the title', () => {
@@ -38,9 +44,9 @@ describe('Glatticket home (real capture)', () => {
     drop({ title: 'קומי וצאי', location: 'היכל התרבות רמות', strong: true });
     // the section survives a later re-check through the stored source category
     assert.equal(classifyEvent({ mode: 'haredi', title: 'קומי וצאי', category: 'הופעות לנשים', strong: true }).ok, true);
-    // men-only stays out, even in a women's section
-    drop({ title: 'ערב ניגונים לגברים', strong: true, womenSection: true });
-    drop({ title: 'מופע גברים', strong: true });
+    // men named in the title: a men's event (men's section), even when listed under a women's section
+    assert.equal(keep({ title: 'ערב ניגונים לגברים', strong: true, womenSection: true }).audience, 'men');
+    assert.equal(keep({ title: 'מופע גברים', strong: true }).audience, 'men');
   });
 });
 

@@ -1,5 +1,6 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { ExternalLink, Phone } from 'lucide-react';
+import { BRAND } from '../shared/brand';
 
 /**
  * Text written by the admins the way they write in WhatsApp: line breaks, *bold*, links and phone numbers.
@@ -14,7 +15,7 @@ const linkLabel = (url: string) => {
     const u = new URL(url.startsWith('http') ? url : `https://${url}`);
     const host = u.hostname.replace(/^www\./, '');
     if (/whatsapp\.com|wa\.me|chat\.whatsapp/.test(host)) return u.pathname.includes('channel') ? 'ערוץ הוואטסאפ' : 'וואטסאפ';
-    if (/nashi-co\.com/.test(host)) return 'לאתר נשי';
+    if (/nashi-co\.com/.test(host)) return `לאתר ${BRAND.name}`;
     if (/heyzine\.com/.test(host)) return 'לחוברת הדיגיטלית';
     if (/youtube\.com|youtu\.be/.test(host)) return 'צפייה ביוטיוב';
     if (/instagram\.com/.test(host)) return 'אינסטגרם';
@@ -76,7 +77,7 @@ const RichText: React.FC<{ text: string; className?: string; clampLines?: number
       </div>
       {clampLines && (overflows || open) && (
         <button type="button" onClick={() => setOpen(o => !o)} className="mt-1.5 text-[13px] font-strong text-rose-700 hover:underline">
-          {open ? 'הצגת פחות' : 'קראי עוד'}
+          {open ? 'הצגת פחות' : 'קריאה נוספת'}
         </button>
       )}
     </div>

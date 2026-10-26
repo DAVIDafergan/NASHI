@@ -1,0 +1,14 @@
+export type Audience = 'women' | 'men' | 'all';
+export type AudienceFilter = Audience | 'any';
+export type Gender = 'male' | 'female';
+export declare const AUDIENCE_IDS: Audience[];
+export declare const AUDIENCE_OPTIONS: { id: Audience; label: string; hint: string }[];
+export declare const AUDIENCE_BADGE: Record<Audience, string>;
+export declare function audienceOf(x: any): Audience;
+export declare const AUDIENCE_FILTERS: { id: AudienceFilter; label: string }[];
+export declare function normAudienceFilter(v: any): AudienceFilter;
+export declare function matchesAudience(item: any, filter: any): boolean;
+export declare function audienceQuery(filter: any): Record<string, any>;
+export declare function normGender(v: any): Gender | null;
+export declare function g<T = string>(gender: any, v: { male?: T; female?: T; neutral?: T }): T;
+export declare const AUDIENCE_TAGS: Record<Audience, string[]>;

@@ -37,7 +37,7 @@ const ContactPage: React.FC = () => {
       setIsRecording(true);
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      alert("לא ניתן לגשת למיקרופון. אנא בדקי הרשאות.");
+      alert("לא ניתן לגשת למיקרופון. כדאי לבדוק הרשאות.");
     }
   };
 
@@ -80,7 +80,7 @@ const ContactPage: React.FC = () => {
         setAudioBlob(null);
         setFormData({ name: '', phone: '', subject: 'בירור על חוגים ואירועים', content: '' });
       } else {
-        alert("שגיאה בשליחת הפנייה, נסי שוב.");
+        alert("שגיאה בשליחת הפנייה, כדאי לנסות שוב.");
       }
     } catch (error) {
       console.error("שגיאה בשליחת הפנייה:", error);
@@ -111,10 +111,10 @@ const ContactPage: React.FC = () => {
   return (
     <PageShell className="!max-w-5xl">
       <PageHero
-        eyebrow="צרי קשר"
+        eyebrow="צור קשר"
         title="נשמח"
-        accent="לשמוע ממך"
-        subtitle="שאלה, רעיון, בקשה להתנדב או משהו שלא עובד — כתבי לנו, או פשוט השאירי הודעה קולית."
+        accent="לשמוע מכם"
+        subtitle="שאלה, רעיון, בקשה להתנדב או משהו שלא עובד — כתבו לנו, או פשוט השאירו הודעה קולית."
       />
 
       <div className="grid gap-6 md:grid-cols-[1fr_2fr] md:gap-8 text-right">
@@ -136,7 +136,7 @@ const ContactPage: React.FC = () => {
            ))}
            <ScrollReveal delay={160} className="hidden md:block rounded-[1.5rem] bg-gradient-to-br from-rose-100 via-rose-50 to-champagne-50 p-6">
              <p className="font-accent text-[1.8rem] leading-none text-rose-700">טיפ קטן</p>
-             <p className="mt-2 text-[14.5px] leading-relaxed text-slate-600">אין זמן להקליד? לחצי על “הקלטת הודעה” ודברי. נחזור אלייך בהקדם.</p>
+             <p className="mt-2 text-[14.5px] leading-relaxed text-slate-600">אין זמן להקליד? לוחצים על “הקלטת הודעה” ומדברים. נחזור אליכם בהקדם.</p>
            </ScrollReveal>
         </aside>
 
@@ -182,7 +182,7 @@ const ContactPage: React.FC = () => {
                 rows={4}
                 value={formData.content}
                 onChange={(e) => setFormData({...formData, content: e.target.value})}
-                placeholder="ספרי לנו במה מדובר…"
+                placeholder="במה מדובר…"
                 className={`${inputCls} resize-none`}
               ></textarea>
             </label>

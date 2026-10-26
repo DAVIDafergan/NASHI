@@ -5,16 +5,17 @@ import ScrollReveal from '../components/ScrollReveal';
 import { SUPPLIER_CATEGORIES } from '../shared/suppliers';
 import { suppliersApi, Checkout } from '../services/suppliersApi';
 import { SupplierForm, PaymentStep, blankSupplier, validateSupplier, categoryIcon, SupplierFormValue } from '../components/suppliers/SupplierParts';
+import { BRAND } from '../shared/brand';
 
 const WHY = [
-  { icon: <Users size={22} />, title: 'מנהלות התרבות של נשי', text: 'בכל אזור יש מנהלת תרבות שמפיקה ערבי נשים, כנסים, מופעים וסדנאות — ומחפשת ספקים.' },
-  { icon: <Search size={22} />, title: 'מוצאות בדיוק אתכם', text: 'חיפוש לפי קטגוריה, סגנון ואזור. אתם מופיעים כשמחפשים את מה שאתם עושים.' },
+  { icon: <Users size={22} />, title: `מנהלי התרבות של ${BRAND.name}`, text: 'בכל אזור יש מנהל/ת תרבות שמפיקים כנסים, מופעים, סדנאות ואירועים לגברים, לנשים ולמשפחות — ומחפשים ספקים.' },
+  { icon: <Search size={22} />, title: 'מוצאים בדיוק אתכם', text: 'חיפוש לפי קטגוריה, סגנון ואזור. אתם מופיעים כשמחפשים את מה שאתם עושים.' },
   { icon: <MapPin size={22} />, title: 'רק איפה שאתם עובדים', text: 'בוחרים אזורים או יישובים — או כל הארץ.' },
 ];
 const STEPS = [
   { icon: <PenLine size={20} />, title: 'ממלאים כרטיס', text: 'פרטי העסק, קטגוריות, אזורים ותמונות.' },
   { icon: <CreditCard size={20} />, title: 'מנוי חודשי', text: 'משלמים ומתחילים. אפשר להפסיק בכל חודש.' },
-  { icon: <Sparkles size={20} />, title: 'מופיעים במאגר', text: 'מנהלות התרבות פונות אליכם ישירות.' },
+  { icon: <Sparkles size={20} />, title: 'מופיעים במאגר', text: 'מנהלי התרבות פונים אליכם ישירות.' },
 ];
 
 const SupplierSignupPage: React.FC = () => {
@@ -57,7 +58,7 @@ const SupplierSignupPage: React.FC = () => {
         <section className="mx-auto max-w-2xl px-5 pt-8 md:pt-14">
           <p className="eyebrow animate-fade-in-up">שלב 2 מתוך 3 · תשלום</p>
           <h1 className="mt-3 text-[2.4rem] leading-[1.05] md:text-[3.4rem] animate-fade-in-up">כמעט שם, <span className="font-accent text-[1.2em] text-rose-600">{done.name}</span></h1>
-          <p className="mt-3 text-[16px] leading-relaxed text-slate-600">הכרטיס נשמר. אחרי התשלום הוא יופיע במאגר הספקים של מנהלות התרבות.</p>
+          <p className="mt-3 text-[16px] leading-relaxed text-slate-600">הכרטיס נשמר. אחרי התשלום הוא יופיע במאגר הספקים של מנהלי התרבות.</p>
           <div className="mt-7">
             <PaymentStep price={price} providerLabel={checkout?.label} checkout={checkout?.checkout} loading={paying} onPay={pay} editLink={editLink} businessName={done.name} />
           </div>
@@ -71,12 +72,12 @@ const SupplierSignupPage: React.FC = () => {
     <div className="pb-24" dir="rtl">
       {/* hero */}
       <section className="mx-auto max-w-5xl px-5 pt-8 text-center md:pt-16">
-        <p className="eyebrow animate-fade-in-up">מאגר הספקים של נשי</p>
+        <p className="eyebrow animate-fade-in-up">מאגר הספקים של {BRAND.name}</p>
         <h1 className="mt-4 text-[2.6rem] leading-[1.02] md:text-[4.4rem] animate-fade-in-up">
-          ספקים לאירועי נשים?<br /><span className="font-accent text-[1.3em] text-rose-600">הצטרפו למאגר</span>
+          ספקים לאירועים חרדיים?<br /><span className="font-accent text-[1.3em] text-rose-600">הצטרפו למאגר</span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-          מרצות, זמרות, הצגות, סדנאות, קייטרינג, הגברה, צילום ועוד. מנהלות התרבות של נשי מחפשות כאן ספקים לאירועים שלהן — בכל הסגנונות ובכל הארץ.
+          מרצים ומרצות, מופעים, הצגות, סדנאות, קייטרינג, הגברה, צילום ועוד. מנהלי התרבות של {BRAND.name} מחפשים כאן ספקים לאירועים שלהם — בכל הסגנונות ובכל הארץ.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
           {/* HashRouter: an "#join" href would change the route, so scroll instead */}
@@ -126,12 +127,12 @@ const SupplierSignupPage: React.FC = () => {
         <div className="card-soft !bg-[#FBF7F4] p-4 md:p-8">
           <p className="eyebrow flex items-center gap-1.5"><Sparkles size={14} /> שלב 1 מתוך 3</p>
           <h2 className="mt-2 text-[2rem]">הכרטיס שלכם במאגר</h2>
-          <p className="mt-1 text-sm text-slate-500">רק מנהלות התרבות של נשי רואות את המאגר. הפרטים לא מתפרסמים לציבור.</p>
+          <p className="mt-1 text-sm text-slate-500">רק מנהלי התרבות של {BRAND.name} רואים את המאגר. הפרטים לא מתפרסמים לציבור.</p>
           <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
             <SupplierForm value={form} onChange={setForm} />
             <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-rose-100 bg-white p-4 text-[14px] leading-relaxed text-slate-600">
               <input type="checkbox" checked={terms} onChange={e => setTerms(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-rose-700" />
-              <span>אני מאשר/ת שהפרטים נכונים, שהשירות מתאים לאירועי נשים בציבור הדתי והחרדי, ושהמנוי מתחדש מדי חודש{price ? ` (₪${price})` : ''} עד לביטול. הנהלת נשי רשאית להסיר כרטיס שאינו מתאים.</span>
+              <span>אני מאשר/ת שהפרטים נכונים, שהשירות מתאים לאירועים בציבור הדתי והחרדי, ושהמנוי מתחדש מדי חודש{price ? ` (₪${price})` : ''} עד לביטול. הנהלת {BRAND.name} רשאית להסיר כרטיס שאינו מתאים.</span>
             </label>
             {error && <p role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
             <button type="submit" disabled={sending} className="btn-primary w-full !py-4 text-lg disabled:opacity-60">

@@ -5,7 +5,7 @@ import { Badge, DeleteButton, EmptyState, IconButton, ItemCard, LocationBadges, 
 
 const when = (d?: string | null) => d ? new Date(d).toLocaleString('he-IL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
 const dur = (r: ImportRun) => r.finishedAt ? `${Math.max(1, Math.round((+new Date(r.finishedAt) - +new Date(r.startedAt)) / 1000))} שנ׳` : '';
-const HIDDEN_LABEL: Record<string, string> = { admin: 'הוסתר ע״י מנהלת', gone: 'ירד מאתר המקור', past: 'עבר' };
+const HIDDEN_LABEL: Record<string, string> = { admin: 'הוסתר ע״י ההנהלה', gone: 'ירד מאתר המקור', past: 'עבר' };
 const SOURCE_TONE: Record<string, string> = { active: 'green', discovery: 'sky', todo: 'amber', skip: 'slate' };
 const SOURCE_LABEL: Record<string, string> = { active: 'פעיל', discovery: 'לגילוי בלבד', todo: 'לבדיקה', skip: 'לא מתאים' };
 
@@ -145,7 +145,7 @@ const ImporterAdmin: React.FC = () => {
   };
   const [rechecking, setRechecking] = useState(false);
   const recheck = async () => {
-    if (!window.confirm('לבדוק מחדש את כל האירועים המיובאים לפי הכללים (נשים בלבד + סימן חרדי)? מה שלא עומד בכללים יימחק ולא ייובא שוב.')) return;
+    if (!window.confirm('לבדוק מחדש את כל האירועים המיובאים לפי הכללים (קהל מפורש — גברים / נשים / משפחות חרדיות — + סימן חרדי)? מה שלא עומד בכללים יימחק ולא ייובא שוב.')) return;
     setRechecking(true);
     try { const r = await importerApi.reclassify(); toast(`נבדקו ${r.checked} · הוסרו ${r.removed.length} · כפילויות ${r.duplicates}`); load(); }
     catch (e: any) { toast(e?.message || 'הבדיקה נכשלה', 'bad'); }
@@ -168,7 +168,7 @@ const ImporterAdmin: React.FC = () => {
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-rose-200"><Bot size={24} /></span>
           <div className="min-w-0 flex-1">
             <p className="font-accent text-[20px] leading-none text-rose-200">סוכן אירועים</p>
-            <h3 className="mt-1 text-[1.35rem] leading-snug !text-white md:text-[1.6rem]">סורק אתרי כרטיסים ומעלה אירועים לנשים — רק כשכל הפרטים קיימים</h3>
+            <h3 className="mt-1 text-[1.35rem] leading-snug !text-white md:text-[1.6rem]">סורק אתרי כרטיסים ומעלה אירועים חרדיים — לגברים, לנשים ולמשפחות — רק כשכל הפרטים קיימים</h3>
             <p className="mt-1.5 text-[13.5px] text-white/70">
               {status ? (status.enabled ? `פועל אוטומטית כל ${status.intervalHours} שעות${status.nextAt ? ` · הריצה הבאה ${when(status.nextAt)}` : ''}` : 'התזמון כבוי (IMPORTER_ENABLED). אפשר להריץ ידנית.') : 'טוען…'}
               {' · '}לא רץ בשבת ובחג
@@ -196,7 +196,7 @@ const ImporterAdmin: React.FC = () => {
       <section>
         <SectionTitle title="ריצות אחרונות" icon={<Clock size={17} />} action={<IconButton onClick={load} aria-label="רענון" title="רענון"><RefreshCw size={15} /></IconButton>} />
         {!status ? <div className="h-24 animate-pulse rounded-[1.4rem] bg-rose-50" /> : status.runs.length === 0 ? (
-          <EmptyState icon={<Bot size={26} />} title="הסוכן עוד לא רץ" text="לחצי על 'הרצה עכשיו' כדי לסרוק בפעם הראשונה." />
+          <EmptyState icon={<Bot size={26} />} title="הסוכן עוד לא רץ" text="'הרצה עכשיו' סורקת בפעם הראשונה." />
         ) : (
           <div className="space-y-2.5">{status.runs.map(r => <RunCard key={r._id} run={r} open={openRun === r._id || (!openRun && r === last)} onToggle={() => setOpenRun(openRun === r._id ? '-' : r._id)} />)}</div>
         )}
@@ -248,7 +248,7 @@ const ImporterAdmin: React.FC = () => {
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[12.5px] text-slate-400">נכנס רק אירוע שמסומן במפורש לנשים ושיש בו סימן חרדי (מקור חרדי, קטגוריה חרדית, עיר או שכונה חרדית, מארגן חרדי). מסיבות, ריקודים, קהל מעורב, סרטים שלא לנשים בלבד ומקומות חילוניים — נדחים. ובנוסף: עתידי, ועם שם, תאריך ושעה, מקום ועיר מוכרת, מחיר (או חינם), קישור לרכישה ופלייר (אם אין במקור — פלייר אוטומטי בעיצוב נשי, מסומן "פלייר אוטומטי"). אירוע שמחקת לא ייובא שוב.</p>
+        <p className="mt-3 text-[12.5px] text-slate-400">נכנס רק אירוע שמסומן במפורש לנשים, לגברים או כאירוע משפחתי חרדי, ושיש בו סימן חרדי (מקור חרדי, קטגוריה חרדית, עיר או שכונה חרדית, מארגן חרדי). מסיבות, ריקודים, קהל מעורב, סרטים שלא לנשים בלבד ומקומות חילוניים — נדחים. ובנוסף: עתידי, ועם שם, תאריך ושעה, מקום ועיר מוכרת, מחיר (או חינם), קישור לרכישה ופלייר (אם אין במקור — פלייר אוטומטי בעיצוב נשי, מסומן "פלייר אוטומטי"). אירוע שמחקת לא ייובא שוב.</p>
       </section>
     </div>
   );

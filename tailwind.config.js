@@ -11,6 +11,14 @@ const sage = { 50:'#F4F7F4',100:'#E6EEE7',200:'#CDDDCF',300:'#ABC5AF',400:'#86A9
 const champagne = { 50:'#FBF7F0',100:'#F5ECDB',200:'#EBD8B6',300:'#DDBF8A',400:'#CDA466',500:'#B8894B',600:'#9C703D',700:'#7E5934',800:'#66482E',900:'#533B28',950:'#2F2116' };
 const dustyBlue = { 50:'#F4F6F9',100:'#E6ECF2',200:'#CDD8E4',300:'#A9BCCF',400:'#849DB6',500:'#69829C',600:'#546A82',700:'#46576A',800:'#3A4858',900:'#313C49',950:'#1F2630' };
 
+// Spot palette: rose / plum / mauve, ink and cream are CSS variables (theme.css) — the look is changed there, as
+// tokens, not in components (rose = primary ink-navy + gold, plum = the dusty-rose secondary accent). The hex
+// scales above are NASHI's original values, kept for reference.
+const KEYS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+const cssScale = (name) => Object.fromEntries(KEYS.map(k => [k, `rgb(var(--${name}-${k}) / <alpha-value>)`]));
+const roseV = cssScale('rose'), plumV = cssScale('plum'), mauveV = cssScale('mauve');
+void dustyRose; void plum; void mauve;
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -38,19 +46,19 @@ export default {
       },
       boxShadow: {
         soft: '0 2px 20px -6px rgba(61, 47, 55, 0.10)',
-        lift: '0 18px 40px -18px rgba(138, 80, 88, 0.28)',
-        petal: '0 1px 2px rgba(61,47,55,0.04), 0 8px 28px -10px rgba(189,122,129,0.22)',
+        lift: '0 18px 40px -18px rgb(var(--rose-700) / 0.28)',
+        petal: '0 1px 2px rgb(var(--mauve-800) / 0.04), 0 8px 28px -10px rgb(var(--rose-500) / 0.22)',
       },
       colors: {
-        slate: mauve, gray: mauve, stone: mauve, zinc: mauve, neutral: mauve,
-        rose: dustyRose, pink: dustyRose,
-        indigo: plum, purple: plum, violet: plum, fuchsia: plum,
+        slate: mauveV, gray: mauveV, stone: mauveV, zinc: mauveV, neutral: mauveV,
+        rose: roseV, pink: roseV,
+        indigo: plumV, purple: plumV, violet: plumV, fuchsia: plumV,
         emerald: sage, green: sage, teal: sage,
         amber: champagne, yellow: champagne, orange: champagne,
         blue: dustyBlue, sky: dustyBlue, cyan: dustyBlue,
-        mauve, plum, sage, champagne, blush: dustyRose,
-        ink: '#2B2027',
-        cream: '#FBF7F4',
+        mauve: mauveV, plum: plumV, sage, champagne, blush: roseV,
+        ink: 'rgb(var(--ink) / <alpha-value>)',
+        cream: 'rgb(var(--cream) / <alpha-value>)',
         // Legacy "watermelon" tokens — kept as names, re-pointed to the new palette
         // Summer 2026 watermelon palette — muted, professional tones (not candy-bright)
         watermelon: {

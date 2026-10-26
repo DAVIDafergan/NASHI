@@ -26,16 +26,16 @@ const ForgotPassword = () => {
       if (res.ok) {
         setStatus({ 
           type: 'success', 
-          message: 'שלחנו לך לינק לאיפוס! בדקי את תיבת המייל שלך (וגם בספאם).' 
+          message: 'שלחנו לינק לאיפוס! כדאי לבדוק את תיבת המייל (וגם בספאם).' 
         });
       } else {
         setStatus({ 
           type: 'error', 
-          message: data.error || 'המייל לא נמצא במערכת, וודאי שהקלדת נכון.' 
+          message: data.error || 'המייל לא נמצא במערכת, כדאי לוודא שהוקלד נכון.' 
         });
       }
     } catch (err) {
-      setStatus({ type: 'error', message: 'שגיאה בחיבור לשרת. נסי שוב מאוחר יותר.' });
+      setStatus({ type: 'error', message: 'שגיאה בחיבור לשרת. כדאי לנסות שוב מאוחר יותר.' });
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ const ForgotPassword = () => {
         </div>
         <p className="eyebrow">שחזור סיסמה</p>
         <h1 className="text-[2.3rem] leading-[1.05]">שכחת סיסמה?</h1>
-        <p className="text-[15px] leading-relaxed text-slate-500">זה קורה לכולן. כתבי את המייל ונשלח לך קישור לאיפוס.</p>
+        <p className="text-[15px] leading-relaxed text-slate-500">זה קורה לכולם. כותבים את המייל ונשלח קישור לאיפוס.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,7 +64,7 @@ const ForgotPassword = () => {
             required
             type="email"
             autoComplete="email"
-            placeholder="כתובת המייל שלך"
+            placeholder="כתובת המייל"
             className={`${authInputCls} pr-12`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -85,7 +85,7 @@ const ForgotPassword = () => {
           className="btn-primary w-full !py-4 !text-base disabled:opacity-50"
         >
           {loading ? <Loader2 className="animate-spin" size={20} /> : (
-            <>שלחי לי קישור לאיפוס <ArrowRight size={18} className="rotate-180" /></>
+            <>שליחת קישור לאיפוס <ArrowRight size={18} className="rotate-180" /></>
           )}
         </button>
       </form>

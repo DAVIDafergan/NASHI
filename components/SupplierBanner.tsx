@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Store, X } from 'lucide-react';
+import { BRAND } from '../shared/brand';
 
 const KEY = 'nashi-supplier-banner-closed';
 const HIDE_ON = ['/admin', '/suppliers', '/interview', '/verify', '/reset-password', '/forgot-password'];
@@ -19,8 +20,8 @@ const SupplierBanner: React.FC = () => {
         <span className="relative hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-rose-200 md:flex"><Store size={26} /></span>
         <div className="relative min-w-0 flex-1 pl-8 md:pl-0">
           <p className="font-accent text-[20px] leading-none text-rose-200">לספקים ולנותני שירות</p>
-          <h2 className="mt-1.5 text-[1.45rem] leading-tight !text-white md:text-[1.9rem]">ספקים? הצטרפו למאגר הספקים של נשי</h2>
-          <p className="mt-1.5 text-[14px] leading-relaxed text-white/75 md:text-[15px]">מנהלות התרבות שלנו בכל הארץ מחפשות מרצות, זמרות, הצגות, סדנאות, קייטרינג, הגברה ועוד.</p>
+          <h2 className="mt-1.5 text-[1.45rem] leading-tight !text-white md:text-[1.9rem]">ספקים? הצטרפו למאגר הספקים של {BRAND.name}</h2>
+          <p className="mt-1.5 text-[14px] leading-relaxed text-white/75 md:text-[15px]">מנהלי התרבות שלנו בכל הארץ מחפשים מרצים, מופעים, הצגות, סדנאות, קייטרינג, הגברה ועוד.</p>
         </div>
         <Link to="/suppliers/join" className="relative mt-4 inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-[15px] font-strong text-rose-800 transition hover:bg-rose-50 active:scale-[0.98] md:mt-0 md:w-auto">
           להצטרפות למאגר <ArrowLeft size={16} />

@@ -5,6 +5,8 @@ import { Story, Personality, Event } from './models.js';
 import { isEventExpired } from '../shared/eventTime.js';
 import { factsLine, eventDeepLink } from '../shared/eventShare.js';
 import { derivePreview } from './ogImage.js';
+import { BRAND, BRAND_COLORS, logoMarkSvg } from '../shared/brand.js';
+import { audienceOf, AUDIENCE_BADGE } from '../shared/audience.js';
 
 /**
  * Link-preview pages for WhatsApp / Facebook / Telegram.
@@ -25,7 +27,7 @@ export const page = ({ title, description, image, url, redirect, imageMeta }) =>
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <meta property="og:type" content="article">
-<meta property="og:site_name" content="נשי · קהילת נשים">
+<meta property="og:site_name" content="${esc(`${BRAND.name} · ${BRAND.tagline}`)}">
 <meta property="og:locale" content="he_IL">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
@@ -38,8 +40,8 @@ export const page = ({ title, description, image, url, redirect, imageMeta }) =>
 <meta name="twitter:card" content="summary_large_image">
 <meta http-equiv="refresh" content="0;url=${esc(redirect)}">
 <link rel="canonical" href="${esc(url)}">
-<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#FBF7F4;color:#A5636B;font-family:Assistant,Arial,sans-serif}</style>
-</head><body><p>פותחת את נשי…</p><script>location.replace(${JSON.stringify(redirect)})</script></body></html>`;
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:${BRAND_COLORS.bg};color:${BRAND_COLORS.navy};font-family:Assistant,Arial,sans-serif}</style>
+</head><body><p>פותחים את ${esc(BRAND.name)}…</p><script>location.replace(${JSON.stringify(redirect)})</script></body></html>`;
 
 const sendPage = (res, data) => {
   res.set('Cache-Control', 'public, max-age=300');
@@ -95,49 +97,79 @@ export function imageInfo(buf) {
 }
 const dataUrlBuffer = (dataUrl) => { const m = /^data:([\w/+.-]+);base64,(.+)$/.exec(dataUrl || ''); return m ? { mime: m[1], buf: Buffer.from(m[2], 'base64') } : null; };
 
+// ---- the brand share image (logo + name + tagline), used when an item has no picture of its own ----
+/** 1200×630 SVG of the share card (pure — tested). Rendered to JPEG by sharp at /s/img/brand.jpg. */
+export function brandCardSvg() {
+  const c = BRAND_COLORS;
+  const mark = logoMarkSvg({ size: 210 }).replace("<svg ", "<svg x=\"800\" y=\"140\" ");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<defs><radialGradient id="a" cx="0.85" cy="0.1" r="0.8"><stop offset="0" stop-color="${c.soft}"/><stop offset="1" stop-color="${c.bg}"/></radialGradient></defs>
+<rect width="1200" height="630" fill="url(#a)"/>
+<rect x="0" y="600" width="1200" height="30" fill="${c.navy}"/><rect x="0" y="600" width="260" height="30" fill="${c.gold}"/>
+${mark}
+<g font-family="'Simple CLM', 'SimpleCLM', Assistant, Arial, sans-serif" text-anchor="start" direction="rtl">
+<text x="780" y="330" font-size="190" font-weight="700" fill="${c.ink}">${esc(BRAND.name)}</text>
+<text x="780" y="420" font-size="54" fill="${c.navy}">${esc(BRAND.tagline)}</text>
+<text x="780" y="490" font-size="36" fill="${c.goldDeep}">לגברים · לנשים · למשפחות</text>
+</g></svg>`;
+}
+let brandJpeg = null;
+router.get('/s/img/brand.jpg', async (req, res) => {
+  try {
+    if (!brandJpeg) {
+      const d = await derivePreview('brand', `data:image/svg+xml;base64,${Buffer.from(brandCardSvg()).toString('base64')}`, { width: 1200 });
+      if (!d) return res.redirect('/og-image.jpg'); // no sharp: the static site image
+      brandJpeg = d;
+    }
+    res.set({ 'Content-Type': brandJpeg.type, 'Content-Length': brandJpeg.buf.length, 'Cache-Control': 'public, max-age=86400' });
+    res.end(brandJpeg.buf);
+  } catch { res.redirect('/og-image.jpg'); }
+});
+const siteImage = (base) => `${base}/s/img/brand.jpg`;
+
 // ---- images that crawlers can fetch ----
 // event flyer for WhatsApp: raster only (WhatsApp ignores SVG — generated placeholder flyers use the site image)
 router.get('/s/img/event/:id', async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/og-image.jpg');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/s/img/brand.jpg');
     const ev = await Event.findById(req.params.id).select('image hidden');
-    if (!ev || ev.hidden || !ev.image) return res.redirect('/og-image.jpg');
+    if (!ev || ev.hidden || !ev.image) return res.redirect('/s/img/brand.jpg');
     if (/^https:\/\//.test(ev.image)) return res.redirect(ev.image);
-    if (!(await sendPreview(res, `event:${ev._id}`, ev.image))) res.redirect('/og-image.jpg');
-  } catch { res.redirect('/og-image.jpg'); }
+    if (!(await sendPreview(res, `event:${ev._id}`, ev.image))) res.redirect('/s/img/brand.jpg');
+  } catch { res.redirect('/s/img/brand.jpg'); }
 });
 
 router.get('/s/img/personality/:id', async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/og-image.jpg');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/s/img/brand.jpg');
     const p = await Personality.findById(req.params.id).select('image status externalToken isTemplate');
-    if (!p || p.isTemplate || p.externalToken || p.status === 'submitted' || !p.image) return res.redirect('/og-image.jpg');
+    if (!p || p.isTemplate || p.externalToken || p.status === 'submitted' || !p.image) return res.redirect('/s/img/brand.jpg');
     if (/^https?:\/\//.test(p.image)) return res.redirect(p.image);
-    if (!(await sendPreview(res, `personality:${p._id}`, p.image))) res.redirect('/og-image.jpg');
-  } catch { res.redirect('/og-image.jpg'); }
+    if (!(await sendPreview(res, `personality:${p._id}`, p.image))) res.redirect('/s/img/brand.jpg');
+  } catch { res.redirect('/s/img/brand.jpg'); }
 });
 
 router.get('/s/img/story/:id', async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/og-image.jpg');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.redirect('/s/img/brand.jpg');
     const s = await Story.findById(req.params.id).select('type content status');
-    if (!s || s.status !== 'approved' || s.type !== 'image') return res.redirect('/og-image.jpg');
-    if (!(await sendPreview(res, `story:${s._id}`, s.content))) res.redirect('/og-image.jpg');
-  } catch { res.redirect('/og-image.jpg'); }
+    if (!s || s.status !== 'approved' || s.type !== 'image') return res.redirect('/s/img/brand.jpg');
+    if (!(await sendPreview(res, `story:${s._id}`, s.content))) res.redirect('/s/img/brand.jpg');
+  } catch { res.redirect('/s/img/brand.jpg'); }
 });
 
 // ---- preview pages ----
 router.get('/s/personality/:id', async (req, res) => {
   const base = origin(req);
-  const fallback = { title: 'אשת השבוע · נשי', description: 'הכירו את נשות השבוע של קהילת נשי', image: `${base}/og-image.jpg`, url: `${base}${req.originalUrl}`, redirect: '/#/personality-archive' };
+  const fallback = { title: `אישיות השבוע · ${BRAND.name}`, description: `הכירו את אישי ונשות השבוע של ${BRAND.name}`, image: siteImage(base), url: `${base}${req.originalUrl}`, redirect: '/#/personality-archive' };
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return sendPage(res, fallback);
     const p = await Personality.findById(req.params.id).select('name role motto image status externalToken isTemplate');
     if (!p || p.isTemplate || p.externalToken || p.status === 'submitted') return sendPage(res, fallback);
     sendPage(res, {
-      title: `${p.name} · אשת השבוע בנשי`,
-      description: clip(p.motto ? `״${p.motto}״ — ${p.role || ''}` : (p.role || 'ראיון אישי בקהילת נשי')),
-      image: p.image ? `${base}/s/img/personality/${p._id}` : `${base}/og-image.jpg`,
+      title: `${p.name} · אישיות השבוע ב${BRAND.name}`,
+      description: clip(p.motto ? `״${p.motto}״ — ${p.role || ''}` : (p.role || `ראיון אישי ב${BRAND.name}`)),
+      image: p.image ? `${base}/s/img/personality/${p._id}` : siteImage(base),
       url: `${base}/s/personality/${p._id}`,
       redirect: `/#/personality-archive/${p._id}`,
     });
@@ -146,16 +178,16 @@ router.get('/s/personality/:id', async (req, res) => {
 
 router.get('/s/story/:id', async (req, res) => {
   const base = origin(req);
-  const fallback = { title: 'סטטוס בקהילת נשי', description: 'היכנסי לראות מה חדש בקהילה', image: `${base}/og-image.jpg`, url: `${base}${req.originalUrl}`, redirect: '/#/' };
+  const fallback = { title: `סטטוס ב${BRAND.name}`, description: 'היכנסו לראות מה חדש בקהילה', image: siteImage(base), url: `${base}${req.originalUrl}`, redirect: '/#/' };
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return sendPage(res, fallback);
     const s = await Story.findById(req.params.id).populate('user', 'name');
     if (!s || s.status !== 'approved') return sendPage(res, fallback);
-    const who = s.user?.name ? s.user.name.split(' ')[0] : 'חברה בקהילה';
+    const who = s.user?.name ? s.user.name.split(' ')[0] : 'הקהילה';
     sendPage(res, {
-      title: `הסטטוס של ${who} · נשי`,
-      description: clip(s.type === 'text' ? s.content : (s.caption || 'היכנסי לראות את הסטטוס בקהילת נשי')),
-      image: s.type === 'image' ? `${base}/s/img/story/${s._id}` : `${base}/og-image.jpg`,
+      title: `הסטטוס של ${who} · ${BRAND.name}`,
+      description: clip(s.type === 'text' ? s.content : (s.caption || `היכנסו לראות את הסטטוס ב${BRAND.name}`)),
+      image: s.type === 'image' ? `${base}/s/img/story/${s._id}` : siteImage(base),
       url: `${base}/s/story/${s._id}`,
       redirect: `/#/?storyId=${s._id}`,
     });
@@ -178,10 +210,12 @@ export function eventPreview(ev, base, { now = Date.now(), svgOk = false } = {})
   const img = typeof ev.image === 'string' ? ev.image : '';
   // SVG placeholder flyers only when they can be converted to JPEG (sharp) — WhatsApp ignores SVG
   const raster = img && (svgOk || !/^data:image\/svg/i.test(img));
+  // who it is for, first ("לגברים · 📅 …") — never "נשים" on a men's / everyone's event
+  const who = AUDIENCE_BADGE[audienceOf(ev)];
   return {
-    title: ended ? `האירוע הסתיים · ${ev.title}` : `${ev.title} · נשי`,
-    description: ended ? 'האירוע הזה כבר הסתיים — היכנסי לאירועים הקרובים באזור שלך בנשי' : clip(blurb ? `${facts} — ${blurb}` : facts, 290),
-    image: !ended && raster ? `${base}/s/img/event/${id}` : `${base}/og-image.jpg`,
+    title: ended ? `האירוע הסתיים · ${ev.title}` : `${ev.title} · ${BRAND.name}`,
+    description: ended ? `האירוע הזה כבר הסתיים — היכנסו לאירועים הקרובים באזור שלכם ב${BRAND.name}` : clip(`${who} · ${blurb ? `${facts} — ${blurb}` : facts}`, 290),
+    image: !ended && raster ? `${base}/s/img/event/${id}` : siteImage(base),
     url: `${base}/s/event/${id}`,
     redirect: eventDeepLink(id),
   };
@@ -190,7 +224,7 @@ export function eventPreview(ev, base, { now = Date.now(), svgOk = false } = {})
 // /s/event/:id — WhatsApp / Facebook preview, then the event opens on the site
 router.get('/s/event/:id', async (req, res) => {
   const base = origin(req);
-  const fallback = { title: 'אירועים לנשים · נשי', description: 'ערבי נשים, סדנאות, הרצאות ומופעים — בכל הארץ', image: `${base}/og-image.jpg`, url: `${base}${req.originalUrl}`, redirect: '/#/events' };
+  const fallback = { title: `אירועים · ${BRAND.name}`, description: 'שיעורים, כנסים, הרצאות ומופעים לגברים, לנשים ולמשפחות — בכל הארץ', image: siteImage(base), url: `${base}${req.originalUrl}`, redirect: '/#/events' };
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return sendPage(res, fallback);
     const ev = await Event.findById(req.params.id).select('-attendees').lean();
@@ -211,9 +245,9 @@ router.get('/s/join', (req, res) => {
   const base = origin(req);
   const ref = typeof req.query.ref === 'string' && /^[a-f0-9]{24}$/i.test(req.query.ref) ? req.query.ref : '';
   sendPage(res, {
-    title: 'הוזמנת לקהילת נשי 💗',
-    description: 'אירועים, חוגים, הגרלות, קהילה ורגעים קטנים של השראה — מרחב אחד, עדין ומחבק לנשים. ההצטרפות חינם.',
-    image: `${base}/og-image.jpg`,
+    title: `הוזמנת ל${BRAND.name}`,
+    description: `${BRAND.tagline}: אירועים, שיעורים, חוגים, הגרלות וקהילה — לגברים, לנשים ולמשפחות. ההצטרפות חינם.`,
+    image: siteImage(base),
     url: `${base}/s/join${ref ? `?ref=${ref}` : ''}`,
     redirect: `/#/${ref ? `?ref=${ref}` : ''}`,
   });
