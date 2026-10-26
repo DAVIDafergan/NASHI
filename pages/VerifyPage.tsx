@@ -77,7 +77,7 @@ const VerifyPage: React.FC<{ user: User | null }> = ({ user }) => {
           <p className="font-accent text-[1.6rem] text-red-500">שימו לב</p>
           <h1 className="mt-1 text-[2.4rem] leading-tight !text-red-700">הכניסה נדחתה</h1>
           <p className="mt-3 text-[16px] text-slate-600">{message}</p>
-          <button onClick={() => navigate('/admin')} className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-rose-700 px-8 py-4 text-[16px] text-white transition hover:bg-rose-800 font-strong">
+          <button onClick={() => navigate('/admin')} className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-plum-300 px-8 py-4 text-[16px] text-ink transition hover:bg-plum-400 font-strong">
             <Home size={19} /> חזרה למערכת הניהול
           </button>
         </div>

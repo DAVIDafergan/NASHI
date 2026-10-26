@@ -40,7 +40,7 @@ const Label: React.FC<{ children: React.ReactNode; hint?: string; required?: boo
 
 const Pill: React.FC<{ on: boolean; onClick: () => void; children: React.ReactNode; icon?: React.ReactNode }> = ({ on, onClick, children, icon }) => (
   <button type="button" onClick={onClick} aria-pressed={on}
-    className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13.5px] transition active:scale-95 ${on ? 'border-rose-700 bg-rose-700 text-white shadow-soft' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300 hover:text-rose-700'}`}>
+    className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13.5px] transition active:scale-95 ${on ? 'border-plum-300 bg-plum-300 text-ink shadow-soft' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300 hover:text-rose-700'}`}>
     {on ? <Check size={14} /> : icon}{children}
   </button>
 );

@@ -66,7 +66,7 @@ export const PageShell: React.FC<{ children: React.ReactNode; className?: string
 );
 
 export const Chip: React.FC<{ active?: boolean; onClick?: () => void; children: React.ReactNode; icon?: React.ReactNode; tone?: 'rose' | 'sage' }> = ({ active, onClick, children, icon, tone = 'rose' }) => {
-  const on = tone === 'sage' ? 'bg-sage-600 border-sage-600 text-white shadow-soft' : 'bg-rose-700 border-rose-700 text-white shadow-soft';
+  const on = tone === 'sage' ? 'bg-sage-600 border-sage-600 text-white shadow-soft' : 'bg-plum-300 border-plum-300 text-ink shadow-soft';
   return (
     <button
       type="button"
@@ -175,7 +175,7 @@ export const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 /** Small round icon button (close / share etc.) */
 export const IconButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { label: string }> = ({ label, className = '', children, ...rest }) => (
-  <button type="button" aria-label={label} title={label} className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-soft backdrop-blur transition hover:bg-rose-700 hover:text-white active:scale-90 ${className}`} {...rest}>
+  <button type="button" aria-label={label} title={label} className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-soft backdrop-blur transition hover:bg-plum-300 hover:text-ink active:scale-90 ${className}`} {...rest}>
     {children}
   </button>
 );

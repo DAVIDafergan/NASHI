@@ -85,7 +85,7 @@ const AdSlot: React.FC<{ placement: string; className?: string }> = ({ placement
               {ad.title && <p className="line-clamp-2 font-strong text-[15px] leading-snug text-ink">{ad.title}</p>}
             </div>
             {clickable && (
-              <button type="button" onClick={e => { e.stopPropagation(); open(); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-rose-700 px-4 py-2 text-[13px] font-strong text-white transition hover:bg-rose-800">
+              <button type="button" onClick={e => { e.stopPropagation(); open(); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-plum-300 px-4 py-2 text-[13px] font-strong text-ink transition hover:bg-plum-400">
                 {ad.ctaText || 'לפרטים'} <ArrowLeft size={14} />
               </button>
             )}

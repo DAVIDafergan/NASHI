@@ -78,10 +78,10 @@ export function useRegionCity<T extends Item>(items: T[], isUpcoming: (x: T) => 
 
 const RegionCard: React.FC<{ active: boolean; onClick: () => void; title: string; count: number; sub?: string; icon?: React.ReactNode }> = ({ active, onClick, title, count, sub, icon }) => (
   <button type="button" onClick={onClick} aria-pressed={active}
-    className={`relative flex min-w-[118px] shrink-0 flex-col items-start rounded-[1.25rem] border px-3.5 py-2.5 text-right transition active:scale-[0.97] md:min-w-0 ${active ? 'border-rose-700 bg-rose-700 text-white shadow-lift' : 'border-rose-100 bg-white text-ink hover:border-rose-300'}`}>
-    <span className={`flex items-center gap-1 text-[11px] ${active ? 'text-rose-100' : 'text-rose-500'}`}>{icon}{sub || ' '}</span>
+    className={`relative flex min-w-[118px] shrink-0 flex-col items-start rounded-[1.25rem] border px-3.5 py-2.5 text-right transition active:scale-[0.97] md:min-w-0 ${active ? 'border-plum-300 bg-plum-300 text-ink shadow-lift' : 'border-rose-100 bg-white text-ink hover:border-rose-300'}`}>
+    <span className={`flex items-center gap-1 text-[11px] ${active ? 'text-ink/70' : 'text-rose-500'}`}>{icon}{sub || ' '}</span>
     <span className="mt-0.5 text-[15px] font-strong leading-tight">{title}</span>
-    <span className={`mt-1 text-[12px] tabular-nums ${active ? 'text-white/80' : count ? 'text-slate-500' : 'text-slate-300'}`}>{count ? `${count} אירועים` : 'עוד אין אירועים'}</span>
+    <span className={`mt-1 text-[12px] tabular-nums ${active ? 'text-ink/70' : count ? 'text-slate-500' : 'text-slate-300'}`}>{count ? `${count} אירועים` : 'עוד אין אירועים'}</span>
     {active && <Check size={14} className="absolute left-2.5 top-2.5 text-white/80" />}
   </button>
 );

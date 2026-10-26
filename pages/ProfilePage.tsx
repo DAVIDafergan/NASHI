@@ -250,7 +250,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
               aria-selected={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-[14.5px] transition-all duration-300 ${
-                activeTab === tab.key ? 'bg-rose-700 text-white shadow-soft' : 'text-slate-500 hover:text-rose-700'
+                activeTab === tab.key ? 'bg-plum-300 text-ink shadow-soft' : 'text-slate-500 hover:text-rose-700'
               }`}
             >
               <TabIcon size={16} /> {tab.label}

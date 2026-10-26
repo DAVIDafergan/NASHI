@@ -83,7 +83,7 @@ const EventCard: React.FC<EventCardProps> = ({
         )}
         {onShare && !isPast && (
           <button type="button" onClick={(e) => { e.stopPropagation(); onShare(); }} aria-label={`שיתוף: ${title}`} title="שיתוף בוואטסאפ"
-            className="absolute top-2.5 left-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-rose-700 shadow-soft backdrop-blur-sm transition hover:bg-rose-700 hover:text-white active:scale-90">
+            className="absolute top-2.5 left-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-rose-700 shadow-soft backdrop-blur-sm transition hover:bg-plum-300 hover:text-ink active:scale-90">
             <Share2 size={17} />
           </button>
         )}
@@ -115,7 +115,7 @@ const EventCard: React.FC<EventCardProps> = ({
           className={`mt-auto w-full py-3 rounded-full text-[14.5px] font-strong active:scale-[0.98] transition-all min-h-[44px] ${
             isPast
               ? 'bg-slate-100 text-slate-500'
-              : 'bg-rose-50 text-rose-700 group-hover:bg-rose-700 group-hover:text-white'
+              : 'bg-rose-50 text-rose-700 group-hover:bg-plum-300 group-hover:text-ink'
           }`}
         >
           {isPast ? 'עבר' : ctaLabel}

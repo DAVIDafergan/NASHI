@@ -117,12 +117,12 @@ const CommunityPage = () => {
               aria-selected={active}
               onClick={() => { setActiveTab(tab.id as any); setSearchTerm(''); }}
               className={`group relative overflow-hidden rounded-[1.4rem] border px-3 py-4 sm:p-5 text-right transition-all duration-500 active:scale-[0.97] ${
-                active ? 'border-rose-700 bg-rose-700 text-white shadow-lift' : 'border-rose-100 bg-white/80 text-ink hover:border-rose-300 hover:-translate-y-0.5'
+                active ? 'border-plum-300 bg-plum-300 text-ink shadow-lift' : 'border-rose-100 bg-white/80 text-ink hover:border-rose-300 hover:-translate-y-0.5'
               }`}
             >
               <span className={`flex h-9 w-9 items-center justify-center rounded-full transition ${active ? 'bg-white/15' : 'bg-rose-50 text-rose-500'}`}>{tab.icon}</span>
               <span className="mt-3 block font-strong text-[14px] sm:text-[16px] leading-tight">{tab.label}</span>
-              {!loading && <span className={`mt-0.5 block text-[12px] ${active ? 'text-white/75' : 'text-slate-400'}`}>{count} פריטים</span>}
+              {!loading && <span className={`mt-0.5 block text-[12px] ${active ? 'text-ink/70' : 'text-slate-400'}`}>{count} פריטים</span>}
             </button>
           );
         })}
@@ -171,7 +171,7 @@ const CommunityPage = () => {
 
                   <button
                     onClick={() => handleContact(item.phone, item.title)}
-                    className="mt-auto inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full bg-rose-50 text-[13.5px] text-rose-700 transition-all duration-300 group-hover:bg-rose-700 group-hover:text-white active:scale-95 font-strong"
+                    className="mt-auto inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full bg-rose-50 text-[13.5px] text-rose-700 transition-all duration-300 group-hover:bg-plum-300 group-hover:text-ink active:scale-95 font-strong"
                   >
                     <MessageCircle size={15}/>
                     לפנייה בוואטסאפ

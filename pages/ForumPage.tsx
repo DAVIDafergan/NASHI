@@ -268,7 +268,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
 
                   <button
                     onClick={() => setExpandedPostId(isExpanded ? null : post._id)}
-                    className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-4 text-[13.5px] transition font-strong ${isExpanded ? 'bg-rose-700 text-white' : 'bg-rose-50 text-rose-700 hover:bg-rose-700 hover:text-white'}`}
+                    className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-4 text-[13.5px] transition font-strong ${isExpanded ? 'bg-plum-300 text-ink' : 'bg-rose-50 text-rose-700 hover:bg-plum-300 hover:text-ink'}`}
                   >
                     {isExpanded ? 'סגירה' : 'לדיון'}
                     <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -300,7 +300,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                         <button
                           onClick={() => handleAddComment(post._id)}
                           aria-label="שליחת תגובה"
-                          className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-rose-700 text-white shadow-soft transition hover:bg-rose-800 active:scale-90"
+                          className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-plum-300 text-ink shadow-soft transition hover:bg-plum-400 active:scale-90"
                         >
                           <Send size={17} className="rotate-180" />
                         </button>
@@ -320,7 +320,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
       <button
         onClick={() => setIsModalOpen(true)}
         aria-label="פתיחת נושא חדש"
-        className="fixed bottom-24 left-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-rose-700 text-white shadow-lift transition active:scale-90 md:hidden"
+        className="fixed bottom-24 left-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-plum-300 text-ink shadow-lift transition active:scale-90 md:hidden"
       >
         <Plus size={24} />
       </button>

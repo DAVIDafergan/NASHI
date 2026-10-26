@@ -392,7 +392,7 @@ const StoriesSection: React.FC<{ user: any; onOpenLogin: () => void }> = ({ user
                 <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-white p-1 shadow-soft">
                   {([['text', 'טקסט', <Type key="t" size={15} />], ['image', 'תמונה', <ImagePlus key="i" size={15} />]] as const).map(([k, label, icon]) => (
                     <button key={k} onClick={() => setDraft(d => ({ ...d, type: k, content: d.type === k ? d.content : '' }))}
-                      className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-sm transition ${draft.type === k ? 'bg-rose-700 font-strong text-white' : 'text-slate-500'}`}>{icon}{label}</button>
+                      className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-sm transition ${draft.type === k ? 'bg-plum-300 font-strong text-ink' : 'text-slate-500'}`}>{icon}{label}</button>
                   ))}
                 </div>
 

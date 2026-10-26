@@ -124,7 +124,7 @@ const ContactPage: React.FC = () => {
            ].map((item, i) => (
              <ScrollReveal key={i} delay={i * 80}>
                <a href={item.href} className="group flex items-center gap-4 rounded-[1.5rem] border border-rose-100/70 bg-white p-4 shadow-petal transition hover:-translate-y-0.5 hover:shadow-lift">
-                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition group-hover:bg-rose-700 group-hover:text-white">
+                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition group-hover:bg-plum-300 group-hover:text-ink">
                    {item.icon}
                  </div>
                  <div className="min-w-0">
@@ -199,7 +199,7 @@ const ContactPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
-                  className={`relative flex items-center gap-2 rounded-full px-4 py-2.5 text-[14px] transition-all font-strong ${isRecording ? 'bg-red-500 text-white' : 'bg-white text-rose-700 shadow-soft hover:bg-rose-700 hover:text-white'}`}
+                  className={`relative flex items-center gap-2 rounded-full px-4 py-2.5 text-[14px] transition-all font-strong ${isRecording ? 'bg-red-500 text-ink' : 'bg-white text-rose-700 shadow-soft hover:bg-plum-300 hover:text-ink'}`}
                 >
                   {isRecording && <span className="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-40" aria-hidden="true" />}
                   {isRecording ? <Square size={15} className="relative fill-current" /> : <Mic size={16} />}

@@ -80,7 +80,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
           <div className="relative shrink-0 overflow-hidden px-7 pt-7 pb-5 md:px-8 md:pt-9">
             <div aria-hidden="true" className="pointer-events-none absolute -top-16 -left-10 h-48 w-48 rounded-full bg-rose-200/50 blur-3xl animate-mesh-drift" />
             <div aria-hidden="true" className="pointer-events-none absolute -top-10 right-[-3rem] h-40 w-40 rounded-full bg-champagne-200/60 blur-3xl animate-mesh-drift-slow" />
-            <button onClick={onClose} aria-label="סגירה" className="absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-slate-500 transition hover:bg-rose-700 hover:text-white active:scale-90">
+            <button onClick={onClose} aria-label="סגירה" className="absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-slate-500 transition hover:bg-plum-300 hover:text-ink active:scale-90">
               <X size={18} />
             </button>
             <div className="relative">
@@ -147,7 +147,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                   <span className="text-[13px] text-slate-500">אני <span className="text-slate-400">(לא חובה)</span></span>
                   {[['male', 'גבר'], ['female', 'אישה']].map(([id, label]) => (
                     <button type="button" key={id} role="radio" aria-checked={formData.gender === id} onClick={() => setFormData({ ...formData, gender: formData.gender === id ? '' : id })}
-                      className={`rounded-full border px-4 py-1.5 text-[13.5px] transition ${formData.gender === id ? 'border-rose-700 bg-rose-700 text-white' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{label}</button>
+                      className={`rounded-full border px-4 py-1.5 text-[13.5px] transition ${formData.gender === id ? 'border-plum-300 bg-plum-300 text-ink' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{label}</button>
                   ))}
                 </div>
               )}
@@ -203,7 +203,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                      <input
                        id="terms-check"
                        type="checkbox"
-                       className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-rose-200 transition-all checked:border-rose-700 checked:bg-rose-700 hover:border-rose-400"
+                       className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-rose-200 transition-all checked:border-plum-300 checked:bg-plum-300 hover:border-rose-400"
                        checked={formData.agreedToTerms}
                        onChange={e => setFormData({...formData, agreedToTerms: e.target.checked})}
                      />
@@ -254,7 +254,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                 <p className="eyebrow">לפני שמצטרפים</p>
                 <h3 className="mt-1 flex items-center gap-2 font-display text-[1.7rem] text-ink"><ShieldCheck className="text-rose-500" size={22}/> תקנון האתר</h3>
               </div>
-              <button onClick={() => setShowTerms(false)} aria-label="חזרה" className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-slate-500 transition hover:bg-rose-700 hover:text-white"><X size={18}/></button>
+              <button onClick={() => setShowTerms(false)} aria-label="חזרה" className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-slate-500 transition hover:bg-plum-300 hover:text-ink"><X size={18}/></button>
            </div>
 
            <div className="overflow-y-auto px-6 py-6 md:px-8 text-[14.5px] leading-[1.85] text-slate-600 space-y-3">

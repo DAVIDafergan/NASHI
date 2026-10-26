@@ -213,7 +213,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
           {/* Desktop Nav — pill with a sliding active indicator */}
           <nav ref={navRef} className="relative hidden md:flex items-center gap-0.5 rounded-full border border-rose-100/80 bg-white/60 p-1 shadow-[0_8px_30px_-18px_rgb(var(--mauve-800)/0.35)] backdrop-blur" aria-label="ניווט ראשי">
             {indicator && (
-              <span className="absolute top-1 bottom-1 rounded-full bg-rose-700 shadow-lift transition-all duration-500 ease-[cubic-bezier(.2,.8,.2,1)]" style={{ left: indicator.left, width: indicator.width }} aria-hidden="true" />
+              <span className="absolute top-1 bottom-1 rounded-full bg-plum-300 shadow-lift transition-all duration-500 ease-[cubic-bezier(.2,.8,.2,1)]" style={{ left: indicator.left, width: indicator.width }} aria-hidden="true" />
             )}
             {primaryLinks.map((link) => {
               const active = isActive(link.path);
@@ -223,7 +223,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                   to={link.path}
                   data-active={active}
                   aria-current={active ? 'page' : undefined}
-                  className={`relative z-10 px-4 py-2 rounded-full text-[14px] transition-colors duration-300 ${active ? 'text-white font-strong' : 'text-slate-600 hover:text-rose-700'}`}
+                  className={`relative z-10 px-4 py-2 rounded-full text-[14px] transition-colors duration-300 ${active ? 'text-ink font-strong' : 'text-slate-600 hover:text-rose-700'}`}
                 >
                   {link.label}
                 </Link>

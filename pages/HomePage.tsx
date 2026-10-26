@@ -635,7 +635,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                              <input id="terms" type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} className="w-5 h-5 text-rose-500 border-slate-300 rounded focus:ring-rose-500 cursor-pointer" />
                              <label htmlFor="terms" className="text-sm font-medium text-slate-600 cursor-pointer">קראתי ואני מסכים/ה לתקנון</label>
                           </div>
-                          <button type="submit" className="w-full mt-4 py-4 bg-rose-700 hover:bg-rose-500 text-white rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl transition-all active:scale-95">שליחת בקשה</button>
+                          <button type="submit" className="w-full mt-4 py-4 bg-plum-300 hover:bg-plum-400 text-ink rounded-2xl font-bold text-sm shadow-xl hover:shadow-2xl transition-all active:scale-95">שליחת בקשה</button>
                       </form>
                   </div>
               </div>
@@ -655,7 +655,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                  <p className="text-slate-600 text-sm leading-relaxed font-medium">כאן מופיע התקנון המלא של האתר...</p>
               </div>
               <div className="pt-6 shrink-0 border-t border-slate-100 mt-4">
-                 <button onClick={() => setShowTermsModal(false)} className="w-full py-4 bg-rose-700 hover:bg-rose-500 text-white font-bold rounded-2xl transition-colors shadow-lg">סגירה והמשך</button>
+                 <button onClick={() => setShowTermsModal(false)} className="w-full py-4 bg-plum-300 hover:bg-plum-400 text-ink font-bold rounded-2xl transition-colors shadow-lg">סגירה והמשך</button>
               </div>
            </div>
         </div>

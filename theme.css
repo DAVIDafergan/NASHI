@@ -95,8 +95,8 @@
 @layer components {
   /* Reusable building blocks for the new look */
   .card-soft { @apply bg-white rounded-[1.75rem] border border-rose-100/70 shadow-petal; }
-  .btn-primary { @apply font-strong inline-flex items-center justify-center gap-2 rounded-full bg-rose-700 px-6 py-3 text-[15px] font-normal text-white shadow-lift transition-all duration-300 hover:bg-rose-800 active:scale-[0.98]; }
-  .btn-ghost { @apply font-strong inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-white/80 px-5 py-2.5 text-[15px] font-normal text-rose-700 transition-all duration-300 hover:bg-rose-50; }
+  .btn-primary { @apply font-strong inline-flex items-center justify-center gap-2 rounded-full bg-plum-300 px-6 py-3 text-[15px] font-normal text-ink shadow-lift transition-all duration-300 hover:bg-plum-400 active:scale-[0.98]; } /* peach (owner, 2026-10-26) */
+  .btn-ghost { @apply font-strong inline-flex items-center justify-center gap-2 rounded-full border border-plum-300 bg-white/80 px-5 py-2.5 text-[15px] font-normal text-ink transition-all duration-300 hover:bg-plum-50; }
   .eyebrow { @apply font-accent text-[21px] leading-none font-light tracking-[0.03em] text-rose-600; }
   .section-title { @apply font-display text-[1.65rem] md:text-[2.1rem] leading-tight text-ink; }
   /* Break out of the page container to the full viewport width */

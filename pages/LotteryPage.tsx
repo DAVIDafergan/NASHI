@@ -429,7 +429,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
       return (
           <button
               onClick={() => handleEnterLottery(lottery)}
-              className={`${base} ${canParticipate ? 'bg-rose-700 text-white shadow-lift hover:bg-rose-800' : 'bg-rose-50 text-rose-300 cursor-not-allowed'}`}
+              className={`${base} ${canParticipate ? 'bg-plum-300 text-ink shadow-lift hover:bg-plum-400' : 'bg-rose-50 text-rose-300 cursor-not-allowed'}`}
           >
               <Ticket size={17} />
               {lottery.participationType === 'mission' ? 'התחלת משימה להגרלה' : canParticipate ? 'הרשמה להגרלה' : 'חסרות לך נקודות'}
@@ -497,7 +497,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
             role="tab"
             aria-selected={activeTab === 'regular'}
             onClick={() => setActiveTab('regular')}
-            className={`flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[14.5px] transition-all duration-300 ${activeTab === 'regular' ? 'bg-rose-700 text-white shadow-soft' : 'text-slate-500 hover:text-rose-700'}`}
+            className={`flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[14.5px] transition-all duration-300 ${activeTab === 'regular' ? 'bg-plum-300 text-ink shadow-soft' : 'text-slate-500 hover:text-rose-700'}`}
           >
             <Gift size={16} /> הגרלות
           </button>

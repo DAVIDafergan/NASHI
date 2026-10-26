@@ -72,7 +72,7 @@ export const SectionHeader: React.FC<{ eyebrow: string; title: string; to?: stri
         {to && (
           <Link to={to} className="group hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-rose-700 shrink-0 pb-2">
             {linkLabel || 'לכל הרשימה'}
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 transition-all duration-500 group-hover:bg-rose-700 group-hover:text-white group-hover:border-rose-700 group-hover:-translate-x-1">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 transition-all duration-500 group-hover:bg-plum-300 group-hover:text-ink group-hover:border-plum-300 group-hover:-translate-x-1">
               <ArrowLeft size={15} />
             </span>
           </Link>

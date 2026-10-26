@@ -161,7 +161,7 @@ const BecomeManagerPage: React.FC<{ user: any; onOpenLogin: () => void }> = ({ u
                   <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="אני">
                     {[['male', 'גבר'], ['female', 'אישה']].map(([id, label]) => (
                       <button type="button" key={id} role="radio" aria-checked={form.gender === id} onClick={() => setForm(f => ({ ...f, gender: f.gender === id ? '' : id }))}
-                        className={`rounded-full border px-4 py-2 text-sm transition ${form.gender === id ? 'border-rose-700 bg-rose-700 text-white' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{label}</button>
+                        className={`rounded-full border px-4 py-2 text-sm transition ${form.gender === id ? 'border-plum-300 bg-plum-300 text-ink' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{label}</button>
                     ))}
                   </div>
                 </div>
@@ -187,7 +187,7 @@ const BecomeManagerPage: React.FC<{ user: any; onOpenLogin: () => void }> = ({ u
                   <div className="flex flex-wrap gap-2">
                     {[['matnas', 'מתנ״ס'], ['municipality', 'עירייה / מועצה'], ['other', 'אחר']].map(([id, label]) => (
                       <button type="button" key={id} onClick={() => setForm(f => ({ ...f, employer: id }))}
-                        className={`rounded-full border px-4 py-2 text-sm transition ${form.employer === id ? 'border-rose-700 bg-rose-700 text-white' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{label}</button>
+                        className={`rounded-full border px-4 py-2 text-sm transition ${form.employer === id ? 'border-plum-300 bg-plum-300 text-ink' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{label}</button>
                     ))}
                   </div>
                   {form.employer === 'other' && <input className={`${input} mt-2`} value={form.employerOther} onChange={e => setForm(f => ({ ...f, employerOther: e.target.value }))} placeholder="פירוט: עמותה, ארגון, עצמאי/ת…" />}
@@ -209,7 +209,7 @@ const BecomeManagerPage: React.FC<{ user: any; onOpenLogin: () => void }> = ({ u
                   <div className="flex flex-wrap gap-2">
                     {['עד שעה', '1-3 שעות', '3-5 שעות', 'יותר'].map(h => (
                       <button type="button" key={h} onClick={() => setForm(f => ({ ...f, hoursPerWeek: h }))}
-                        className={`rounded-full border px-4 py-2 text-sm transition ${form.hoursPerWeek === h ? 'border-rose-700 bg-rose-700 text-white' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{h}</button>
+                        className={`rounded-full border px-4 py-2 text-sm transition ${form.hoursPerWeek === h ? 'border-plum-300 bg-plum-300 text-ink' : 'border-rose-100 bg-white text-slate-600 hover:border-rose-300'}`}>{h}</button>
                     ))}
                   </div>
                 </div>
