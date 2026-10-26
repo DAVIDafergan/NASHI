@@ -236,19 +236,6 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       } catch (err) { alert("שגיאה בשליחה"); }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center" dir="rtl">
-        <div className="text-center space-y-5">
-          <div className="animate-pulse"><Logo size="xl" /></div>
-          <div className="mx-auto h-px w-24 overflow-hidden bg-rose-100">
-            <div className="h-full w-1/2 bg-rose-400 animate-[shimmer-sweep_1.6s_ease-in-out_infinite]" />
-          </div>
-          <p className="text-sm text-slate-500">רגע, מכינים את הבית…</p>
-        </div>
-      </div>
-    );
-  }
 
   const latestInspiration = inspirations[0] || { text: "מעט מן האור דוחה הרבה מן החושך.", author: BRAND.name };
 
@@ -258,6 +245,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
       {/* ============ HERO — full-bleed, animated ============ */}
       <section className="full-bleed relative -mt-4 overflow-hidden">
         {/* drifting colour mesh */}
+        <div className="absolute inset-0 pointer-events-none md:hidden" aria-hidden="true">
+          <div className="absolute -top-16 -right-16 h-72 w-72 rounded-full bg-plum-200/50 blur-[60px]" />
+          <div className="absolute top-[45%] -left-20 h-64 w-64 rounded-full bg-champagne-200/50 blur-[60px]" />
+        </div>
         <div className="absolute inset-0 pointer-events-none hidden md:block" aria-hidden="true">
           <div className="absolute -top-24 right-[8%] w-[46vw] max-w-[620px] aspect-square rounded-full bg-rose-200/60 blur-[90px] animate-mesh-drift" />
           <div className="absolute top-[30%] left-[4%] w-[40vw] max-w-[540px] aspect-square rounded-full bg-plum-200/50 blur-[100px] animate-mesh-drift-slow" />
@@ -269,19 +260,19 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </svg>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-5 md:px-8 pt-8 md:pt-16 pb-8 md:pb-20 grid lg:grid-cols-[1.15fr_1fr] gap-8 lg:gap-6 items-center">
+        <div className="relative max-w-7xl mx-auto px-5 md:px-8 pt-6 md:pt-16 pb-6 md:pb-20 grid lg:grid-cols-[1.15fr_1fr] gap-8 lg:gap-6 items-center">
           <div className="relative z-10">
-            <p className="eyebrow animate-fade-in-up">לגברים · לנשים · למשפחות · מכל הארץ</p>
+            <p className="eyebrow animate-fade-in-up">לגברים · לנשים · למשפחות<span className="hidden sm:inline"> · מכל הארץ</span></p>
             <HebrewDayLine className="mt-2 animate-fade-in-up" />
             <AnimatedHeadline
               className="mt-5 text-[3.4rem] leading-[0.98] sm:text-[4.6rem] lg:text-[6.2rem] text-ink"
               lines={[{ text: 'כל התרבות' }, { text: 'החרדית,', className: 'font-accent text-[1.45em] leading-[0.82] text-rose-600' }, { text: 'במקום אחד, קרוב לבית.' , className: 'text-[0.55em] leading-[1.25] mt-3 text-slate-500 font-light' }]}
             />
-            <p className="mt-7 max-w-md text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
+            <p className="mt-5 md:mt-7 max-w-md text-[15.5px] md:text-[17px] leading-relaxed text-slate-600 animate-fade-in-up" style={{ animationDelay: '450ms' }}>
               שיעורים וכנסים, אירועים ומופעים, חוגים, גמ"חים ורגעים של השראה — לגברים, לנשים ולמשפחות, באזור שלכם ובכל הארץ.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3 animate-fade-in-up" style={{ animationDelay: '550ms' }}>
-              <Link to="/events" className="btn-primary group !px-7 !py-3.5">
+            <div className="mt-6 md:mt-9 flex flex-nowrap sm:flex-wrap items-center gap-2.5 md:gap-3 animate-fade-in-up" style={{ animationDelay: '550ms' }}>
+              <Link to="/events" className="btn-primary group shrink-0 !px-5 md:!px-7 !py-3 md:!py-3.5 !text-[14.5px] md:!text-[15px]">
                 לאירועים הקרובים
                 <ArrowLeft size={16} className="transition-transform duration-500 group-hover:-translate-x-1.5" />
               </Link>
@@ -290,7 +281,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                   <Star size={15} className="text-champagne-500" fill="currentColor" /> {(user?.points || 0).toLocaleString()} נקודות במעגל
                 </span>
               ) : !user?.isMemberRequested ? (
-                <button onClick={() => (user ? setShowMembershipModal(true) : onOpenLogin())} className="btn-ghost !px-6 !py-3.5">הצטרפות למעגל</button>
+                <button onClick={() => (user ? setShowMembershipModal(true) : onOpenLogin())} className="btn-ghost shrink-0 !px-5 md:!px-6 !py-3 md:!py-3.5 !text-[14.5px] md:!text-[15px]">הצטרפות למעגל</button>
               ) : (
                 <span className="text-sm text-slate-500">בקשת ההצטרפות שלך בטיפול ✨</span>
               )}
@@ -298,7 +289,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </div>
 
           {/* phones: an animated "spot" — the pin with pulsing rings and floating chips of what's on */}
-          <div className="lg:hidden relative mx-auto -mt-2 h-60 w-full max-w-sm animate-fade-in-up" style={{ animationDelay: '600ms' }} aria-hidden="true">
+          <div className="lg:hidden relative mx-auto -mt-6 h-56 w-full max-w-sm animate-blur-in" style={{ animationDelay: '500ms', animationFillMode: 'both' }} aria-hidden="true">
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="absolute h-44 w-44 rounded-full bg-gradient-to-br from-plum-200 via-champagne-100 to-rose-100 blur-2xl animate-mesh-drift" />
               <span className="absolute h-28 w-28 rounded-full border-2 border-plum-300 animate-ring-pulse" />
@@ -316,8 +307,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
               { t: 'מופעים', c: 'left-[2%] top-[30%] bg-plum-300 text-ink', d: '-1.5s' },
               { t: 'חוגים', c: 'right-[12%] bottom-[10%] bg-rose-700 text-white', d: '-3s' },
               { t: 'כנסים', c: 'left-[16%] bottom-[4%] bg-champagne-100 text-ink', d: '-2.2s' },
-            ].map(x => (
-              <span key={x.t} className={`absolute ${x.c} rounded-full px-4 py-2 text-[14px] font-strong shadow-soft animate-float-y-slow`} style={{ animationDelay: x.d }}>{x.t}</span>
+            ].map((x, i) => (
+              <span key={x.t} className={`absolute ${x.c.split(' ').filter(k => !k.startsWith('bg-') && !k.startsWith('text-')).join(' ')} animate-scale-in`} style={{ animationDelay: `${900 + i * 160}ms`, animationFillMode: 'both' }}>
+                <span className={`block rounded-full px-4 py-2 text-[14px] font-strong shadow-soft animate-float-y-slow ${x.c.split(' ').filter(k => k.startsWith('bg-') || k.startsWith('text-')).join(' ')}`} style={{ animationDelay: x.d }}>{x.t}</span>
+              </span>
             ))}
           </div>
 
@@ -389,7 +382,15 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
         </div>
       </section>
 
-      <div className="relative z-10 space-y-14 md:space-y-28 pt-10 md:pt-20">
+      {isLoading ? (
+        <div className="relative z-10 mx-auto max-w-7xl space-y-5 px-5 pt-10 md:px-8 md:pt-20" aria-busy="true" aria-label="טוען">
+          <div className="h-7 w-48 rounded-full bg-rose-100/70 animate-pulse" />
+          <div className="grid gap-4 md:grid-cols-3">
+            {[0, 1, 2].map(i => <div key={i} className="h-56 rounded-[2rem] bg-white/70 shadow-soft animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />)}
+          </div>
+        </div>
+      ) : (
+      <div className="relative z-10 space-y-14 md:space-y-28 pt-10 md:pt-20 animate-fade-in">
 
         {/* ============ FLYERS ============ */}
         <ScrollReveal animation="blur-in" className="px-5 md:px-0">
@@ -633,6 +634,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
           </p>
         </div>
       </div>
+      )}
 
       {/* --- מודלים --- */}
 
