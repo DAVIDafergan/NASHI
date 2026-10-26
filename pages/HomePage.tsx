@@ -330,43 +330,35 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
             </Link>
           )}
 
-          {/* floating collage of what's coming up (tablet/desktop) */}
-          <div className="relative hidden lg:block h-[560px]">
-            {(() => {
-              const pics = upcomingEvents.filter(e => e.image).slice(0, 3);
-              const fallback = shownClasses.filter((c: any) => c.image).slice(0, 3 - pics.length).map((c: any) => ({ image: c.image, title: c.title, id: c._id }));
-              const items: any[] = [...pics, ...fallback];
-              const spots = [
-                'right-[6%] top-[4%] w-[52%] h-[64%] rotate-[-4deg] animate-float-y',
-                'left-[4%] top-[18%] w-[44%] h-[52%] rotate-[5deg] animate-float-y-slow',
-                'right-[30%] bottom-[2%] w-[40%] h-[40%] rotate-[2deg] animate-float-y',
-              ];
-              if (items.length === 0) {
-                return (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative w-[78%] aspect-square">
-                      <div className="absolute inset-0 rounded-[45%_55%_60%_40%/50%_45%_55%_50%] bg-gradient-to-br from-rose-200 via-rose-100 to-plum-200 animate-mesh-drift" />
-                      <div className="absolute inset-[12%] rounded-[55%_45%_40%_60%/45%_55%_45%_55%] bg-white/50 backdrop-blur-xl border border-white/70 flex items-center justify-center">
-                        <Logo size="xl" />
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              return items.map((it, i) => (
-                <div key={i} className={`absolute ${spots[i]}`} style={{ animationDelay: `${i * -2.3}s` }}>
-                  <div className="w-full h-full animate-clip-up" style={{ animationDelay: `${500 + i * 220}ms` }}>
-                    <div className="w-full h-full rounded-[2rem] overflow-hidden shadow-lift ring-8 ring-white/70 bg-rose-100">
-                      {/* flyers are posters: show them whole over a blurred copy instead of cropping */}
-                      <div className="relative w-full h-full">
-                        <img src={it.image} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60" />
-                        <img src={it.image} alt={it.title || ''} className="relative w-full h-full object-contain" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ));
-            })()}
+          {/* desktop: the Spot orbit — the pin with soft pulsing rings and a slow orbit of icons (always there) */}
+          <div className="relative hidden lg:block h-[560px]" aria-hidden="true">
+            <div className="absolute inset-0 flex items-center justify-center animate-blur-in" style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
+              <span className="absolute h-[26rem] w-[26rem] rounded-full bg-gradient-to-br from-plum-200/70 via-champagne-100/60 to-transparent blur-3xl" />
+              <span className="absolute h-40 w-40 rounded-full border border-plum-300 animate-ring-pulse" />
+              <span className="absolute h-40 w-40 rounded-full border border-plum-300 animate-ring-pulse" style={{ animationDelay: '1.6s' }} />
+              <span className="absolute h-[19rem] w-[19rem] rounded-full border border-champagne-300/60" />
+              <span className="absolute h-[27rem] w-[27rem] rounded-full border border-dashed border-champagne-300/40" />
+              <div className="absolute h-[27rem] w-[27rem] animate-spin-slow">
+                {[
+                  { I: BookOpen, pos: 'left-1/2 -top-7 -translate-x-1/2', t: 'שיעורים' },
+                  { I: Music, pos: '-right-7 top-1/2 -translate-y-1/2', t: 'מופעים' },
+                  { I: Calendar, pos: 'left-1/2 -bottom-7 -translate-x-1/2', t: 'אירועים' },
+                  { I: GraduationCap, pos: '-left-7 top-1/2 -translate-y-1/2', t: 'חוגים' },
+                ].map(({ I, pos, t }, i) => (
+                  <span key={i} className={`absolute ${pos}`}>
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-rose-700 shadow-lift ring-1 ring-champagne-200 [animation:spin-slow_40s_linear_infinite_reverse]" title={t}>
+                      <I size={22} strokeWidth={1.6} />
+                    </span>
+                  </span>
+                ))}
+              </div>
+              <div className="relative flex flex-col items-center animate-float-y">
+                <svg viewBox="0 0 64 64" className="h-28 w-28 drop-shadow-2xl">
+                  <path d="M32 4C20.4 4 11 13.2 11 24.6 11 40 32 60 32 60s21-20 21-35.4C53 13.2 43.6 4 32 4z" fill="rgb(var(--rose-700))" />
+                  <circle cx="32" cy="24.5" r="8.5" fill="rgb(var(--plum-300))" />
+                </svg>
+              </div>
+            </div>
             {upcomingEvents[0] && (
               <Link to="/events" className="absolute left-[2%] bottom-[8%] z-10 animate-scale-in" style={{ animationDelay: '1300ms' }}>
                 <div className="rounded-3xl bg-white/85 backdrop-blur-xl border border-white shadow-lift px-5 py-4 max-w-[230px] hover:-translate-y-1 transition-transform duration-500">
