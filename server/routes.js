@@ -811,7 +811,7 @@ router.delete('/community/:id', authenticate, canManage(Community), async (req, 
     try { await Community.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ================= 7. אשת השבוע (PERSONALITY) =================
+// ================= 7. אישיות השבוע (PERSONALITY) =================
 // Flow: admin sends a questionnaire link → she fills it (status "submitted") → admin approves
 // (status "published" + shown on the homepage). Published interviews stay in the public archive.
 
@@ -862,7 +862,7 @@ router.post('/personality/template', authenticate, isAdmin, async (req, res) => 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// אשת השבוע שמוצגת בדף הבית: זו שהמנהלת בחרה, ואם אין — האחרונה שאושרה
+// אישיות השבוע שמוצגת בדף הבית: זו שהמנהלת בחרה, ואם אין — האחרונה שאושרה
 router.get('/personality', async (req, res) => {
     try {
         let p = await Personality.findOne({ ...PUBLISHED_FILTER, isActive: true }).sort({ updatedAt: -1 });
@@ -880,7 +880,7 @@ router.get('/personality/archive', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// עריכת אשת השבוע הנוכחית (תאימות לאחור לממשק הישן)
+// עריכת אישיות השבוע הנוכחית (תאימות לאחור לממשק הישן)
 router.post('/personality', authenticate, isAdmin, async (req, res) => {
     try {
         let p = await Personality.findOne({ ...PUBLISHED_FILTER, isActive: true });

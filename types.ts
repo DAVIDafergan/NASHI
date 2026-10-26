@@ -115,7 +115,7 @@ export interface LotteryItem {
   missionText?: string;  // נוסף לטובת הגרלות משימה
 }
 
-// --- אשת השבוע (Personality) ---
+// --- אישיות השבוע (Personality) ---
 
 export interface PersonalityQuestion {
   question: string;
