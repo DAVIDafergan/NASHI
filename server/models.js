@@ -53,7 +53,7 @@ const UserSchema = new mongoose.Schema({
   
   // שדות מעגל נשי
   isMemberRequested: { type: Boolean, default: false },
-  isMemberApproved: { type: Boolean, default: false },
+  isMemberApproved: { type: Boolean, default: true }, // everyone collects points — no joining step (owner, 2026-10-26)
   
   // שדות לאיפוס סיסמה (חדש)
   resetPasswordToken: { type: String },

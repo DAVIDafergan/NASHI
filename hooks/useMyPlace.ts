@@ -48,3 +48,12 @@ export function isNear(item: { region?: string; scope?: string } | null | undefi
   if (!region) return true;
   return (item.region || 'north') === region;
 }
+
+/** Home page / flyers: national & online items, plus local items of the visitor's own CITY (not the whole region). */
+export function isInMyCity(item: { city?: string; scope?: string } | null | undefined, city: string) {
+  if (!item) return false;
+  const scope = item.scope || 'local';
+  if (scope !== 'local') return true;
+  if (!city) return false;
+  return (item.city || 'מגדל העמק') === city;
+}

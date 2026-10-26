@@ -109,11 +109,10 @@ const App: React.FC = () => {
   // --- Actions ---
 
   const handleAddPoints = (pointsToAdd: number) => {
-    if (user && user.isMemberApproved) {
-      handleUpdateUser({ ...user, points: user.points + pointsToAdd });
+    // everyone who's signed in collects points (no "circle" approval anymore)
+    if (user) {
+      handleUpdateUser({ ...user, points: (user.points || 0) + pointsToAdd });
       alert(`כל הכבוד! צברת ${pointsToAdd} נקודות חדשות.`);
-    } else if (user && !user.isMemberApproved) {
-      alert("רק חברי מעגל מאושרים יכולים לצבור נקודות.");
     } else {
       handleOpenAuth();
     }

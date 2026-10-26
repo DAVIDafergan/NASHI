@@ -490,7 +490,7 @@ const LotteryPage: React.FC<LotteryPageProps> = ({ lotteries = [], user, onUpdat
         eyebrow="הגרלות"
         title="קצת מזל,"
         accent="הרבה פרגון"
-        subtitle="הגרלות לחברי המעגל עם פרסים אמיתיים. נרשמים בלחיצה ומחכים לגילוי."
+        subtitle="הגרלות לכל המשתמשים הרשומים, עם פרסים אמיתיים. נרשמים בלחיצה ומחכים לגילוי."
       >
       </PageHero>
 

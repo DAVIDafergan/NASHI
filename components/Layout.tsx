@@ -283,7 +283,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                   </div>
                   <div className="text-right hidden md:block leading-tight">
                     <p className="text-[13px] font-semibold text-slate-800">{user.name.split(' ')[0]}</p>
-                    {user.isMemberApproved && <p className="text-[11px] text-rose-600">{user.points} נקודות</p>}
+                    <p className="text-[11px] text-rose-600">{user.points || 0} נקודות</p>
                   </div>
                   <ChevronDown size={13} className="text-slate-400 hidden md:block group-hover:text-rose-600 transition-colors" />
                 </button>
@@ -295,7 +295,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                       <div className="px-4 py-3 mb-1 rounded-2xl bg-rose-50/70">
                           <p className="text-sm font-semibold text-slate-800">{user.name}</p>
                           <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                          {user.isMemberApproved && <p className="mt-1 text-xs text-rose-700">{user.points} נקודות בקהילה</p>}
+                          <p className="mt-1 text-xs text-rose-700">{user.points || 0} נקודות בקהילה</p>
                       </div>
                       <Link to="/profile" onClick={() => setIsProfileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><UserIcon size={16} strokeWidth={1.75} />האזור האישי</Link>
                       <button onClick={() => { setIsProfileMenuOpen(false); invite(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-rose-50 hover:text-rose-700 transition-colors rounded-2xl"><Heart size={16} strokeWidth={1.75} />הזמנת חברים</button>

@@ -206,7 +206,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                )}
 
                {/* מדד התקדמות - מופיע רק למאושרות */}
-               {!isEditing && user.isMemberApproved && (
+               {!isEditing && (
                   <div className="mx-auto w-full max-w-md md:mx-0">
                       <div className="mb-1.5 flex justify-between text-[12.5px] text-slate-500">
                         <span>{user.points} נקודות</span>
@@ -264,7 +264,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
           <div className="space-y-6">
               {/* Digital Card */}
               <ScrollReveal delay={100} animation="scale-in">
-                <div className={`group relative aspect-[1.6/1] overflow-hidden rounded-[1.75rem] p-6 md:p-8 text-white shadow-lift transition-transform duration-700 hover:-rotate-1 hover:scale-[1.02] ${user.isMemberApproved ? (user.level === UserLevel.AMBASSADOR ? 'bg-gradient-to-br from-champagne-400 via-champagne-500 to-rose-600' : 'bg-gradient-to-br from-plum-800 via-rose-800 to-plum-950') : 'bg-gradient-to-br from-slate-400 to-slate-500 grayscale'}`}>
+                <div className={`group relative aspect-[1.6/1] overflow-hidden rounded-[1.75rem] p-6 md:p-8 text-white shadow-lift transition-transform duration-700 hover:-rotate-1 hover:scale-[1.02] ${true ? (user.level === UserLevel.AMBASSADOR ? 'bg-gradient-to-br from-champagne-400 via-champagne-500 to-rose-600' : 'bg-gradient-to-br from-plum-800 via-rose-800 to-plum-950') : 'bg-gradient-to-br from-slate-400 to-slate-500 grayscale'}`}>
                     <div className="relative z-10 flex h-full flex-col justify-between">
                       <div className="flex items-start justify-between">
                           <div>
@@ -277,7 +277,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                           <div>
                               <p className="mb-1 text-[12px] opacity-70">{g(gen, { male: 'בעל הכרטיס', female: 'בעלת הכרטיס', neutral: 'בעלי הכרטיס' })}</p>
                               <p className="font-strong text-[1.2rem] tracking-wide">{user.name}</p>
-                              {!user.isMemberApproved && <p className="mt-1 text-[12px] opacity-80">יופעל לאחר אישור החברות</p>}
+                              {false && <p className="mt-1 text-[12px] opacity-80">יופעל לאחר אישור החברות</p>}
                           </div>
                           <QrCode size={58} className="rounded-xl bg-white p-1.5 text-plum-900" />
                       </div>
@@ -290,7 +290,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
               </ScrollReveal>
 
               {/* Missions Section - המשימות הפעילות שלי */}
-              {user.isMemberApproved && activeMissions.length > 0 && (
+              {activeMissions.length > 0 && (
                   <ScrollReveal delay={150} className="rounded-[1.75rem] border border-champagne-100 bg-white p-6 shadow-petal">
                       <h3 className="mb-4 flex items-center gap-2 text-[1.15rem] text-champagne-700">
                           <Target size={20} />
@@ -330,11 +330,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
                       ההטבות שלי
                   </h3>
 
-                  {user.isMemberApproved ? (
+                  {true ? (
                     <div className="flex flex-1 flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-rose-200 bg-rose-50/30 p-6 text-center">
                         <Sparkles size={26} className="mb-2 text-rose-300 animate-float-y" />
                         <p className="text-[14.5px] leading-relaxed text-slate-500">
-                          אין כרגע הטבות מוגדרות למעגל. ההנהלה תעדכן כאן הטבות חדשות בקרוב.
+                          אין כרגע הטבות מוגדרות. ההנהלה תעדכן כאן הטבות חדשות בקרוב.
                         </p>
                     </div>
                   ) : (

@@ -16,7 +16,7 @@ import StoriesSection from '../components/stories/StoriesSection';
 import InviteBand from '../components/home/InviteBand';
 import AdSlot from '../components/AdSlot';
 import HebrewDayLine from '../components/home/HebrewDayLine';
-import { useMyPlace, isNear } from '../hooks/useMyPlace';
+import { useMyPlace, isInMyCity } from '../hooks/useMyPlace';
 import { regionName } from '../shared/regions';
 import EventCard from '../components/EventCard';
 import AudienceBadge from '../components/AudienceBadge';
@@ -144,17 +144,11 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
   // גם אם המשמעות היא רשימה ריקה (הסקשן כולו מוסתר במקרה הזה)
   // ממוין ב-useMemo (לא בכל רינדור) כדי שלא יאפס את אינטרוול הגלילה האוטומטית של הסליידר בכל עדכון state אחר בעמוד
   // national site: show the visitor's area first (local items of her region + all national/online items).
-  // Each visitor sees her/his own area only: local items of other regions never show (owner, 2026-10-26).
+  // Each visitor sees her/his own CITY only (+ national / online items); other cities never show (owner, 2026-10-26).
   // Location unknown → only national / online items until a city is chosen.
   const place = useMyPlace(user);
-  const pickNear = <T,>(list: T[]): T[] => {
-    if (!place.region) return list.filter((i: any) => (i.scope || 'local') !== 'local' && !i.regionOnly);
-    const near = list.filter((i: any) => isNear(i, place.region));
-    // her own city first, then the rest of the region (stable: keeps the original order inside each group)
-    const mine = near.filter((i: any) => (i.scope || 'local') === 'local' && i.city === place.city);
-    return mine.length ? [...mine, ...near.filter(i => !mine.includes(i))] : near;
-  };
-  const areaLabel = place.city ? `באזור שלך · ${regionName(place.region) || place.city}` : 'מכל הארץ';
+  const pickNear = <T,>(list: T[]): T[] => list.filter((i: any) => isInMyCity(i, place.city));
+  const areaLabel = place.city ? `ב${place.city}` : 'מכל הארץ';
   const shownClasses = useMemo(() => pickNear(classes as any[]), [classes, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
   const shownCommunity = useMemo(() => pickNear(communityItems as any[]), [communityItems, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
   const shownAnnouncements = useMemo(() => pickNear(announcements as any[]), [announcements, place.region]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -276,14 +270,10 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 לאירועים הקרובים
                 <ArrowLeft size={16} className="transition-transform duration-500 group-hover:-translate-x-1.5" />
               </Link>
-              {user?.isMemberApproved ? (
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/70 backdrop-blur border border-rose-100 px-5 py-3 text-sm text-slate-600">
-                  <Star size={15} className="text-champagne-500" fill="currentColor" /> {(user?.points || 0).toLocaleString()} נקודות במעגל
+              {user && (
+                <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/70 backdrop-blur border border-rose-100 px-5 py-3 text-sm text-slate-600">
+                  <Star size={15} className="text-champagne-500" fill="currentColor" /> {(user?.points || 0).toLocaleString()} נקודות
                 </span>
-              ) : !user?.isMemberRequested ? (
-                <button onClick={() => (user ? setShowMembershipModal(true) : onOpenLogin())} className="btn-ghost shrink-0 !px-5 md:!px-6 !py-3 md:!py-3.5 !text-[14.5px] md:!text-[15px]">הצטרפות למעגל</button>
-              ) : (
-                <span className="text-sm text-slate-500">בקשת ההצטרפות שלך בטיפול ✨</span>
               )}
             </div>
           </div>
@@ -377,7 +367,7 @@ const HomePage = ({ user, onOpenLogin, onUpdateUser }: { user: any, onOpenLogin:
                 <Trophy size={28} strokeWidth={1.3} className="text-champagne-600 transition-transform duration-500 group-hover:scale-110" />
                 <div>
                   <h3 className="font-accent text-5xl md:text-6xl leading-none text-champagne-800">הגרלות</h3>
-                  <p className="text-xs text-champagne-700 mt-1 tabular-nums">{upcomingLottery ? `ההגרלה בעוד ${timeLeft}` : 'פרסים לחברי המעגל'}</p>
+                  <p className="text-xs text-champagne-700 mt-1 tabular-nums">{upcomingLottery ? `ההגרלה בעוד ${timeLeft}` : 'פרסים לכל המשתמשים'}</p>
                 </div>
               </TiltCard>
             </ScrollReveal>

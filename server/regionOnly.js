@@ -13,3 +13,11 @@ export async function backfillRegionOnly(log = console.log) {
     if (n) log(`[regionOnly] marked ${n} items of regional managers`);
   } catch (e) { log(`[regionOnly] ${e.message}`); }
 }
+
+/** Everyone collects points now: open the circle to all existing users (idempotent). */
+export async function openCircleToAll(log = console.log) {
+  try {
+    const r = await User.updateMany({ isMemberApproved: { $ne: true } }, { $set: { isMemberApproved: true } });
+    if (r.modifiedCount) log(`[circle] ${r.modifiedCount} users can now collect points`);
+  } catch (e) { log(`[circle] ${e.message}`); }
+}
