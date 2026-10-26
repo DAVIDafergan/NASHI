@@ -56,12 +56,12 @@ describe('/s/event preview page', () => {
     for (const ev of [{ ...EV, date: new Date('2026-01-01'), time: '20:00' }, { ...EV, archived: true }, { ...EV, hidden: true }]) {
       const p = eventPreview(ev, BASE);
       assert.match(p.title, /^האירוע הסתיים · /);
-      assert.equal(p.image, `${BASE}/s/img/brand-v2.jpg`);
+      assert.equal(p.image, `${BASE}/s/img/brand-v3.jpg`);
       assert.equal(p.redirect, `/#/events?e=${EV._id}`, 'the site explains it ended and links to the region');
     }
   });
   test('generated SVG placeholder flyers are not used as og:image (WhatsApp ignores SVG)', () => {
-    assert.equal(eventPreview({ ...EV, image: 'data:image/svg+xml;base64,PHN2Zz4=' }, BASE).image, `${BASE}/s/img/brand-v2.jpg`);
+    assert.equal(eventPreview({ ...EV, image: 'data:image/svg+xml;base64,PHN2Zz4=' }, BASE).image, `${BASE}/s/img/brand-v3.jpg`);
   });
   test('the audience leads the description, and a men\'s / everyone\'s event never says "נשים"', () => {
     const men = { ...EV, title: 'כנס אברכים', description: 'ערב עיון', audience: 'men' };
@@ -136,7 +136,7 @@ describe('share routes over HTTP (MongoDB)', { skip: !MONGO && 'set MONGO_TEST_U
     setSharpLoader(() => Promise.reject(new Error('no sharp')));
     try {
       const html2 = await (await fetch(`${base}/s/event/${ids.svg}`)).text();
-      assert.ok(html2.includes('/s/img/brand-v2.jpg"'), 'falls back to the site image');
+      assert.ok(html2.includes('/s/img/brand-v3.jpg"'), 'falls back to the site image');
       const r = await fetch(`${base}/s/img/event/${ids.svg}`, { redirect: 'manual' });
       assert.equal(r.status, 302);
       const png = await fetch(`${base}/s/img/event/${ids.live}`);

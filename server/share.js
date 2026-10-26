@@ -101,36 +101,53 @@ const dataUrlBuffer = (dataUrl) => { const m = /^data:([\w/+.-]+);base64,(.+)$/.
 /** 1200×630 SVG of the share card (pure — tested). Rendered to JPEG by sharp at /s/img/brand.jpg. */
 export function brandCardSvg() {
   const c = BRAND_COLORS;
-  // dark, premium card: deep navy with a soft gold glow, fine dot texture, glowing pin, white wordmark, gold tagline
-  const mark = logoMarkSvg({ size: 190, pin: c.gold, dot: "#0E1A33" }).replace("<svg ", "<svg x=\"860\" y=\"150\" ");
+  const peach = '#F8BE9C', peachDeep = '#E88A60', navy = '#0E1A33';
+  const F = "'Simple CLM', 'SimpleCLM', Assistant, Arial, sans-serif";
+  // librsvg + RTL: text-anchor="start" with x = the RIGHT edge of the line
+  const card = (x, y, rot, fill, stroke, kicker, title, sub, ink) => `<g transform="translate(${x} ${y}) rotate(${rot})">
+<rect x="-90" y="-125" width="180" height="250" rx="24" fill="#000" opacity="0.3" transform="translate(8 14)"/>
+<rect x="-90" y="-125" width="180" height="250" rx="24" fill="${fill}"/>
+<rect x="-78" y="-113" width="156" height="226" rx="16" fill="none" stroke="${stroke}" stroke-opacity="0.45" stroke-width="2"/>
+<g font-family="${F}" text-anchor="middle">
+<text x="0" y="-68" font-size="22" fill="${ink}" fill-opacity="0.75">${kicker}</text>
+<text x="0" y="14" font-size="40" font-weight="700" fill="${ink}">${title}</text>
+<text x="0" y="90" font-size="21" fill="${ink}" fill-opacity="0.75">${sub}</text>
+</g></g>`;
   const dots = [];
-  for (let y = 30; y < 630; y += 34) for (let x = 20 + ((y / 34) % 2) * 17; x < 1200; x += 34) dots.push(`<circle cx="${x}" cy="${y}" r="1.3"/>`);
+  for (let y = 24; y < 630; y += 30) for (let x = 14 + ((y / 30) % 2) * 15; x < 1200; x += 30) dots.push(`<circle cx="${x}" cy="${y}" r="1.2"/>`);
+  const mark = logoMarkSvg({ size: 128, pin: peach, dot: navy }).replace('<svg ', '<svg x="990" y="92" ');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
 <defs>
-<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0E1A33"/><stop offset="0.55" stop-color="#14254A"/><stop offset="1" stop-color="#0A1328"/></linearGradient>
-<radialGradient id="glow" cx="0.78" cy="0.42" r="0.42"><stop offset="0" stop-color="${c.gold}" stop-opacity="0.38"/><stop offset="1" stop-color="${c.gold}" stop-opacity="0"/></radialGradient>
-<radialGradient id="glow2" cx="0.08" cy="0.95" r="0.5"><stop offset="0" stop-color="#3A5BA0" stop-opacity="0.35"/><stop offset="1" stop-color="#3A5BA0" stop-opacity="0"/></radialGradient>
-<linearGradient id="line" x1="0" x2="1"><stop offset="0" stop-color="${c.gold}" stop-opacity="0"/><stop offset="0.5" stop-color="${c.gold}"/><stop offset="1" stop-color="${c.gold}" stop-opacity="0"/></linearGradient>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#101E3C"/><stop offset="0.6" stop-color="#16294F"/><stop offset="1" stop-color="#0B1530"/></linearGradient>
+<radialGradient id="g1" cx="0.25" cy="0.55" r="0.42"><stop offset="0" stop-color="${peach}" stop-opacity="0.30"/><stop offset="1" stop-color="${peach}" stop-opacity="0"/></radialGradient>
+<radialGradient id="g2" cx="0.88" cy="0.2" r="0.38"><stop offset="0" stop-color="${c.gold}" stop-opacity="0.22"/><stop offset="1" stop-color="${c.gold}" stop-opacity="0"/></radialGradient>
+<linearGradient id="peachBtn" x1="0" x2="1"><stop offset="0" stop-color="${peachDeep}"/><stop offset="1" stop-color="${peach}"/></linearGradient>
 </defs>
 <rect width="1200" height="630" fill="url(#bg)"/>
-<g fill="#FFFFFF" fill-opacity="0.06">${dots.join('')}</g>
-<rect width="1200" height="630" fill="url(#glow)"/><rect width="1200" height="630" fill="url(#glow2)"/>
-<circle cx="955" cy="245" r="150" fill="none" stroke="${c.gold}" stroke-opacity="0.25" stroke-width="1.5"/>
-<circle cx="955" cy="245" r="205" fill="none" stroke="${c.gold}" stroke-opacity="0.12" stroke-width="1"/>
+<g fill="#FFFFFF" fill-opacity="0.05">${dots.join('')}</g>
+<rect width="1200" height="630" fill="url(#g1)"/><rect width="1200" height="630" fill="url(#g2)"/>
+<circle cx="268" cy="320" r="260" fill="none" stroke="${peach}" stroke-opacity="0.12" stroke-width="1.5"/>
+${card(100, 340, -9, '#C9A25E', '#FFFFFF', 'ערב', 'מופעים', 'לנשים', navy)}
+${card(268, 300, 0, peach, navy, 'השבוע', 'חוגים', 'למשפחות', navy)}
+${card(436, 340, 9, '#1F3A6B', '#C9A25E', 'כנס', 'שיעורים', 'לגברים', '#FFFFFF')}
 ${mark}
-<g font-family="'Simple CLM', 'SimpleCLM', Assistant, Arial, sans-serif" text-anchor="start" direction="rtl">
-<text x="790" y="300" font-size="200" font-weight="700" fill="#FFFFFF">${esc(BRAND.name)}</text>
-<text x="790" y="395" font-size="54" fill="${c.gold}">${esc(BRAND.tagline)}</text>
+<g font-family="${F}" text-anchor="start" direction="rtl">
+<text x="975" y="205" font-size="124" font-weight="700" fill="#FFFFFF">${esc(BRAND.name)}</text>
+<text x="1120" y="300" font-size="44" fill="${peach}">${esc(BRAND.tagline)}</text>
+<text x="1120" y="356" font-size="28" fill="#C8D0DF">אירועים, שיעורים, חוגים וקהילה בכל הארץ</text>
 </g>
-<rect x="110" y="440" width="680" height="2" fill="url(#line)"/>
-<g font-family="'Simple CLM', 'SimpleCLM', Assistant, Arial, sans-serif" font-size="38" fill="#E6EAF2" text-anchor="middle" direction="rtl">
-<text x="690" y="510">לגברים</text><circle cx="600" cy="498" r="5" fill="${c.gold}"/>
-<text x="510" y="510">לנשים</text><circle cx="430" cy="498" r="5" fill="${c.gold}"/>
-<text x="330" y="510">למשפחות</text>
-</g></svg>`;
+<g transform="translate(680 410)">
+<rect x="0" y="0" width="440" height="76" rx="38" fill="url(#peachBtn)"/>
+<g font-family="${F}" font-size="31" fill="${navy}" text-anchor="start" direction="rtl">
+<text x="410" y="49">לגברים</text><circle cx="290" cy="38" r="5" fill="${navy}"/>
+<text x="268" y="49">לנשים</text><circle cx="166" cy="38" r="5" fill="${navy}"/>
+<text x="144" y="49">למשפחות</text>
+</g></g>
+<rect x="0" y="618" width="1200" height="12" fill="url(#peachBtn)"/>
+</svg>`;
 }
 let brandJpeg = null;
-router.get(['/s/img/brand.jpg', '/s/img/brand-v2.jpg'], async (req, res) => {
+router.get(['/s/img/brand.jpg', '/s/img/brand-v2.jpg', '/s/img/brand-v3.jpg'], async (req, res) => {
   try {
     if (!brandJpeg) {
       const d = await derivePreview('brand', `data:image/svg+xml;base64,${Buffer.from(brandCardSvg()).toString('base64')}`, { width: 1200 });
@@ -141,7 +158,7 @@ router.get(['/s/img/brand.jpg', '/s/img/brand-v2.jpg'], async (req, res) => {
     res.end(brandJpeg.buf);
   } catch { res.redirect('/og-image.jpg'); }
 });
-const siteImage = (base) => `${base}/s/img/brand-v2.jpg`;
+const siteImage = (base) => `${base}/s/img/brand-v3.jpg`;
 
 // ---- images that crawlers can fetch ----
 // event flyer for WhatsApp: raster only (WhatsApp ignores SVG — generated placeholder flyers use the site image)
