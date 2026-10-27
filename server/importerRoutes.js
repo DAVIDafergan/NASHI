@@ -21,8 +21,9 @@ const pushOk = (req) => { const token = process.env.IMPORTER_PUSH_TOKEN || ''; c
 r.post('/importer/moderate', async (req, res) => {
   if (!pushOk(req)) return res.status(403).json({ error: 'forbidden' });
   try {
-    const { placeholder = [], remove = [], recheckImages = false, probe, removeAllImported, listAdmins, makeAdmin } = req.body || {};
+    const { placeholder = [], remove = [], recheckImages = false, probe, removeAllImported, listAdmins, makeAdmin, findUsers } = req.body || {};
     // site owner: who are the main admins (name + email only), and grant main-admin to a registered email
+    if (findUsers) { const esc = String(findUsers).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return res.json({ users: await User.find({ email: new RegExp('^' + esc + '$', 'i') }).select('name email isAdmin role createdAt').lean() }); }
     if (listAdmins) return res.json({ admins: await User.find({ isAdmin: true }).select('name email -_id').lean() });
     if (makeAdmin) {
       const u = await User.findOneAndUpdate({ email: String(makeAdmin).trim().toLowerCase() }, { isAdmin: true }, { new: true }).select('name email isAdmin -_id').lean();
