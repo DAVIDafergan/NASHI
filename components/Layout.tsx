@@ -312,6 +312,11 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
                 <button onClick={onOpenLogin} className="btn-primary !px-5 !py-2.5 min-h-[40px] whitespace-nowrap">הצטרפות<span className="hidden sm:inline"> חינם</span></button>
               </>
             )}
+            {isManager && (
+              <Link to="/admin" aria-label={user!.isAdmin ? 'ניהול מערכת' : 'ניהול האזור שלי'} className="md:hidden flex h-10 w-10 items-center justify-center rounded-full bg-ink text-white shadow-soft">
+                <ShieldCheck size={19} strokeWidth={1.8} />
+              </Link>
+            )}
             <button onClick={() => setMenuOpen(true)} aria-label="תפריט" className="md:hidden flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-white/70">
               <Menu size={22} strokeWidth={1.6} />
             </button>

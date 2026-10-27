@@ -45,10 +45,11 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // one failing list must not stop the signed-in user from loading (and losing the admin button)
         const [fetchedEvents, fetchedClasses, fetchedLotteries] = await Promise.all([
-          api.getEvents(),
-          api.getClasses(),
-          api.getLotteries()
+          api.getEvents().catch(() => []),
+          api.getClasses().catch(() => []),
+          api.getLotteries().catch(() => [])
         ]);
         setEvents(fetchedEvents);
         setClasses(fetchedClasses);

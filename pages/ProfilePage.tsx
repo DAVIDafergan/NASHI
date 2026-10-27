@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Award, Star, Settings, QrCode, TrendingUp, Heart, Calendar, Edit2, Save, X, Camera, HeartHandshake, Lock, ClipboardList, CheckCircle2, Target, Clock, LogOut, Bookmark, Activity, Sparkles } from 'lucide-react'; // נוספו אייקונים
+import { User, Award, Star, Settings, QrCode, TrendingUp, Heart, Calendar, Edit2, Save, X, Camera, HeartHandshake, Lock, ClipboardList, CheckCircle2, Target, Clock, LogOut, Bookmark, Activity, Sparkles, ShieldCheck } from 'lucide-react'; // נוספו אייקונים
 import { shareLink } from '../utils/share';
 import { UserLevel, EventItem, LotteryItem } from '../types'; // הוספת LotteryItem
 import { Link, useNavigate } from 'react-router-dom';
@@ -220,7 +220,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
 
                {/* כפתורי פעולה */}
                {!isEditing && (
-                 <div className="flex justify-center gap-2 pt-1 md:justify-start">
+                 <div className="flex flex-wrap justify-center gap-2 pt-1 md:justify-start">
+                    {(user.isAdmin || (user as any).role === 'regionAdmin') && (
+                      <Link to="/admin" className="btn-primary"><ShieldCheck size={16} /> {user.isAdmin ? 'ניהול מערכת' : 'ניהול האזור שלי'}</Link>
+                    )}
                     <button onClick={() => setIsEditing(true)} className="btn-ghost">
                         <Edit2 size={16} /> עריכת פרטים
                     </button>
