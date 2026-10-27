@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { Event, ImportRun, ImportBlock } from './models.js';
+import { Event, ImportRun, ImportBlock, User } from './models.js';
 import { authenticate, isAdmin } from './auth.js';
 import { importerConfig, importerRunning, importerNextAt, runImporterNow } from './importer/index.js';
 import { reclassifyImported } from './importer/reclassify.js';
@@ -21,7 +21,13 @@ const pushOk = (req) => { const token = process.env.IMPORTER_PUSH_TOKEN || ''; c
 r.post('/importer/moderate', async (req, res) => {
   if (!pushOk(req)) return res.status(403).json({ error: 'forbidden' });
   try {
-    const { placeholder = [], remove = [], recheckImages = false, probe, removeAllImported } = req.body || {};
+    const { placeholder = [], remove = [], recheckImages = false, probe, removeAllImported, listAdmins, makeAdmin } = req.body || {};
+    // site owner: who are the main admins (name + email only), and grant main-admin to a registered email
+    if (listAdmins) return res.json({ admins: await User.find({ isAdmin: true }).select('name email -_id').lean() });
+    if (makeAdmin) {
+      const u = await User.findOneAndUpdate({ email: String(makeAdmin).trim().toLowerCase() }, { isAdmin: true }, { new: true }).select('name email isAdmin -_id').lean();
+      return u ? res.json({ ok: true, user: u }) : res.status(404).json({ error: 'אין משתמש רשום עם המייל הזה' });
+    }
     if (removeAllImported === 'yes') {
       const r = await Event.deleteMany({ source: { $type: 'string' } });
       return res.json({ removedAllImported: r.deletedCount });
