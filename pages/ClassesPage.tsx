@@ -31,7 +31,7 @@ interface ClassItem {
   audience?: any;
 }
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
+const API_URL = (import.meta as any).env?.VITE_API_URL || '/api';
 
 const ClassesPage = () => {
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ const ClassesPage = () => {
         const formattedClasses = data.map((item: any) => ({
             ...item,
             id: item._id || item.id,
-            image: item.image || 'https://via.placeholder.com/400x300',
+            image: item.image || '/placeholder.svg',
         }));
         setClasses(formattedClasses);
         setLoading(false);

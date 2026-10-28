@@ -47,7 +47,7 @@ const WomanOfTheWeek = () => {
       <div className="flex flex-col md:flex-row gap-6 items-center">
         <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-purple-200 to-pink-200 p-1 flex-shrink-0">
           <img 
-            src={personality.image || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200"} 
+            src={personality.image || `/api/avatar.svg?n=${encodeURIComponent(personality.name || '')}`} 
             alt={personality.name} 
             className="w-full h-full object-cover rounded-full border-4 border-white"
           />

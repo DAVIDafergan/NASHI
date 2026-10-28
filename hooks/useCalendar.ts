@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
+const API_URL = (import.meta as any).env?.VITE_API_URL || '/api';
 
 export type CalendarInfo = {
   now: string; hebrewDate: string; parasha: string | null; holiday: string | null;

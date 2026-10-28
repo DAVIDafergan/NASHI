@@ -19,16 +19,8 @@ interface ProfilePageProps {
 }
 
 
-const predefinedAvatars = [
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Willow',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Zoey',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Molly',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucy',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie'
-];
+// initials avatars in the site colours, from our own domain (no cartoon faces, no outside image hosts)
+const avatarChoices = (name: string) => [0, 1, 2, 3, 4].map(c => `/api/avatar.svg?n=${encodeURIComponent(name || '')}&c=${c}`);
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries = [], onUpdateUser, onUpdateLottery, onLogout }) => {
   const navigate = useNavigate();
@@ -122,7 +114,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
               <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-rose-300 via-champagne-200 to-plum-200 animate-spin-slow opacity-80" aria-hidden="true" />
               <div className={`relative h-32 w-32 md:h-40 md:w-40 overflow-hidden rounded-full border-4 border-white shadow-lift ${isEditing ? 'cursor-pointer' : ''}`}
                    onClick={() => isEditing && setShowAvatarPicker(!showAvatarPicker)}>
-                 <img src={isEditing ? editForm.avatar : user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Annie'} alt="Profile" className="h-full w-full bg-rose-50 object-cover" />
+                 <img src={isEditing ? editForm.avatar : user.avatar || `/api/avatar.svg?n=${encodeURIComponent(user.name || '')}`} alt="Profile" className="h-full w-full bg-rose-50 object-cover" />
                  {isEditing && (
                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
                          <Camera size={24} />
@@ -133,7 +125,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, events = [], lotteries 
               {/* Avatar Picker Popup */}
               {showAvatarPicker && isEditing && (
                   <div className="absolute top-full right-1/2 translate-x-1/2 md:right-0 md:translate-x-0 z-50 mt-3 grid w-64 grid-cols-4 gap-2 rounded-[1.5rem] border border-rose-100 bg-white p-4 shadow-lift animate-fade-in-up">
-                      {predefinedAvatars.map((url, i) => (
+                      {avatarChoices(user.name).map((url, i) => (
                           <button key={i} onClick={() => handleAvatarSelect(url)} className="h-12 w-12 overflow-hidden rounded-full border border-rose-100 transition-transform hover:scale-110">
                               <img src={url} className="h-full w-full" />
                           </button>

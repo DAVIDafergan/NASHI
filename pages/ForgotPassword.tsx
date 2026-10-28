@@ -15,7 +15,7 @@ const ForgotPassword = () => {
     setStatus({ type: null, message: '' });
 
     try {
-      const res = await fetch('https://nashi-production.up.railway.app/api/forgot-password', {
+      const res = await fetch('/api/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

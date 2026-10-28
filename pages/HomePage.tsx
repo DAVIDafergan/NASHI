@@ -44,7 +44,7 @@ const categories = [
   { name: 'קהילה', icon: <HeartHandshake size={12} /> },
 ];
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
+const API_URL = (import.meta as any).env?.VITE_API_URL || '/api';
 
 // פיצ'רי הפלטפורמה המוצגים בסקשן "מה זה ספוט?" — קומפקטי: 4 אייקונים עיקריים, אייקון וטקסט, צבע מתחלף
 const platformFeatures = [

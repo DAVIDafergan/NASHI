@@ -11,7 +11,7 @@ import { compressImageFile } from '../../utils/image';
 /*  Shared building blocks for the admin panel                         */
 /* ------------------------------------------------------------------ */
 
-export const API_BASE: string = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
+export const API_BASE: string = (import.meta as any).env?.VITE_API_URL || '/api';
 export const authHeaders = () => ({
   'Content-Type': 'application/json',
   Authorization: `Bearer ${localStorage.getItem('token') || ''}`,

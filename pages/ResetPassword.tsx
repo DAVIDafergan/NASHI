@@ -19,7 +19,7 @@ const ResetPassword = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch(`https://nashi-production.up.railway.app/api/reset-password/${token}`, {
+      const res = await fetch(`/api/reset-password/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })

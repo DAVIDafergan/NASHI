@@ -27,7 +27,7 @@ export interface FlyerInput {
     scope?: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface ZodiacWheelWinner {
     _id: string;

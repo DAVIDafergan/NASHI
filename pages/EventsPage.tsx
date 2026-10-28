@@ -73,7 +73,7 @@ function whenGroup(e: { startAt?: string; date: string }) {
 }
 const GROUPS = ['היום', 'מחר', 'השבוע', 'בחודש הקרוב', 'בהמשך', 'אתמול', 'לפני יומיים'];
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
+const API_URL = (import.meta as any).env?.VITE_API_URL || '/api';
 
 const EventsPage = () => {
   const location = useLocation();
@@ -101,7 +101,7 @@ const EventsPage = () => {
             ...item,
             id: item._id || item.id,
             date: item.date || new Date().toISOString(),
-            image: item.image || 'https://via.placeholder.com/400x300',
+            image: item.image || '/placeholder.svg',
             ratings: item.ratings || []
         }));
         setEvents(formattedEvents);

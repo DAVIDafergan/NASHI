@@ -2,7 +2,7 @@
 
 export const getSmartRecommendation = async (userQuery: string): Promise<string> => {
   try {
-    const response = await fetch('https://nashi-production.up.railway.app/api/chat', {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json' 

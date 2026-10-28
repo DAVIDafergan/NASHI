@@ -213,7 +213,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                 {/* ראש הפוסט */}
                 <div className="mb-3 flex items-center gap-3">
                   <img
-                    src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${post.authorName || 'user'}`}
+                    src={`/api/avatar.svg?n=${encodeURIComponent(post.authorName || '')}`}
                     alt=""
                     className="h-11 w-11 shrink-0 rounded-full border-2 border-white bg-rose-50 object-cover shadow-soft"
                   />
@@ -280,7 +280,7 @@ const ForumPage = ({ user, searchTerm }: { user: any, searchTerm: string }) => {
                   <div className="mt-4 space-y-2.5 animate-fade-in-up">
                     {post.comments?.length ? post.comments.map((comment: any, ci: number) => (
                       <div key={ci} className="flex gap-2.5">
-                        <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${comment.authorName || 'c'}`} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-rose-50" />
+                        <img src={`/api/avatar.svg?n=${encodeURIComponent(comment.authorName || '')}`} alt="" className="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-rose-50" />
                         <div className="rounded-2xl rounded-tr-md bg-rose-50/60 px-4 py-2.5">
                           <span className="block text-[12px] text-rose-700 font-strong">{comment.authorName}</span>
                           <p className="text-[14.5px] text-ink">{comment.text}</p>

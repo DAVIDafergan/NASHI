@@ -147,7 +147,7 @@ const CommunityPage = () => {
               <div className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-rose-100/70 bg-white shadow-petal transition-all duration-500 hover:-translate-y-1 hover:shadow-lift">
                 <div className="relative m-1.5 mb-0 aspect-[4/3] overflow-hidden rounded-[1.2rem] bg-rose-50 shrink-0">
                   <img
-                    src={item.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=500'}
+                    src={item.image || '/placeholder.svg'}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
                     alt={item.title}
                     loading="lazy"

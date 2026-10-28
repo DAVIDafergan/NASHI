@@ -1,5 +1,5 @@
 // API client for the supplier directory, paid supplier signup and the events agent (admin).
-const API_URL: string = (import.meta as any).env?.VITE_API_URL || 'https://nashi-production.up.railway.app/api';
+const API_URL: string = (import.meta as any).env?.VITE_API_URL || '/api';
 
 export interface Supplier {
   id: string;

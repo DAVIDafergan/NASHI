@@ -7,6 +7,9 @@ import { regionOfCity, REGIONS, DEFAULT_CITY, DEFAULT_REGION } from '../shared/r
 import { isEventExpired } from '../shared/eventTime.js';
 import { AUDIENCE_IDS, audienceQuery, normGender, g } from '../shared/audience.js';
 import { BRAND, mailFrom } from '../shared/brand.js';
+import { avatarSvg, avatarPath } from './avatar.js';
+// the same address regardless of capital/small letters
+const emailRe = (e) => new RegExp('^' + String(e).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i');
 const REGION_IDS = REGIONS.map(r => r.id);
 import { 
     User, Event, Class, Lottery, Settings, GiftCode, 
@@ -23,6 +26,10 @@ import {
 } from './models.js';
 
 const router = express.Router();
+
+router.get('/avatar.svg', (req, res) => {
+    res.set('Content-Type', 'image/svg+xml').set('Cache-Control', 'public, max-age=604800').send(avatarSvg(String(req.query.n || ''), req.query.c !== undefined ? parseInt(req.query.c, 10) : undefined));
+});
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_123';
 
 // --- Middlewares ---
@@ -302,7 +309,8 @@ router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
         const city = typeof req.body.city === 'string' ? req.body.city.trim().slice(0, 60) : '';
-        if (await User.findOne({ email })) return res.status(400).json({ error: 'Email exists' });
+        if (!email || typeof email !== 'string') return res.status(400).json({ error: 'חסר מייל' });
+        if (await User.findOne({ email: emailRe(email) })) return res.status(400).json({ error: 'Email exists' });
         const config = await getPointsConfig();
         const hashedPassword = await bcrypt.hash(password, 10);
         const gender = normGender(req.body.gender);
@@ -311,7 +319,7 @@ router.post('/register', async (req, res) => {
             city: city || undefined, region: regionOfCity(city) || undefined,
             ...(gender ? { gender } : {}),
             // a neutral avatar (initials) — fits everyone
-            avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=1e3354,8a6828,5b5f68,a5636b&textColor=ffffff`,
+            avatar: avatarPath(name),
             points: config.pointsPerRegister || 50
         });
         // חברה שהזמינה אותה (קישור הזמנה /s/join?ref=...) מקבלת נקודות
@@ -332,11 +340,14 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ error: 'משתמש לא נמצא' });
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ error: 'סיסמה שגויה' });
+        if (!email || typeof email !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'משתמש לא נמצא' });
+        // capital/small letters don't matter: the exact spelling first, then any account with the same address
+        const candidates = (await User.find({ email: emailRe(email) }))
+            .sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0) || (b.email === email.trim() ? 1 : 0) - (a.email === email.trim() ? 1 : 0));
+        if (!candidates.length) return res.status(400).json({ error: 'משתמש לא נמצא' });
+        let user = null;
+        for (const c of candidates) if (await bcrypt.compare(password, c.password)) { user = c; break; }
+        if (!user) return res.status(400).json({ error: 'סיסמה שגויה' });
 
         const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '7d' });
         res.json({ token, user: publicUser(user) });
@@ -348,7 +359,9 @@ router.post('/login', async (req, res) => {
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
-        const user = await User.findOne({ email });
+        if (!email || typeof email !== 'string') return res.status(404).json({ error: 'המייל לא נמצא במערכת' });
+        // same address in any capital/small letters → the admin account first (the mail goes to that mailbox anyway)
+        const user = (await User.find({ email: emailRe(email) })).sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0))[0];
         if (!user) return res.status(404).json({ error: 'המייל לא נמצא במערכת' });
 
         const token = crypto.randomBytes(20).toString('hex');
