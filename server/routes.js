@@ -8,6 +8,7 @@ import { isEventExpired } from '../shared/eventTime.js';
 import { AUDIENCE_IDS, audienceQuery, normGender, g } from '../shared/audience.js';
 import { BRAND, mailFrom } from '../shared/brand.js';
 import { avatarSvg, avatarPath } from './avatar.js';
+import { sendManagerWelcome } from './emails/managerWelcome.js';
 // the same address regardless of capital/small letters
 const emailRe = (e) => new RegExp('^' + String(e).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i');
 const REGION_IDS = REGIONS.map(r => r.id);
@@ -183,10 +184,19 @@ router.put('/admin/users/:id/role', authenticate, isAdmin, async (req, res) => {
         const { role, adminRegion } = req.body || {};
         if (!['member', 'regionAdmin'].includes(role)) return res.status(400).json({ error: 'role' });
         if (role === 'regionAdmin' && !REGION_IDS.includes(adminRegion)) return res.status(400).json({ error: 'יש לבחור אזור' });
+        const before = await User.findById(req.params.id).select('role adminRegion').lean();
         const user = await User.findByIdAndUpdate(req.params.id,
             role === 'regionAdmin' ? { role, adminRegion } : { role: 'member', $unset: { adminRegion: 1 } },
             { new: true }).select('-password -resetPasswordToken -resetPasswordExpires');
         if (!user) return res.status(404).json({ error: 'not found' });
+        // newly appointed (or moved to another region) → the same welcome email
+        if (role === 'regionAdmin' && (before?.role !== 'regionAdmin' || before?.adminRegion !== adminRegion) && user.email) {
+            const approver = await User.findById(req.user.id).select('email').lean();
+            await sendManagerWelcome(req.resend, {
+                to: user.email, name: user.name, gender: normGender(user.gender),
+                regionLabel: (REGIONS.find(r => r.id === adminRegion) || {}).name || '', replyTo: approver?.email,
+            });
+        }
         res.json(user);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -249,25 +259,16 @@ router.post('/admin/manager-applications/:id/:decision(approve|reject)', authent
         appl.decidedBy = req.user.id;
         await appl.save();
         if (approve) await User.updateOne({ _id: appl.user._id }, { role: 'regionAdmin', adminRegion: region });
-        // best-effort email
-        try {
-            if (approve && appl.user?.email && req.resend && process.env.RESEND_API_KEY) {
-                const regionLabel = (REGIONS.find(r => r.id === region) || {}).name || '';
-                // worded by the person's own gender (application "אני", else the profile); neutral when unknown
-                const gen = normGender(appl.gender) || normGender(appl.user.gender);
-                await req.resend.emails.send({
-                    from: mailFrom(),
-                    to: appl.user.email,
-                    subject: g(gen, { male: `ברוך הבא לצוות מנהלי התרבות של ${BRAND.name}`, female: `ברוכה הבאה לצוות מנהלות התרבות של ${BRAND.name}`, neutral: `ברוכים הבאים לצוות ניהול התרבות של ${BRAND.name}` }),
-                    html: `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.7;color:#121C2E">
-                      <h2 style="color:#1E3354">מזל טוב, ${appl.user.name || ''}!</h2>
-                      <p>הבקשה שלך אושרה. ${g(gen, { male: 'מעכשיו אתה <b>מנהל התרבות', female: 'מעכשיו את <b>מנהלת התרבות', neutral: 'מעכשיו יש לך <b>ניהול התרבות' })} של אזור ${regionLabel}</b> ב${BRAND.name}.</p>
-                      <p>${g(gen, { male: 'איך מתחילים: נכנסים לאתר עם המשתמש שלך, ובתפריט בוחרים', female: 'איך מתחילות: נכנסות לאתר עם המשתמש שלך, ובתפריט בוחרות', neutral: 'איך מתחילים: נכנסים לאתר עם המשתמש שלך, ובתפריט בוחרים' })} <b>"ניהול האזור שלי"</b>. משם אפשר להעלות אירועים, חוגים, גמ"חים והגרלות — לגברים, לנשים או לכולם — ולהנפיק כרטיסים.</p>
-                      <p><a href="https://nashi-co.com/#/admin" style="background:#1E3354;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none">לניהול האזור שלי</a></p>
-                      <p style="color:#888;font-size:13px">נשלח מ${BRAND.name} · ${BRAND.tagline}</p></div>`,
-                });
-            }
-        } catch (e) { console.warn('manager approval email failed:', e?.message); }
+        // the welcome email: approved + what she/he can do + how to start (reply goes to the approving admin)
+        if (approve && appl.user?.email) {
+            const approver = await User.findById(req.user.id).select('email').lean();
+            await sendManagerWelcome(req.resend, {
+                to: appl.user.email, name: appl.user.name,
+                gender: normGender(appl.gender) || normGender(appl.user.gender),
+                regionLabel: (REGIONS.find(r => r.id === region) || {}).name || '',
+                replyTo: approver?.email,
+            });
+        }
         res.json({ success: true, application: appl });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
