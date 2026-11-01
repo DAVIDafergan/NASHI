@@ -271,6 +271,57 @@ p{margin:0}
 .hdr{background:rgba(6,35,30,.72)}
 .nav a{font-weight:300;letter-spacing:.04em}
 
+/* ── mobile menu UX ── */
+.mtabs,.picker{display:none}
+@media (max-width:700px){
+  .menu .tabs{display:none!important}
+  .mtabs{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 66px);z-index:6;margin-top:28px;margin-inline:calc(var(--gut) * -1) calc(var(--gut-r) * -1);padding:10px var(--gut-r) 10px var(--gut);background:var(--paper);border-block:1px solid var(--rule);box-shadow:0 14px 24px -20px rgba(0,0,0,.4)}
+  .mtabs__cur{display:flex;align-items:center;gap:10px;background:var(--green);color:var(--paper);border:0;padding:12px 16px;font:300 15px/1 var(--f);cursor:pointer;flex:1;min-width:0;text-align:right}
+  .mtabs__cur .mtabs__k{font-size:11px;letter-spacing:.2em;color:var(--gold-2)}
+  .mtabs__cur b{font-weight:500;font-size:17px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mtabs__cur i{font-style:normal;color:var(--gold-2)}
+  .mtabs__arrows{display:flex;gap:6px}
+  .mtabs__arrows button{width:44px;height:44px;border:1px solid var(--rule);background:transparent;color:var(--ink);font-size:20px;cursor:pointer}
+  .picker{display:grid;position:fixed;inset:0;z-index:85;background:rgba(6,35,30,.55);backdrop-filter:blur(4px);align-items:end;opacity:0;pointer-events:none;transition:opacity .35s}
+  .picker.on{opacity:1;pointer-events:auto}
+  .picker__in{background:var(--paper);color:var(--ink);border-radius:18px 18px 0 0;padding:14px var(--gut-r) calc(16px + env(safe-area-inset-bottom,0px)) var(--gut);transform:translateY(100%);transition:transform .5s var(--ease)}
+  .picker.on .picker__in{transform:none}
+  .picker__h{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.2em;color:#9A7F3E;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+  .picker__h button{background:none;border:0;font-size:24px;color:var(--ink);cursor:pointer;width:40px;height:40px}
+  .picker__list{display:grid}
+  .picker__list button{display:flex;justify-content:space-between;align-items:center;gap:12px;background:none;border:0;border-bottom:1px solid var(--rule);padding:16px 2px;font:300 19px/1.2 var(--f);color:var(--ink);text-align:right;cursor:pointer}
+  .picker__list button small{font-size:12px;letter-spacing:.1em;color:var(--ink-2)}
+  .picker__list button[aria-current="true"]{font-weight:500;color:var(--green)}
+  .picker__list button[aria-current="true"]::after{content:"✓";color:var(--green)}
+  /* dishes: text first, + at the end of the row */
+  .panel{padding-top:22px}
+  .panel__intro{gap:10px}
+  .panel__intro .ribbon{font-size:24px;padding:.3em .6em}
+  .choose{font-size:19px}
+  .add-hint{font-size:13px;margin-top:14px}
+  .cols{columns:auto;column-count:1;margin-top:22px;display:block}
+  .grp{margin-bottom:22px}
+  .grp__t{font-size:24px;margin-bottom:4px}
+  .dish{display:flex;align-items:center;gap:12px;padding:12px 0;padding-inline-end:0;border-bottom:1px solid rgba(214,201,174,.5);width:100%}
+  .dish .add{position:static;flex:none;width:36px;height:36px;order:2}
+  .dish__n{flex:1;min-width:0}
+  .dish__d{flex-basis:100%;order:3}
+  .dish{flex-wrap:wrap}
+  .dish__n{flex:1 1 0}
+  .dish .veg{order:4;flex-basis:100%}
+  .dish__n{font-size:16.5px}
+  .dish__n::after{display:none}
+  .dish__d{font-size:14px;line-height:1.55}
+  .station{padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:22px}
+  .station .add{position:static;flex:none;width:36px;height:36px;order:2}
+  .station h4{flex:1 1 0;min-width:0;font-size:24px;padding:6px 0;border:0}
+  .station > p{flex-basis:100%;order:3}
+  .station .dish{flex-basis:100%;order:4}
+  .callout{font-size:19px;padding:18px}
+  .menu__foot{flex-direction:column;align-items:stretch;text-align:center}
+  .menu__foot .btn{justify-content:center}
+}
+
 /* ── luxury pass II: gold accents, lighter orange, hairline frames, quiet surfaces ── */
 :root{--gold:#C9A961;--gold-2:#E3CC93}
 .sec-head .lat{color:var(--gold-2)!important}
@@ -1675,6 +1726,11 @@ fill="currentColor" stroke="none">
       <p data-a>בונים יחד את התפריט לאירוע: בוחרים מכל פרק, ואנחנו מתאימים כמויות, הגשה ועיצוב. כל המנות כשרות למהדרין.</p>
     </div>
     <div class="tabs" role="tablist" aria-label="פרקי התפריט" id="tabs"></div>
+    <div class="mtabs" id="mtabs">
+      <button class="mtabs__cur" id="mtabsCur" aria-haspopup="dialog" aria-expanded="false"><span class="mtabs__k">פרק</span><b id="mtabsName">קבלת פנים</b><i aria-hidden="true">▾</i></button>
+      <div class="mtabs__arrows"><button id="mtPrev" aria-label="הפרק הקודם">›</button><button id="mtNext" aria-label="הפרק הבא">‹</button></div>
+    </div>
+    <div class="picker" id="picker" aria-hidden="true"><div class="picker__in" role="dialog" aria-label="בחירת פרק בתפריט"><div class="picker__h"><span>פרקי התפריט</span><button id="pickerClose" aria-label="סגירה">×</button></div><div class="picker__list" id="pickerList"></div></div></div>
     <div id="panels"></div>
     <div class="menu__foot"><span>התפריט מתעדכן לפי עונה · מחירים והרכב סופי בתיאום אישי</span><a class="btn btn--green" href="#contact">לבניית תפריט לאירוע</a></div>
   </div>
@@ -2770,6 +2826,15 @@ function select(id,focus){
 }
 MENU.forEach(c=>{const b=document.createElement('button');b.className='tab';b.setAttribute('role','tab');b.dataset.id=c.id;b.textContent=c.t;b.onclick=()=>{select(c.id);if(innerWidth<960){const y=panelsEl.getBoundingClientRect().top+scrollY-140;window.__lenis?window.__lenis.scrollTo(y,{duration:1}):scrollTo({top:y,behavior:'smooth'})}};tabsEl.appendChild(b)});
 tabsEl.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;const ids=MENU.map(c=>c.id),i=ids.indexOf(tabsEl.querySelector('[aria-selected="true"]').dataset.id);select(ids[e.key==='ArrowLeft'?Math.min(ids.length-1,i+1):Math.max(0,i-1)],true)});
+const mtName=document.getElementById('mtabsName'),picker=document.getElementById('picker'),pickerList=document.getElementById('pickerList');
+pickerList.innerHTML=MENU.map(c=>`<button data-id="${c.id}"><span>${c.t}</span><small>${(c.groups||[]).reduce((n,g)=>n+g.d.length,0)||(c.stations||[]).length} פריטים</small></button>`).join('');
+const setPicker=o=>{picker.classList.toggle('on',o);picker.setAttribute('aria-hidden',!o);document.getElementById('mtabsCur').setAttribute('aria-expanded',o)};
+document.getElementById('mtabsCur').onclick=()=>setPicker(true);document.getElementById('pickerClose').onclick=()=>setPicker(false);picker.addEventListener('click',e=>{if(e.target===picker)setPicker(false)});
+pickerList.addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(!b)return;setPicker(false);select(b.dataset.id);scrollToPanel()});
+function scrollToPanel(){if(innerWidth>700)return;const y=document.getElementById('mtabs').getBoundingClientRect().top+scrollY-(66+(parseInt(getComputedStyle(document.documentElement).getPropertyValue('padding-top'))||0));window.__lenis?window.__lenis.scrollTo(y,{duration:.9}):scrollTo({top:y,behavior:'smooth'})}
+const stepTab=d=>{const ids=MENU.map(c=>c.id),i=ids.indexOf(CUR);const n=ids[(i+d+ids.length)%ids.length];select(n);scrollToPanel()};
+document.getElementById('mtNext').onclick=()=>stepTab(1);document.getElementById('mtPrev').onclick=()=>stepTab(-1);
+const _select=select;select=function(id,focus){_select(id,focus);const c=MENU.find(x=>x.id===id);if(mtName)mtName.textContent=c.t;pickerList.querySelectorAll('[data-id]').forEach(b=>b.setAttribute('aria-current',b.dataset.id===id))};
 let start='welcome';try{const s=localStorage.getItem('louiza-tab');if(MENU.some(c=>c.id===s))start=s}catch(e){}
 select(start);
 
