@@ -234,7 +234,7 @@ async function boot(){
 }
 async function load(){ST=await api('GET','/api/c/'+SLUG);fill();await loadRows()}
 function fill(){
-  const s=ST.settings;const url=location.origin+'/screen/'+SLUG;$('screenUrl').textContent=url;$('openScreen').href=url;$('prev').src=url;$('csv').href='/api/c/'+SLUG+'/export.csv?pin='+encodeURIComponent(PIN);
+  const s=ST.settings;const url=location.origin+'/screen/'+SLUG;$('screenUrl').textContent=url;$('openScreen').href=url;if($('prev').dataset.u!==url){$('prev').dataset.u=url;$('prev').src=url}$('csv').href='/api/c/'+SLUG+'/export.csv?pin='+encodeURIComponent(PIN);
   $('goal').value=ST.goal;$('sTotal').textContent=fmt(ST.total);$('sCount').textContent=fmt(ST.count);const pct=ST.goal?Math.min(100,ST.total/ST.goal*100):0;$('sPct').textContent=Math.round(pct)+'%';$('sBar').style.width=pct+'%';
   document.querySelectorAll('[data-s]').forEach(el=>{const k=el.dataset.s;if(el.type==='checkbox')el.checked=!!s[k];else el.value=s[k]??''});
   document.querySelectorAll('.theme').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===s.theme));
