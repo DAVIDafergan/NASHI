@@ -275,13 +275,14 @@ p{margin:0}
 .mtabs,.picker{display:none}
 @media (max-width:700px){
   .menu .tabs{display:none!important}
-  .mtabs{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 66px);z-index:6;margin-top:28px;margin-inline:calc(var(--gut) * -1) calc(var(--gut-r) * -1);padding:10px var(--gut-r) 10px var(--gut);background:var(--paper);border-block:1px solid var(--rule);box-shadow:0 14px 24px -20px rgba(0,0,0,.4)}
-  .mtabs__cur{display:flex;align-items:center;gap:10px;background:var(--green);color:var(--paper);border:0;padding:12px 16px;font:300 15px/1 var(--f);cursor:pointer;flex:1;min-width:0;text-align:right}
-  .mtabs__cur .mtabs__k{font-size:11px;letter-spacing:.2em;color:var(--gold-2)}
-  .mtabs__cur b{font-weight:500;font-size:17px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mtabs__cur i{font-style:normal;color:var(--gold-2)}
-  .mtabs__arrows{display:flex;gap:6px}
-  .mtabs__arrows button{width:44px;height:44px;border:1px solid var(--rule);background:transparent;color:var(--ink);font-size:20px;cursor:pointer}
+  .menu__head p{display:none}
+  .menu__in{padding-top:70px}
+  .mtabs{display:flex;align-items:center;gap:8px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 66px);z-index:6;margin-top:22px;margin-inline:calc(var(--gut) * -1) calc(var(--gut-r) * -1);padding:10px 0 10px var(--gut);background:var(--paper);border-bottom:1px solid var(--rule)}
+  .mtabs__rail{flex:1;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-inline-end:12px;scroll-padding-inline:12px;-webkit-overflow-scrolling:touch}
+  .mtabs__rail::-webkit-scrollbar{display:none}
+  .mtabs__rail button{flex:none;border:1px solid var(--rule);background:transparent;color:var(--ink-2);padding:10px 15px;font:300 14.5px/1 var(--f);border-radius:999px;cursor:pointer;transition:all .3s;white-space:nowrap}
+  .mtabs__rail button[aria-selected="true"]{background:var(--green);border-color:var(--green);color:var(--paper);font-weight:400}
+  .mtabs__all{flex:none;width:44px;height:40px;border:0;border-inline-start:1px solid var(--rule);background:transparent;color:var(--ink);font-size:20px;cursor:pointer}
   .picker{display:grid;position:fixed;inset:0;z-index:85;background:rgba(6,35,30,.55);backdrop-filter:blur(4px);align-items:end;opacity:0;pointer-events:none;transition:opacity .35s}
   .picker.on{opacity:1;pointer-events:auto}
   .picker__in{background:var(--paper);color:var(--ink);border-radius:18px 18px 0 0;padding:14px var(--gut-r) calc(16px + env(safe-area-inset-bottom,0px)) var(--gut);transform:translateY(100%);transition:transform .5s var(--ease)}
@@ -293,33 +294,41 @@ p{margin:0}
   .picker__list button small{font-size:12px;letter-spacing:.1em;color:var(--ink-2)}
   .picker__list button[aria-current="true"]{font-weight:500;color:var(--green)}
   .picker__list button[aria-current="true"]::after{content:"✓";color:var(--green)}
-  /* dishes: text first, + at the end of the row */
-  .panel{padding-top:22px}
-  .panel__intro{gap:10px}
-  .panel__intro .ribbon{font-size:24px;padding:.3em .6em}
-  .choose{font-size:19px}
-  .add-hint{font-size:13px;margin-top:14px}
-  .cols{columns:auto;column-count:1;margin-top:22px;display:block}
-  .grp{margin-bottom:22px}
-  .grp__t{font-size:24px;margin-bottom:4px}
-  .dish{display:flex;align-items:center;gap:12px;padding:12px 0;padding-inline-end:0;border-bottom:1px solid rgba(214,201,174,.5);width:100%}
-  .dish .add{position:static;flex:none;width:36px;height:36px;order:2}
-  .dish__n{flex:1;min-width:0}
-  .dish__d{flex-basis:100%;order:3}
-  .dish{flex-wrap:wrap}
-  .dish__n{flex:1 1 0}
-  .dish .veg{order:4;flex-basis:100%}
-  .dish__n{font-size:16.5px}
+  /* chapter intro: compact */
+  .panel{padding-top:18px}
+  .panel__intro{grid-template-columns:1fr;gap:8px}
+  .panel__intro .ribbon{display:none}
+  .choose{font-size:15px;letter-spacing:.06em;color:#9A7F3E}
+  .choose::before,.choose::after{width:22px;background:#9A7F3E}
+  .panel__intro p{font-size:14px;line-height:1.6;color:var(--ink-2)}
+  .panel__intro small{font-size:13px}
+  .menu .add-hint{display:none}
+  .callout{font-size:17px;padding:16px 18px;margin:14px 0 0}
+  .cols{columns:auto;column-count:1;margin-top:14px;display:block}
+  .grp{margin-bottom:10px}
+  .grp__t{font-size:13px;letter-spacing:.2em;font-weight:400;color:#9A7F3E;margin:22px 0 2px;gap:12px}
+  .grp__t::before,.grp__t::after{opacity:.35}
+  .grp__t svg{width:12px}
+  .menu .grp .grp__t.plain{background:transparent!important;border:0!important;padding:0;font-size:13px;letter-spacing:.2em;color:#9A7F3E;justify-content:center;font-weight:400}
+  .menu .grp .grp__t.plain::before,.menu .grp .grp__t.plain::after{display:block;content:"";flex:1;height:1px;background:#9A7F3E;opacity:.35}
+  .grp__note{display:none}
+  /* dish rows */
+  .dish{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;padding:13px 0;padding-inline-end:0;border-bottom:1px solid rgba(214,201,174,.45);width:100%}
+  .dish .add{position:static;flex:none;width:34px;height:34px;order:2;border-width:1px}
+  .dish__n{flex:1 1 0;min-width:0;font-size:16.5px;font-weight:500}
   .dish__n::after{display:none}
-  .dish__d{font-size:14px;line-height:1.55}
-  .station{padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:22px}
-  .station .add{position:static;flex:none;width:36px;height:36px;order:2}
-  .station h4{flex:1 1 0;min-width:0;font-size:24px;padding:6px 0;border:0}
-  .station > p{flex-basis:100%;order:3}
+  .dish__d{flex-basis:100%;order:3;font-size:13.5px;line-height:1.55;color:var(--ink-2);padding-inline-end:46px}
+  .dish .veg{order:4;flex-basis:100%;font-size:12px;margin-top:4px}
+  .dish:has(.add[aria-pressed="true"]){background:linear-gradient(90deg,transparent,rgba(30,138,76,.06));margin-inline:-8px;padding-inline:8px}
+  /* stations */
+  .station{padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin:18px 0 6px}
+  .station .add{position:static;flex:none;width:34px;height:34px;order:2;border-width:1px}
+  .menu .station h4{flex:1 1 0;min-width:0;font-size:22px;font-weight:300;padding:4px 0;border:0;background:transparent!important}
+  .station > p{flex-basis:100%;order:3;font-size:13.5px;line-height:1.55}
   .station .dish{flex-basis:100%;order:4}
-  .callout{font-size:19px;padding:18px}
-  .menu__foot{flex-direction:column;align-items:stretch;text-align:center}
+  .menu__foot{flex-direction:column;align-items:stretch;text-align:center;margin-top:26px;font-size:13.5px}
   .menu__foot .btn{justify-content:center}
+}
 }
 
 /* ── luxury pass II: gold accents, lighter orange, hairline frames, quiet surfaces ── */
@@ -1727,8 +1736,9 @@ fill="currentColor" stroke="none">
     </div>
     <div class="tabs" role="tablist" aria-label="פרקי התפריט" id="tabs"></div>
     <div class="mtabs" id="mtabs">
-      <button class="mtabs__cur" id="mtabsCur" aria-haspopup="dialog" aria-expanded="false"><span class="mtabs__k">פרק</span><b id="mtabsName">קבלת פנים</b><i aria-hidden="true">▾</i></button>
-      <div class="mtabs__arrows"><button id="mtPrev" aria-label="הפרק הקודם">›</button><button id="mtNext" aria-label="הפרק הבא">‹</button></div>
+      <div class="mtabs__rail" id="mtabsRail"></div>
+      <button class="mtabs__all" id="mtabsCur" aria-haspopup="dialog" aria-expanded="false" aria-label="כל הפרקים"><span id="mtabsName" hidden></span>≡</button>
+      <span hidden id="mtPrev"></span><span hidden id="mtNext"></span>
     </div>
     <div class="picker" id="picker" aria-hidden="true"><div class="picker__in" role="dialog" aria-label="בחירת פרק בתפריט"><div class="picker__h"><span>פרקי התפריט</span><button id="pickerClose" aria-label="סגירה">×</button></div><div class="picker__list" id="pickerList"></div></div></div>
     <div id="panels"></div>
@@ -2831,10 +2841,10 @@ pickerList.innerHTML=MENU.map(c=>`<button data-id="${c.id}"><span>${c.t}</span><
 const setPicker=o=>{picker.classList.toggle('on',o);picker.setAttribute('aria-hidden',!o);document.getElementById('mtabsCur').setAttribute('aria-expanded',o)};
 document.getElementById('mtabsCur').onclick=()=>setPicker(true);document.getElementById('pickerClose').onclick=()=>setPicker(false);picker.addEventListener('click',e=>{if(e.target===picker)setPicker(false)});
 pickerList.addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(!b)return;setPicker(false);select(b.dataset.id);scrollToPanel()});
-function scrollToPanel(){if(innerWidth>700)return;const y=document.getElementById('mtabs').getBoundingClientRect().top+scrollY-(66+(parseInt(getComputedStyle(document.documentElement).getPropertyValue('padding-top'))||0));window.__lenis?window.__lenis.scrollTo(y,{duration:.9}):scrollTo({top:y,behavior:'smooth'})}
+function scrollToPanel(){if(innerWidth>700)return;const mt=document.getElementById('mtabs');if(mt.getBoundingClientRect().top>=66&&mt.getBoundingClientRect().top<200)return;const y=mt.getBoundingClientRect().top+scrollY-(66+(parseInt(getComputedStyle(document.documentElement).getPropertyValue('padding-top'))||0));window.__lenis?window.__lenis.scrollTo(y,{duration:.9}):scrollTo({top:y,behavior:'smooth'})}
 const stepTab=d=>{const ids=MENU.map(c=>c.id),i=ids.indexOf(CUR);const n=ids[(i+d+ids.length)%ids.length];select(n);scrollToPanel()};
-document.getElementById('mtNext').onclick=()=>stepTab(1);document.getElementById('mtPrev').onclick=()=>stepTab(-1);
-const _select=select;select=function(id,focus){_select(id,focus);const c=MENU.find(x=>x.id===id);if(mtName)mtName.textContent=c.t;pickerList.querySelectorAll('[data-id]').forEach(b=>b.setAttribute('aria-current',b.dataset.id===id))};
+const rail=document.getElementById('mtabsRail');rail.innerHTML=MENU.map(c=>`<button data-id="${c.id}" aria-selected="false">${c.t}</button>`).join('');rail.addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(!b)return;select(b.dataset.id);scrollToPanel()});
+const _select=select;select=function(id,focus){_select(id,focus);const c=MENU.find(x=>x.id===id);if(mtName)mtName.textContent=c.t;pickerList.querySelectorAll('[data-id]').forEach(b=>b.setAttribute('aria-current',b.dataset.id===id));rail.querySelectorAll('[data-id]').forEach(b=>{const on=b.dataset.id===id;b.setAttribute('aria-selected',on);if(on)b.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'})})};
 let start='welcome';try{const s=localStorage.getItem('louiza-tab');if(MENU.some(c=>c.id===s))start=s}catch(e){}
 select(start);
 
