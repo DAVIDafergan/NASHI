@@ -190,11 +190,11 @@ p{margin:0}
 .js .step.pre .step__art img{transform:scale(.5) rotate(-10deg);opacity:0}
 .step__art::before{display:none}
 .panel{transform-origin:right center;backface-visibility:hidden}
-.panel.flip-in{animation:flipin .7s var(--ease) both}
-.panel.flip-out{animation:flipout .35s ease-in both;pointer-events:none}
-@keyframes flipin{from{transform:rotateY(-70deg) translateX(40px);opacity:0}to{transform:none;opacity:1}}
-@keyframes flipout{to{transform:rotateY(60deg) translateX(-30px);opacity:0}}
-.panel .dish,.panel .grp__t,.panel .station,.panel .callout,.panel .panel__intro>*,.panel .add-hint{animation:rise .8s var(--ease) both;animation-delay:calc(var(--i,0) * 35ms)}
+.panel.flip-in{animation:flipin .38s cubic-bezier(.2,.8,.2,1) both}
+.panel.flip-out{animation:flipout .16s ease-in both;pointer-events:none}
+@keyframes flipin{from{transform:rotateY(-28deg) translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes flipout{to{transform:rotateY(22deg) translateX(-16px);opacity:0}}
+.panel .dish,.panel .grp__t,.panel .station,.panel .callout,.panel .panel__intro>*,.panel .add-hint{animation:rise .45s var(--ease) both;animation-delay:calc(min(var(--i,0),10) * 22ms)}
 .qa .a{overflow:hidden}
 .btn,.add,.occ__card,.cert,.chip,.tab{will-change:transform}
 .btn{transition:transform .6s cubic-bezier(.34,1.56,.64,1),background .3s,color .3s,border-color .3s}
@@ -2818,9 +2818,9 @@ function renderPanel(c){
 const PETAL_SVG=`<svg viewBox="${document.querySelector('.brand .mk svg').getAttribute('viewBox')}" fill="currentColor">${PETAL.replace(/^[\s\S]*?(<g[\s\S]*<\/g>)[\s\S]*$/,'$1')}</svg>`;
 function select(id,focus){
   tabsEl.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.id===id;b.setAttribute('aria-selected',on);b.tabIndex=on?0:-1;if(on&&focus)b.focus()});
-  const draw=()=>{panelsEl.innerHTML=renderPanel(MENU.find(c=>c.id===id));const p=panelsEl.firstElementChild;if(!REDUCED&&p)p.classList.add('flip-in');panelsEl.querySelectorAll('.panel__intro>*,.add-hint,.callout,.grp__t,.dish,.station').forEach((el,i)=>el.style.setProperty('--i',Math.min(i,28)))};
+  const draw=()=>{panelsEl.innerHTML=renderPanel(MENU.find(c=>c.id===id));const p=panelsEl.firstElementChild;if(!REDUCED&&p)p.classList.add('flip-in');panelsEl.querySelectorAll('.panel__intro>*,.add-hint,.callout,.grp__t,.dish,.station').forEach((el,i)=>el.style.setProperty('--i',Math.min(i,10)))};
   const old=panelsEl.firstElementChild;
-  if(old&&!REDUCED){old.classList.add('flip-out');setTimeout(draw,330)}else draw();
+  if(old&&!REDUCED){old.classList.add('flip-out');setTimeout(draw,150)}else draw();
   if(window.ScrollTrigger)ScrollTrigger.refresh();
   try{localStorage.setItem('louiza-tab',id)}catch(e){}
 }
