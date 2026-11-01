@@ -32,7 +32,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-html{scroll-padding-top:90px}
+html{scroll-padding-top:90px;overflow-x:clip}
 .lenis.lenis-smooth{scroll-behavior:auto!important}
 body{margin:0;background:var(--green);color:var(--paper);font-family:var(--f);font-weight:300;font-size:17px;line-height:1.8;-webkit-font-smoothing:antialiased;overflow-x:hidden;text-align:right}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--green)}
@@ -113,8 +113,8 @@ p{margin:0}
 .burger{display:none;margin-inline-start:auto;background:none;border:0;color:#fff;width:44px;height:44px;cursor:pointer}
 .burger span{display:block;width:24px;height:2px;background:currentColor;margin:5px auto}
 @media (max-width:960px){.nav,.hdr .btn{display:none}.burger{display:block}.hdr__row{height:66px}.brand .mk{width:30px}.brand .wd{width:88px}}
-.drawer{position:fixed;inset:0;z-index:70;background:var(--green);display:flex;flex-direction:column;padding:calc(100px + env(safe-area-inset-top,0px)) var(--gut-r) 40px var(--gut);transform:translateX(100%);transition:transform .7s var(--ease)}
-.drawer.open{transform:none}
+.drawer{position:fixed;inset:0;z-index:70;visibility:hidden;transition:transform .7s var(--ease),visibility 0s .7s;background:var(--green);display:flex;flex-direction:column;padding:calc(100px + env(safe-area-inset-top,0px)) var(--gut-r) 40px var(--gut);transform:translateX(100%);transition:transform .7s var(--ease)}
+.drawer.open{transform:none;visibility:visible;transition:transform .7s var(--ease)}
 .drawer a{font-size:34px;font-weight:200;text-decoration:none;color:#fff;padding:12px 0;border-bottom:1px solid var(--hair)}
 .drawer .btn{margin-top:30px;align-self:flex-start;font-size:16px}
 .drawer__close{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));background:none;border:1px solid var(--hair);color:#fff;width:44px;height:44px;font-size:22px;cursor:pointer;border-radius:50%}
@@ -373,7 +373,7 @@ a.wa{background:var(--green);border:1px solid var(--gold);color:var(--gold-2)}
 .menu__foot .btn--green:hover{background:var(--green);color:var(--paper);border-color:var(--green)}
 
 /* ── welcome (cover page 2) ── */
-.welcome{position:relative;padding-block:clamp(90px,11vw,150px);overflow:hidden}
+.welcome{position:relative;padding-block:clamp(90px,11vw,150px);overflow:hidden;overflow-x:clip}
 .welcome__grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,6vw,100px);align-items:center}
 .welcome h2{font-size:clamp(40px,5vw,72px)}
 .welcome h2 b{font-weight:700}
@@ -389,7 +389,7 @@ a.wa{background:var(--green);border:1px solid var(--gold);color:var(--gold-2)}
 .welcome__media .ph2{position:absolute;width:42%;aspect-ratio:3/4;max-width:100%;inset-inline-end:-6%;bottom:-10%;overflow:hidden;border:6px solid var(--green)}
 .welcome__media .ph2 img{width:100%;height:100%;object-fit:cover}
 .welcome__media .eng{position:absolute;inset-inline-start:-8%;top:-10%;width:30%;opacity:.9;pointer-events:none}
-@media (max-width:900px){.welcome__grid{grid-template-columns:1fr}.welcome__media{width:88%;margin-top:30px}}
+@media (max-width:900px){.welcome__grid{grid-template-columns:1fr}.welcome__media{width:84%;margin-top:30px;margin-inline-end:8%}.welcome__media .eng{inset-inline-start:auto;inset-inline-end:-4%;width:26%}}
 
 /* ── occasions ── */
 .occ{position:relative;padding-block:clamp(90px,11vw,150px)}
