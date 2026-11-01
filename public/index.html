@@ -192,8 +192,8 @@ p{margin:0}
 .panel{transform-origin:right center;backface-visibility:hidden}
 .panel.flip-in{animation:flipin .38s cubic-bezier(.2,.8,.2,1) both}
 .panel.flip-out{animation:flipout .16s ease-in both;pointer-events:none}
-@keyframes flipin{from{transform:rotateY(-28deg) translateX(24px);opacity:0}to{transform:none;opacity:1}}
-@keyframes flipout{to{transform:rotateY(22deg) translateX(-16px);opacity:0}}
+@keyframes flipin{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@keyframes flipout{to{transform:translateY(-8px);opacity:0}}
 .panel .dish,.panel .grp__t,.panel .station,.panel .callout,.panel .panel__intro>*,.panel .add-hint{animation:rise .45s var(--ease) both;animation-delay:calc(min(var(--i,0),10) * 22ms)}
 .qa .a{overflow:hidden}
 .btn,.add,.occ__card,.cert,.chip,.tab{will-change:transform}
