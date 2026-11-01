@@ -172,6 +172,19 @@ tr.hidden td{opacity:.45;text-decoration:line-through}
         <div class="f"><label>צבע טקסט</label><div class="color"><input type="color" data-s="text"></div></div>
         <div class="f"><label>גופן</label><select data-s="font"><option>Heebo</option><option>Rubik</option><option>Assistant</option><option>Frank Ruhl Libre</option><option>Secular One</option><option>Suez One</option></select></div>
       </div>
+      <div class="f"><label>סגנון עיצוב כולל</label><select data-s="skin"><option value="">קלאסי (ערכות צבע)</option><option value="shtar">שטר שותפות – קלף, קרניים וזהב</option></select></div>
+      <div id="shtarBox" class="card" style="padding:12px;margin:0 0 12px;background:#faf6ea;box-shadow:none">
+        <label class="hint" style="font-weight:700">הגדרות סגנון "שטר שותפות"</label>
+        <div class="f"><label>כותרת השטר</label><input data-s="scrollTitle" placeholder="שטר שותפות ותמיכה במוסדות התורה"></div>
+        <div class="f"><label>שורת משנה</label><input data-s="scrollSub"></div>
+        <div class="f"><label>פסוק / ציטוט בפס מודגש</label><input data-s="quote"></div>
+        <div class="f"><label>שלט עליון (תמונה, ריק = ברירת מחדל, none = בלי)</label><input data-s="plaqueImg" dir="ltr" placeholder="/skin/plaque.webp"></div>
+        <label class="hint" style="font-weight:700;margin-top:6px">רמות שותפים</label>
+        <div class="row3"><div class="f"><label>רמה 1 – שם</label><input data-s="tier1Name"></div><div class="f"><label>תיאור</label><input data-s="tier1Sub"></div><div class="f"><label>סכום</label><input type="number" data-s="tier1Amt"></div></div>
+        <div class="row3"><div class="f"><label>רמה 2 – שם</label><input data-s="tier2Name"></div><div class="f"><label>תיאור</label><input data-s="tier2Sub"></div><div class="f"><label>סכום</label><input type="number" data-s="tier2Amt"></div></div>
+        <div class="row3"><div class="f"><label>רמה 3 – שם</label><input data-s="tier3Name"></div><div class="f"><label>תיאור</label><input data-s="tier3Sub"></div><div class="f"><label>סכום</label><input type="number" data-s="tier3Amt"></div></div>
+        <p class="hint">תרומה שווה או גדולה מסכום הרמה מקבלת תג שותף מתאים בקפיצה. סכום 0 מבטל רמה.</p>
+      </div>
       <div class="f"><label>פריסה</label><select data-s="layout"><option value="wallcounter">קיר תורמים + מונה (מומלץ)</option><option value="split">מונה + רשימת תורמים</option><option value="center">מונה במרכז</option><option value="list-left">רשימה מימין, מונה משמאל</option><option value="minimal">מינימלי, מונה ענק</option><option value="wall">קיר תורמים בלבד</option><option value="wallcounter">קיר תורמים + מונה</option></select></div>
       <div class="f"><label>לוגו</label><div class="up"><label class="btn ghost sm"><input type="file" accept="image/*" data-up="logo">העלאת לוגו</label><img id="logoPrev" hidden><button class="btn ghost sm" data-clear="logo">הסרה</button></div></div>
       <div class="f"><label>תמונת רקע</label><div class="up"><label class="btn ghost sm"><input type="file" accept="image/*" data-up="bgImage">העלאת תמונה</label><img id="bgImagePrev" hidden><button class="btn ghost sm" data-clear="bgImage">הסרה</button></div></div>
@@ -239,18 +252,19 @@ if(PIN)tryLogin(PIN);
 async function boot(){
   const cs=await api('GET','/api/campaigns');if(!cs.find(c=>c.slug===SLUG))SLUG=cs[0].slug;
   $('camp').innerHTML=cs.map(c=>`<option value="${c.slug}" ${c.slug===SLUG?'selected':''}>${c.name}</option>`).join('');
-  $('quick').innerHTML=QUICK.map(a=>`<button data-a="${a}">${fmt(a)}</button>`).join('');
+  quickBtns();
   $('themes').innerHTML=Object.entries(THEMES).map(([k,[n,p,b1,b2,t]])=>`<button class="theme" data-th="${k}"><div class="sw" style="background:linear-gradient(135deg,${b1},${b2});color:${p}">₪</div><span>${n}</span></button>`).join('');
   $('sounds').innerHTML=Object.entries(SOUNDS).map(([k,n])=>`<button data-snd="${k}" data-for="sound">${n}</button>`).join('');
   $('bigSounds').innerHTML=Object.entries(SOUNDS).map(([k,n])=>`<button data-snd="${k}" data-for="bigSound">${n}</button>`).join('');
   await load();connect();
 }
+function quickBtns(){const s=ST&&ST.settings;const t=s&&s.skin==='shtar'?[s.tier1Amt,s.tier2Amt,s.tier3Amt].filter(Boolean):[];const q=[...new Set([...t,...QUICK])].sort((x,y)=>x-y);$('quick').innerHTML=q.map(a=>`<button data-a="${a}" ${t.includes(a)?'style="border-color:var(--p);font-weight:800"':''}>${fmt(a)}</button>`).join('')}
 async function load(){ST=await api('GET','/api/c/'+SLUG);fill();await loadRows()}
 function fill(){
   const s=ST.settings;const url=location.origin+'/screen/'+SLUG+(PREV?'?s='+PREV:'');$('screenUrl').textContent=url;$('openScreen').href=url;if($('prev').dataset.u!==url){$('prev').dataset.u=url;$('prev').src=url}renderScreens();$('csv').href='/api/c/'+SLUG+'/export.csv?pin='+encodeURIComponent(PIN);
   $('goal').value=ST.goal;$('sTotal').textContent=fmt(ST.total);$('sCount').textContent=fmt(ST.count);const pct=ST.goal?Math.min(100,ST.total/ST.goal*100):0;$('sPct').textContent=Math.round(pct)+'%';$('sBar').style.width=pct+'%';
   document.querySelectorAll('[data-s]').forEach(el=>{const k=el.dataset.s;if(el.type==='checkbox')el.checked=!!s[k];else el.value=s[k]??''});
-  document.querySelectorAll('.theme').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===s.theme));
+  quickBtns();$('shtarBox').style.display=s.skin==='shtar'?'':'none';document.querySelectorAll('.theme').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===s.theme));
   document.querySelectorAll('[data-snd]').forEach(b=>b.setAttribute('aria-pressed',s[b.dataset.for]===b.dataset.snd));
   $('logoPrev').hidden=!s.logo;$('logoPrev').src=s.logo||'';$('bgImagePrev').hidden=!s.bgImage;$('bgImagePrev').src=s.bgImage||'';$('bgVideoPrev').textContent=s.bgVideo?'סרטון הועלה':'';
 }
@@ -304,6 +318,7 @@ function renderScreens(){
    <div class="f"><label>פריסה</label><select data-sf="layout">${LAY.map(([v,n])=>`<option value="${v}" ${(o.layout||'')===v?'selected':''}>${n}</option>`).join('')}</select></div></div>
    <div class="row3"><div class="f"><label>עיצוב</label><select data-sf="theme"><option value="">כמו הקמפיין</option>${Object.entries(THEMES).map(([k,[n]])=>`<option value="${k}" ${o.theme===k?'selected':''}>${n}</option>`).join('')}</select></div>
    <div class="f"><label>קפיצת תורם</label><select data-sf="popupStyle"><option value="">כמו הקמפיין</option><option value="card" ${o.popupStyle==='card'?'selected':''}>כרטיס</option><option value="banner" ${o.popupStyle==='banner'?'selected':''}>פס</option><option value="full" ${o.popupStyle==='full'?'selected':''}>מסך מלא</option></select></div>
+   <div class="f"><label>סגנון</label><select data-sf="skin"><option value="">כמו הקמפיין</option><option value="classic" ${o.skin==='classic'?'selected':''}>קלאסי</option><option value="shtar" ${o.skin==='shtar'?'selected':''}>שטר שותפות</option></select></div>
    <div class="f"><label>עמודות בקיר</label><input type="number" min="1" max="8" data-sf="wallCols" value="${o.wallCols||''}" placeholder="אוטו'"></div></div>
    <label class="chk" style="border:0"><input type="checkbox" data-sf="mute" ${o.mute?'checked':''}><span>מסך שקט (בלי צליל)</span></label>`:`<p class="hint" style="margin:0 0 6px">פועל לפי ההגדרות הכלליות (פריסה, עיצוב, צלילים) ובגודל המסך עצמו.</p>`}
    <div class="url"><b>${url}</b><button class="btn ghost sm" data-copy="${url}">העתקה</button><a class="btn ghost sm" href="${url}" target="_blank">פתיחה</a></div></div>`};

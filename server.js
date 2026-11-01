@@ -33,18 +33,28 @@ const DEFAULTS = {
   popupStyle: 'card', popupSeconds: 7, sound: 'chime', volume: 0.8, confetti: true, bigThreshold: 1000,
   bigSound: 'fanfare', showAmount: true, roundUp: true, ticker: 'תודה לכל התורמים! כל תרומה מקרבת אותנו ליעד', blessing: 'תזכו למצוות',
   goalMsg: 'הגענו ליעד! תודה!', speech: false, currency: '₪', dedicationShow: true, latestFirst: true, dim: 0.35, idleMsg: '', countUp: true,
-  wallCols: 3, screens: {}
+  wallCols: 3, screens: {}, skin: '', plaqueImg: '/skin/plaque.webp',
+  scrollTitle: '', scrollSub: '', quote: '',
+  tier1Name: 'שותף כסף', tier1Sub: 'החזקת תלמיד', tier1Amt: 148, tier2Name: 'שותף זהב', tier2Sub: 'החזקת יום במוסדות', tier2Amt: 248, tier3Name: 'שותף יהלום', tier3Sub: 'החזקת שבוע במוסדות', tier3Amt: 512
 };
 const getCampaign = (slug) => db.prepare('SELECT * FROM campaigns WHERE slug=?').get(slug);
 const settingsOf = (c) => ({ ...DEFAULTS, ...JSON.parse(c.settings || '{}') });
 if (!db.prepare('SELECT COUNT(*) n FROM campaigns').get().n) {
   db.prepare('INSERT INTO campaigns(slug,name,goal,settings) VALUES(?,?,?,?)').run('main', 'קמפיין ראשי', 100000, '{}');
 }
+{
+  const PRESET = { skin: 'shtar', layout: 'wallcounter', title: 'בנחלים יהלכון', scrollTitle: 'שטר שותפות ותמיכה במוסדות התורה',
+    scrollSub: 'מוסדות התורה והחסד "נחלי התורה" בשיאורתו הרה"ג הרב נתן מרדכי ישראל שליט"א', quote: '"כי לי כל הבכור… ויתמכו בו ויחזקו ידיו"',
+    ticker: 'הריני השותף בנחלים יהלכון למען דור העתיד ✦ תזכו למצוות', wallCols: 3 };
+  const m = db.prepare("SELECT id,settings FROM campaigns WHERE slug='main'").get();
+  if (m && (m.settings || '{}') === '{}') db.prepare('UPDATE campaigns SET settings=? WHERE id=?').run(JSON.stringify(PRESET), m.id);
+}
 const totals = (cid) => db.prepare('SELECT COALESCE(SUM(amount),0) total, COUNT(*) count FROM donations WHERE campaign_id=? AND hidden=0').get(cid);
 const recent = (cid, n) => db.prepare('SELECT id,donor,amount,dedication,city,anonymous,created_at FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY id DESC LIMIT ?').all(cid, n);
 const top = (cid, n) => db.prepare('SELECT id,donor,amount,dedication,city,anonymous FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY amount DESC, id DESC LIMIT ?').all(cid, n);
+const amounts = (cid) => Object.fromEntries(db.prepare('SELECT amount a, COUNT(*) n FROM donations WHERE campaign_id=? AND hidden=0 GROUP BY amount').all(cid).map(r => [r.a, r.n]));
 const pub = (d) => ({ ...d, donor: d.anonymous ? 'תורם/ת אנונימי/ת' : d.donor });
-const state = (c) => { const t = totals(c.id); return { slug: c.slug, name: c.name, goal: c.goal, total: t.total, count: t.count, settings: settingsOf(c), recent: recent(c.id, 30).map(pub), wall: recent(c.id, 300).map(pub), top: top(c.id, 10).map(pub) }; };
+const state = (c) => { const t = totals(c.id); return { slug: c.slug, name: c.name, goal: c.goal, total: t.total, count: t.count, settings: settingsOf(c), recent: recent(c.id, 30).map(pub), wall: recent(c.id, 300).map(pub), amounts: amounts(c.id), top: top(c.id, 10).map(pub) }; };
 
 const app = express();
 const server = http.createServer(app);
