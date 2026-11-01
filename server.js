@@ -32,7 +32,8 @@ const DEFAULTS = {
   showGoal: true, showTicker: true, showList: true, listCount: 8, showClock: true, showQr: false, qrUrl: '',
   popupStyle: 'card', popupSeconds: 7, sound: 'chime', volume: 0.8, confetti: true, bigThreshold: 1000,
   bigSound: 'fanfare', showAmount: true, roundUp: true, ticker: 'תודה לכל התורמים! כל תרומה מקרבת אותנו ליעד', blessing: 'תזכו למצוות',
-  goalMsg: 'הגענו ליעד! תודה!', speech: false, currency: '₪', dedicationShow: true, latestFirst: true, dim: 0.35, idleMsg: '', countUp: true
+  goalMsg: 'הגענו ליעד! תודה!', speech: false, currency: '₪', dedicationShow: true, latestFirst: true, dim: 0.35, idleMsg: '', countUp: true,
+  wallCols: 3, screens: {}
 };
 const getCampaign = (slug) => db.prepare('SELECT * FROM campaigns WHERE slug=?').get(slug);
 const settingsOf = (c) => ({ ...DEFAULTS, ...JSON.parse(c.settings || '{}') });
@@ -43,7 +44,7 @@ const totals = (cid) => db.prepare('SELECT COALESCE(SUM(amount),0) total, COUNT(
 const recent = (cid, n) => db.prepare('SELECT id,donor,amount,dedication,city,anonymous,created_at FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY id DESC LIMIT ?').all(cid, n);
 const top = (cid, n) => db.prepare('SELECT id,donor,amount,dedication,city,anonymous FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY amount DESC, id DESC LIMIT ?').all(cid, n);
 const pub = (d) => ({ ...d, donor: d.anonymous ? 'תורם/ת אנונימי/ת' : d.donor });
-const state = (c) => { const t = totals(c.id); return { slug: c.slug, name: c.name, goal: c.goal, total: t.total, count: t.count, settings: settingsOf(c), recent: recent(c.id, 30).map(pub), top: top(c.id, 10).map(pub) }; };
+const state = (c) => { const t = totals(c.id); return { slug: c.slug, name: c.name, goal: c.goal, total: t.total, count: t.count, settings: settingsOf(c), recent: recent(c.id, 30).map(pub), wall: recent(c.id, 300).map(pub), top: top(c.id, 10).map(pub) }; };
 
 const app = express();
 const server = http.createServer(app);

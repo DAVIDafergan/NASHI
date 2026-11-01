@@ -83,6 +83,11 @@ tr.hidden td{opacity:.45;text-decoration:line-through}
 .up{display:flex;gap:8px;align-items:center}
 .up input[type=file]{display:none}
 .up img{height:40px;border-radius:6px;border:1px solid var(--line)}
+.scr{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
+.scr__h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.scr .nm{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-weight:700;width:200px}
+.scr .x{border:0;background:none;font-size:20px;cursor:pointer;color:var(--bad)}
+.scr .url{margin-top:8px}
 </style>
 </head>
 <body>
@@ -130,6 +135,7 @@ tr.hidden td{opacity:.45;text-decoration:line-through}
     <h2>מצב הקמפיין</h2>
     <div class="stats"><div class="stat"><small>נאסף</small><b id="sTotal">0</b></div><div class="stat"><small>תורמים</small><b id="sCount">0</b></div><div class="stat"><small>אחוז מהיעד</small><b id="sPct">0%</b></div></div>
     <div class="meter"><i id="sBar"></i></div>
+    <div class="inline" style="margin-bottom:8px"><label class="hint" style="margin:0">תצוגה מקדימה של:</label><div class="f" style="margin:0"><select id="prevSel"></select></div></div>
     <div class="preview"><iframe id="prev" title="תצוגה מקדימה"></iframe></div>
     <div class="url"><b id="screenUrl"></b><button class="btn ghost sm" id="copyUrl">העתקה</button></div>
     <p class="hint">פתחו את הקישור הזה בדפדפן של כל מסך, לחצו פעם אחת על המסך להפעלת הצליל, ולחצו F למסך מלא. אפשר לחבר כמה מסכים שרוצים.</p>
@@ -139,9 +145,15 @@ tr.hidden td{opacity:.45;text-decoration:line-through}
    <div class="card" style="margin-top:18px">
     <h2>עיצוב והגדרות המסך <small>נשמר אוטומטית ומתעדכן חי</small></h2>
     <div class="tabs" id="tabs">
-      <button aria-selected="true" data-t="t1">כללי</button><button data-t="t2">עיצוב</button><button data-t="t3">קפיצת תורם</button><button data-t="t4">צלילים</button><button data-t="t5">תצוגה</button><button data-t="t6">מתקדם</button>
+      <button aria-selected="true" data-t="t0">מסכים</button><button data-t="t2">עיצוב</button><button data-t="t3 t4">קפיצה וצליל</button><button data-t="t1 t5">תוכן ותצוגה</button><button data-t="t6">מתקדם</button>
     </div>
-    <div class="pane on" id="t1">
+    <div class="pane on" id="t0">
+      <p class="hint" style="margin:0 0 10px">לכל מסך פיזי יש קישור משלו, עם רזולוציה, פריסה ועיצוב משלו. מסך "ראשי" פועל לפי ההגדרות הכלליות בלשוניות האחרות.</p>
+      <div class="inline" style="margin-bottom:12px"><button class="btn ghost sm" data-recipe="one">קיר תורמים + מונה במסך אחד</button><button class="btn ghost sm" data-recipe="two">שני מסכים: מונה + קיר</button><button class="btn ghost sm" data-recipe="vert">מסך אנכי</button></div>
+      <div id="screens"></div>
+      <button class="btn sm" id="addScreen" style="margin-top:10px">+ מסך חדש</button>
+    </div>
+    <div class="pane" id="t1">
       <div class="f"><label>שם הקמפיין (בראש המסך)</label><input data-s="title"></div>
       <div class="f"><label>כותרת משנה</label><input data-s="subtitle"></div>
       <div class="row2"><div class="f"><label>יעד</label><input id="goal" type="number" min="0"></div><div class="f"><label>מטבע</label><select data-s="currency"><option>₪</option><option>$</option><option>€</option><option>£</option></select></div></div>
@@ -160,7 +172,7 @@ tr.hidden td{opacity:.45;text-decoration:line-through}
         <div class="f"><label>צבע טקסט</label><div class="color"><input type="color" data-s="text"></div></div>
         <div class="f"><label>גופן</label><select data-s="font"><option>Heebo</option><option>Rubik</option><option>Assistant</option><option>Frank Ruhl Libre</option><option>Secular One</option><option>Suez One</option></select></div>
       </div>
-      <div class="f"><label>פריסה</label><select data-s="layout"><option value="split">מונה + רשימת תורמים</option><option value="center">מונה במרכז</option><option value="list-left">רשימה מימין, מונה משמאל</option><option value="minimal">מינימלי, מונה ענק</option><option value="wall">קיר תורמים</option></select></div>
+      <div class="f"><label>פריסה</label><select data-s="layout"><option value="wallcounter">קיר תורמים + מונה (מומלץ)</option><option value="split">מונה + רשימת תורמים</option><option value="center">מונה במרכז</option><option value="list-left">רשימה מימין, מונה משמאל</option><option value="minimal">מינימלי, מונה ענק</option><option value="wall">קיר תורמים בלבד</option><option value="wallcounter">קיר תורמים + מונה</option></select></div>
       <div class="f"><label>לוגו</label><div class="up"><label class="btn ghost sm"><input type="file" accept="image/*" data-up="logo">העלאת לוגו</label><img id="logoPrev" hidden><button class="btn ghost sm" data-clear="logo">הסרה</button></div></div>
       <div class="f"><label>תמונת רקע</label><div class="up"><label class="btn ghost sm"><input type="file" accept="image/*" data-up="bgImage">העלאת תמונה</label><img id="bgImagePrev" hidden><button class="btn ghost sm" data-clear="bgImage">הסרה</button></div></div>
       <div class="f"><label>סרטון רקע (mp4, עד 25MB)</label><div class="up"><label class="btn ghost sm"><input type="file" accept="video/mp4,video/webm" data-up="bgVideo">העלאת סרטון</label><span id="bgVideoPrev" class="hint"></span><button class="btn ghost sm" data-clear="bgVideo">הסרה</button></div></div>
@@ -189,6 +201,7 @@ tr.hidden td{opacity:.45;text-decoration:line-through}
       <label class="chk"><input type="checkbox" data-s="showClock"><span>שעון</span></label>
       <label class="chk"><input type="checkbox" data-s="countUp"><span>אנימציית ספירה במונה</span></label>
       <label class="chk"><input type="checkbox" data-s="latestFirst"><span>רשימה: האחרונים (כבוי = המובילים בסכום)</span></label>
+      <div class="row2" style="margin-top:10px"><div class="f"><label>עמודות בקיר התורמים</label><input type="number" min="1" max="8" data-s="wallCols"></div><div class="f"><label>גודל כתב בקיר (1 = רגיל)</label><input type="number" step="0.1" min="0.5" max="3" data-s="wallScale"></div></div>
       <div class="f" style="margin-top:10px"><label>כמה תורמים ברשימה</label><input type="number" min="3" max="30" data-s="listCount"></div>
       <label class="chk"><input type="checkbox" data-s="showQr"><span>קוד QR לתרומה</span></label>
       <div class="f"><label>קישור לדף התרומה (ל-QR)</label><input data-s="qrUrl" dir="ltr" placeholder="https://..."></div>
@@ -209,7 +222,7 @@ tr.hidden td{opacity:.45;text-decoration:line-through}
 
 <script>
 const $=id=>document.getElementById(id);
-let PIN=sessionStorage.getItem('pin')||'',SLUG=localStorage.getItem('slug')||'main',ST=null,saveT=0,ws;
+let PREV='',PIN=sessionStorage.getItem('pin')||'',SLUG=localStorage.getItem('slug')||'main',ST=null,saveT=0,ws;
 const api=(m,u,b)=>fetch(u,{method:m,headers:{'Content-Type':'application/json','x-pin':PIN},body:b?JSON.stringify(b):undefined}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'שגיאה');return j});
 const toast=t=>{$('toast').textContent=t;$('toast').classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('on'),2200)};
 const fmt=n=>Math.round(n).toLocaleString('he-IL');
@@ -234,7 +247,7 @@ async function boot(){
 }
 async function load(){ST=await api('GET','/api/c/'+SLUG);fill();await loadRows()}
 function fill(){
-  const s=ST.settings;const url=location.origin+'/screen/'+SLUG;$('screenUrl').textContent=url;$('openScreen').href=url;if($('prev').dataset.u!==url){$('prev').dataset.u=url;$('prev').src=url}$('csv').href='/api/c/'+SLUG+'/export.csv?pin='+encodeURIComponent(PIN);
+  const s=ST.settings;const url=location.origin+'/screen/'+SLUG+(PREV?'?s='+PREV:'');$('screenUrl').textContent=url;$('openScreen').href=url;if($('prev').dataset.u!==url){$('prev').dataset.u=url;$('prev').src=url}renderScreens();$('csv').href='/api/c/'+SLUG+'/export.csv?pin='+encodeURIComponent(PIN);
   $('goal').value=ST.goal;$('sTotal').textContent=fmt(ST.total);$('sCount').textContent=fmt(ST.count);const pct=ST.goal?Math.min(100,ST.total/ST.goal*100):0;$('sPct').textContent=Math.round(pct)+'%';$('sBar').style.width=pct+'%';
   document.querySelectorAll('[data-s]').forEach(el=>{const k=el.dataset.s;if(el.type==='checkbox')el.checked=!!s[k];else el.value=s[k]??''});
   document.querySelectorAll('.theme').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===s.theme));
@@ -270,11 +283,53 @@ document.querySelectorAll('[data-s]').forEach(el=>el.addEventListener(el.type===
 $('goal').addEventListener('input',()=>{clearTimeout(saveT);saveT=setTimeout(()=>api('PUT','/api/c/'+SLUG,{goal:Number($('goal').value)}).then(()=>toast('היעד עודכן')),400)});
 $('themes').onclick=e=>{const b=e.target.closest('.theme');if(!b)return;const[,p,b1,b2,t]=THEMES[b.dataset.th];const patch={theme:b.dataset.th,primary:p,bg1:b1,bg2:b2,text:t};Object.assign(ST.settings,patch);fill();clearTimeout(saveT);api('PUT','/api/c/'+SLUG,{settings:patch}).then(()=>toast('הערכה הוחלה'))};
 document.querySelectorAll('[data-snd]').forEach(b=>b.onclick=()=>{save({[b.dataset.for]:b.dataset.snd});fill();previewSound(b.dataset.snd)});
-$('tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;$('tabs').querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===b.dataset.t))};
+$('tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;$('tabs').querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));const ids=b.dataset.t.split(' ');document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',ids.includes(p.id)))};
 document.querySelectorAll('[data-up]').forEach(inp=>inp.onchange=async()=>{const f=inp.files[0];if(!f)return;const fd=new FormData();fd.append('file',f);toast('מעלה…');const r=await fetch('/api/upload',{method:'POST',headers:{'x-pin':PIN},body:fd}).then(r=>r.json());if(r.url){save({[inp.dataset.up]:r.url});fill()}else toast(r.error||'שגיאה בהעלאה')});
 document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{save({[b.dataset.clear]:''});fill()});
 $('camp').onchange=()=>{SLUG=$('camp').value;localStorage.setItem('slug',SLUG);load();connect()};
 $('newCamp').onclick=async()=>{const name=prompt('שם הקמפיין החדש');if(!name)return;const goal=prompt('יעד','100000');try{const c=await api('POST','/api/campaigns',{name,goal});SLUG=c.slug;localStorage.setItem('slug',SLUG);boot()}catch(e){toast(e.message)}};
+
+
+/* ---- screens ---- */
+const RES=[['auto','לפי המסך (אוטומטי)'],['1920x1080','Full HD אופקי 1920×1080'],['3840x2160','4K אופקי 3840×2160'],['1280x720','HD 1280×720'],['1080x1920','אנכי Full HD 1080×1920'],['2160x3840','אנכי 4K 2160×3840'],['1080x1080','ריבוע 1080×1080'],['custom','מותאם אישית…']];
+const LAY=[['','כמו הקמפיין'],['wallcounter','קיר תורמים + מונה'],['wall','קיר תורמים בלבד'],['split','מונה + רשימה'],['center','מונה במרכז'],['list-left','רשימה + מונה'],['minimal','מונה ענק']];
+const scr=()=>ST.settings.screens||{};
+function saveScreens(){save({screens:scr()});}
+function renderScreens(){
+  if(!ST)return;const S=scr(),box=$('screens');if(!box||box.contains(document.activeElement)&&document.activeElement.tagName==='INPUT')return;
+  const base=location.origin+'/screen/'+SLUG;
+  const card=(id,o)=>{const isCustom=o.res&&!RES.some(r=>r[0]===o.res);const url=base+(id?'?s='+id:'');
+   return `<div class="scr" data-id="${id}"><div class="scr__h"><b>${id?`<input class="nm" data-sf="name" value="${esc(o.name||'')}" placeholder="שם המסך">`:'מסך ראשי'}</b>${id?`<button class="x" data-sdel title="מחיקה">×</button>`:''}</div>
+   ${id?`<div class="row2"><div class="f"><label>רזולוציה</label><select data-sf="res">${RES.map(([v,n])=>`<option value="${v}" ${(isCustom?'custom':(o.res||'auto'))===v?'selected':''}>${n}</option>`).join('')}</select>${isCustom||o.res==='custom'?`<input data-sf="customres" dir="ltr" placeholder="1920x1080" value="${isCustom?esc(o.res):''}" style="margin-top:6px">`:''}</div>
+   <div class="f"><label>פריסה</label><select data-sf="layout">${LAY.map(([v,n])=>`<option value="${v}" ${(o.layout||'')===v?'selected':''}>${n}</option>`).join('')}</select></div></div>
+   <div class="row3"><div class="f"><label>עיצוב</label><select data-sf="theme"><option value="">כמו הקמפיין</option>${Object.entries(THEMES).map(([k,[n]])=>`<option value="${k}" ${o.theme===k?'selected':''}>${n}</option>`).join('')}</select></div>
+   <div class="f"><label>קפיצת תורם</label><select data-sf="popupStyle"><option value="">כמו הקמפיין</option><option value="card" ${o.popupStyle==='card'?'selected':''}>כרטיס</option><option value="banner" ${o.popupStyle==='banner'?'selected':''}>פס</option><option value="full" ${o.popupStyle==='full'?'selected':''}>מסך מלא</option></select></div>
+   <div class="f"><label>עמודות בקיר</label><input type="number" min="1" max="8" data-sf="wallCols" value="${o.wallCols||''}" placeholder="אוטו'"></div></div>
+   <label class="chk" style="border:0"><input type="checkbox" data-sf="mute" ${o.mute?'checked':''}><span>מסך שקט (בלי צליל)</span></label>`:`<p class="hint" style="margin:0 0 6px">פועל לפי ההגדרות הכלליות (פריסה, עיצוב, צלילים) ובגודל המסך עצמו.</p>`}
+   <div class="url"><b>${url}</b><button class="btn ghost sm" data-copy="${url}">העתקה</button><a class="btn ghost sm" href="${url}" target="_blank">פתיחה</a></div></div>`};
+  box.innerHTML=card('',{})+Object.entries(S).map(([id,o])=>card(id,o)).join('');
+  const sel=$('prevSel'),cur=PREV;sel.innerHTML='<option value="">מסך ראשי</option>'+Object.entries(S).map(([id,o])=>`<option value="${id}">${esc(o.name||id)}</option>`).join('');sel.value=S[cur]?cur:'';if(!S[cur])PREV=''
+}
+$('prevSel').onchange=()=>{PREV=$('prevSel').value;fill()};
+$('screens').addEventListener('change',e=>{const el=e.target.closest('[data-sf]');if(!el)return;const id=el.closest('.scr').dataset.id,S=scr();if(!S[id])return;const k=el.dataset.sf;let v=el.type==='checkbox'?el.checked:el.value;
+  if(k==='theme'){['theme','primary','bg1','bg2','text'].forEach(x=>delete S[id][x]);if(v){const[,p,b1,b2,t]=THEMES[v];Object.assign(S[id],{theme:v,primary:p,bg1:b1,bg2:b2,text:t})}}
+  else if(k==='res'){if(v==='custom'){S[id].res='custom';renderScreens();return}if(v==='auto')delete S[id].res;else S[id].res=v}
+  else if(k==='customres'){if(/^\d{3,5}x\d{3,5}$/.test(v.trim()))S[id].res=v.trim();else return toast('פורמט: 1920x1080')}
+  else if(k==='wallCols'){if(v)S[id].wallCols=Number(v);else delete S[id].wallCols}
+  else if(k==='mute'){if(v)S[id].mute=true;else delete S[id].mute}
+  else{if(v)S[id][k]=v;else delete S[id][k]}
+  saveScreens();renderScreens()});
+$('screens').addEventListener('input',e=>{const el=e.target.closest('[data-sf="name"]');if(!el)return;const id=el.closest('.scr').dataset.id;scr()[id].name=el.value;saveScreens()});
+$('screens').addEventListener('click',async e=>{
+  const c=e.target.closest('[data-copy]');if(c){try{await navigator.clipboard.writeText(c.dataset.copy);toast('הקישור הועתק')}catch(_){toast('סמנו והעתיקו ידנית')}return}
+  const d=e.target.closest('[data-sdel]');if(d){const id=d.closest('.scr').dataset.id;if(!confirm('למחוק את המסך? הקישור שלו יעבור לפעול כמסך ראשי.'))return;delete scr()[id];saveScreens();renderScreens()}});
+function newScreen(name,o){const S=ST.settings.screens=scr();let i=1;while(S['s'+i])i++;S['s'+i]={name,...o};return 's'+i}
+$('addScreen').onclick=()=>{newScreen('מסך '+(Object.keys(scr()).length+1),{res:'1920x1080'});saveScreens();renderScreens()};
+document.querySelectorAll('[data-recipe]').forEach(b=>b.onclick=()=>{const r=b.dataset.recipe;
+  if(r==='one'){save({layout:'wallcounter',wallCols:3});toast('הוגדרה פריסת קיר + מונה במסך הראשי')}
+  if(r==='two'){newScreen('מסך מונה',{res:'1920x1080',layout:'minimal'});newScreen('מסך קיר תורמים',{res:'1920x1080',layout:'wall',wallCols:4,mute:true});saveScreens();toast('נוספו שני מסכים')}
+  if(r==='vert'){newScreen('מסך אנכי',{res:'1080x1920',layout:'wallcounter',wallCols:2});saveScreens();toast('נוסף מסך אנכי')}
+  renderScreens()});
 
 /* preview sound locally */
 let AC;function previewSound(n){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime;const tone=(f,d,l,ty='sine',g=.2)=>{const o=AC.createOscillator(),v=AC.createGain();o.type=ty;o.frequency.value=f;v.gain.setValueAtTime(0,t+d);v.gain.linearRampToValueAtTime(g,t+d+.02);v.gain.exponentialRampToValueAtTime(.0001,t+d+l);o.connect(v).connect(AC.destination);o.start(t+d);o.stop(t+d+l+.05)};
