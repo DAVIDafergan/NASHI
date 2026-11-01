@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ניהול מסכי התרמה</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap">
+<style>
+:root{--bg:#F4F5F7;--card:#fff;--ink:#121826;--mute:#5B6475;--line:#E3E6EC;--p:#1E3A6E;--acc:#C9A961;--ok:#1E8A4C;--bad:#B3261E}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Heebo,Arial,sans-serif;font-size:15px;line-height:1.55}
+button,input,select,textarea{font:inherit}
+.top{position:sticky;top:0;z-index:10;background:var(--p);color:#fff;display:flex;align-items:center;gap:14px;padding:12px 18px;flex-wrap:wrap}
+.top h1{margin:0;font-size:18px;font-weight:700}
+.top select{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:8px 10px}
+.top .sp{flex:1}
+.top a,.top button.ghost{color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:8px 12px;text-decoration:none;background:none;cursor:pointer;font-size:14px}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:13px;opacity:.9}.live i{width:8px;height:8px;border-radius:50%;background:#58D68D;box-shadow:0 0 0 0 rgba(88,214,141,.7);animation:p 1.6s infinite}
+@keyframes p{to{box-shadow:0 0 0 10px rgba(88,214,141,0)}}
+.wrap{max-width:1180px;margin:0 auto;padding:18px}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h2{margin:0 0 12px;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card h2 small{font-weight:400;color:var(--mute);font-size:13px}
+.f{display:grid;gap:5px;margin-bottom:12px}
+.f label{font-size:13px;color:var(--mute)}
+.f input,.f select,.f textarea{border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;background:#fff}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(30,58,110,.12)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;padding:12px 18px;background:var(--p);color:#fff;font-weight:700;cursor:pointer;transition:transform .15s,opacity .2s}
+.btn:active{transform:scale(.98)}
+.btn.big{width:100%;padding:16px;font-size:18px;background:var(--acc);color:#111}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:500}
+.btn.danger{background:var(--bad)}
+.btn.sm{padding:7px 10px;font-size:13px}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.quick button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:500}
+.quick button:hover{border-color:var(--p)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat{background:var(--bg);border-radius:10px;padding:10px 12px}
+.stat small{display:block;color:var(--mute);font-size:12px}
+.stat b{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
+.meter{height:10px;border-radius:999px;background:var(--line);overflow:hidden;margin-bottom:16px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#E3CC93);width:0;transition:width .8s}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
+th{color:var(--mute);font-weight:500;font-size:12.5px}
+td.amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+td .x{background:none;border:0;color:var(--bad);cursor:pointer;font-size:16px}
+td .e{background:none;border:0;color:var(--p);cursor:pointer;font-size:14px}
+tr.hidden td{opacity:.45;text-decoration:line-through}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:10px 12px;cursor:pointer;color:var(--mute);border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
+.tabs button[aria-selected="true"]{color:var(--p);border-color:var(--p)}
+.pane{display:none}.pane.on{display:block}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.theme{border:2px solid transparent;border-radius:12px;overflow:hidden;cursor:pointer;background:#fff;padding:0;text-align:right}
+.theme[aria-pressed="true"]{border-color:var(--p)}
+.theme .sw{height:56px;display:grid;place-items:center;font-weight:900;font-size:18px}
+.theme span{display:block;padding:6px 8px;font-size:12.5px}
+.color{display:flex;align-items:center;gap:8px}
+.color input[type=color]{width:44px;height:38px;padding:2px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.chk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.chk input{width:18px;height:18px}
+.chk span{flex:1}
+.hint{font-size:12.5px;color:var(--mute)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,120%);background:#111;color:#fff;padding:12px 18px;border-radius:10px;transition:transform .4s;z-index:50;font-weight:500}
+.toast.on{transform:translate(-50%,0)}
+.login{min-height:100vh;display:grid;place-items:center;background:var(--p)}
+.login .card{width:min(380px,92vw);text-align:center}
+.login h1{margin:0 0 6px;font-size:22px}
+.preview{aspect-ratio:16/9;width:100%;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px}
+.preview iframe{width:400%;height:400%;transform:scale(.25);transform-origin:top left;border:0;pointer-events:none}
+.url{display:flex;gap:8px;align-items:center;background:var(--bg);border-radius:10px;padding:8px 10px;font-size:13px;direction:ltr;text-align:left;word-break:break-all}
+.url b{flex:1;font-weight:500}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.inline .f{flex:1;margin:0;min-width:160px}
+.sounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.sounds button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px;cursor:pointer}
+.sounds button[aria-pressed="true"]{border-color:var(--p);background:rgba(30,58,110,.06);font-weight:700}
+.up{display:flex;gap:8px;align-items:center}
+.up input[type=file]{display:none}
+.up img{height:40px;border-radius:6px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="login" id="login">
+  <div class="card"><h1>ניהול מסכי התרמה</h1><p class="hint" style="margin-bottom:14px">הקלידו את קוד הניהול</p><div class="f"><input id="pin" type="password" inputmode="numeric" placeholder="קוד" autofocus></div><button class="btn" style="width:100%" id="loginBtn">כניסה</button><p class="hint" id="loginErr" style="color:var(--bad)"></p></div>
+</div>
+
+<div id="app" hidden>
+<div class="top">
+  <h1>מסכי התרמה</h1>
+  <select id="camp"></select>
+  <button class="ghost" id="newCamp">+ קמפיין</button>
+  <span class="sp"></span>
+  <span class="live"><i></i> מחובר</span>
+  <a id="openScreen" href="#" target="_blank">פתיחת המסך ↗</a>
+  <button class="ghost" id="logout">יציאה</button>
+</div>
+<div class="wrap">
+ <div class="grid">
+  <div>
+   <div class="card" id="addCard">
+    <h2>הוספת תרומה <small>תקפוץ מיד בכל המסכים</small></h2>
+    <div class="quick" id="quick"></div>
+    <div class="row2">
+      <div class="f"><label>שם התורם/ת</label><input id="dDonor" placeholder="למשל: משפחת כהן" autocomplete="off"></div>
+      <div class="f"><label>סכום</label><input id="dAmount" type="number" inputmode="numeric" min="1" placeholder="180"></div>
+    </div>
+    <div class="row2">
+      <div class="f"><label>הקדשה (לא חובה)</label><input id="dDed" placeholder="לעילוי נשמת / לרפואת / לזכות"></div>
+      <div class="f"><label>עיר (לא חובה)</label><input id="dCity" placeholder="בני ברק"></div>
+    </div>
+    <label class="chk" style="border:0"><input type="checkbox" id="dAnon"><span>תורם אנונימי (יוצג "תורם אנונימי")</span></label>
+    <button class="btn big" id="addBtn">הוספה והקפצה למסך</button>
+    <div class="inline" style="margin-top:10px"><button class="btn ghost sm" id="testBtn">בדיקת מסך (לא נשמר)</button><button class="btn ghost sm" id="confBtn">קונפטי</button><button class="btn ghost sm" id="goalBtn">הפעלת חגיגת יעד</button></div>
+   </div>
+
+   <div class="card" style="margin-top:18px">
+    <h2>תרומות <small id="dCount"></small><span><a class="btn ghost sm" id="csv" href="#">ייצוא CSV</a> <button class="btn ghost sm" id="undoBtn">ביטול האחרונה</button></span></h2>
+    <div style="overflow:auto;max-height:520px"><table><thead><tr><th>#</th><th>תורם</th><th>סכום</th><th>הקדשה</th><th>שעה</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+   </div>
+  </div>
+
+  <div>
+   <div class="card">
+    <h2>מצב הקמפיין</h2>
+    <div class="stats"><div class="stat"><small>נאסף</small><b id="sTotal">0</b></div><div class="stat"><small>תורמים</small><b id="sCount">0</b></div><div class="stat"><small>אחוז מהיעד</small><b id="sPct">0%</b></div></div>
+    <div class="meter"><i id="sBar"></i></div>
+    <div class="preview"><iframe id="prev" title="תצוגה מקדימה"></iframe></div>
+    <div class="url"><b id="screenUrl"></b><button class="btn ghost sm" id="copyUrl">העתקה</button></div>
+    <p class="hint">פתחו את הקישור הזה בדפדפן של כל מסך, לחצו פעם אחת על המסך להפעלת הצליל, ולחצו F למסך מלא. אפשר לחבר כמה מסכים שרוצים.</p>
+    <div class="inline" style="margin-top:8px"><div class="f"><input id="msgText" placeholder="הודעה חיה למסכים (למשל: עוד 10 דקות לסיום!)"></div><button class="btn sm" id="msgBtn">שליחה</button></div>
+   </div>
+
+   <div class="card" style="margin-top:18px">
+    <h2>עיצוב והגדרות המסך <small>נשמר אוטומטית ומתעדכן חי</small></h2>
+    <div class="tabs" id="tabs">
+      <button aria-selected="true" data-t="t1">כללי</button><button data-t="t2">עיצוב</button><button data-t="t3">קפיצת תורם</button><button data-t="t4">צלילים</button><button data-t="t5">תצוגה</button><button data-t="t6">מתקדם</button>
+    </div>
+    <div class="pane on" id="t1">
+      <div class="f"><label>שם הקמפיין (בראש המסך)</label><input data-s="title"></div>
+      <div class="f"><label>כותרת משנה</label><input data-s="subtitle"></div>
+      <div class="row2"><div class="f"><label>יעד</label><input id="goal" type="number" min="0"></div><div class="f"><label>מטבע</label><select data-s="currency"><option>₪</option><option>$</option><option>€</option><option>£</option></select></div></div>
+      <div class="f"><label>טקסט רץ בתחתית</label><input data-s="ticker"></div>
+      <div class="f"><label>הודעה בהגעה ליעד</label><input data-s="goalMsg"></div>
+    </div>
+    <div class="pane" id="t2">
+      <label class="hint">ערכות מוכנות</label>
+      <div class="themes" id="themes"></div>
+      <div class="row3">
+        <div class="f"><label>צבע הדגשה</label><div class="color"><input type="color" data-s="primary"></div></div>
+        <div class="f"><label>רקע 1</label><div class="color"><input type="color" data-s="bg1"></div></div>
+        <div class="f"><label>רקע 2</label><div class="color"><input type="color" data-s="bg2"></div></div>
+      </div>
+      <div class="row2">
+        <div class="f"><label>צבע טקסט</label><div class="color"><input type="color" data-s="text"></div></div>
+        <div class="f"><label>גופן</label><select data-s="font"><option>Heebo</option><option>Rubik</option><option>Assistant</option><option>Frank Ruhl Libre</option><option>Secular One</option><option>Suez One</option></select></div>
+      </div>
+      <div class="f"><label>פריסה</label><select data-s="layout"><option value="split">מונה + רשימת תורמים</option><option value="center">מונה במרכז</option><option value="list-left">רשימה מימין, מונה משמאל</option><option value="minimal">מינימלי, מונה ענק</option><option value="wall">קיר תורמים</option></select></div>
+      <div class="f"><label>לוגו</label><div class="up"><label class="btn ghost sm"><input type="file" accept="image/*" data-up="logo">העלאת לוגו</label><img id="logoPrev" hidden><button class="btn ghost sm" data-clear="logo">הסרה</button></div></div>
+      <div class="f"><label>תמונת רקע</label><div class="up"><label class="btn ghost sm"><input type="file" accept="image/*" data-up="bgImage">העלאת תמונה</label><img id="bgImagePrev" hidden><button class="btn ghost sm" data-clear="bgImage">הסרה</button></div></div>
+      <div class="f"><label>סרטון רקע (mp4, עד 25MB)</label><div class="up"><label class="btn ghost sm"><input type="file" accept="video/mp4,video/webm" data-up="bgVideo">העלאת סרטון</label><span id="bgVideoPrev" class="hint"></span><button class="btn ghost sm" data-clear="bgVideo">הסרה</button></div></div>
+      <div class="f"><label>הכהיית רקע (0 בהיר, 0.8 כהה)</label><input type="range" min="0" max="0.85" step="0.05" data-s="dim"></div>
+    </div>
+    <div class="pane" id="t3">
+      <div class="f"><label>סגנון הקפיצה</label><select data-s="popupStyle"><option value="card">כרטיס במרכז</option><option value="banner">פס בתחתית</option><option value="full">מסך מלא</option></select></div>
+      <div class="row2"><div class="f"><label>משך הצגה (שניות)</label><input type="number" min="2" max="60" data-s="popupSeconds"></div><div class="f"><label>תרומה "מיוחדת" מסכום של</label><input type="number" min="0" data-s="bigThreshold"></div></div>
+      <div class="f"><label>ברכה בתחתית הכרטיס</label><input data-s="blessing"></div>
+      <label class="chk"><input type="checkbox" data-s="showAmount"><span>להציג את הסכום</span></label>
+      <label class="chk"><input type="checkbox" data-s="dedicationShow"><span>להציג הקדשה</span></label>
+      <label class="chk"><input type="checkbox" data-s="confetti"><span>קונפטי בכל תרומה</span></label>
+      <label class="chk"><input type="checkbox" data-s="speech"><span>הקראה קולית של שם התורם (בדפדפנים שתומכים)</span></label>
+    </div>
+    <div class="pane" id="t4">
+      <label class="hint">צליל לתרומה רגילה</label>
+      <div class="sounds" id="sounds"></div>
+      <label class="hint" style="display:block;margin-top:12px">צליל לתרומה מיוחדת</label>
+      <div class="sounds" id="bigSounds"></div>
+      <div class="f" style="margin-top:12px"><label>עוצמה</label><input type="range" min="0" max="1" step="0.05" data-s="volume"></div>
+      <p class="hint">הצלילים מופקים במסך עצמו, בלי קבצים. לחיצה על צליל משמיעה אותו כאן לדוגמה.</p>
+    </div>
+    <div class="pane" id="t5">
+      <label class="chk"><input type="checkbox" data-s="showGoal"><span>מד יעד</span></label>
+      <label class="chk"><input type="checkbox" data-s="showTicker"><span>טקסט רץ</span></label>
+      <label class="chk"><input type="checkbox" data-s="showClock"><span>שעון</span></label>
+      <label class="chk"><input type="checkbox" data-s="countUp"><span>אנימציית ספירה במונה</span></label>
+      <label class="chk"><input type="checkbox" data-s="latestFirst"><span>רשימה: האחרונים (כבוי = המובילים בסכום)</span></label>
+      <div class="f" style="margin-top:10px"><label>כמה תורמים ברשימה</label><input type="number" min="3" max="30" data-s="listCount"></div>
+      <label class="chk"><input type="checkbox" data-s="showQr"><span>קוד QR לתרומה</span></label>
+      <div class="f"><label>קישור לדף התרומה (ל-QR)</label><input data-s="qrUrl" dir="ltr" placeholder="https://..."></div>
+    </div>
+    <div class="pane" id="t6">
+      <div class="f"><label>מסך המתנה (טקסט במקום המונה, ריק = כבוי)</label><input data-s="idleMsg" placeholder="למשל: הערב מתחיל ב-20:30"></div>
+      <div class="inline" style="margin:10px 0"><button class="btn ghost sm" data-cmd="reload">רענון כל המסכים</button><button class="btn ghost sm" data-cmd="sound">בדיקת צליל במסכים</button></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+      <p class="hint">איפוס מסתיר את כל התרומות מהמסך (הן נשמרות בייצוא). לשימוש בתחילת אירוע חדש באותו קמפיין.</p>
+      <button class="btn danger sm" id="resetBtn">איפוס תרומות הקמפיין</button>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let PIN=sessionStorage.getItem('pin')||'',SLUG=localStorage.getItem('slug')||'main',ST=null,saveT=0,ws;
+const api=(m,u,b)=>fetch(u,{method:m,headers:{'Content-Type':'application/json','x-pin':PIN},body:b?JSON.stringify(b):undefined}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'שגיאה');return j});
+const toast=t=>{$('toast').textContent=t;$('toast').classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('on'),2200)};
+const fmt=n=>Math.round(n).toLocaleString('he-IL');
+const THEMES={royal:['מלכותי','#C9A961','#0B1D3A','#1E3A6E','#FFFFFF'],emerald:['אמרלד','#E3CC93','#06231E','#0E4027','#FBF8F1'],bordeaux:['בורדו','#F2C14E','#3A0B14','#6E1E2E','#FFF7F2'],sky:['תכלת','#1E3A6E','#E8F1FB','#BFD7F2','#0B1D3A'],night:['לילה','#7ED3FF','#05070D','#141B2E','#FFFFFF'],sunset:['שקיעה','#FFD36E','#4A1942','#C2185B','#FFFFFF'],paper:['נייר','#B3261E','#FBF8F1','#EDE5D6','#13201A'],torah:['קלף','#8B5E1A','#F5E9D0','#E6D2A8','#2B1D0E']};
+const SOUNDS={chime:'פעמונים',bell:'פעמון',coins:'מטבעות',harp:'נבל',fanfare:'תרועה',pop:'פופ',shofar:'שופר',none:'ללא'};
+const QUICK=[18,36,52,100,180,360,500,1000,1800,5000];
+
+/* login */
+async function tryLogin(p){const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:p})}).then(r=>r.json());if(r.ok){PIN=p;sessionStorage.setItem('pin',p);$('login').hidden=true;$('app').hidden=false;boot()}else{$('loginErr').textContent='קוד שגוי'}}
+$('loginBtn').onclick=()=>tryLogin($('pin').value.trim());$('pin').onkeydown=e=>{if(e.key==='Enter')tryLogin($('pin').value.trim())};
+$('logout').onclick=()=>{sessionStorage.removeItem('pin');location.reload()};
+if(PIN)tryLogin(PIN);
+
+async function boot(){
+  const cs=await api('GET','/api/campaigns');if(!cs.find(c=>c.slug===SLUG))SLUG=cs[0].slug;
+  $('camp').innerHTML=cs.map(c=>`<option value="${c.slug}" ${c.slug===SLUG?'selected':''}>${c.name}</option>`).join('');
+  $('quick').innerHTML=QUICK.map(a=>`<button data-a="${a}">${fmt(a)}</button>`).join('');
+  $('themes').innerHTML=Object.entries(THEMES).map(([k,[n,p,b1,b2,t]])=>`<button class="theme" data-th="${k}"><div class="sw" style="background:linear-gradient(135deg,${b1},${b2});color:${p}">₪</div><span>${n}</span></button>`).join('');
+  $('sounds').innerHTML=Object.entries(SOUNDS).map(([k,n])=>`<button data-snd="${k}" data-for="sound">${n}</button>`).join('');
+  $('bigSounds').innerHTML=Object.entries(SOUNDS).map(([k,n])=>`<button data-snd="${k}" data-for="bigSound">${n}</button>`).join('');
+  await load();connect();
+}
+async function load(){ST=await api('GET','/api/c/'+SLUG);fill();await loadRows()}
+function fill(){
+  const s=ST.settings;const url=location.origin+'/screen/'+SLUG;$('screenUrl').textContent=url;$('openScreen').href=url;$('prev').src=url;$('csv').href='/api/c/'+SLUG+'/export.csv?pin='+encodeURIComponent(PIN);
+  $('goal').value=ST.goal;$('sTotal').textContent=fmt(ST.total);$('sCount').textContent=fmt(ST.count);const pct=ST.goal?Math.min(100,ST.total/ST.goal*100):0;$('sPct').textContent=Math.round(pct)+'%';$('sBar').style.width=pct+'%';
+  document.querySelectorAll('[data-s]').forEach(el=>{const k=el.dataset.s;if(el.type==='checkbox')el.checked=!!s[k];else el.value=s[k]??''});
+  document.querySelectorAll('.theme').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===s.theme));
+  document.querySelectorAll('[data-snd]').forEach(b=>b.setAttribute('aria-pressed',s[b.dataset.for]===b.dataset.snd));
+  $('logoPrev').hidden=!s.logo;$('logoPrev').src=s.logo||'';$('bgImagePrev').hidden=!s.bgImage;$('bgImagePrev').src=s.bgImage||'';$('bgVideoPrev').textContent=s.bgVideo?'סרטון הועלה':'';
+}
+async function loadRows(){const rows=await fetch('/api/c/'+SLUG+'/donations').then(r=>r.json());$('dCount').textContent=rows.filter(r=>!r.hidden).length+' פעילות';
+  $('rows').innerHTML=rows.map(r=>`<tr class="${r.hidden?'hidden':''}" data-id="${r.id}"><td>${r.id}</td><td>${r.anonymous?'<i>אנונימי</i> · ':''}${esc(r.donor)}</td><td class="amt">${ST.settings.currency}${fmt(r.amount)}</td><td>${esc(r.dedication||'')}</td><td>${new Date(r.created_at+'Z').toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</td><td style="white-space:nowrap">${r.hidden?`<button class="e" data-restore="${r.id}">שחזור</button>`:`<button class="e" data-edit="${r.id}">עריכה</button> <button class="x" data-del="${r.id}" title="הסרה מהמסך">×</button>`}</td></tr>`).join('')}
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* add donation */
+async function add(){const donor=$('dDonor').value.trim(),amount=Number($('dAmount').value);if(!donor||!(amount>0))return toast('צריך שם וסכום');
+  const b=$('addBtn');b.disabled=true;try{await api('POST','/api/c/'+SLUG+'/donations',{donor,amount,dedication:$('dDed').value.trim(),city:$('dCity').value.trim(),anonymous:$('dAnon').checked});toast(`✓ ${donor} – ${fmt(amount)} עלה למסך`);$('dDonor').value='';$('dAmount').value='';$('dDed').value='';$('dAnon').checked=false;$('dDonor').focus()}catch(e){toast(e.message)}b.disabled=false}
+$('addBtn').onclick=add;['dDonor','dAmount','dDed','dCity'].forEach(id=>$(id).onkeydown=e=>{if(e.key==='Enter')add()});
+$('quick').onclick=e=>{const b=e.target.closest('[data-a]');if(b){$('dAmount').value=b.dataset.a;$('dDonor').focus()}};
+$('testBtn').onclick=()=>api('POST','/api/c/'+SLUG+'/test',{donor:$('dDonor').value||'תורם לדוגמה',amount:Number($('dAmount').value)||180,dedication:$('dDed').value}).then(()=>toast('נשלחה בדיקה למסכים'));
+$('confBtn').onclick=()=>api('POST','/api/c/'+SLUG+'/command',{cmd:'confetti'});
+$('goalBtn').onclick=()=>api('POST','/api/c/'+SLUG+'/command',{cmd:'goal'});
+$('undoBtn').onclick=async()=>{const r=document.querySelector('#rows tr:not(.hidden)');if(!r)return;if(!confirm('לבטל את התרומה האחרונה?'))return;await api('DELETE',`/api/c/${SLUG}/donations/${r.dataset.id}`);toast('בוטלה')};
+$('rows').onclick=async e=>{const d=e.target.closest('[data-del]'),r=e.target.closest('[data-restore]'),ed=e.target.closest('[data-edit]');
+  if(d&&confirm('להסיר את התרומה מהמסך?'))await api('DELETE',`/api/c/${SLUG}/donations/${d.dataset.del}`);
+  if(r)await api('POST',`/api/c/${SLUG}/donations/${r.dataset.restore}/restore`);
+  if(ed){const tr=ed.closest('tr');const donor=prompt('שם',tr.children[1].textContent.replace(/^אנונימי · /,''));if(donor===null)return;const amount=prompt('סכום',tr.children[2].textContent.replace(/[^\d]/g,''));if(amount===null)return;const dedication=prompt('הקדשה',tr.children[3].textContent);await api('PUT',`/api/c/${SLUG}/donations/${ed.dataset.edit}`,{donor,amount:Number(amount),dedication})}
+};
+$('msgBtn').onclick=()=>{const t=$('msgText').value.trim();if(!t)return;api('POST','/api/c/'+SLUG+'/message',{text:t,seconds:12}).then(()=>{toast('נשלח למסכים');$('msgText').value=''})};
+$('copyUrl').onclick=async()=>{try{await navigator.clipboard.writeText($('screenUrl').textContent);toast('הקישור הועתק')}catch(e){toast('סמנו והעתיקו ידנית')}};
+document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>api('POST','/api/c/'+SLUG+'/command',{cmd:b.dataset.cmd,arg:'chime'}).then(()=>toast('נשלח')));
+$('resetBtn').onclick=async()=>{if(!confirm('לאפס את כל התרומות של הקמפיין מהמסך? הן יישארו בייצוא.'))return;await api('POST','/api/c/'+SLUG+'/reset');toast('אופס')};
+
+/* settings autosave */
+let pending={};function save(patch,extra){clearTimeout(saveT);Object.assign(ST.settings,patch);Object.assign(pending,patch);saveT=setTimeout(async()=>{const body={settings:pending,...(extra||{})};pending={};try{await api('PUT','/api/c/'+SLUG,body);toast('נשמר')}catch(e){toast(e.message)}},350)}
+document.querySelectorAll('[data-s]').forEach(el=>el.addEventListener(el.type==='checkbox'||el.tagName==='SELECT'||el.type==='color'||el.type==='range'?'change':'input',()=>{const v=el.type==='checkbox'?el.checked:(el.type==='number'||el.type==='range'?Number(el.value):el.value);save({[el.dataset.s]:v})}));
+$('goal').addEventListener('input',()=>{clearTimeout(saveT);saveT=setTimeout(()=>api('PUT','/api/c/'+SLUG,{goal:Number($('goal').value)}).then(()=>toast('היעד עודכן')),400)});
+$('themes').onclick=e=>{const b=e.target.closest('.theme');if(!b)return;const[,p,b1,b2,t]=THEMES[b.dataset.th];const patch={theme:b.dataset.th,primary:p,bg1:b1,bg2:b2,text:t};Object.assign(ST.settings,patch);fill();clearTimeout(saveT);api('PUT','/api/c/'+SLUG,{settings:patch}).then(()=>toast('הערכה הוחלה'))};
+document.querySelectorAll('[data-snd]').forEach(b=>b.onclick=()=>{save({[b.dataset.for]:b.dataset.snd});fill();previewSound(b.dataset.snd)});
+$('tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;$('tabs').querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===b.dataset.t))};
+document.querySelectorAll('[data-up]').forEach(inp=>inp.onchange=async()=>{const f=inp.files[0];if(!f)return;const fd=new FormData();fd.append('file',f);toast('מעלה…');const r=await fetch('/api/upload',{method:'POST',headers:{'x-pin':PIN},body:fd}).then(r=>r.json());if(r.url){save({[inp.dataset.up]:r.url});fill()}else toast(r.error||'שגיאה בהעלאה')});
+document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{save({[b.dataset.clear]:''});fill()});
+$('camp').onchange=()=>{SLUG=$('camp').value;localStorage.setItem('slug',SLUG);load();connect()};
+$('newCamp').onclick=async()=>{const name=prompt('שם הקמפיין החדש');if(!name)return;const goal=prompt('יעד','100000');try{const c=await api('POST','/api/campaigns',{name,goal});SLUG=c.slug;localStorage.setItem('slug',SLUG);boot()}catch(e){toast(e.message)}};
+
+/* preview sound locally */
+let AC;function previewSound(n){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime;const tone=(f,d,l,ty='sine',g=.2)=>{const o=AC.createOscillator(),v=AC.createGain();o.type=ty;o.frequency.value=f;v.gain.setValueAtTime(0,t+d);v.gain.linearRampToValueAtTime(g,t+d+.02);v.gain.exponentialRampToValueAtTime(.0001,t+d+l);o.connect(v).connect(AC.destination);o.start(t+d);o.stop(t+d+l+.05)};
+  ({chime:()=>[523,659,784,1046].forEach((f,i)=>tone(f,i*.09,1)),bell:()=>{tone(880,0,2,'sine',.3);tone(1760,0,1,'sine',.08)},coins:()=>{for(let i=0;i<7;i++)tone(2000+Math.random()*1800,i*.07,.18,'triangle',.12)},harp:()=>[261,329,392,523,659,784,1046].forEach((f,i)=>tone(f,i*.06,1.5,'triangle',.14)),fanfare:()=>[[392,0,.18],[392,.2,.18],[392,.4,.18],[523,.6,.6],[659,1.1,.25],[784,1.35,.9]].forEach(([f,d,l])=>tone(f,d,l,'sawtooth',.12)),pop:()=>{tone(600,0,.12);tone(900,.05,.15)},shofar:()=>tone(330,0,1.8,'sawtooth',.15),none:()=>{}})[n]?.()}catch(e){}}
+
+/* live refresh */
+function connect(){try{ws&&ws.close()}catch(e){}ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws?c='+encodeURIComponent(SLUG));ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='state'){ST=m.state;fill();loadRows()}if(m.type==='donation'&&!m.test){ST.total=m.total;ST.count=m.count;fill();loadRows()}};ws.onclose=()=>setTimeout(connect,2000)}
+</script>
+</body>
+</html>
