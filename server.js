@@ -11,7 +11,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA = process.env.DATA_DIR || path.join(__dirname, 'data');
 fs.mkdirSync(path.join(DATA, 'uploads'), { recursive: true });
-const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
+const PIN_FILE = path.join(DATA, 'pin.txt');
+let ADMIN_PIN = process.env.ADMIN_PIN || '1234';
+try { const p = fs.readFileSync(PIN_FILE, 'utf8').trim(); if (p) ADMIN_PIN = p; } catch {}
 
 const db = new Database(path.join(DATA, 'tromot.db'));
 db.pragma('journal_mode = WAL');
@@ -79,7 +81,7 @@ const auth = (req, res, next) => { if ((req.get('x-pin') || req.query.pin) === A
 
 // ---- public ----
 app.get('/api/c/:slug', (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).json({ error: 'not found' }); res.json(state(c)); });
-app.get('/api/c/:slug/donations', (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).json({ error: 'not found' }); res.json(db.prepare('SELECT * FROM donations WHERE campaign_id=? ORDER BY id DESC LIMIT 500').all(c.id)); });
+app.get('/api/c/:slug/donations', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).json({ error: 'not found' }); res.json(db.prepare('SELECT * FROM donations WHERE campaign_id=? ORDER BY id DESC LIMIT 500').all(c.id)); });
 
 // ---- admin ----
 app.post('/api/login', (req, res) => res.json({ ok: (req.body?.pin || '') === ADMIN_PIN }));
@@ -117,6 +119,49 @@ app.post('/api/c/:slug/reset', auth, (req, res) => { const c = getCampaign(req.p
 app.get('/api/c/:slug/export.csv', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); const rows = db.prepare('SELECT id,donor,amount,dedication,city,anonymous,hidden,created_at FROM donations WHERE campaign_id=? ORDER BY id').all(c.id); res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="${c.slug}.csv"`); res.send('﻿' + ['id,donor,amount,dedication,city,anonymous,hidden,created_at', ...rows.map(r => [r.id, r.donor, r.amount, r.dedication, r.city, r.anonymous, r.hidden, r.created_at].map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(','))].join('\n')); });
 const upload = multer({ storage: multer.diskStorage({ destination: path.join(DATA, 'uploads'), filename: (_, f, cb) => cb(null, crypto.randomBytes(8).toString('hex') + path.extname(f.originalname).toLowerCase()) }), limits: { fileSize: 25 * 1024 * 1024 }, fileFilter: (_, f, cb) => cb(null, /^(image|video|audio)\//.test(f.mimetype)) });
 app.post('/api/upload', auth, upload.single('file'), (req, res) => { if (!req.file) return res.status(400).json({ error: 'קובץ לא נתמך' }); res.json({ url: '/uploads/' + req.file.filename }); });
+
+// ---- admin extras ----
+app.post('/api/pin', auth, (req, res) => { const n = String(req.body?.pin || '').trim(); if (n.length < 4) return res.status(400).json({ error: 'הקוד חייב להכיל לפחות 4 תווים' }); ADMIN_PIN = n; fs.writeFileSync(PIN_FILE, n); res.json({ ok: true }); });
+app.get('/api/c/:slug/stats', auth, (req, res) => {
+  const c = getCampaign(req.params.slug); if (!c) return res.status(404).end();
+  const base = 'FROM donations WHERE campaign_id=? AND hidden=0';
+  const sum = db.prepare(`SELECT COALESCE(SUM(amount),0) total, COUNT(*) n, COALESCE(AVG(amount),0) avg, COALESCE(MAX(amount),0) max, COALESCE(MIN(amount),0) min ${base}`).get(c.id);
+  const hourly = db.prepare(`SELECT strftime('%Y-%m-%d %H:00', created_at) h, COUNT(*) n, SUM(amount) s ${base} GROUP BY h ORDER BY h DESC LIMIT 24`).all(c.id).reverse();
+  const cities = db.prepare(`SELECT city, COUNT(*) n, SUM(amount) s ${base} AND city<>'' GROUP BY city ORDER BY s DESC LIMIT 8`).all(c.id);
+  const buckets = db.prepare(`SELECT amount a, COUNT(*) n ${base} GROUP BY amount ORDER BY n DESC LIMIT 8`).all(c.id);
+  const last = db.prepare(`SELECT created_at ${base} ORDER BY id DESC LIMIT 1`).get(c.id);
+  res.json({ ...sum, hourly, cities, buckets, last: last?.created_at || null });
+});
+app.post('/api/c/:slug/import', auth, (req, res) => {
+  const c = getCampaign(req.params.slug); if (!c) return res.status(404).end();
+  const rows = Array.isArray(req.body?.rows) ? req.body.rows : []; let n = 0;
+  const ins = db.prepare('INSERT INTO donations(campaign_id,donor,amount,dedication,city,anonymous) VALUES(?,?,?,?,?,?)');
+  db.transaction(() => { for (const r of rows) { const amt = Math.round(Number(r.amount)); if (r.donor?.toString().trim() && amt > 0) { ins.run(c.id, r.donor.toString().trim(), amt, r.dedication || '', r.city || '', r.anonymous ? 1 : 0); n++; } } })();
+  pushState(c); res.json({ ok: true, imported: n });
+});
+app.get('/api/c/:slug/backup', auth, (req, res) => {
+  const c = getCampaign(req.params.slug); if (!c) return res.status(404).end();
+  res.setHeader('Content-Disposition', `attachment; filename="${c.slug}-backup.json"`);
+  res.json({ campaign: { name: c.name, goal: c.goal, settings: JSON.parse(c.settings || '{}') }, donations: db.prepare('SELECT donor,amount,dedication,city,anonymous,hidden,created_at FROM donations WHERE campaign_id=? ORDER BY id').all(c.id) });
+});
+app.post('/api/c/:slug/restore', auth, (req, res) => {
+  const c = getCampaign(req.params.slug); if (!c) return res.status(404).end();
+  const b = req.body; if (!b?.campaign || !Array.isArray(b.donations)) return res.status(400).json({ error: 'קובץ גיבוי לא תקין' });
+  const ins = db.prepare('INSERT INTO donations(campaign_id,donor,amount,dedication,city,anonymous,hidden,created_at) VALUES(?,?,?,?,?,?,?,COALESCE(?,CURRENT_TIMESTAMP))');
+  db.transaction(() => { db.prepare('DELETE FROM donations WHERE campaign_id=?').run(c.id); for (const d of b.donations) ins.run(c.id, String(d.donor), Math.round(Number(d.amount)) || 0, d.dedication || '', d.city || '', d.anonymous ? 1 : 0, d.hidden ? 1 : 0, d.created_at || null); db.prepare('UPDATE campaigns SET name=?, goal=?, settings=? WHERE id=?').run(b.campaign.name || c.name, Number(b.campaign.goal) || c.goal, JSON.stringify(b.campaign.settings || {}), c.id); })();
+  const u = getCampaign(c.slug); pushState(u); res.json({ ok: true });
+});
+app.post('/api/c/:slug/duplicate', auth, (req, res) => {
+  const c = getCampaign(req.params.slug); if (!c) return res.status(404).end();
+  const slug = 'c-' + crypto.randomBytes(3).toString('hex');
+  db.prepare('INSERT INTO campaigns(slug,name,goal,settings) VALUES(?,?,?,?)').run(slug, c.name + ' (עותק)', c.goal, c.settings); res.json(getCampaign(slug));
+});
+app.delete('/api/c/:slug', auth, (req, res) => {
+  const c = getCampaign(req.params.slug); if (!c) return res.status(404).end();
+  if (db.prepare('SELECT COUNT(*) n FROM campaigns').get().n < 2) return res.status(400).json({ error: 'לא ניתן למחוק את הקמפיין האחרון' });
+  db.prepare('DELETE FROM donations WHERE campaign_id=?').run(c.id); db.prepare('DELETE FROM campaigns WHERE id=?').run(c.id); res.json({ ok: true });
+});
+app.post('/api/c/:slug/purge/:id', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); db.prepare('DELETE FROM donations WHERE id=? AND campaign_id=? AND hidden=1').run(req.params.id, c.id); res.json({ ok: true }); });
 
 app.get('/screen/:slug', (_, res) => res.sendFile(path.join(__dirname, 'public', 'screen.html')));
 app.get('/admin', (_, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
