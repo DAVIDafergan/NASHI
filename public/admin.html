@@ -192,7 +192,7 @@ dialog h2{margin:0 0 14px;font-size:18px}
      <section class="page" data-page="design">
       <div class="card">
         <h2>סגנון כולל</h2><p class="sub">בחירה בין הסגנון הרשמי של הקמפיין לבין ערכות צבע.</p>
-        <div class="row2"><div class="f"><label>סגנון</label><select data-s="skin"><option value="">קלאסי (ערכות צבע)</option><option value="shtar">שטר שותפות – קלף וזהב</option></select></div>
+        <div class="row2"><div class="f"><label>סגנון</label><select data-s="skin"><option value="">קלאסי (ערכות צבע)</option><option value="shtar">שטר שותפות – קלף וזהב</option><option value="royal">מלכותי – כהה עם זהב</option></select></div>
         <div class="f"><label>פריסה</label><select data-s="layout"><option value="wallcounter">קיר תורמים + מונה</option><option value="split">מונה + רשימת תורמים</option><option value="center">מונה במרכז</option><option value="list-left">רשימה + מונה</option><option value="minimal">מינימלי, מונה ענק</option><option value="wall">קיר תורמים בלבד</option></select></div></div>
       </div>
       <div class="card" id="shtarBox">
@@ -366,7 +366,7 @@ async function boot(){
   await load();connect();go(PAGE);refreshStats();setInterval(refreshStats,60000);
 }
 async function loadCamps(){const cs=await api('GET','/api/campaigns');if(!cs.find(c=>c.slug===SLUG))SLUG=cs[0].slug;$('camp').innerHTML=cs.map(c=>`<option value="${c.slug}" ${c.slug===SLUG?'selected':''}>${esc(c.name)}</option>`).join('')}
-function quickBtns(){const s=ST&&ST.settings;const t=s&&s.skin==='shtar'?[s.tier1Amt,s.tier2Amt,s.tier3Amt].filter(Boolean):[];const q=[...new Set([...t,...QUICK])].sort((x,y)=>x-y);$('quick').innerHTML=q.map(a=>`<button data-a="${a}" class="${t.includes(a)?'tier':''}">${fmt(a)}</button>`).join('')}
+function quickBtns(){const s=ST&&ST.settings;const t=s&&(s.skin==='shtar'||s.skin==='royal')?[s.tier1Amt,s.tier2Amt,s.tier3Amt].filter(Boolean):[];const q=[...new Set([...t,...QUICK])].sort((x,y)=>x-y);$('quick').innerHTML=q.map(a=>`<button data-a="${a}" class="${t.includes(a)?'tier':''}">${fmt(a)}</button>`).join('')}
 async function load(){ST=await api('GET','/api/c/'+SLUG);fill();await loadRows()}
 function fill(){
   const s=ST.settings;const url=location.origin+'/screen/'+SLUG+(PREV?'?s='+PREV:'');$('screenUrl').textContent=url;$('openScreen').href=url;if($('prev').dataset.u!==url){$('prev').dataset.u=url;$('prev').src=url}renderScreens();
@@ -375,7 +375,7 @@ function fill(){
   $('goal').value=ST.goal;$('campName').value=ST.name;
   $('kTotal').textContent=s.currency+fmt(ST.total);$('kCount').textContent=fmt(ST.count);const pct=ST.goal?Math.min(100,ST.total/ST.goal*100):0;$('kPct').textContent=Math.round(pct)+'%';$('kBar').style.width=pct+'%';$('kGoal').textContent=ST.goal?'מתוך '+s.currency+fmt(ST.goal)+' · נותרו '+s.currency+fmt(Math.max(0,ST.goal-ST.total)):'ללא יעד';
   document.querySelectorAll('[data-s]').forEach(el=>{if(el===act)return;const k=el.dataset.s;if(el.type==='checkbox')el.checked=!!s[k];else el.value=s[k]??''});
-  quickBtns();$('shtarBox').hidden=s.skin!=='shtar';document.querySelectorAll('.theme').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===s.theme));
+  quickBtns();$('shtarBox').hidden=!['shtar','royal'].includes(s.skin);document.querySelectorAll('.theme').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===s.theme));
   document.querySelectorAll('[data-snd]').forEach(b=>b.setAttribute('aria-pressed',s[b.dataset.for]===b.dataset.snd));
   $('logoPrev').hidden=!s.logo;$('logoPrev').src=s.logo||'';$('bgImagePrev').hidden=!s.bgImage;$('bgImagePrev').src=s.bgImage||'';$('bgVideoPrev').textContent=s.bgVideo?'סרטון הועלה':'';
   renderFeed();
@@ -431,7 +431,7 @@ $('pinBtn').onclick=async()=>{const n=$('newPin').value.trim();try{await api('PO
 
 /* settings autosave */
 let pending={};function save(patch,extra){clearTimeout(saveT);Object.assign(ST.settings,patch);Object.assign(pending,patch);saveT=setTimeout(async()=>{const body={settings:pending,...(extra||{})};pending={};try{await api('PUT','/api/c/'+SLUG,body);toast('נשמר')}catch(e){toast(e.message)}},350)}
-document.querySelectorAll('[data-s]').forEach(el=>el.addEventListener(el.type==='checkbox'||el.tagName==='SELECT'||el.type==='color'||el.type==='range'?'change':'input',()=>{const v=el.type==='checkbox'?el.checked:(el.type==='number'||el.type==='range'?Number(el.value):el.value);save({[el.dataset.s]:v});if(el.dataset.s==='skin')$('shtarBox').hidden=v!=='shtar'}));
+document.querySelectorAll('[data-s]').forEach(el=>el.addEventListener(el.type==='checkbox'||el.tagName==='SELECT'||el.type==='color'||el.type==='range'?'change':'input',()=>{const v=el.type==='checkbox'?el.checked:(el.type==='number'||el.type==='range'?Number(el.value):el.value);save({[el.dataset.s]:v});if(el.dataset.s==='skin')$('shtarBox').hidden=!['shtar','royal'].includes(v)}));
 $('goal').addEventListener('input',()=>{clearTimeout(saveT);saveT=setTimeout(()=>api('PUT','/api/c/'+SLUG,{goal:Number($('goal').value)}).then(()=>toast('היעד עודכן')),400)});
 $('campName').addEventListener('input',()=>{clearTimeout(saveT);saveT=setTimeout(()=>api('PUT','/api/c/'+SLUG,{name:$('campName').value}).then(()=>{toast('השם עודכן');loadCamps()}),500)});
 $('themes').onclick=e=>{const b=e.target.closest('.theme');if(!b)return;const[,p,b1,b2,t]=THEMES[b.dataset.th];const patch={theme:b.dataset.th,primary:p,bg1:b1,bg2:b2,text:t};Object.assign(ST.settings,patch);fill();clearTimeout(saveT);api('PUT','/api/c/'+SLUG,{settings:patch}).then(()=>toast('הערכה הוחלה'))};
@@ -454,7 +454,7 @@ function renderScreens(){
    <div class="f"><label>פריסה</label><select data-sf="layout">${LAY.map(([v,n])=>`<option value="${v}" ${(o.layout||'')===v?'selected':''}>${n}</option>`).join('')}</select></div></div>
    <div class="row4"><div class="f"><label>צבעים</label><select data-sf="theme"><option value="">כמו הקמפיין</option>${Object.entries(THEMES).map(([k,[n]])=>`<option value="${k}" ${o.theme===k?'selected':''}>${n}</option>`).join('')}</select></div>
    <div class="f"><label>קפיצה</label><select data-sf="popupStyle"><option value="">כמו הקמפיין</option><option value="card" ${o.popupStyle==='card'?'selected':''}>כרטיס</option><option value="banner" ${o.popupStyle==='banner'?'selected':''}>פס</option><option value="full" ${o.popupStyle==='full'?'selected':''}>מסך מלא</option></select></div>
-   <div class="f"><label>סגנון</label><select data-sf="skin"><option value="">כמו הקמפיין</option><option value="classic" ${o.skin==='classic'?'selected':''}>קלאסי</option><option value="shtar" ${o.skin==='shtar'?'selected':''}>שטר שותפות</option></select></div>
+   <div class="f"><label>סגנון</label><select data-sf="skin"><option value="">כמו הקמפיין</option><option value="classic" ${o.skin==='classic'?'selected':''}>קלאסי</option><option value="shtar" ${o.skin==='shtar'?'selected':''}>שטר שותפות</option><option value="royal" ${o.skin==='royal'?'selected':''}>מלכותי כהה</option></select></div>
    <div class="f"><label>עמודות בקיר</label><input type="number" min="1" max="8" data-sf="wallCols" value="${o.wallCols||''}" placeholder="אוטו'"></div></div>
    <label class="chk" style="border:0"><input type="checkbox" data-sf="mute" ${o.mute?'checked':''}><span>מסך שקט (בלי צליל)</span></label>`:`<p class="hint" style="margin:0 0 8px">פועל לפי ההגדרות הכלליות ובגודל המסך עצמו.</p>`}
    <div class="url"><b>${url}</b><button class="btn ghost sm" data-copy="${url}">העתקה</button><a class="btn ghost sm" href="${url}" target="_blank">פתיחה</a></div></div>`};
