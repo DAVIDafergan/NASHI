@@ -396,6 +396,47 @@ body[data-skin="shtar"] .ticker{font-family:"Frank Ruhl Libre",serif;font-weight
 body[data-skin="shtar"] .sk-paper{overflow:hidden}
 body[data-tone="dark"] .sk-paper::before{background-image:none}
 body[data-tone="dark"] .sk-scroll::after{content:"";position:absolute;inset:0;border-radius:2cqh;background:linear-gradient(105deg,transparent 40%,rgba(255,236,170,.10) 50%,transparent 60%) 220% 0/260% 100% no-repeat;animation:glint 9s ease-in-out infinite;pointer-events:none}
+/* ===== GRAND: full-bleed, no frame, no panel ===== */
+body[data-fill="1"] .sk-scroll,body[data-fill="1"] .sk-o,body[data-fill="1"] .sk-plaque:not(.logo){display:none!important}
+body[data-fill="1"] .sk{background:radial-gradient(120% 90% at 50% 0%,#14204f 0%,#0a1130 45%,#04060f 100%)}
+body[data-fill="1"] .sk-rays{background:repeating-conic-gradient(from 0deg,transparent 0 7deg,rgba(241,207,114,.035) 7deg 9deg);opacity:1;top:-10%}
+body[data-fill="1"] .sk::before{content:"";position:absolute;left:50%;top:-20cqh;width:150cqh;height:90cqh;translate:-50% 0;background:radial-gradient(closest-side,rgba(241,207,114,.18),transparent);pointer-events:none}
+body[data-fill="1"] .sk::after{top:62%;width:170cqh;height:170cqh;background:radial-gradient(closest-side,rgba(241,207,114,.10),transparent)}
+body[data-fill="1"] .sk-vig{background:radial-gradient(90% 85% at 50% 50%,transparent 45%,rgba(0,0,0,.65) 100%)}
+body[data-skin="shtar"][data-fill="1"] .stage{left:0;right:0;top:0;bottom:0;padding:3.2cqh 3.6cqw 0;grid-template-rows:auto minmax(0,1fr) auto auto}
+body[data-fill="1"] .sk-head h2{font-size:6.2cqh;line-height:1.05;margin:0}
+body[data-fill="1"] .sk-head p{display:block;font-size:2.1cqh;margin-top:.8cqh}
+body[data-fill="1"] .sk-quote{font-size:2cqh;margin-top:1cqh}
+body[data-fill="1"] .sk-head::after{content:"";display:block;width:26cqw;height:1px;margin:1.6cqh auto 0;background:linear-gradient(90deg,transparent,#f1cf72,transparent)}
+body[data-skin="shtar"][data-fill="1"] main{grid-template-columns:1fr 1.25fr;gap:3.2cqw;padding-block:2.4cqh}
+body[data-fill="1"] .wall{align-content:stretch;grid-auto-rows:1fr;height:100%}
+body[data-fill="1"] .tile{display:flex;flex-direction:column;justify-content:center}
+body[data-fill="1"] .total b{font-size:calc(19cqh*var(--k,1))!important}
+body[data-fill="1"] .total small{font-size:2.4cqh}
+body[data-fill="1"] .total .of{font-size:3cqh}
+body[data-fill="1"] .meter{height:2cqh}
+body[data-fill="1"] .stats{font-size:2.6cqh}
+body[data-skin="shtar"][data-fill="1"] .tile{padding:2cqh 1.2cqw;border-radius:.8cqh;background:linear-gradient(165deg,rgba(255,255,255,.09),rgba(255,255,255,.02))}
+body[data-fill="1"] .tile .n{font-size:calc(3.3cqh*var(--ts,1))}
+body[data-fill="1"] .tile .a{font-size:calc(3.2cqh*var(--ts,1))}
+body[data-fill="1"] .tile .d{font-size:calc(1.9cqh*var(--ts,1))}
+body[data-fill="1"] .side h3{font-size:2.2cqh}
+body[data-skin="shtar"][data-fill="1"] .tiers{margin:0 0 1.6cqh;gap:1.4cqw}
+body[data-skin="shtar"][data-fill="1"] footer{margin:0 -3.6cqw;padding:0 3.6cqw;border-radius:0;border-width:1px 0 0 0;min-height:6.4cqh;background:rgba(0,0,0,.4)}
+body[data-fill="1"] .sk-plaque.logo{display:block!important;left:auto;right:3.6cqw;top:3cqh;translate:none;width:11cqh;height:11cqh;border-radius:0;background:none!important;box-shadow:none}
+body[data-fill="1"] .sk-plaque.logo::before{width:100%;height:100%}
+@container (max-aspect-ratio:1/1){
+  body[data-skin="shtar"][data-fill="1"] .stage{left:0;right:0;top:0;bottom:0;padding:2.4cqh 5cqw 0}
+  body[data-fill="1"] .sk-head h2{font-size:min(8cqw,4.6cqh)}
+  body[data-fill="1"] .total b{font-size:calc(min(19cqw,11cqh)*var(--k,1))!important}
+  body[data-fill="1"] .tile .n{font-size:calc(min(4.2cqw,2.2cqh)*var(--ts,1))}body[data-fill="1"] .tile .a{font-size:calc(min(4cqw,2.1cqh)*var(--ts,1))}
+  body[data-skin="shtar"][data-fill="1"] footer{margin:0 -5cqw;padding:0 5cqw}
+}
+@container (min-aspect-ratio:19/10){
+  body[data-skin="shtar"][data-fill="1"] .stage{left:0;right:0;top:0;bottom:0;padding:2.4cqh 3.4cqw 0}
+  body[data-fill="1"] .sk-head h2{font-size:5cqh}body[data-fill="1"] .sk-head p{display:none}
+  body[data-fill="1"] .total b{font-size:calc(17cqh*var(--k,1))!important}
+}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -478,10 +519,10 @@ let raf=0;function loop(){raf=requestAnimationFrame(loop);cx.clearRect(0,0,cv.wi
 
 /* ---------- render ---------- */
 function applySettings(s0){
-  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const royal=s.skin==='royal';
+  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
   settings=s;fitFrame();const r=document.documentElement.style;
   r.setProperty('--p',s.primary);r.setProperty('--bg1',s.bg1);r.setProperty('--bg2',s.bg2);r.setProperty('--t',s.text);r.setProperty('--f',`"${s.font}"`);r.setProperty('--dim',s.dim);
-  document.body.dataset.layout=s.layout;document.body.dataset.skin=(s.skin==='shtar'||royal)?'shtar':'';document.body.dataset.tone=royal?'dark':'';initSkin(s);document.body.dataset.popup=s.popupStyle;
+  document.body.dataset.layout=s.layout;document.body.dataset.skin=(s.skin==='shtar'||royal)?'shtar':'';document.body.dataset.tone=royal?'dark':'';document.body.dataset.fill=grand?'1':'';initSkin(s);document.body.dataset.popup=s.popupStyle;
   $('title').textContent=s.title;$('subtitle').textContent=s.subtitle;$('subtitle').hidden=!s.subtitle;
   const lg=$('logo');if(s.logo){lg.src=s.logo;lg.hidden=false}else lg.hidden=true;
   const bg=$('bg');bg.innerHTML='';bg.classList.toggle('nomedia',!(s.bgImage||s.bgVideo));
@@ -515,7 +556,7 @@ function renderList(st){
 }
 let skInit=false;
 function initSkin(s){
-  if(s.skin!=='shtar'&&s.skin!=='royal')return;
+  if(s.skin!=='shtar'&&s.skin!=='royal'&&s.skin!=='grand')return;
   $('skTitle').textContent=s.scrollTitle||s.title;const sp=s.scrollSub||s.subtitle;$('skSub').textContent=sp;$('skSub').hidden=!sp;
   const q=$('skQuote');q.textContent=s.quote||'';q.hidden=!s.quote;
   const pi=s.plaqueImg;$('plaque').style.display=pi==='none'?'none':'';$('plaque').style.setProperty('--img',`url(${pi||'/skin/plaque.webp'})`);
@@ -537,7 +578,7 @@ const tierList=()=>[1,2,3].map(i=>({name:settings['tier'+i+'Name']||'',sub:setti
 function tierOf(a){let r=0;tierList().forEach((t,i)=>{if(t.amt&&a>=t.amt)r=i+1});return r}
 let prevTier=[0,0,0,0];
 function renderTiers(st){
-  if(settings.skin!=='shtar'&&settings.skin!=='royal')return;const T=tierList(),cur=settings.currency||'₪';const c=[0,0,0,0];
+  if(!['shtar','royal','grand'].includes(settings.skin))return;const T=tierList(),cur=settings.currency||'₪';const c=[0,0,0,0];
   Object.entries(st.amounts||{}).forEach(([a,n])=>{c[tierOf(Number(a))]+=n});
   const show=T.some(t=>t.amt);$('tiers').style.display=show?'':'none';
   $('tiers').innerHTML=T.map((t,i)=>`<div class="tier t${i+1} ${c[i+1]>prevTier[i+1]&&prevTier.some(Boolean)?'bump':''}"><small>${esc(t.name)}${t.sub?' <span class="sub">· '+esc(t.sub)+'</span>':''}</small><b>${esc(cur)}${fmt(t.amt)}</b><em>${c[i+1]?fmt(c[i+1])+' שותפים':'היו הראשונים'}</em></div>`).join('');
@@ -561,7 +602,7 @@ const queue=[];let busy=false;
 function enqueue(ev){queue.push(ev);pump()}
 function pump(){if(busy||!queue.length)return;busy=true;const ev=queue.shift();showPop(ev,()=>{busy=false;setTimeout(pump,350)})}
 function showPop(ev,done){
-  const d=ev.donation;const sk=settings.skin==='shtar'||settings.skin==='royal';const tr=sk?tierOf(d.amount):0;const big=d.amount>=Number(settings.bigThreshold||1e9)||(sk&&tr===3);const cur=settings.currency||'₪';
+  const d=ev.donation;const sk=['shtar','royal','grand'].includes(settings.skin);const tr=sk?tierOf(d.amount):0;const big=d.amount>=Number(settings.bigThreshold||1e9)||(sk&&tr===3);const cur=settings.currency||'₪';
   $('card').classList.toggle('big',big);
   $('pk').textContent=sk?'הריני השותף':(big?'תרומה מיוחדת!':'תרומה חדשה');$('card').dataset.tier=tr;$('ptier').textContent=tr?(tierList()[tr-1].name||'שותף'):'';
   $('pn').textContent=d.donor;$('pa').innerHTML=settings.showAmount?`<span class="cur">${esc(cur)}</span>${fmt(d.amount)}`:'';

@@ -111,6 +111,9 @@ tr.hid td{opacity:.45}tr.hid td.nm{text-decoration:line-through}
 dialog{border:0;border-radius:16px;padding:22px;width:min(460px,94vw);box-shadow:0 30px 80px rgba(0,0,0,.35)}dialog::backdrop{background:rgba(10,15,35,.55)}
 dialog h2{margin:0 0 14px;font-size:18px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,140%);background:#111;color:#fff;padding:12px 20px;border-radius:10px;transition:transform .35s;z-index:99;font-weight:500;max-width:90vw}.toast.on{transform:translate(-50%,0)}
+.deck{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.tb{border:1px solid var(--line);background:#fff;border-radius:12px;padding:16px 12px;cursor:pointer;font-weight:700;font-size:15px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;min-height:74px;justify-content:center;transition:transform .12s,border-color .2s,background .2s}
+.tb:hover{border-color:var(--p2);background:#f5f7fd}.tb:active{transform:scale(.97)}.tb i{font-style:normal;font-size:22px}
 .mnav{display:none}
 @media (max-width:860px){
   .shell{grid-template-columns:1fr}aside.nav{display:none}
@@ -156,14 +159,7 @@ dialog h2{margin:0 0 14px;font-size:18px}
         <div class="kpi"><small>תורמים</small><b id="kCount">0</b><em id="kLast"></em></div>
         <div class="kpi"><small>ממוצע לתרומה</small><b id="kAvg">0</b><em id="kMax"></em></div>
       </div>
-      <div class="card">
-        <h2>הוספת תרומה <span class="hint">תקפוץ מיד בכל המסכים</span></h2>
-        <div class="chips" id="quick"></div>
-        <div class="row2"><div class="f"><label>שם התורם/ת</label><input id="dDonor" placeholder="למשל: משפחת כהן" autocomplete="off"></div><div class="f"><label>סכום</label><input id="dAmount" type="number" inputmode="numeric" min="1" placeholder="180"></div></div>
-        <div class="row2"><div class="f"><label>הקדשה (לא חובה)</label><input id="dDed" placeholder="לעילוי נשמת / לרפואת / לזכות"></div><div class="f"><label>עיר (לא חובה)</label><input id="dCity"></div></div>
-        <label class="chk" style="border:0"><input type="checkbox" id="dAnon"><span>תורם אנונימי (יוצג "תורם/ת אנונימי/ת")</span></label>
-        <button class="btn gold big" id="addBtn" style="margin-top:6px">הוספה והקפצה למסך</button>
-      </div>
+      <div class="card" style="background:linear-gradient(135deg,#0F1830,#1A2B5C);color:#fff;border:0;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b style="font-size:17px">מחכים לתרומה?</b><div style="opacity:.75;font-size:13.5px">הוספה מהירה עם קפיצה במסך נמצאת בלשונית "שליטה חיה" (או מקש N).</div></div><button class="btn gold" data-go="live">פתיחת שליטה חיה ←</button></div>
       <div class="card"><h2>תרומות אחרונות <button class="btn ghost sm" data-go="home">כל התרומות ←</button></h2><div class="feed" id="feed"></div></div>
       <div class="card"><h2>תרומות לפי שעה <span class="hint">24 שעות אחרונות עם פעילות</span></h2><div class="bars" id="bars"></div><div class="axis" id="axis"></div></div>
      </section>
@@ -186,7 +182,7 @@ dialog h2{margin:0 0 14px;font-size:18px}
       <div class="stepnote">כל קבוצה נפתחת בלחיצה על הכותרת. השינויים נשמרים אוטומטית ומופיעים בתצוגה המקדימה משמאל.</div>
       <div class="card">
         <h2>סגנון כולל</h2><p class="sub">בחירה בין הסגנון הרשמי של הקמפיין לבין ערכות צבע.</p>
-        <div class="row2"><div class="f"><label>סגנון</label><select data-s="skin"><option value="">קלאסי (ערכות צבע)</option><option value="shtar">שטר שותפות – קלף וזהב</option><option value="royal">מלכותי – כהה עם זהב</option></select></div>
+        <div class="row2"><div class="f"><label>סגנון</label><select data-s="skin"><option value="">קלאסי (ערכות צבע)</option><option value="shtar">שטר שותפות – קלף וזהב</option><option value="grand">מסך מלא – יוקרתי (מומלץ)</option><option value="royal">מלכותי – כהה עם מסגרת</option></select></div>
         <div class="f"><label>פריסה</label><select data-s="layout"><option value="wallcounter">קיר תורמים + מונה</option><option value="split">מונה + רשימת תורמים</option><option value="center">מונה במרכז</option><option value="list-left">רשימה + מונה</option><option value="minimal">מינימלי, מונה ענק</option><option value="wall">קיר תורמים בלבד</option></select></div></div>
       </div>
       <div class="card" id="shtarBox">
@@ -274,17 +270,29 @@ dialog h2{margin:0 0 14px;font-size:18px}
      <!-- ===== שליטה חיה ===== -->
      <section class="page" data-page="live">
       <div class="card">
-        <h2>הודעה חיה למסכים</h2><p class="sub">מופיעה על כל המסכים מיד.</p>
-        <div class="f"><input id="msgText" placeholder="למשל: עוד 10 דקות לסיום!"></div>
-        <div class="chips" id="msgPresets"></div>
-        <div class="inl"><div class="f" style="max-width:160px"><label>משך (שניות)</label><input type="number" id="msgSec" value="12" min="3" max="120"></div><button class="btn" id="msgBtn">שליחה למסכים</button></div>
+        <h2>הוספת תרומה <span class="hint">תקפוץ מיד בכל המסכים</span></h2>
+        <div class="chips" id="quick"></div>
+        <div class="row2"><div class="f"><label>שם התורם/ת</label><input id="dDonor" placeholder="למשל: משפחת כהן" autocomplete="off"></div><div class="f"><label>סכום</label><input id="dAmount" type="number" inputmode="numeric" min="1" placeholder="180"></div></div>
+        <div class="row2"><div class="f"><label>הקדשה (לא חובה)</label><input id="dDed" placeholder="לעילוי נשמת / לרפואת / לזכות"></div><div class="f"><label>עיר (לא חובה)</label><input id="dCity"></div></div>
+        <label class="chk" style="border:0"><input type="checkbox" id="dAnon"><span>תורם אנונימי (יוצג "תורם/ת אנונימי/ת")</span></label>
+        <button class="btn gold big" id="addBtn" style="margin-top:6px">הוספה והקפצה למסך</button>
+      </div>
+
+      <div class="card">
+        <h2>הודעה למסכים <span class="hint">לחיצה על הודעה מוכנה שולחת מיד</span></h2>
+        <div class="deck" id="msgPresets"></div>
+        <div class="inl" style="margin-top:12px"><div class="f"><input id="msgText" placeholder="או כתבו הודעה משלכם…"></div><div class="f" style="max-width:110px;flex:none"><input type="number" id="msgSec" value="12" min="3" max="120" title="שניות"></div><button class="btn" id="msgBtn">שליחה</button></div>
       </div>
       <div class="card">
         <h2>פעולות מהירות</h2>
-        <div class="inl"><button class="btn ghost" id="confBtn">🎉 קונפטי</button><button class="btn ghost" id="goalBtn">🏆 חגיגת יעד</button><button class="btn ghost" data-cmd="reload">⟳ רענון כל המסכים</button><button class="btn ghost" data-cmd="sound">🔊 בדיקת צליל</button></div>
-        <h3>בדיקת קפיצה</h3>
-        <div class="row3"><div class="f"><label>שם</label><input id="tDonor" value="משפחת כהן"></div><div class="f"><label>סכום</label><input id="tAmount" type="number" value="248"></div><div class="f"><label>הקדשה</label><input id="tDed" value="לעילוי נשמת"></div></div>
-        <button class="btn ghost" id="testBtn">שליחת בדיקה (לא נשמרת)</button>
+        <div class="deck">
+          <button class="tb" id="confBtn"><i>🎉</i>קונפטי</button>
+          <button class="tb" id="goalBtn"><i>🏆</i>חגיגת יעד</button>
+          <button class="tb" data-cmd="sound"><i>🔊</i>בדיקת צליל</button>
+          <button class="tb" data-cmd="reload"><i>⟳</i>רענון מסכים</button>
+          <button class="tb" id="testBtn"><i>👁</i>קפיצת בדיקה</button>
+        </div>
+        <details style="margin-top:12px"><summary class="hint" style="cursor:pointer">הגדרת קפיצת הבדיקה</summary><div class="row3" style="margin-top:10px"><div class="f"><label>שם</label><input id="tDonor" value="משפחת כהן"></div><div class="f"><label>סכום</label><input id="tAmount" type="number" value="248"></div><div class="f"><label>הקדשה</label><input id="tDed" value="לעילוי נשמת"></div></div></details>
       </div>
      </section>
 
@@ -369,11 +377,11 @@ async function boot(){
   $('themes').innerHTML=Object.entries(THEMES).map(([k,[n,p,b1,b2]])=>`<button class="theme" data-th="${k}"><div class="sw" style="background:linear-gradient(135deg,${b1},${b2});color:${p}">₪</div><span>${n}</span></button>`).join('');
   $('sounds').innerHTML=Object.entries(SOUNDS).map(([k,n])=>`<button data-snd="${k}" data-for="sound">${n}</button>`).join('');
   $('bigSounds').innerHTML=Object.entries(SOUNDS).map(([k,n])=>`<button data-snd="${k}" data-for="bigSound">${n}</button>`).join('');
-  $('msgPresets').innerHTML=['עוד 10 דקות לסיום!','תודה רבה לכל התורמים!','אפשר להצטרף גם עכשיו – סרקו את הקוד','הערב ממשיך בעוד רגע'].map(t=>`<button data-pre="${esc(t)}">${t}</button>`).join('');
+  $('msgPresets').innerHTML=['עוד 10 דקות לסיום!','תודה רבה לכל התורמים!','אפשר להצטרף גם עכשיו – סרקו את הקוד','הערב ממשיך בעוד רגע','הגענו ל-50% מהיעד!','תזכו למצוות'].map(t=>`<button class="tb" data-pre="${esc(t)}">${t}</button>`).join('');
   await load();connect();accordion();go(PAGE);refreshStats();setInterval(refreshStats,60000);
 }
 async function loadCamps(){const cs=await api('GET','/api/campaigns');if(!cs.find(c=>c.slug===SLUG))SLUG=cs[0].slug;$('camp').innerHTML=cs.map(c=>`<option value="${c.slug}" ${c.slug===SLUG?'selected':''}>${esc(c.name)}</option>`).join('')}
-function quickBtns(){const s=ST&&ST.settings;const t=s&&(s.skin==='shtar'||s.skin==='royal')?[s.tier1Amt,s.tier2Amt,s.tier3Amt].filter(Boolean):[];const q=[...new Set([...t,...QUICK])].sort((x,y)=>x-y);$('quick').innerHTML=q.map(a=>`<button data-a="${a}" class="${t.includes(a)?'tier':''}">${fmt(a)}</button>`).join('')}
+function quickBtns(){const s=ST&&ST.settings;const t=s&&['shtar','royal','grand'].includes(s.skin)?[s.tier1Amt,s.tier2Amt,s.tier3Amt].filter(Boolean):[];const q=[...new Set([...t,...QUICK])].sort((x,y)=>x-y);$('quick').innerHTML=q.map(a=>`<button data-a="${a}" class="${t.includes(a)?'tier':''}">${fmt(a)}</button>`).join('')}
 async function load(){ST=await api('GET','/api/c/'+SLUG);fill();await loadRows()}
 function fill(){
   const s=ST.settings;const url=location.origin+'/screen/'+SLUG+(PREV?'?s='+PREV:'');$('screenUrl').textContent=url;$('openScreen').href=url;if($('prev').dataset.u!==url){$('prev').dataset.u=url;$('prev').src=url}renderScreens();
@@ -382,7 +390,7 @@ function fill(){
   $('goal').value=ST.goal;$('campName').value=ST.name;
   $('kTotal').textContent=s.currency+fmt(ST.total);$('kCount').textContent=fmt(ST.count);const pct=ST.goal?Math.min(100,ST.total/ST.goal*100):0;$('kPct').textContent=Math.round(pct)+'%';$('kBar').style.width=pct+'%';$('kGoal').textContent=ST.goal?'מתוך '+s.currency+fmt(ST.goal)+' · נותרו '+s.currency+fmt(Math.max(0,ST.goal-ST.total)):'ללא יעד';
   document.querySelectorAll('[data-s]').forEach(el=>{if(el===act)return;const k=el.dataset.s;if(el.type==='checkbox')el.checked=!!s[k];else el.value=s[k]??''});
-  quickBtns();$('shtarBox').hidden=!['shtar','royal'].includes(s.skin);document.querySelectorAll('.theme').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===s.theme));
+  quickBtns();$('shtarBox').hidden=!['shtar','royal','grand'].includes(s.skin);document.querySelectorAll('.theme').forEach(b=>b.setAttribute('aria-pressed',b.dataset.th===s.theme));
   document.querySelectorAll('[data-snd]').forEach(b=>b.setAttribute('aria-pressed',s[b.dataset.for]===b.dataset.snd));
   $('logoPrev').hidden=!s.logo;$('logoPrev').src=s.logo||'';$('bgImagePrev').hidden=!s.bgImage;$('bgImagePrev').src=s.bgImage||'';$('bgVideoPrev').textContent=s.bgVideo?'סרטון הועלה':'';
   renderFeed();
@@ -420,11 +428,11 @@ document.addEventListener('keydown',e=>{if(e.key==='n'&&!/INPUT|TEXTAREA|SELECT/
 
 /* live */
 const test=()=>api('POST','/api/c/'+SLUG+'/test',{donor:$('tDonor').value||'תורם לדוגמה',amount:Number($('tAmount').value)||180,dedication:$('tDed').value}).then(()=>toast('נשלחה בדיקה למסכים'));
-$('testBtn').onclick=test;$('testBtn2').onclick=test;
+$('testBtn').onclick=test;if($('testBtn2'))$('testBtn2').onclick=test;
 $('confBtn').onclick=()=>api('POST','/api/c/'+SLUG+'/command',{cmd:'confetti'}).then(()=>toast('נשלח'));
 $('goalBtn').onclick=()=>api('POST','/api/c/'+SLUG+'/command',{cmd:'goal'}).then(()=>toast('נשלח'));
 document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>api('POST','/api/c/'+SLUG+'/command',{cmd:b.dataset.cmd,arg:'chime'}).then(()=>toast('נשלח')));
-$('msgPresets').onclick=e=>{const b=e.target.closest('[data-pre]');if(b)$('msgText').value=b.dataset.pre};
+$('msgPresets').onclick=e=>{const b=e.target.closest('[data-pre]');if(b)api('POST','/api/c/'+SLUG+'/message',{text:b.dataset.pre,seconds:Number($('msgSec').value)||12}).then(()=>toast('נשלח: '+b.dataset.pre))};
 $('msgBtn').onclick=()=>{const t=$('msgText').value.trim();if(!t)return toast('כתבו הודעה');api('POST','/api/c/'+SLUG+'/message',{text:t,seconds:Number($('msgSec').value)||12}).then(()=>{toast('נשלח למסכים');$('msgText').value=''})};
 $('copyUrl').onclick=async()=>{try{await navigator.clipboard.writeText($('screenUrl').textContent);toast('הקישור הועתק')}catch(e){toast('סמנו והעתיקו ידנית')}};
 
@@ -438,7 +446,7 @@ $('pinBtn').onclick=async()=>{const n=$('newPin').value.trim();try{await api('PO
 
 /* settings autosave */
 let pending={};function save(patch,extra){clearTimeout(saveT);Object.assign(ST.settings,patch);Object.assign(pending,patch);saveT=setTimeout(async()=>{const body={settings:pending,...(extra||{})};pending={};try{await api('PUT','/api/c/'+SLUG,body);toast('נשמר')}catch(e){toast(e.message)}},350)}
-document.querySelectorAll('[data-s]').forEach(el=>el.addEventListener(el.type==='checkbox'||el.tagName==='SELECT'||el.type==='color'||el.type==='range'?'change':'input',()=>{const v=el.type==='checkbox'?el.checked:(el.type==='number'||el.type==='range'?Number(el.value):el.value);save({[el.dataset.s]:v});if(el.dataset.s==='skin')$('shtarBox').hidden=!['shtar','royal'].includes(v)}));
+document.querySelectorAll('[data-s]').forEach(el=>el.addEventListener(el.type==='checkbox'||el.tagName==='SELECT'||el.type==='color'||el.type==='range'?'change':'input',()=>{const v=el.type==='checkbox'?el.checked:(el.type==='number'||el.type==='range'?Number(el.value):el.value);save({[el.dataset.s]:v});if(el.dataset.s==='skin')$('shtarBox').hidden=!['shtar','royal','grand'].includes(v)}));
 $('goal').addEventListener('input',()=>{clearTimeout(saveT);saveT=setTimeout(()=>api('PUT','/api/c/'+SLUG,{goal:Number($('goal').value)}).then(()=>toast('היעד עודכן')),400)});
 $('campName').addEventListener('input',()=>{clearTimeout(saveT);saveT=setTimeout(()=>api('PUT','/api/c/'+SLUG,{name:$('campName').value}).then(()=>{toast('השם עודכן');loadCamps()}),500)});
 $('themes').onclick=e=>{const b=e.target.closest('.theme');if(!b)return;const[,p,b1,b2,t]=THEMES[b.dataset.th];const patch={theme:b.dataset.th,primary:p,bg1:b1,bg2:b2,text:t};Object.assign(ST.settings,patch);fill();clearTimeout(saveT);api('PUT','/api/c/'+SLUG,{settings:patch}).then(()=>toast('הערכה הוחלה'))};
@@ -461,7 +469,7 @@ function renderScreens(){
    <div class="f"><label>פריסה</label><select data-sf="layout">${LAY.map(([v,n])=>`<option value="${v}" ${(o.layout||'')===v?'selected':''}>${n}</option>`).join('')}</select></div></div>
    <div class="row4"><div class="f"><label>צבעים</label><select data-sf="theme"><option value="">כמו הקמפיין</option>${Object.entries(THEMES).map(([k,[n]])=>`<option value="${k}" ${o.theme===k?'selected':''}>${n}</option>`).join('')}</select></div>
    <div class="f"><label>קפיצה</label><select data-sf="popupStyle"><option value="">כמו הקמפיין</option><option value="card" ${o.popupStyle==='card'?'selected':''}>כרטיס</option><option value="banner" ${o.popupStyle==='banner'?'selected':''}>פס</option><option value="full" ${o.popupStyle==='full'?'selected':''}>מסך מלא</option></select></div>
-   <div class="f"><label>סגנון</label><select data-sf="skin"><option value="">כמו הקמפיין</option><option value="classic" ${o.skin==='classic'?'selected':''}>קלאסי</option><option value="shtar" ${o.skin==='shtar'?'selected':''}>שטר שותפות</option><option value="royal" ${o.skin==='royal'?'selected':''}>מלכותי כהה</option></select></div>
+   <div class="f"><label>סגנון</label><select data-sf="skin"><option value="">כמו הקמפיין</option><option value="classic" ${o.skin==='classic'?'selected':''}>קלאסי</option><option value="shtar" ${o.skin==='shtar'?'selected':''}>שטר שותפות</option><option value="grand" ${o.skin==='grand'?'selected':''}>מסך מלא יוקרתי</option><option value="royal" ${o.skin==='royal'?'selected':''}>מלכותי כהה</option></select></div>
    <div class="f"><label>עמודות בקיר</label><input type="number" min="1" max="8" data-sf="wallCols" value="${o.wallCols||''}" placeholder="אוטו'"></div></div>
    <label class="chk" style="border:0"><input type="checkbox" data-sf="mute" ${o.mute?'checked':''}><span>מסך שקט (בלי צליל)</span></label>`:`<p class="hint" style="margin:0 0 8px">פועל לפי ההגדרות הכלליות ובגודל המסך עצמו.</p>`}
    <div class="url"><b>${url}</b><button class="btn ghost sm" data-copy="${url}">העתקה</button><a class="btn ghost sm" href="${url}" target="_blank">פתיחה</a></div></div>`};
