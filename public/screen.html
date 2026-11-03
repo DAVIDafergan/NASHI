@@ -607,6 +607,30 @@ body[data-skin="gala"] .gala{position:absolute;inset:0;z-index:2;display:grid;gr
 .g-center .feat .fo.l{left:-3cqh;transform:scaleX(-1) rotate(0deg)}.g-center .feat .fo.r{right:-3cqh}
 .g-center .feat .fo.l{transform:none}.g-center .feat .fo.r{transform:scaleX(-1)}
 @keyframes ornIn{from{opacity:0;filter:blur(10px) drop-shadow(0 0 0 #000)}to{opacity:1}}
+body[data-skin="gala"] .gala{padding-top:1cqh}
+.g-arch{position:absolute;left:50%;top:1.2%;bottom:auto;height:97.5%;width:46cqw;transform:translateX(-50%);object-fit:fill;filter:drop-shadow(0 1.6cqh 1.6cqh rgba(0,0,0,.55));z-index:1}
+.g-top{margin-top:14cqh;max-width:34cqw;justify-self:center;flex-wrap:nowrap}
+.g-plaque small{font-size:3.4cqh;padding:.8cqh 1.6cqw}.g-plaque b{font-size:3.6cqh;padding:.8cqh 1.6cqw}
+.g-grid{grid-template-columns:minmax(0,1fr) minmax(0,2.1fr) minmax(0,1fr)}
+.g-center{padding-inline:6.4cqw;padding-top:1cqh;justify-content:center;gap:4.6cqh;padding-bottom:6cqh}
+.g-center .feat{padding:3.4cqh 3cqw}
+.g-center .feat .n{font-size:7.6cqh}.g-center .feat .amt{font-size:5.6cqh}
+.g-center .feat .fo{display:none}
+.g-center .ded{font-size:4.4cqh;max-width:100%;padding:2cqh 4cqw}
+.g-center .feat{display:block;width:46cqw;max-width:none;padding:0;aspect-ratio:2434/488;flex:none;filter:drop-shadow(0 1.6cqh 1.4cqh rgba(0,0,0,.6))}
+.g-center .feat>.plate{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:0}
+.g-center .feat>.in.in{position:absolute;left:12%;right:11%;top:30%;bottom:27%;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;direction:rtl;z-index:2}
+.g-center .feat .n{font-size:5.6cqh;padding:0 1cqw}.g-center .feat .amt{font-size:4.8cqh}.g-center .feat .sep{margin:0 1cqw;height:60%;align-self:center}
+.gc{border:0;background:none;box-shadow:none;overflow:visible;padding:3.4cqh 6% 3.2cqh;filter:drop-shadow(0 1.2cqh 1.1cqh rgba(0,0,0,.55));grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
+.gc::after{display:none}
+.gc>.cf{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:0;pointer-events:none}
+.gc>.n,.gc>.p{position:relative;z-index:1}
+.gc .n{font-size:4.1cqh}.gc .p{margin:0;border-radius:1.2cqh;font-size:2.5cqh}.gc .p b{font-size:2.7cqh}
+.gc.ghost{background:none;border:0;opacity:.22}.gc.ghost>.cf{display:block}
+.g-center .ded{background:none!important;border:0!important;box-shadow:none!important;border-radius:0;padding:0;width:100%;max-width:100%;aspect-ratio:1992/400;display:flex;align-items:center;justify-content:center;overflow:visible;filter:drop-shadow(0 1.2cqh 1.1cqh rgba(0,0,0,.55));font-size:3cqh;font-weight:900;color:#06285a;text-shadow:0 .2cqh 0 rgba(255,255,255,.55);position:relative}
+.g-center .ded>.df{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+.g-center .ded>span{position:relative;z-index:1;max-width:86%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc{padding:3.3cqh 6% 3.9cqh}
 .g-foot{margin:0 -4cqw;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
 .g-foot .ticker{font-size:2.5cqh;color:#ffe9a8;font-weight:700}
 @keyframes gcIn{from{opacity:0;transform:translateY(2cqh) scale(.96);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
@@ -637,12 +661,7 @@ body[data-skin="gala"] .gala{position:absolute;inset:0;z-index:2;display:grid;gr
 <g id="gScroll"><path d="M0,0 C18,-34 70,-38 78,-6 C84,20 52,34 40,16 C32,3 46,-8 56,-1" fill="none" stroke="url(#gGold)" stroke-width="5" stroke-linecap="round"/><path d="M0,0 C40,8 70,34 120,30 C150,28 168,10 190,14" fill="none" stroke="url(#gGold)" stroke-width="4" stroke-linecap="round"/><path d="M60,22 C74,50 108,58 130,44" fill="none" stroke="url(#gGold)" stroke-width="3" stroke-linecap="round"/><circle cx="196" cy="14" r="5" fill="url(#gGold)"/><circle cx="56" cy="-1" r="4" fill="url(#gGold)"/></g>
 <g id="gCrown"><path d="M10,92 L22,34 L58,66 L100,14 L142,66 L178,34 L190,92 Z" fill="url(#gGold)" stroke="#7a520e" stroke-width="2.5" stroke-linejoin="round"/><path d="M10,92 L190,92 L186,112 Q100,126 14,112 Z" fill="url(#gGoldH)" stroke="#7a520e" stroke-width="2.5"/><circle cx="100" cy="10" r="9" fill="url(#gRuby)" stroke="#7a520e" stroke-width="2"/><circle cx="22" cy="30" r="7" fill="url(#gJewel)" stroke="#7a520e" stroke-width="2"/><circle cx="178" cy="30" r="7" fill="url(#gJewel)" stroke="#7a520e" stroke-width="2"/><circle cx="58" cy="102" r="6" fill="url(#gJewel)"/><circle cx="100" cy="104" r="7" fill="url(#gRuby)"/><circle cx="142" cy="102" r="6" fill="url(#gJewel)"/><path d="M40,92 L58,66 M100,92 L100,40 M160,92 L142,66" stroke="#fff3bf" stroke-width="2" opacity=".7"/></g>
 </defs></svg>
-<svg class="g-arch" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-<path d="M80,800 L80,330 C80,120 280,30 500,30 C720,30 920,120 920,330 L920,800" fill="rgba(20,60,150,.35)" stroke="url(#gGold)" stroke-width="12" filter="url(#gDrop)"/>
-<path d="M104,800 L104,334 C104,142 292,56 500,56 C708,56 896,142 896,334 L896,800" fill="none" stroke="#e9d6dc" stroke-width="3" opacity=".8"/>
-<path d="M128,800 L128,338 C128,164 304,82 500,82 C696,82 872,164 872,338 L872,800" fill="none" stroke="url(#gGold)" stroke-width="5"/>
-<circle cx="500" cy="30" r="13" fill="url(#gRuby)" stroke="url(#gGold)" stroke-width="4"/>
-</svg>
+<img class="g-arch" src="/orn/arch.png" alt="">
   <img class="orn o-tl" src="/orn/corner.png" alt=""><img class="orn o-tr" src="/orn/corner.png" alt=""><img class="orn o-bl" src="/orn/corner.png" alt=""><img class="orn o-br" src="/orn/corner.png" alt="">
   <div class="g-top"><div class="g-plaque"><small id="gLabel">עד כה התחייבו</small><b id="gTotal">0</b></div><div class="g-meter"><i id="gBar"></i></div></div>
   <div class="g-grid"><div class="g-col" id="gR"></div><div class="g-center" id="gC"></div><div class="g-col" id="gL"></div></div>
@@ -762,17 +781,17 @@ function renderGala(st){
   const top=items[0];
   $('gTotal').textContent=cur+fmt(st.total||0);
   $('gLabel').textContent=settings.galaLabel||'עד כה התחייבו';
-  const card=(d,i)=>`<div class="gc" style="--i:${i}"><div class="n">${esc(d.donor)}</div><div class="p">${d.dedication?`<span>${esc(d.dedication)}</span>`:''}${settings.showAmount===false&&d.dedication?'':`<b>${esc(cur)}${fmt(d.amount)}</b>`}</div></div>`;
-  const ghost='<div class="gc ghost"></div>';
+  const card=(d,i)=>`<div class="gc" style="--i:${i}"><img class="cf" src="/orn/card.png" alt=""><div class="n">${esc(d.donor)}</div><div class="p">${d.dedication?`<span>${esc(d.dedication)}</span>`:''}${settings.showAmount===false&&d.dedication?'':`<b>${esc(cur)}${fmt(d.amount)}</b>`}</div></div>`;
+  const ghost='<div class="gc ghost"><img class="cf" src="/orn/card.png" alt=""></div>';
   const rest=items.slice(1,9);
   const R=[],L=[];rest.forEach((d,i)=>(i%2?L:R).push(d));
   const col=(arr,t)=>`<h4>${t}</h4>`+Array.from({length:4},(_,i)=>arr[i]?card(arr[i],i):ghost).join('');
   $('gR').innerHTML=col(R,'השותפים');
   $('gL').innerHTML=col(L,'השותפים');
   const fo='<img class="fo l" src="/orn/corner.png" alt=""><img class="fo r" src="/orn/corner.png" alt="">';
-  const plate='<svg viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M2,60 C44,60 50,5 116,5 L884,5 C950,5 956,60 998,60 C956,60 950,115 884,115 L116,115 C50,115 44,60 2,60 Z" fill="url(#gNavy)" stroke="url(#gGold)" stroke-width="7" vector-effect="non-scaling-stroke"/><path d="M26,60 C62,60 66,17 126,17 L874,17 C934,17 938,60 974,60 C938,60 934,103 874,103 L126,103 C66,103 62,60 26,60 Z" fill="none" stroke="#e9d6dc" stroke-width="2" opacity=".75" vector-effect="non-scaling-stroke"/><circle cx="14" cy="60" r="9" fill="url(#gRuby)" stroke="url(#gGold)" stroke-width="3" vector-effect="non-scaling-stroke"/><circle cx="986" cy="60" r="9" fill="url(#gRuby)" stroke="url(#gGold)" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>';
+  const plate='<img class="plate" src="/orn/plate.png" alt="">';
   const medal=settings.logo?`<div class="crown" style="width:34cqh"><img src="${settings.logo}" style="width:100%;display:block" alt=""></div>`:'';
-  $('gC').innerHTML=top?`<div class="feat" data-k="${top.id}">${plate}${fo}<div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div>${top.dedication?`<div class="ded">${esc(top.dedication)}</div>`:''}${medal}`:`<div class="feat">${plate}<div class="n">${esc(settings.title||'')}</div></div>${medal}`;
+  $('gC').innerHTML=top?`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/pill.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
   setTimeout(fitAll,40);
 }
