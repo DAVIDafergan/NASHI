@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>מסך התרמה</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Frank+Ruhl+Libre:wght@400;700;900&family=Rubik:wght@400;700;900&family=Secular+One&family=Suez+One&family=Assistant:wght@400;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Assistant:wght@300;400;700;900&family=Rubik:wght@300;400;700;900&family=Alef:wght@300;400;700;900&family=Frank+Ruhl+Libre:wght@300;400;700;900&family=David+Libre:wght@300;400;700;900&family=Miriam+Libre:wght@300;400;700;900&family=Secular+One&family=Suez+One&family=Varela+Round&family=Bellefair&family=Karantina&family=Noto+Serif+Hebrew:wght@300;400;700;900&family=Noto+Sans+Hebrew:wght@300;400;700;900&display=swap">
 <style>
 :root{--p:#C9A961;--bg1:#0B1D3A;--bg2:#1E3A6E;--t:#fff;--f:"Heebo";--dim:.35}
 *{box-sizing:border-box}
@@ -130,7 +130,7 @@ body[data-skin="shtar"] .stage{position:absolute;left:21cqw;right:21cqw;top:25.5
 body[data-skin="shtar"] .brand,body[data-skin="shtar"] .clock{display:none}
 body[data-skin="shtar"] header{justify-content:center}
 body[data-skin="shtar"] .sk-head{display:block;text-align:center}
-.sk-head h2{margin:0;font-family:"Frank Ruhl Libre","Heebo",serif;font-weight:900;font-size:4.5cqh;line-height:1.05;color:var(--ink);text-shadow:.25cqh .25cqh 0 rgba(255,236,170,.9)}
+.sk-head h2{margin:0;font-weight:900;font-size:4.5cqh;line-height:1.05;color:var(--ink);text-shadow:.25cqh .25cqh 0 rgba(255,236,170,.9)}
 .sk-head p{margin:.5cqh 0 0;font-size:1.8cqh;color:#3a4382;font-weight:500}
 .sk-quote{margin:.7cqh auto 0;padding:.5cqh 2cqw;background:rgba(80,66,130,.16);border-radius:.5cqh;font-weight:700;font-size:1.85cqh;color:var(--ink);width:max-content;max-width:100%}
 body[data-skin="shtar"] main{padding-block:1.2cqh}
@@ -184,8 +184,8 @@ body[data-skin="shtar"] .tiers{display:grid;grid-template-columns:repeat(3,1fr);
 body[data-skin="shtar"] .pop__veil{background:radial-gradient(60% 60% at 50% 50%,rgba(18,22,84,.55),rgba(4,5,28,.9))}
 body[data-skin="shtar"] .card{transform:none;opacity:1;transition:none;background:radial-gradient(120% 100% at 50% 38%,#fcf3da,#f1dcae 68%,#dcbc7c);color:var(--ink);border:0;border-radius:1cqh;padding:5cqh 6cqw 6.5cqh;min-width:56cqw;backdrop-filter:none;box-shadow:0 0 0 .5cqh #b9891f,0 0 0 .95cqh #f4d98a,0 0 0 1.3cqh #8a5f12,0 6cqh 14cqh rgba(0,0,0,.7)}
 body[data-skin="shtar"] .card::before{inset:1.6cqh;border:.2cqh dashed rgba(138,95,18,.55);border-radius:.6cqh}
-body[data-skin="shtar"] .card .k{color:#6a4a10;font-family:"Frank Ruhl Libre",serif;font-weight:900;letter-spacing:.25em;font-size:3.2cqh}
-body[data-skin="shtar"] .card .n{color:var(--ink);font-family:"Frank Ruhl Libre","Heebo",serif;text-shadow:.35cqh .35cqh 0 rgba(255,236,170,.95)}
+body[data-skin="shtar"] .card .k{color:#6a4a10;font-weight:900;letter-spacing:.25em;font-size:3.2cqh}
+body[data-skin="shtar"] .card .n{color:var(--ink);text-shadow:.35cqh .35cqh 0 rgba(255,236,170,.95)}
 body[data-skin="shtar"] .card .a{color:#a87412;text-shadow:.4cqh .4cqh 0 rgba(255,236,170,.95)}
 body[data-skin="shtar"] .card .d{color:#2c356f;font-weight:500}
 body[data-skin="shtar"] .card .b{color:#7a5410;font-weight:700}
@@ -387,12 +387,20 @@ body[data-tone="dark"] .card .d{color:#cfd5ee}
 body[data-tone="dark"] .card .b{color:#e0c27a}
 body[data-tone="dark"] .card .rays{opacity:.5;mix-blend-mode:screen}
 body[data-tone="dark"] .pop__veil{background:radial-gradient(60% 60% at 50% 50%,rgba(2,3,12,.5),rgba(1,2,8,.92))}
+/* ===== per-element fonts ===== */
+body[data-skin] .sk-head h2,body .card .k{font-family:var(--fT,var(--fd1,inherit)),"Heebo",serif}
+body .tile .n,body .row .n,body .card .n{font-family:var(--fN,var(--fd1,inherit)),"Heebo",serif}
+body .tile .a,body .row .a,body .tier b,body .total b,body .stats b,body .card .a,body .tier .c{font-family:var(--fA,var(--fd1,inherit)),"Heebo",serif}
+body .ticker,body .sk-head p,body .sk-quote,body .tile .d,body .row .d,body .card .d,body .card .b,body .tier small,body .msg{font-family:var(--fS,var(--fd2,inherit)),"Heebo",sans-serif}
+/* no clipping: single line, auto-fitted by JS */
+body .tile .n,body .row .n{white-space:nowrap;overflow:hidden;text-overflow:clip;display:block;-webkit-line-clamp:unset}
+body .card .n{white-space:nowrap}
 /* ===== typographic polish ===== */
-body[data-skin="shtar"] .tile .n,body[data-skin="shtar"] .row .n{font-family:"Frank Ruhl Libre","Heebo",serif;font-weight:700;letter-spacing:.01em}
-body[data-skin="shtar"] .tile .a,body[data-skin="shtar"] .row .a,body[data-skin="shtar"] .tier b,body[data-skin="shtar"] .total b,body[data-skin="shtar"] .stats b{font-family:"Frank Ruhl Libre","Heebo",serif;font-weight:900}
+body[data-skin="shtar"] .tile .n,body[data-skin="shtar"] .row .n{font-weight:700;letter-spacing:.01em}
+body[data-skin="shtar"] .tile .a,body[data-skin="shtar"] .row .a,body[data-skin="shtar"] .tier b,body[data-skin="shtar"] .total b,body[data-skin="shtar"] .stats b{font-weight:900}
 body[data-skin="shtar"] .tile,body[data-skin="shtar"] .tier,body[data-skin="shtar"] .row{position:relative}
 body[data-skin="shtar"] .tile::before,body[data-skin="shtar"] .tier::before{content:"";position:absolute;left:12%;right:12%;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(241,207,114,.9),transparent)}
-body[data-skin="shtar"] .ticker{font-family:"Frank Ruhl Libre",serif;font-weight:500;letter-spacing:.04em}
+body[data-skin="shtar"] .ticker{font-weight:500;letter-spacing:.04em}
 body[data-skin="shtar"] .sk-paper{overflow:hidden}
 body[data-tone="dark"] .sk-paper::before{background-image:none}
 body[data-tone="dark"] .sk-scroll::after{content:"";position:absolute;inset:0;border-radius:2cqh;background:linear-gradient(105deg,transparent 40%,rgba(255,236,170,.10) 50%,transparent 60%) 220% 0/260% 100% no-repeat;animation:glint 9s ease-in-out infinite;pointer-events:none}
@@ -530,7 +538,7 @@ const slug=location.pathname.split('/').pop()||'main';
 const SID=new URLSearchParams(location.search).get('s')||'';
 let FW=innerWidth,FH=innerHeight;
 function fitFrame(){const f=$('frame'),res=settings.res||'auto';
-  if(res==='auto'||!/^\d+x\d+$/.test(res)){f.style.cssText='';FW=innerWidth;FH=innerHeight}
+  if(res==='auto'||!/^\d+x\d+$/.test(res)||document.body.dataset.fill==='1'){f.style.cssText='';FW=innerWidth;FH=innerHeight}
   else{const [w,h]=res.split('x').map(Number);const k=Math.min(innerWidth/w,innerHeight/h);FW=w;FH=h;f.style.width=w+'px';f.style.height=h+'px';f.style.left=((innerWidth-w*k)/2)+'px';f.style.top=((innerHeight-h*k)/2)+'px';f.style.transform=`scale(${k})`}
   cv.width=FW;cv.height=FH}
 const $=id=>document.getElementById(id);
@@ -565,8 +573,8 @@ let raf=0;function loop(){raf=requestAnimationFrame(loop);cx.clearRect(0,0,cv.wi
 function applySettings(s0){
   const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
   settings=s;fitFrame();const r=document.documentElement.style;
-  r.setProperty('--p',s.primary);r.setProperty('--bg1',s.bg1);r.setProperty('--bg2',s.bg2);r.setProperty('--t',s.text);r.setProperty('--f',`"${s.font}"`);r.setProperty('--dim',s.dim);
-  document.body.dataset.layout=s.layout;document.body.dataset.skin=(s.skin==='shtar'||royal)?'shtar':'';document.body.dataset.tone=royal?'dark':'';document.body.dataset.fill=grand?'1':'';initSkin(s);document.body.dataset.popup=s.popupStyle;
+  r.setProperty('--p',s.primary);r.setProperty('--bg1',s.bg1);r.setProperty('--bg2',s.bg2);r.setProperty('--t',s.text);r.setProperty('--f',`"${s.font}"`);{const serif=s.skin==='shtar'||s.skin==='royal'||s.skin==='grand';r.setProperty('--fd1',serif?'"Frank Ruhl Libre"':`"${s.font||'Heebo'}"`);r.setProperty('--fd2',`"${s.font||'Heebo'}"`);for(const [k,v] of [['--fT',s.fontTitle],['--fN',s.fontNames],['--fA',s.fontNums],['--fS',s.fontSub]]){if(v)r.setProperty(k,`"${v}"`);else r.removeProperty(k)}}r.setProperty('--dim',s.dim);
+  document.body.dataset.layout=s.layout;document.body.dataset.skin=(s.skin==='shtar'||royal)?'shtar':'';document.body.dataset.tone=royal?'dark':'';document.body.dataset.fill=grand?'1':'';fitFrame();initSkin(s);document.body.dataset.popup=s.popupStyle;
   $('title').textContent=s.title;$('subtitle').textContent=s.subtitle;$('subtitle').hidden=!s.subtitle;
   const lg=$('logo');if(s.logo){lg.src=s.logo;lg.hidden=false}else lg.hidden=true;
   const bg=$('bg');bg.innerHTML='';bg.classList.toggle('nomedia',!(s.bgImage||s.bgVideo));
@@ -634,11 +642,16 @@ function renderWall(st){
   const cols=Number(settings.wallCols)||3;const t=$('wallT');
   const html=items.map(d=>`<div class="tile ${lastWall.size&&!lastWall.has(d.id)?'new':''}"><div class="n">${esc(d.donor)}</div>${settings.showAmount?`<div class="a">${esc(settings.currency||'₪')}${fmt(d.amount)}</div>`:''}${settings.dedicationShow&&d.dedication?`<div class="d">${esc(d.dedication)}</div>`:''}</div>`).join('');
   lastWall=new Set(items.map(d=>d.id));
-  t.style.setProperty('--cols',cols);w.style.setProperty('--ts',settings.wallScale||1);
+  t.style.setProperty('--cols',cols);w.style.setProperty('--ts',1);
   t.innerHTML=html;w.classList.remove('scroll');t.style.animation='none';
   requestAnimationFrame(()=>{if(t.scrollHeight>w.clientHeight+4){t.innerHTML=html+html;w.classList.add('scroll');t.style.animation='';t.style.setProperty('--dur',Math.max(25,items.length*(Number(settings.wallSpeed)||2.5)/Math.max(1,cols/3))+'s')}})
 }
 let lastWall=new Set();
+
+/* auto-fit: shrink text until it fits its box, never clip */
+function fitAll(){document.querySelectorAll('.tile .n,.row .n,.card .n').forEach(el=>{el.style.fontSize='';let fs=parseFloat(getComputedStyle(el).fontSize),min=fs*.45,g=0;while(el.scrollWidth>el.clientWidth+1&&fs>min&&g++<40){fs*=.94;el.style.fontSize=fs+'px'}})}
+new MutationObserver(()=>{clearTimeout(window.__ft);window.__ft=setTimeout(fitAll,60)}).observe(document.body,{childList:true,subtree:true});
+addEventListener('resize',()=>setTimeout(fitAll,120));
 let __build=null,__t0=Date.now();
 function render(st){if(st.build){if(__build&&st.build!==__build&&Date.now()-__t0>60000){location.reload();return}__build=st.build}S=st;applySettings(st.settings);renderTotals(st.total,st.count,st.goal);renderList(st);renderWall(st);renderTiers(st);$('idle').classList.toggle('on',!!settings.idleMsg)}
 
