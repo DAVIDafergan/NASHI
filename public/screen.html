@@ -660,7 +660,24 @@ body[data-skin="gala"] #frame::after{content:"";position:absolute;inset:0;backgr
 .g-center .ttl{display:flex;flex-direction:column;align-items:center;gap:.4cqh;text-align:center;max-width:100%}
 .g-center .ttl small{font-size:2.8cqh;font-weight:800;letter-spacing:.35em;color:#e9c968;text-shadow:0 .3cqh .5cqh rgba(0,0,0,.7)}
 .g-center .ttl b{font-size:7cqh;font-weight:900;line-height:1.1;white-space:nowrap;max-width:100%;overflow:hidden;background:linear-gradient(180deg,#fff,#ffe9a0 50%,#d9a93c);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 .5cqh .4cqh rgba(0,0,0,.7))}
-.g-foot{margin:0 -4cqw;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
+
+/* ---- v9: fine gold frame, gilded lettering, flying dust ---- */
+@font-face{font-family:"Suez One";src:url(/fonts/suez-one-he.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+body[data-skin="gala"]{--gf:"Suez One"}
+body[data-skin="gala"] #frame::after{display:none}
+.orn{display:none}
+#gDust{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.g-frame{position:absolute;inset:1.3cqh;z-index:6;pointer-events:none;border:.32cqh solid transparent;border-image:linear-gradient(135deg,#fff3bf 0%,#c8942c 22%,#fff0b0 45%,#8a5d12 62%,#f2d27a 82%,#fff3bf 100%) 1;box-shadow:0 0 2.4cqh rgba(240,205,120,.25),inset 0 0 2.4cqh rgba(240,205,120,.18)}
+.g-frame::before{content:"";position:absolute;inset:.9cqh;border:.12cqh solid rgba(240,205,120,.7)}
+body[data-skin="gala"] .gala,.gc .n,.g-center .feat .n,.g-center .feat .amt,.g-center .ttl b,.g-center .ttl small,.g-center .ded>span,.gc .p,.gc .p b,.g-plaque small,.g-plaque b,.g-col h4>span,.g-foot .ticker{font-family:var(--fN,var(--gf)),"Heebo",serif!important;font-weight:400!important}
+/* gilded engraved lettering */
+.gc .n,.g-center .feat .n,.g-center .ded>span{background:linear-gradient(180deg,#fffbe6 0%,#ffe9a0 38%,#e0b24a 62%,#fff0b8 100%);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-stroke:.045em rgba(236,196,96,.95);text-shadow:none!important;filter:drop-shadow(0 .06em 0 #5a3a07) drop-shadow(0 .7cqh .6cqh rgba(0,0,0,.7))}
+.g-center .feat .amt,.gc .p b{-webkit-text-stroke:.04em rgba(236,196,96,.95);background:linear-gradient(180deg,#fffbe6,#ffe29a 45%,#d9a93c);-webkit-background-clip:text;background-clip:text;color:transparent!important;filter:drop-shadow(0 .25cqh 0 #5a3a07) drop-shadow(0 .5cqh .5cqh rgba(0,0,0,.7))}
+.gc .p,.gc .p span{color:#f6dc92;text-shadow:0 .25cqh 0 rgba(60,35,4,.9)}
+.g-center .ttl b{-webkit-text-stroke:.035em rgba(236,196,96,.95);filter:drop-shadow(0 .35cqh 0 #5a3a07) drop-shadow(0 .9cqh .8cqh rgba(0,0,0,.7))}
+.g-col h4>span{color:#6a2417;text-shadow:0 .22cqh 0 rgba(255,225,205,.85),0 -.12cqh 0 rgba(60,10,5,.6);letter-spacing:.06em}
+.g-plaque small,.g-plaque b{color:#ffeaa8;text-shadow:0 .3cqh 0 rgba(40,25,0,.85)}
+.g-foot{margin:0 -1.9cqw 3cqh;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
 .g-foot .ticker{font-size:2.5cqh;color:#ffe9a8;font-weight:700}
 @keyframes gcIn{from{opacity:0;transform:translateY(2cqh) scale(.96);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
 @keyframes gcFeat{0%{opacity:0;transform:scale(.88) translateZ(0);filter:blur(14px)}60%{transform:scale(1.03)}100%{opacity:1;transform:none}}
@@ -691,7 +708,8 @@ body[data-skin="gala"] #frame::after{content:"";position:absolute;inset:0;backgr
 <g id="gCrown"><path d="M10,92 L22,34 L58,66 L100,14 L142,66 L178,34 L190,92 Z" fill="url(#gGold)" stroke="#7a520e" stroke-width="2.5" stroke-linejoin="round"/><path d="M10,92 L190,92 L186,112 Q100,126 14,112 Z" fill="url(#gGoldH)" stroke="#7a520e" stroke-width="2.5"/><circle cx="100" cy="10" r="9" fill="url(#gRuby)" stroke="#7a520e" stroke-width="2"/><circle cx="22" cy="30" r="7" fill="url(#gJewel)" stroke="#7a520e" stroke-width="2"/><circle cx="178" cy="30" r="7" fill="url(#gJewel)" stroke="#7a520e" stroke-width="2"/><circle cx="58" cy="102" r="6" fill="url(#gJewel)"/><circle cx="100" cy="104" r="7" fill="url(#gRuby)"/><circle cx="142" cy="102" r="6" fill="url(#gJewel)"/><path d="M40,92 L58,66 M100,92 L100,40 M160,92 L142,66" stroke="#fff3bf" stroke-width="2" opacity=".7"/></g>
 </defs></svg>
 <img class="g-arch" src="/orn/arch.png" alt="">
-  <img class="orn o-tl" src="/orn/corner.png" alt=""><img class="orn o-tr" src="/orn/corner.png" alt=""><img class="orn o-bl" src="/orn/corner.png" alt=""><img class="orn o-br" src="/orn/corner.png" alt="">
+  
+  <canvas id="gDust"></canvas><div class="g-frame"></div>
   <div class="g-top"><div class="g-plaque"><small id="gLabel">עד כה התחייבו</small><b id="gTotal">0</b></div><div class="g-meter"><i id="gBar"></i></div></div>
   <div class="g-grid"><div class="g-col" id="gR"></div><div class="g-center" id="gC"></div><div class="g-col" id="gL"></div></div>
   <div class="g-foot"><div class="ticker" id="gTicker"></div></div>
@@ -825,6 +843,22 @@ function renderGala(st){
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
   setTimeout(fitAll,40);
 }
+
+/* ---- flying dust (white specks carried by the wind) ---- */
+(function(){const c=document.getElementById('gDust');if(!c)return;const x=c.getContext('2d');let W=0,H=0,P=[],last=0,t0=0;
+function mk(init){const sc=H/1080;const big=Math.random()<.14;return{x:init?Math.random()*W:-20*sc,y:Math.random()*H,r:(big?1.8+Math.random()*2.6:.5+Math.random()*1.3)*sc,v:(big?60+Math.random()*70:30+Math.random()*120)*sc,l:(Math.random()-.55)*22*sc,ph:Math.random()*6.28,wa:(8+Math.random()*26)*sc,wf:.4+Math.random()*1.1,tw:.8+Math.random()*2.2,a:.35+Math.random()*.6,big}}
+function size(){W=c.width=innerWidth;H=c.height=innerHeight;P=Array.from({length:Math.round(190*(W*H)/(1920*1080))},()=>mk(true))}
+size();addEventListener('resize',size);
+function frame(ts){requestAnimationFrame(frame);if(document.body.dataset.skin!=='gala'){if(last){x.clearRect(0,0,W,H);last=0}return}
+if(!last){last=ts;t0=ts}const dt=Math.min(.05,(ts-last)/1000);last=ts;const T=(ts-t0)/1000;
+const gust=1+.55*Math.sin(T*.35)+.25*Math.sin(T*.9+1.3);x.clearRect(0,0,W,H);
+for(const p of P){p.x+=p.v*gust*dt;p.y+=p.l*dt+Math.sin(T*p.wf+p.ph)*p.wa*dt;
+if(p.x>W+30||p.y<-30||p.y>H+30){Object.assign(p,mk(false));p.y=Math.random()*H}
+const tw=.55+.45*Math.sin(T*p.tw+p.ph);x.globalAlpha=p.a*tw;
+if(p.big){const g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*4);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba(255,246,220,.7)');g.addColorStop(1,'rgba(255,240,200,0)');x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r*4,0,6.283);x.fill()}
+else{x.fillStyle='#fff';x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fill()}}
+x.globalAlpha=1}
+requestAnimationFrame(frame)})();
 let skInit=false;
 function initSkin(s){
   if(s.skin!=='shtar'&&s.skin!=='royal'&&s.skin!=='grand')return;
