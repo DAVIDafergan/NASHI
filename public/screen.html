@@ -625,7 +625,7 @@ body[data-skin="gala"] .gala{padding-top:1cqh}
 .gc::after{display:none}
 .gc>.cf{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:0;pointer-events:none}
 .gc>.n,.gc>.p{position:relative;z-index:1}
-.gc .n{font-size:4.1cqh}.gc .p{margin:0;border-radius:1.2cqh;font-size:2.5cqh}.gc .p b{font-size:2.7cqh}
+.gc .n{font-size:3.6cqh}.gc .p{margin:0;border-radius:1.2cqh;font-size:2.5cqh}.gc .p b{font-size:2.7cqh}
 .gc.ghost{background:none;border:0;opacity:.22}.gc.ghost>.cf{display:block}
 .g-center .ded{background:none!important;border:0!important;box-shadow:none!important;border-radius:0;padding:0;width:100%;max-width:100%;aspect-ratio:1992/400;display:flex;align-items:center;justify-content:center;overflow:visible;filter:drop-shadow(0 1.2cqh 1.1cqh rgba(0,0,0,.55));font-size:3cqh;font-weight:900;color:#06285a;text-shadow:0 .2cqh 0 rgba(255,255,255,.55);position:relative}
 .g-center .ded>.df{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
@@ -654,6 +654,12 @@ body[data-skin="gala"] #frame::after{content:"";position:absolute;inset:0;backgr
 .g-col h4{background:linear-gradient(180deg,#fff3bf,#e6bd55 50%,#a87420) padding-box,linear-gradient(180deg,#fff3bf,#d9a93c 55%,#7a520e) border-box;color:#1a1244;text-shadow:0 .25cqh 0 rgba(255,255,255,.6);box-shadow:0 .5cqh 0 #6b480c,0 1cqh 0 #3c2606,0 1.8cqh 2.4cqh rgba(0,0,0,.55),inset 0 .4cqh .6cqh rgba(255,255,255,.7)}
 .g-plaque small,.g-plaque b{background:linear-gradient(180deg,#2b4fc0,#13287a 60%,#0a1550) padding-box,linear-gradient(180deg,#fff3bf,#d9a93c 55%,#7a520e) border-box}
 .g-plaque b{background:linear-gradient(180deg,#3a63d8,#1b3699 60%,#0f1e6a) padding-box,linear-gradient(180deg,#fff3bf,#d9a93c 55%,#7a520e) border-box}
+.g-col h4{position:relative;height:7.8cqh;padding:0;border:0;background:none!important;box-shadow:none!important;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 1.1cqh 1cqh rgba(0,0,0,.55));text-shadow:none}
+.g-col h4>.tf{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+.g-col h4>span{position:relative;z-index:1;font-size:3.6cqh;font-weight:900;color:#fff4dc;text-shadow:0 .35cqh 0 rgba(90,30,20,.85),0 .8cqh 1cqh rgba(0,0,0,.45);letter-spacing:.04em}
+.g-center .ttl{display:flex;flex-direction:column;align-items:center;gap:.4cqh;text-align:center;max-width:100%}
+.g-center .ttl small{font-size:2.8cqh;font-weight:800;letter-spacing:.35em;color:#e9c968;text-shadow:0 .3cqh .5cqh rgba(0,0,0,.7)}
+.g-center .ttl b{font-size:7cqh;font-weight:900;line-height:1.1;white-space:nowrap;max-width:100%;overflow:hidden;background:linear-gradient(180deg,#fff,#ffe9a0 50%,#d9a93c);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 .5cqh .4cqh rgba(0,0,0,.7))}
 .g-foot{margin:0 -4cqw;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
 .g-foot .ticker{font-size:2.5cqh;color:#ffe9a8;font-weight:700}
 @keyframes gcIn{from{opacity:0;transform:translateY(2cqh) scale(.96);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
@@ -808,13 +814,14 @@ function renderGala(st){
   const ghost='<div class="gc ghost"><img class="cf" src="/orn/card.png" alt=""></div>';
   const rest=items.slice(1,9);
   const R=[],L=[];rest.forEach((d,i)=>(i%2?L:R).push(d));
-  const col=(arr,t)=>`<h4>${t}</h4>`+Array.from({length:4},(_,i)=>arr[i]?card(arr[i],i):ghost).join('');
+  const col=(arr,t)=>`<h4><img class="tf" src="/orn/tab.png" alt=""><span>${t}</span></h4>`+Array.from({length:4},(_,i)=>arr[i]?card(arr[i],i):ghost).join('');
   $('gR').innerHTML=col(R,'השותפים');
   $('gL').innerHTML=col(L,'השותפים');
   const fo='<img class="fo l" src="/orn/corner.png" alt=""><img class="fo r" src="/orn/corner.png" alt="">';
   const plate='<img class="plate" src="/orn/plate.png" alt="">';
   const medal=settings.logo?`<div class="crown" style="width:34cqh"><img src="${settings.logo}" style="width:100%;display:block" alt=""></div>`:'';
-  $('gC').innerHTML=top?`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/plate.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
+  const ttl=`<div class="ttl"><small>\u05e9\u05d8\u05e8 \u05e9\u05d5\u05ea\u05e4\u05d5\u05ea</small><b>${esc(settings.title||st.name||'')}</b></div>`;
+  $('gC').innerHTML=top?ttl+`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/plate.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:ttl+`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
   setTimeout(fitAll,40);
 }
