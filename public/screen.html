@@ -631,6 +631,29 @@ body[data-skin="gala"] .gala{padding-top:1cqh}
 .g-center .ded>.df{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
 .g-center .ded>span{position:relative;z-index:1;max-width:86%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gc{padding:3.3cqh 6% 3.9cqh}
+
+/* ---- luxury pass ---- */
+body[data-skin="gala"] #frame{background:
+ radial-gradient(48% 62% at 50% 46%,rgba(255,196,96,.34) 0%,rgba(255,170,70,.10) 45%,transparent 72%),
+ radial-gradient(90% 100% at 50% 0%,#0f3a86 0%,#0a2760 38%,#061a45 70%,#030c26 100%);overflow:hidden}
+body[data-skin="gala"] #frame::before{content:"";position:absolute;inset:0;background:
+ repeating-linear-gradient(90deg,rgba(0,0,0,.42) 0,rgba(0,0,0,0) 3.2cqw,rgba(120,170,255,.10) 5.4cqw,rgba(0,0,0,0) 7.4cqw,rgba(0,0,0,.42) 9.6cqw),
+ radial-gradient(circle at 50% 50%,transparent 38%,rgba(0,0,12,.72) 100%);pointer-events:none}
+body[data-skin="gala"] #frame::after{content:"";position:absolute;inset:0;background:
+ radial-gradient(circle,rgba(255,226,150,.9) 0 .18cqh,transparent .22cqh) 0 0/9cqh 11cqh,
+ radial-gradient(circle,rgba(255,226,150,.6) 0 .14cqh,transparent .2cqh) 4cqh 6cqh/13cqh 9cqh;
+ opacity:.35;animation:gDust 26s linear infinite;pointer-events:none;mask-image:radial-gradient(circle at 50% 50%,#000 20%,transparent 75%)}
+@keyframes gDust{from{background-position:0 0,4cqh 6cqh}to{background-position:0 -44cqh,4cqh -30cqh}}
+/* velvet capsules with gold */
+.gc .p{background:linear-gradient(180deg,#14275f,#0a1640 60%,#050c28);box-shadow:inset 0 0 0 .22cqh rgba(240,205,120,.75),inset 0 .4cqh .5cqh rgba(255,255,255,.14),inset 0 -.4cqh .6cqh rgba(0,0,0,.6);color:#f3d98e;text-shadow:0 .25cqh .4cqh rgba(0,0,0,.8)}
+.gc .p b{color:#ffe9a6;background:none;-webkit-background-clip:border-box;background-clip:border-box;filter:none;text-shadow:0 .25cqh .4cqh rgba(0,0,0,.85)}
+.gc .p span+b{border-inline-start-color:rgba(240,205,120,.5)}
+.g-center .ded{color:#fff;text-shadow:0 .4cqh 0 rgba(10,10,50,.8),0 .8cqh 1cqh rgba(0,0,0,.5);font-size:3.4cqh}
+.g-center .ded>span{color:#fff6d6;font-weight:900}
+/* gold header tabs + sapphire pills */
+.g-col h4{background:linear-gradient(180deg,#fff3bf,#e6bd55 50%,#a87420) padding-box,linear-gradient(180deg,#fff3bf,#d9a93c 55%,#7a520e) border-box;color:#1a1244;text-shadow:0 .25cqh 0 rgba(255,255,255,.6);box-shadow:0 .5cqh 0 #6b480c,0 1cqh 0 #3c2606,0 1.8cqh 2.4cqh rgba(0,0,0,.55),inset 0 .4cqh .6cqh rgba(255,255,255,.7)}
+.g-plaque small,.g-plaque b{background:linear-gradient(180deg,#2b4fc0,#13287a 60%,#0a1550) padding-box,linear-gradient(180deg,#fff3bf,#d9a93c 55%,#7a520e) border-box}
+.g-plaque b{background:linear-gradient(180deg,#3a63d8,#1b3699 60%,#0f1e6a) padding-box,linear-gradient(180deg,#fff3bf,#d9a93c 55%,#7a520e) border-box}
 .g-foot{margin:0 -4cqw;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
 .g-foot .ticker{font-size:2.5cqh;color:#ffe9a8;font-weight:700}
 @keyframes gcIn{from{opacity:0;transform:translateY(2cqh) scale(.96);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
@@ -791,7 +814,7 @@ function renderGala(st){
   const fo='<img class="fo l" src="/orn/corner.png" alt=""><img class="fo r" src="/orn/corner.png" alt="">';
   const plate='<img class="plate" src="/orn/plate.png" alt="">';
   const medal=settings.logo?`<div class="crown" style="width:34cqh"><img src="${settings.logo}" style="width:100%;display:block" alt=""></div>`:'';
-  $('gC').innerHTML=top?`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/pill.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
+  $('gC').innerHTML=top?`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/plate.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
   setTimeout(fitAll,40);
 }
