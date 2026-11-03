@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ניהול מסכי התרמה</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Assistant:wght@400;700&family=Rubik:wght@400;700&family=Alef:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Varela+Round&family=Bellefair&family=Karantina&family=Noto+Serif+Hebrew:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&display=swap">
 <style>
 :root{--bg:#F3F4F7;--card:#fff;--ink:#12182A;--mute:#5E6678;--line:#E3E6EE;--p:#1A2B5C;--p2:#26397A;--acc:#B8923A;--ok:#1E8A4C;--bad:#B3261E;--side:#0F1830}
 *{box-sizing:border-box}
@@ -156,6 +156,21 @@ th{background:#fff;border-bottom-color:#ECE9E1}td{border-bottom-color:#F2EFE8}
 .card[style*="linear-gradient(135deg,#0F1830"] .btn.gold{background:#1F3A8A}
 .login{background:radial-gradient(80% 60% at 50% 0%,#FBF3DE,#F1EBDD)}
 .login .box{box-shadow:0 20px 60px rgba(60,45,10,.15)}
+
+/* ===== STRUCTURE v3 ===== */
+.live2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:22px;align-items:start}
+@media (max-width:1080px){.live2{grid-template-columns:minmax(0,1fr)}}
+.page[data-page=design] .card>h2{cursor:default}.page[data-page=design] .card>h2::after{content:none}
+.page[data-page=design] .card.col>:not(h2){display:block!important}
+.page[data-page=design] .card[data-tab]:not(.show){display:none}
+.tabbar{display:flex;gap:6px;flex-wrap:wrap;background:#fff;border-radius:16px;padding:6px;margin-bottom:18px;box-shadow:0 1px 2px rgba(30,25,10,.04),0 8px 28px rgba(30,25,10,.05);position:sticky;top:70px;z-index:10}
+.tabbar button{flex:1;border:0;background:none;border-radius:12px;padding:12px 14px;font-weight:600;color:var(--mute);cursor:pointer;white-space:nowrap}
+.tabbar button[aria-pressed="true"]{background:#FBF3DE;color:#8A6618}
+.kpis{margin-bottom:22px}
+.kpi:first-child b{color:#8A6618}
+.col2 .feed{max-height:340px;overflow:auto}
+.fprev{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#0b1433;color:#f1cf72;border-radius:16px;padding:16px;margin:6px 0 10px}
+.fprev small{display:block;color:#9aa6d6;font-size:12px}.fprev b{font-size:24px;font-weight:700;line-height:1.3}
 </style>
 </head>
 <body>
@@ -188,14 +203,6 @@ th{background:#fff;border-bottom-color:#ECE9E1}td{border-bottom-color:#F2EFE8}
 
      <!-- ===== סקירה ===== -->
      <section class="page" data-page="home">
-      <div class="kpis">
-        <div class="kpi"><small>נאסף</small><b id="kTotal">0</b><em id="kGoal"></em></div>
-        <div class="kpi"><small>אחוז מהיעד</small><b id="kPct">0%</b><div class="meter"><i id="kBar"></i></div></div>
-        <div class="kpi"><small>תורמים</small><b id="kCount">0</b><em id="kLast"></em></div>
-        <div class="kpi"><small>ממוצע לתרומה</small><b id="kAvg">0</b><em id="kMax"></em></div>
-      </div>
-      <div class="card" style="background:linear-gradient(135deg,#0F1830,#1A2B5C);color:#fff;border:0;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b style="font-size:17px">מחכים לתרומה?</b><div style="opacity:.75;font-size:13.5px">הוספה מהירה עם קפיצה במסך נמצאת בלשונית "שליטה חיה" (או מקש N).</div></div><button class="btn gold" data-go="live">פתיחת שליטה חיה ←</button></div>
-      <div class="card"><h2>תרומות אחרונות <button class="btn ghost sm" data-go="home">כל התרומות ←</button></h2><div class="feed" id="feed"></div></div>
       <div class="card"><h2>תרומות לפי שעה <span class="hint">24 שעות אחרונות עם פעילות</span></h2><div class="bars" id="bars"></div><div class="axis" id="axis"></div></div>
      </section>
 
@@ -207,14 +214,14 @@ th{background:#fff;border-bottom-color:#ECE9E1}td{border-bottom-color:#F2EFE8}
           <div class="f"><input id="q" class="in" placeholder="חיפוש לפי שם, הקדשה, עיר או סכום"></div>
           <div class="seg" id="flt"><button data-f="all" aria-pressed="true">הכול</button><button data-f="live">פעילות</button><button data-f="hidden">מוסתרות</button><button data-f="anon">אנונימיות</button></div>
         </div>
-        <div class="inl" style="margin-bottom:10px"><button class="btn ghost sm" id="undoBtn">ביטול האחרונה</button><a class="btn ghost sm" id="csv" href="#">ייצוא CSV</a><button class="btn ghost sm" id="impBtn">יבוא רשימה</button><button class="btn ghost sm" data-go="home">+ תרומה חדשה</button></div>
+        <div class="inl" style="margin-bottom:10px"><button class="btn ghost sm" id="undoBtn">ביטול האחרונה</button><a class="btn ghost sm" id="csv" href="#">ייצוא CSV</a><button class="btn ghost sm" id="impBtn">יבוא רשימה</button><button class="btn ghost sm" data-go="live">+ תרומה חדשה</button></div>
         <div style="overflow:auto;max-height:640px"><table><thead><tr><th>#</th><th>תורם</th><th>סכום</th><th>הקדשה</th><th>עיר</th><th>זמן</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
       </div>
      </section>
 
      <!-- ===== עיצוב ===== -->
      <section class="page" data-page="design">
-      <div class="stepnote">כל קבוצה נפתחת בלחיצה על הכותרת. השינויים נשמרים אוטומטית ומופיעים בתצוגה המקדימה משמאל.</div>
+      <div class="stepnote">בחרו לשונית למעלה. השינויים נשמרים אוטומטית ומופיעים בתצוגה המקדימה.</div>
       <div class="card">
         <h2>סגנון כולל</h2><p class="sub">בחירה בין הסגנון הרשמי של הקמפיין לבין ערכות צבע.</p>
         <div class="row2"><div class="f"><label>סגנון</label><select data-s="skin"><option value="">קלאסי (ערכות צבע)</option><option value="shtar">שטר שותפות – קלף וזהב</option><option value="grand">מסך מלא – יוקרתי (מומלץ)</option><option value="royal">מלכותי – כהה עם מסגרת</option></select></div>
@@ -235,7 +242,7 @@ th{background:#fff;border-bottom-color:#ECE9E1}td{border-bottom-color:#F2EFE8}
         <h2>צבעים וגופן</h2>
         <div class="themes" id="themes"></div>
         <div class="row4"><div class="f"><label>הדגשה</label><div class="color"><input type="color" data-s="primary"></div></div><div class="f"><label>רקע 1</label><div class="color"><input type="color" data-s="bg1"></div></div><div class="f"><label>רקע 2</label><div class="color"><input type="color" data-s="bg2"></div></div><div class="f"><label>טקסט</label><div class="color"><input type="color" data-s="text"></div></div></div>
-        <h3>גופנים — בחרו לכל אלמנט</h3><div class="row2"><div class="f"><label>גופן כללי</label><select data-s="font"><option>Heebo</option><option>Assistant</option><option>Rubik</option><option>Alef</option><option>Frank Ruhl Libre</option><option>David Libre</option><option>Miriam Libre</option><option>Secular One</option><option>Suez One</option><option>Varela Round</option><option>Bellefair</option><option>Karantina</option><option>Noto Serif Hebrew</option><option>Noto Sans Hebrew</option></select></div><div class="f"><label>כותרת ראשית</label><select data-s="fontTitle"><option value="">לפי הסגנון (ברירת מחדל)</option><option>Heebo</option><option>Assistant</option><option>Rubik</option><option>Alef</option><option>Frank Ruhl Libre</option><option>David Libre</option><option>Miriam Libre</option><option>Secular One</option><option>Suez One</option><option>Varela Round</option><option>Bellefair</option><option>Karantina</option><option>Noto Serif Hebrew</option><option>Noto Sans Hebrew</option></select></div><div class="f"><label>שמות תורמים</label><select data-s="fontNames"><option value="">לפי הסגנון (ברירת מחדל)</option><option>Heebo</option><option>Assistant</option><option>Rubik</option><option>Alef</option><option>Frank Ruhl Libre</option><option>David Libre</option><option>Miriam Libre</option><option>Secular One</option><option>Suez One</option><option>Varela Round</option><option>Bellefair</option><option>Karantina</option><option>Noto Serif Hebrew</option><option>Noto Sans Hebrew</option></select></div><div class="f"><label>סכומים ומספרים</label><select data-s="fontNums"><option value="">לפי הסגנון (ברירת מחדל)</option><option>Heebo</option><option>Assistant</option><option>Rubik</option><option>Alef</option><option>Frank Ruhl Libre</option><option>David Libre</option><option>Miriam Libre</option><option>Secular One</option><option>Suez One</option><option>Varela Round</option><option>Bellefair</option><option>Karantina</option><option>Noto Serif Hebrew</option><option>Noto Sans Hebrew</option></select></div><div class="f"><label>כתובית, הקדשות ורצועת טקסט</label><select data-s="fontSub"><option value="">לפי הסגנון (ברירת מחדל)</option><option>Heebo</option><option>Assistant</option><option>Rubik</option><option>Alef</option><option>Frank Ruhl Libre</option><option>David Libre</option><option>Miriam Libre</option><option>Secular One</option><option>Suez One</option><option>Varela Round</option><option>Bellefair</option><option>Karantina</option><option>Noto Serif Hebrew</option><option>Noto Sans Hebrew</option></select></div></div><p class="hint">גודל הטקסט מתאים את עצמו אוטומטית — שם ארוך יוקטן כדי להיכנס בדיוק בכרטיס.</p>
+        <h3>גופנים — בחרו לכל אלמנט</h3><div class="row2"><div class="f"><label>גופן כללי</label><select data-s="font"><option value="Heebo" style="font-family:'Heebo',sans-serif;font-size:17px">היבו – מודרני ונקי</option><option value="Assistant" style="font-family:'Assistant',sans-serif;font-size:17px">אסיסטנט – ניטרלי וקריא</option><option value="Rubik" style="font-family:'Rubik',sans-serif;font-size:17px">רוביק – מעוגל ובולט</option><option value="Alef" style="font-family:'Alef',sans-serif;font-size:17px">אלף – קלאסי</option><option value="Frank Ruhl Libre" style="font-family:'Frank Ruhl Libre',sans-serif;font-size:17px">פרנק רוהל – ספרים וכתבי קודש</option><option value="David Libre" style="font-family:'David Libre',sans-serif;font-size:17px">דוד – סופרים</option><option value="Miriam Libre" style="font-family:'Miriam Libre',sans-serif;font-size:17px">מרים – נקי עם סריף</option><option value="Secular One" style="font-family:'Secular One',sans-serif;font-size:17px">סקולר – עבה ומודרני</option><option value="Suez One" style="font-family:'Suez One',sans-serif;font-size:17px">סואץ – כותרות כבדות</option><option value="Varela Round" style="font-family:'Varela Round',sans-serif;font-size:17px">ורלה – עגול וידידותי</option><option value="Bellefair" style="font-family:'Bellefair',sans-serif;font-size:17px">בלפייר – אלגנטי</option><option value="Karantina" style="font-family:'Karantina',sans-serif;font-size:17px">קרנטינה – דקורטיבי</option><option value="Noto Serif Hebrew" style="font-family:'Noto Serif Hebrew',sans-serif;font-size:17px">נוטו סריף – רשמי</option><option value="Noto Sans Hebrew" style="font-family:'Noto Sans Hebrew',sans-serif;font-size:17px">נוטו סנס – נקי</option></select></div><div class="f"><label>כותרת ראשית</label><select data-s="fontTitle"><option value="">לפי הסגנון (ברירת מחדל)</option><option value="Heebo" style="font-family:'Heebo',sans-serif;font-size:17px">היבו – מודרני ונקי</option><option value="Assistant" style="font-family:'Assistant',sans-serif;font-size:17px">אסיסטנט – ניטרלי וקריא</option><option value="Rubik" style="font-family:'Rubik',sans-serif;font-size:17px">רוביק – מעוגל ובולט</option><option value="Alef" style="font-family:'Alef',sans-serif;font-size:17px">אלף – קלאסי</option><option value="Frank Ruhl Libre" style="font-family:'Frank Ruhl Libre',sans-serif;font-size:17px">פרנק רוהל – ספרים וכתבי קודש</option><option value="David Libre" style="font-family:'David Libre',sans-serif;font-size:17px">דוד – סופרים</option><option value="Miriam Libre" style="font-family:'Miriam Libre',sans-serif;font-size:17px">מרים – נקי עם סריף</option><option value="Secular One" style="font-family:'Secular One',sans-serif;font-size:17px">סקולר – עבה ומודרני</option><option value="Suez One" style="font-family:'Suez One',sans-serif;font-size:17px">סואץ – כותרות כבדות</option><option value="Varela Round" style="font-family:'Varela Round',sans-serif;font-size:17px">ורלה – עגול וידידותי</option><option value="Bellefair" style="font-family:'Bellefair',sans-serif;font-size:17px">בלפייר – אלגנטי</option><option value="Karantina" style="font-family:'Karantina',sans-serif;font-size:17px">קרנטינה – דקורטיבי</option><option value="Noto Serif Hebrew" style="font-family:'Noto Serif Hebrew',sans-serif;font-size:17px">נוטו סריף – רשמי</option><option value="Noto Sans Hebrew" style="font-family:'Noto Sans Hebrew',sans-serif;font-size:17px">נוטו סנס – נקי</option></select></div><div class="f"><label>שמות תורמים</label><select data-s="fontNames"><option value="">לפי הסגנון (ברירת מחדל)</option><option value="Heebo" style="font-family:'Heebo',sans-serif;font-size:17px">היבו – מודרני ונקי</option><option value="Assistant" style="font-family:'Assistant',sans-serif;font-size:17px">אסיסטנט – ניטרלי וקריא</option><option value="Rubik" style="font-family:'Rubik',sans-serif;font-size:17px">רוביק – מעוגל ובולט</option><option value="Alef" style="font-family:'Alef',sans-serif;font-size:17px">אלף – קלאסי</option><option value="Frank Ruhl Libre" style="font-family:'Frank Ruhl Libre',sans-serif;font-size:17px">פרנק רוהל – ספרים וכתבי קודש</option><option value="David Libre" style="font-family:'David Libre',sans-serif;font-size:17px">דוד – סופרים</option><option value="Miriam Libre" style="font-family:'Miriam Libre',sans-serif;font-size:17px">מרים – נקי עם סריף</option><option value="Secular One" style="font-family:'Secular One',sans-serif;font-size:17px">סקולר – עבה ומודרני</option><option value="Suez One" style="font-family:'Suez One',sans-serif;font-size:17px">סואץ – כותרות כבדות</option><option value="Varela Round" style="font-family:'Varela Round',sans-serif;font-size:17px">ורלה – עגול וידידותי</option><option value="Bellefair" style="font-family:'Bellefair',sans-serif;font-size:17px">בלפייר – אלגנטי</option><option value="Karantina" style="font-family:'Karantina',sans-serif;font-size:17px">קרנטינה – דקורטיבי</option><option value="Noto Serif Hebrew" style="font-family:'Noto Serif Hebrew',sans-serif;font-size:17px">נוטו סריף – רשמי</option><option value="Noto Sans Hebrew" style="font-family:'Noto Sans Hebrew',sans-serif;font-size:17px">נוטו סנס – נקי</option></select></div><div class="f"><label>סכומים ומספרים</label><select data-s="fontNums"><option value="">לפי הסגנון (ברירת מחדל)</option><option value="Heebo" style="font-family:'Heebo',sans-serif;font-size:17px">היבו – מודרני ונקי</option><option value="Assistant" style="font-family:'Assistant',sans-serif;font-size:17px">אסיסטנט – ניטרלי וקריא</option><option value="Rubik" style="font-family:'Rubik',sans-serif;font-size:17px">רוביק – מעוגל ובולט</option><option value="Alef" style="font-family:'Alef',sans-serif;font-size:17px">אלף – קלאסי</option><option value="Frank Ruhl Libre" style="font-family:'Frank Ruhl Libre',sans-serif;font-size:17px">פרנק רוהל – ספרים וכתבי קודש</option><option value="David Libre" style="font-family:'David Libre',sans-serif;font-size:17px">דוד – סופרים</option><option value="Miriam Libre" style="font-family:'Miriam Libre',sans-serif;font-size:17px">מרים – נקי עם סריף</option><option value="Secular One" style="font-family:'Secular One',sans-serif;font-size:17px">סקולר – עבה ומודרני</option><option value="Suez One" style="font-family:'Suez One',sans-serif;font-size:17px">סואץ – כותרות כבדות</option><option value="Varela Round" style="font-family:'Varela Round',sans-serif;font-size:17px">ורלה – עגול וידידותי</option><option value="Bellefair" style="font-family:'Bellefair',sans-serif;font-size:17px">בלפייר – אלגנטי</option><option value="Karantina" style="font-family:'Karantina',sans-serif;font-size:17px">קרנטינה – דקורטיבי</option><option value="Noto Serif Hebrew" style="font-family:'Noto Serif Hebrew',sans-serif;font-size:17px">נוטו סריף – רשמי</option><option value="Noto Sans Hebrew" style="font-family:'Noto Sans Hebrew',sans-serif;font-size:17px">נוטו סנס – נקי</option></select></div><div class="f"><label>כתובית, הקדשות ורצועת טקסט</label><select data-s="fontSub"><option value="">לפי הסגנון (ברירת מחדל)</option><option value="Heebo" style="font-family:'Heebo',sans-serif;font-size:17px">היבו – מודרני ונקי</option><option value="Assistant" style="font-family:'Assistant',sans-serif;font-size:17px">אסיסטנט – ניטרלי וקריא</option><option value="Rubik" style="font-family:'Rubik',sans-serif;font-size:17px">רוביק – מעוגל ובולט</option><option value="Alef" style="font-family:'Alef',sans-serif;font-size:17px">אלף – קלאסי</option><option value="Frank Ruhl Libre" style="font-family:'Frank Ruhl Libre',sans-serif;font-size:17px">פרנק רוהל – ספרים וכתבי קודש</option><option value="David Libre" style="font-family:'David Libre',sans-serif;font-size:17px">דוד – סופרים</option><option value="Miriam Libre" style="font-family:'Miriam Libre',sans-serif;font-size:17px">מרים – נקי עם סריף</option><option value="Secular One" style="font-family:'Secular One',sans-serif;font-size:17px">סקולר – עבה ומודרני</option><option value="Suez One" style="font-family:'Suez One',sans-serif;font-size:17px">סואץ – כותרות כבדות</option><option value="Varela Round" style="font-family:'Varela Round',sans-serif;font-size:17px">ורלה – עגול וידידותי</option><option value="Bellefair" style="font-family:'Bellefair',sans-serif;font-size:17px">בלפייר – אלגנטי</option><option value="Karantina" style="font-family:'Karantina',sans-serif;font-size:17px">קרנטינה – דקורטיבי</option><option value="Noto Serif Hebrew" style="font-family:'Noto Serif Hebrew',sans-serif;font-size:17px">נוטו סריף – רשמי</option><option value="Noto Sans Hebrew" style="font-family:'Noto Sans Hebrew',sans-serif;font-size:17px">נוטו סנס – נקי</option></select></div></div><div id="fontPrev" class="fprev"><div><small>כותרת</small><b data-r="fontTitle">שטר שותפות ותמיכה במוסדות התורה</b></div><div><small>שם תורם</small><b data-r="fontNames">משפחת כהן</b></div><div><small>סכום</small><b data-r="fontNums">₪1,800 · 12,345</b></div><div><small>כתובית</small><b data-r="fontSub">לעילוי נשמת · תזכו למצוות</b></div></div><p class="hint">גודל הטקסט מתאים את עצמו אוטומטית — שם ארוך יוקטן כדי להיכנס בדיוק בכרטיס.</p>
       </div>
       <div class="card">
         <h2>מדיה</h2>
@@ -304,6 +311,14 @@ th{background:#fff;border-bottom-color:#ECE9E1}td{border-bottom-color:#F2EFE8}
 
      <!-- ===== שליטה חיה ===== -->
      <section class="page" data-page="live">
+      <div class="kpis">
+        <div class="kpi"><small>נאסף</small><b id="kTotal">0</b><em id="kGoal"></em></div>
+        <div class="kpi"><small>אחוז מהיעד</small><b id="kPct">0%</b><div class="meter"><i id="kBar"></i></div></div>
+        <div class="kpi"><small>תורמים</small><b id="kCount">0</b><em id="kLast"></em></div>
+        <div class="kpi"><small>ממוצע לתרומה</small><b id="kAvg">0</b><em id="kMax"></em></div>
+      </div>
+      <div class="live2">
+       <div class="col1">
       <div class="card">
         <h2>הוספת תרומה <span class="hint">תקפוץ מיד בכל המסכים</span></h2>
         <div class="chips" id="quick"></div>
@@ -318,6 +333,10 @@ th{background:#fff;border-bottom-color:#ECE9E1}td{border-bottom-color:#F2EFE8}
         <div class="deck" id="msgPresets"></div>
         <div class="inl" style="margin-top:12px"><div class="f"><input id="msgText" placeholder="או כתבו הודעה משלכם…"></div><div class="f" style="max-width:110px;flex:none"><input type="number" id="msgSec" value="12" min="3" max="120" title="שניות"></div><button class="btn" id="msgBtn">שליחה</button></div>
       </div>
+       </div>
+       <div class="col2">
+      <div class="card"><h2>תרומות אחרונות <button class="btn ghost sm" data-go="home">כל התרומות ←</button></h2><div class="feed" id="feed"></div></div>
+
       <div class="card">
         <h2>פעולות מהירות</h2>
         <div class="deck">
@@ -328,6 +347,9 @@ th{background:#fff;border-bottom-color:#ECE9E1}td{border-bottom-color:#F2EFE8}
           <button class="tb" id="testBtn"><i>👁</i>קפיצת בדיקה</button>
         </div>
         <details style="margin-top:12px"><summary class="hint" style="cursor:pointer">הגדרת קפיצת הבדיקה</summary><div class="row3" style="margin-top:10px"><div class="f"><label>שם</label><input id="tDonor" value="משפחת כהן"></div><div class="f"><label>סכום</label><input id="tAmount" type="number" value="248"></div><div class="f"><label>הקדשה</label><input id="tDed" value="לעילוי נשמת"></div></div></details>
+      </div>
+     
+       </div>
       </div>
      </section>
 
@@ -381,7 +403,7 @@ th{background:#fff;border-bottom-color:#ECE9E1}td{border-bottom-color:#F2EFE8}
 
 <script>
 const $=id=>document.getElementById(id);
-let PREV='',PIN=sessionStorage.getItem('pin')||'',SLUG=localStorage.getItem('slug')||'main',ST=null,saveT=0,ws,ROWS=[],FLT='all',PAGE=localStorage.getItem('page')||'home',STATS=null;
+let PREV='',PIN=sessionStorage.getItem('pin')||'',SLUG=localStorage.getItem('slug')||'main',ST=null,saveT=0,ws,ROWS=[],FLT='all',PAGE=localStorage.getItem('pg')||'live',STATS=null;
 const api=(m,u,b)=>fetch(u,{method:m,headers:{'Content-Type':'application/json','x-pin':PIN},body:b?JSON.stringify(b):undefined}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'שגיאה');return j});
 const toast=t=>{$('toast').textContent=t;$('toast').classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('on'),2400)};
 const fmt=n=>Math.round(n||0).toLocaleString('he-IL');
@@ -390,12 +412,20 @@ const THEMES={royal:['מלכותי','#C9A961','#0B1D3A','#1E3A6E','#FFFFFF'],eme
 const SOUNDS={chime:'פעמונים',bell:'פעמון',coins:'מטבעות',harp:'נבל',fanfare:'תרועה',pop:'פופ',shofar:'שופר',none:'ללא'};
 const QUICK=[18,36,52,100,180,360,500,1000,1800,5000];
 const ic=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-const PAGES=[['home','לוח בקרה',ic('<path d="M3 11l9-8 9 8M5 10v10h14V10"/>')],['design','מסכים ועיצוב',ic('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>')],['live','שליטה חיה',ic('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>')],['tools','כלים',ic('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6 2.6-2.2z"/>')]];
+const PAGES=[['live','אירוע חי',ic('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>')],['home','תרומות',ic('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>')],['design','עיצוב ומסכים',ic('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>')],['tools','הגדרות',ic('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>')]];
 const NOPV=['home','live','tools'];
 $('navItems').innerHTML=PAGES.map(([k,n,i])=>`<button class="n" data-p="${k}">${i}${n}</button>`).join('');
 $('mnav').innerHTML=PAGES.map(([k,n])=>`<button data-p="${k}">${n}</button>`).join('');
-function accordion(){document.querySelectorAll('.page[data-page=design] .card').forEach((c,i)=>{if(!c.dataset.acc){c.dataset.acc=1;if(i>0)c.classList.add('col');c.querySelector(':scope>h2').addEventListener('click',e=>{if(e.target.closest('button,select,input,a'))return;c.classList.toggle('col')})}})}
-function go(p){if(!PAGES.some(x=>x[0]===p))p='home';PAGE=p;localStorage.setItem('page',p);
+const TABS=[['style','סגנון',['סגנון כולל','שטר שותפות']],['text','טקסטים',['טקסטים ויעד','מה מוצג במסך']],['look','צבעים ופונטים',['צבעים וגופן','מדיה']],['fx','קפיצה וצלילים',['קפיצת תורם','צלילים']],['scr','מסכים',['מסכים פיזיים וקישורים']]];
+let TAB=localStorage.getItem('tab')||'style';
+function fontPrev(){const g=k=>document.querySelector('[data-s="'+k+'"]')?.value||'',base=g('font')||'Heebo';document.querySelectorAll('#fontPrev [data-r]').forEach(b=>b.style.fontFamily=`'${g(b.dataset.r)||base}',Heebo,sans-serif`)}
+document.addEventListener('change',e=>{if(e.target.matches('[data-s^=font]'))fontPrev()});setInterval(fontPrev,1500);
+function accordion(){const cards=[...document.querySelectorAll('.page[data-page=design] .card')];
+  cards.forEach(c=>{const h=(c.querySelector(':scope>h2')?.firstChild?.textContent||'').trim();const t=TABS.find(x=>x[2].includes(h));c.dataset.tab=t?t[0]:'style'});
+  const first=cards[0];if(first&&!$('tabbar')){const bar=document.createElement('div');bar.id='tabbar';bar.className='tabbar';first.parentElement.insertBefore(bar,first)}
+  const draw=()=>{$('tabbar').innerHTML=TABS.map(([k,n])=>`<button data-tab="${k}" aria-pressed="${k===TAB}">${n}</button>`).join('');cards.forEach(c=>c.classList.toggle('show',c.dataset.tab===TAB))};
+  draw();document.addEventListener('click',e=>{const b=e.target.closest('#tabbar [data-tab]');if(b){TAB=b.dataset.tab;localStorage.setItem('tab',TAB);draw()}})}
+function go(p){if(!PAGES.some(x=>x[0]===p))p='live';PAGE=p;localStorage.setItem('pg',p);
   document.querySelectorAll('.page').forEach(e=>e.classList.toggle('on',e.dataset.page===p));
   document.querySelectorAll('[data-p]').forEach(b=>b.dataset.p===p?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   $('pageTitle').textContent=PAGES.find(x=>x[0]===p)[1];$('layout').classList.toggle('nopv',NOPV.includes(p));$('pvcol').hidden=NOPV.includes(p);scrollTo(0,0)}
@@ -459,7 +489,7 @@ async function add(){const donor=$('dDonor').value.trim(),amount=Number($('dAmou
   const b=$('addBtn');b.disabled=true;try{await api('POST','/api/c/'+SLUG+'/donations',{donor,amount,dedication:$('dDed').value.trim(),city:$('dCity').value.trim(),anonymous:$('dAnon').checked});toast(`✓ ${donor} – ${fmt(amount)} עלה למסך`);['dDonor','dAmount','dDed'].forEach(i=>$(i).value='');$('dAnon').checked=false;$('dDonor').focus()}catch(e){toast(e.message)}b.disabled=false}
 $('addBtn').onclick=add;['dDonor','dAmount','dDed','dCity'].forEach(id=>$(id).onkeydown=e=>{if(e.key==='Enter')add()});
 $('quick').onclick=e=>{const b=e.target.closest('[data-a]');if(b){$('dAmount').value=b.dataset.a;$('dDonor').focus()}};
-document.addEventListener('keydown',e=>{if(e.key==='n'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)&&!e.ctrlKey&&!e.metaKey){e.preventDefault();go('home');$('dDonor').focus()}});
+document.addEventListener('keydown',e=>{if(e.key==='n'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)&&!e.ctrlKey&&!e.metaKey){e.preventDefault();go('live');$('dDonor').focus()}});
 
 /* live */
 const test=()=>api('POST','/api/c/'+SLUG+'/test',{donor:$('tDonor').value||'תורם לדוגמה',amount:Number($('tAmount').value)||180,dedication:$('tDed').value}).then(()=>toast('נשלחה בדיקה למסכים'));
