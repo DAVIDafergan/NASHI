@@ -687,6 +687,28 @@ body[data-skin="gala"] .gala,.gc .n,.g-center .feat .n,.g-center .feat .amt,.g-c
 .g-center .goalb .bar{position:relative;width:78%;height:2.2cqh;margin-top:.8cqh;border-radius:2cqh;border:.28cqh solid transparent;background:linear-gradient(180deg,#0b1240,#050a28) padding-box,linear-gradient(180deg,#fff3bf,#c8942c 55%,#7a520e) border-box;overflow:hidden;direction:rtl;box-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.6),inset 0 .3cqh .5cqh rgba(0,0,0,.7)}
 .g-center .goalb .bar i{display:block;height:100%;border-radius:2cqh;background:linear-gradient(180deg,#fff6c8,#e6bd55 45%,#a87420);box-shadow:0 0 1.6cqh rgba(255,215,120,.7);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
 .g-center .goalb .bar span{position:absolute;inset:0;display:grid;place-items:center;font-size:1.7cqh;color:#fff1c0;text-shadow:0 .15cqh .3cqh rgba(0,0,0,.95)}
+
+/* ---- v13: logo at top slot; total + goal row lower ---- */
+.g-plaque{display:none!important}
+.g-top{justify-content:center}
+.g-logo{display:flex;align-items:center;justify-content:center;max-width:24cqw}
+.g-logo img{max-height:14cqh;max-width:24cqw;object-fit:contain;filter:drop-shadow(0 .8cqh .8cqh rgba(0,0,0,.6)) drop-shadow(0 0 2cqh rgba(255,215,120,.45))}
+.g-center .goalb{display:none}
+.g-center .sum{display:flex;align-items:flex-start;justify-content:center;width:100%;direction:rtl;gap:1.4cqw}
+.g-center .sum .sc{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:.4cqh;text-align:center}
+.g-center .sum small{font-size:2.4cqh;letter-spacing:.28em;color:#e9c968;text-shadow:0 .3cqh .5cqh rgba(0,0,0,.8)}
+.g-center .sum b{display:block;font-size:6.6cqh;line-height:1.05;white-space:nowrap;max-width:100%;overflow:hidden;background:linear-gradient(180deg,#fffbe6,#ffe29a 45%,#d9a93c);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.04em rgba(236,196,96,.95);filter:drop-shadow(0 .06em 0 #5a3a07) drop-shadow(0 .7cqh .7cqh rgba(0,0,0,.7))}
+.g-center .sum .sep{width:.3cqh;align-self:stretch;margin-top:.8cqh;background:linear-gradient(180deg,transparent,#e9c968,transparent)}
+.g-center>.bar{position:relative;width:86%;height:2.2cqh;border-radius:2cqh;border:.28cqh solid transparent;background:linear-gradient(180deg,#0b1240,#050a28) padding-box,linear-gradient(180deg,#fff3bf,#c8942c 55%,#7a520e) border-box;overflow:hidden;direction:rtl;box-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.6),inset 0 .3cqh .5cqh rgba(0,0,0,.7)}
+.g-center>.bar i{display:block;height:100%;border-radius:2cqh;background:linear-gradient(180deg,#fff6c8,#e6bd55 45%,#a87420);box-shadow:0 0 1.6cqh rgba(255,215,120,.7);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.g-center>.bar span{position:absolute;inset:0;display:grid;place-items:center;font-size:1.7cqh;color:#fff1c0;text-shadow:0 .15cqh .3cqh rgba(0,0,0,.95)}
+.g-center{gap:1.8cqh}
+body[data-skin="gala"] .gala{grid-template-rows:minmax(0,1fr) auto}
+.g-top{position:absolute!important;top:15.5cqh;left:0;right:0;margin:0!important;max-width:none!important;pointer-events:none;z-index:7}
+.g-logo img{max-height:12cqh}
+.g-center{padding-top:27.5cqh!important;gap:1.5cqh!important}
+.g-center .ttl small{font-size:2cqh}.g-center .ttl b{font-size:4.6cqh}
+.g-center .sum b{font-size:6.2cqh}
 .g-foot{margin:0 -1.9cqw 3cqh;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
 .g-foot .ticker{font-size:2.5cqh;color:#ffe9a8;font-weight:700}
 @keyframes gcIn{from{opacity:0;transform:translateY(2cqh) scale(.96);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
@@ -720,7 +742,7 @@ body[data-skin="gala"] .gala,.gc .n,.g-center .feat .n,.g-center .feat .amt,.g-c
 <img class="g-arch" src="/orn/arch.png" alt="">
   
   <canvas id="gDust"></canvas><div class="g-frame"></div>
-  <div class="g-top"><div class="g-plaque"><small id="gLabel">עד כה התחייבו</small><b id="gTotal">0</b></div><div class="g-meter"><i id="gBar"></i></div></div>
+  <div class="g-top"><div class="g-logo" id="gLogo"></div><div class="g-plaque"><small id="gLabel">עד כה התחייבו</small><b id="gTotal">0</b></div><div class="g-meter"><i id="gBar"></i></div></div>
   <div class="g-grid"><div class="g-col" id="gR"></div><div class="g-center" id="gC"></div><div class="g-col" id="gL"></div></div>
   <div class="g-foot"><div class="ticker" id="gTicker"></div></div>
 </div>
@@ -847,9 +869,10 @@ function renderGala(st){
   $('gL').innerHTML=col(L,'השותפים');
   const fo='<img class="fo l" src="/orn/corner.png" alt=""><img class="fo r" src="/orn/corner.png" alt="">';
   const plate='<img class="plate" src="/orn/plate.png" alt="">';
-  const medal=settings.logo?`<div class="crown" style="width:34cqh"><img src="${settings.logo}" style="width:100%;display:block" alt=""></div>`:'';
+  const medal='';
   const goal=+st.goal||0,pct=goal>0?Math.min(100,(+st.total||0)/goal*100):0;
-  const goalH=goal>0?`<div class="goalb"><div class="gl"><i></i><span>\u05d9\u05e2\u05d3</span><i></i></div><b>${esc(cur)}${fmt(goal)}</b><div class="bar"><i style="width:${pct.toFixed(1)}%"></i><span>${Math.round(pct)}%</span></div></div>`:'';
+  const goalH=`<div class="sum"><div class="sc"><small>${esc(settings.galaLabel||'עד כה התחייבו')}</small><b>${esc(cur)}${fmt(+st.total||0)}</b></div>${goal>0?`<div class="sep"></div><div class="sc"><small>יעד</small><b>${esc(cur)}${fmt(goal)}</b></div>`:''}</div>${goal>0?`<div class="bar"><i style="width:${pct.toFixed(1)}%"></i><span>${Math.round(pct)}%</span></div>`:''}`;
+  $('gLogo').innerHTML=settings.logo?`<img src="${settings.logo}" alt="">`:'';
   const ttl=`<div class="ttl"><small>\u05e9\u05d8\u05e8 \u05e9\u05d5\u05ea\u05e4\u05d5\u05ea</small><b>${esc(settings.title||st.name||'')}</b></div>`;
   $('gC').innerHTML=top?ttl+goalH+`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/plate.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:ttl+goalH+`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
