@@ -639,7 +639,8 @@ function renderWall(st){
   requestAnimationFrame(()=>{if(t.scrollHeight>w.clientHeight+4){t.innerHTML=html+html;w.classList.add('scroll');t.style.animation='';t.style.setProperty('--dur',Math.max(25,items.length*(Number(settings.wallSpeed)||2.5)/Math.max(1,cols/3))+'s')}})
 }
 let lastWall=new Set();
-function render(st){S=st;applySettings(st.settings);renderTotals(st.total,st.count,st.goal);renderList(st);renderWall(st);renderTiers(st);$('idle').classList.toggle('on',!!settings.idleMsg)}
+let __build=null,__t0=Date.now();
+function render(st){if(st.build){if(__build&&st.build!==__build&&Date.now()-__t0>60000){location.reload();return}__build=st.build}S=st;applySettings(st.settings);renderTotals(st.total,st.count,st.goal);renderList(st);renderWall(st);renderTiers(st);$('idle').classList.toggle('on',!!settings.idleMsg)}
 
 /* ---------- popup queue ---------- */
 const queue=[];let busy=false;
