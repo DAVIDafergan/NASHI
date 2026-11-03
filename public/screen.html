@@ -677,6 +677,31 @@ body[data-skin="gala"] .gala,.gc .n,.g-center .feat .n,.g-center .feat .amt,.g-c
 .g-center .ttl b{-webkit-text-stroke:.035em rgba(236,196,96,.95);filter:drop-shadow(0 .35cqh 0 #5a3a07) drop-shadow(0 .9cqh .8cqh rgba(0,0,0,.7))}
 .g-col h4>span{color:#6a2417;text-shadow:0 .22cqh 0 rgba(255,225,205,.85),0 -.12cqh 0 rgba(60,10,5,.6);letter-spacing:.06em}
 .g-plaque small,.g-plaque b{color:#ffeaa8;text-shadow:0 .3cqh 0 rgba(40,25,0,.85)}
+
+/* ---- v10: grand total + goal plate ---- */
+.g-top{display:none!important}
+.g-center{gap:2.4cqh;padding-bottom:3cqh}
+.g-center .ttl b{font-size:5.4cqh}.g-center .ttl small{font-size:2.3cqh}
+.g-center .tot{display:flex;flex-direction:column;align-items:center;gap:1cqh;width:100%;flex:none}
+.g-center .tot .pl{position:relative;width:50cqw;aspect-ratio:2434/488;flex:none;filter:drop-shadow(0 1.6cqh 1.4cqh rgba(0,0,0,.6))}
+.g-center .tot .plate{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+.g-center .tot .in{position:absolute;left:12%;right:11%;top:29%;bottom:26%;display:grid;grid-template-columns:minmax(0,1.25fr) auto minmax(0,1fr);align-items:center;direction:rtl;z-index:2;text-align:center}
+.g-center .tot .in:has(.tc:only-child){grid-template-columns:1fr}
+.g-center .tot small{display:block;font-size:2.2cqh;letter-spacing:.22em;color:#e9c968;text-shadow:0 .25cqh 0 rgba(30,15,0,.9);line-height:1}
+.g-center .tot b{display:block;white-space:nowrap;font-size:4.9cqh;line-height:1.05;background:linear-gradient(180deg,#fffbe6,#ffe29a 45%,#d9a93c);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.04em rgba(236,196,96,.95);filter:drop-shadow(0 .06em 0 #5a3a07) drop-shadow(0 .5cqh .5cqh rgba(0,0,0,.7))}
+.g-center .tot .tg b{font-size:4.2cqh}
+.g-center .tot .sep{width:.35cqh;height:72%;align-self:center;margin:0 1.4cqw;background:linear-gradient(180deg,transparent,#e9c968,transparent)}
+.g-center .tot .bar{position:relative;width:38cqw;height:2.6cqh;border-radius:2cqh;border:.3cqh solid transparent;background:linear-gradient(180deg,#0b1240,#050a28) padding-box,linear-gradient(180deg,#fff3bf,#c8942c 55%,#7a520e) border-box;box-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.6),inset 0 .3cqh .5cqh rgba(0,0,0,.7);overflow:hidden;direction:rtl}
+.g-center .tot .bar i{display:block;height:100%;border-radius:2cqh;background:linear-gradient(180deg,#fff6c8,#e6bd55 45%,#a87420);box-shadow:0 0 1.6cqh rgba(255,215,120,.7);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.g-center .tot .bar span{position:absolute;inset:0;display:grid;place-items:center;font-size:1.9cqh;color:#fff1c0;text-shadow:0 .15cqh .3cqh rgba(0,0,0,.95);z-index:2;font-family:var(--fA,var(--gf)),serif}
+.g-center .feat{width:50cqw}
+body[data-skin="gala"] .gala{grid-template-rows:minmax(0,1fr) auto}
+.g-center{padding-top:13cqh;padding-bottom:2cqh;gap:2cqh;justify-content:flex-start}
+.g-col h4{margin-top:0}
+.g-arch{top:9.5%;height:90%}
+.g-center .ttl{position:absolute;top:2.2cqh;left:50%;transform:translateX(-50%);z-index:7;width:46cqw;align-items:center}
+.g-center .ttl small{font-size:2.2cqh}.g-center .ttl b{font-size:5.6cqh}
+.g-center{padding-top:19cqh;gap:2cqh}
 .g-foot{margin:0 -1.9cqw 3cqh;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
 .g-foot .ticker{font-size:2.5cqh;color:#ffe9a8;font-weight:700}
 @keyframes gcIn{from{opacity:0;transform:translateY(2cqh) scale(.96);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
@@ -838,8 +863,10 @@ function renderGala(st){
   const fo='<img class="fo l" src="/orn/corner.png" alt=""><img class="fo r" src="/orn/corner.png" alt="">';
   const plate='<img class="plate" src="/orn/plate.png" alt="">';
   const medal=settings.logo?`<div class="crown" style="width:34cqh"><img src="${settings.logo}" style="width:100%;display:block" alt=""></div>`:'';
+  const goal=+st.goal||0,tot=+st.total||0,pct=goal>0?Math.min(100,tot/goal*100):0;
+  const totH=`<div class="tot"><div class="pl"><img class="plate" src="/orn/plate.png" alt=""><div class="in"><div class="tc"><small>${esc(settings.galaLabel||'\u05e2\u05d3 \u05db\u05d4 \u05d4\u05ea\u05d7\u05d9\u05d9\u05d1\u05d5')}</small><b>${esc(cur)}${fmt(tot)}</b></div>${goal>0?`<div class="sep"></div><div class="tg"><small>\u05d9\u05e2\u05d3</small><b>${esc(cur)}${fmt(goal)}</b></div>`:''}</div></div>${goal>0?`<div class="bar"><i style="width:${pct.toFixed(1)}%"></i><span>${Math.round(pct)}%</span></div>`:''}</div>`;
   const ttl=`<div class="ttl"><small>\u05e9\u05d8\u05e8 \u05e9\u05d5\u05ea\u05e4\u05d5\u05ea</small><b>${esc(settings.title||st.name||'')}</b></div>`;
-  $('gC').innerHTML=top?ttl+`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/plate.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:ttl+`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
+  $('gC').innerHTML=top?ttl+totH+`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/plate.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:ttl+totH+`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
   setTimeout(fitAll,40);
 }
