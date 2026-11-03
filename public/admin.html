@@ -41,6 +41,11 @@ main.main{min-width:0}
 .pvcol{position:sticky;top:76px}
 @media (max-width:1180px){.pvcol{position:static}}
 .page{display:none}.page.on{display:block}
+.page[data-page=design] .card>h2{cursor:pointer;margin:0}.page[data-page=design] .card>h2::after{content:"\25BE";margin-inline-start:auto;color:var(--mute);transition:transform .2s}
+.page[data-page=design] .card.col>h2::after{transform:rotate(90deg)}
+.page[data-page=design] .card.col>:not(h2){display:none!important}
+.page[data-page=design] .card:not(.col)>h2{margin-bottom:6px}
+.stepnote{background:#fbf6e8;border:1px solid #eadfba;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
 .card h2{margin:0 0 4px;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .card .sub{color:var(--mute);font-size:13px;margin:0 0 14px}
@@ -159,12 +164,12 @@ dialog h2{margin:0 0 14px;font-size:18px}
         <label class="chk" style="border:0"><input type="checkbox" id="dAnon"><span>תורם אנונימי (יוצג "תורם/ת אנונימי/ת")</span></label>
         <button class="btn gold big" id="addBtn" style="margin-top:6px">הוספה והקפצה למסך</button>
       </div>
-      <div class="card"><h2>תרומות אחרונות <button class="btn ghost sm" data-go="donations">כל התרומות ←</button></h2><div class="feed" id="feed"></div></div>
+      <div class="card"><h2>תרומות אחרונות <button class="btn ghost sm" data-go="home">כל התרומות ←</button></h2><div class="feed" id="feed"></div></div>
       <div class="card"><h2>תרומות לפי שעה <span class="hint">24 שעות אחרונות עם פעילות</span></h2><div class="bars" id="bars"></div><div class="axis" id="axis"></div></div>
      </section>
 
      <!-- ===== תרומות ===== -->
-     <section class="page" data-page="donations">
+     <section class="page" data-page="home">
       <div class="card">
         <h2>כל התרומות <span class="hint" id="dCount"></span></h2>
         <div class="inl" style="margin:10px 0 12px">
@@ -176,20 +181,9 @@ dialog h2{margin:0 0 14px;font-size:18px}
       </div>
      </section>
 
-     <!-- ===== מסכים ===== -->
-     <section class="page" data-page="screens">
-      <div class="card">
-        <h2>המסכים שלכם</h2>
-        <p class="sub">לכל מסך פיזי קישור משלו – עם רזולוציה, פריסה ועיצוב משלו. לחצו על כרטיס כדי לראות אותו בתצוגה המקדימה.</p>
-        <div class="inl" style="margin-bottom:14px"><button class="btn ghost sm" data-recipe="one">קיר תורמים + מונה במסך אחד</button><button class="btn ghost sm" data-recipe="two">שני מסכים: מונה + קיר</button><button class="btn ghost sm" data-recipe="vert">מסך אנכי</button><button class="btn ghost sm" data-recipe="wide">מסך רחב 1536×768</button></div>
-        <div id="screens"></div>
-        <button class="btn sm" id="addScreen">+ מסך חדש</button>
-        <p class="hint" style="margin-top:12px">פתחו את הקישור בדפדפן של כל מסך, לחצו פעם אחת על המסך להפעלת הצליל, ו-F למסך מלא.</p>
-      </div>
-     </section>
-
      <!-- ===== עיצוב ===== -->
      <section class="page" data-page="design">
+      <div class="stepnote">כל קבוצה נפתחת בלחיצה על הכותרת. השינויים נשמרים אוטומטית ומופיעים בתצוגה המקדימה משמאל.</div>
       <div class="card">
         <h2>סגנון כולל</h2><p class="sub">בחירה בין הסגנון הרשמי של הקמפיין לבין ערכות צבע.</p>
         <div class="row2"><div class="f"><label>סגנון</label><select data-s="skin"><option value="">קלאסי (ערכות צבע)</option><option value="shtar">שטר שותפות – קלף וזהב</option><option value="royal">מלכותי – כהה עם זהב</option></select></div>
@@ -222,7 +216,7 @@ dialog h2{margin:0 0 14px;font-size:18px}
      </section>
 
      <!-- ===== קפיצה וצליל ===== -->
-     <section class="page" data-page="popup">
+     <section class="page" data-page="design">
       <div class="card">
         <h2>קפיצת תורם</h2><p class="sub">מה קורה במסך כשנכנסת תרומה.</p>
         <div class="row3"><div class="f"><label>סגנון</label><select data-s="popupStyle"><option value="card">כרטיס במרכז</option><option value="banner">פס בתחתית</option><option value="full">מסך מלא</option></select></div><div class="f"><label>משך (שניות)</label><input type="number" min="2" max="60" data-s="popupSeconds"></div><div class="f"><label>תרומה מיוחדת מסכום</label><input type="number" min="0" data-s="bigThreshold"></div></div>
@@ -243,7 +237,7 @@ dialog h2{margin:0 0 14px;font-size:18px}
      </section>
 
      <!-- ===== תצוגה ותוכן ===== -->
-     <section class="page" data-page="display">
+     <section class="page" data-page="design">
       <div class="card">
         <h2>טקסטים ויעד</h2>
         <div class="row2"><div class="f"><label>שם הקמפיין (בראש המסך)</label><input data-s="title"></div><div class="f"><label>כותרת משנה</label><input data-s="subtitle"></div></div>
@@ -262,6 +256,18 @@ dialog h2{margin:0 0 14px;font-size:18px}
         <div class="row3" style="margin-top:12px"><div class="f"><label>עמודות בקיר</label><input type="number" min="1" max="8" data-s="wallCols"></div><div class="f"><label>גודל כתב בקיר</label><input type="number" step="0.1" min="0.5" max="3" data-s="wallScale"></div><div class="f"><label>תורמים ברשימה</label><input type="number" min="3" max="30" data-s="listCount"></div></div>
         <label class="chk"><input type="checkbox" data-s="showQr"><span>קוד QR לתרומה</span></label>
         <div class="f" style="margin-top:8px"><label>קישור לדף התרומה (ל-QR)</label><input data-s="qrUrl" dir="ltr" placeholder="https://..."></div>
+      </div>
+     </section>
+
+     <!-- ===== מסכים ===== -->
+     <section class="page" data-page="design">
+      <div class="card">
+        <h2>מסכים פיזיים וקישורים</h2>
+        <p class="sub">לכל מסך פיזי קישור משלו – עם רזולוציה, פריסה ועיצוב משלו. לחצו על כרטיס כדי לראות אותו בתצוגה המקדימה.</p>
+        <div class="inl" style="margin-bottom:14px"><button class="btn ghost sm" data-recipe="one">קיר תורמים + מונה במסך אחד</button><button class="btn ghost sm" data-recipe="two">שני מסכים: מונה + קיר</button><button class="btn ghost sm" data-recipe="vert">מסך אנכי</button><button class="btn ghost sm" data-recipe="wide">מסך רחב 1536×768</button></div>
+        <div id="screens"></div>
+        <button class="btn sm" id="addScreen">+ מסך חדש</button>
+        <p class="hint" style="margin-top:12px">פתחו את הקישור בדפדפן של כל מסך, לחצו פעם אחת על המסך להפעלת הצליל, ו-F למסך מלא.</p>
       </div>
      </section>
 
@@ -341,10 +347,11 @@ const THEMES={royal:['מלכותי','#C9A961','#0B1D3A','#1E3A6E','#FFFFFF'],eme
 const SOUNDS={chime:'פעמונים',bell:'פעמון',coins:'מטבעות',harp:'נבל',fanfare:'תרועה',pop:'פופ',shofar:'שופר',none:'ללא'};
 const QUICK=[18,36,52,100,180,360,500,1000,1800,5000];
 const ic=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-const PAGES=[['home','סקירה',ic('<path d="M3 11l9-8 9 8M5 10v10h14V10"/>')],['donations','תרומות',ic('<path d="M12 21s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z"/>')],['screens','מסכים',ic('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>')],['design','עיצוב',ic('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18c2 0 2-2 1-3s0-3 2-3h2a4 4 0 0 0 4-4"/>')],['popup','קפיצה וצליל',ic('<path d="M11 5L6 9H3v6h3l5 4V5zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>')],['display','תצוגה ותוכן',ic('<path d="M4 6h16M4 12h16M4 18h10"/>')],['live','שליטה חיה',ic('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>')],['tools','כלים',ic('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6 2.6-2.2z"/>')]];
-const NOPV=['home','donations','live','tools'];
+const PAGES=[['home','לוח בקרה',ic('<path d="M3 11l9-8 9 8M5 10v10h14V10"/>')],['design','מסכים ועיצוב',ic('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>')],['live','שליטה חיה',ic('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>')],['tools','כלים',ic('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6 2.6-2.2z"/>')]];
+const NOPV=['home','live','tools'];
 $('navItems').innerHTML=PAGES.map(([k,n,i])=>`<button class="n" data-p="${k}">${i}${n}</button>`).join('');
 $('mnav').innerHTML=PAGES.map(([k,n])=>`<button data-p="${k}">${n}</button>`).join('');
+function accordion(){document.querySelectorAll('.page[data-page=design] .card').forEach((c,i)=>{if(!c.dataset.acc){c.dataset.acc=1;if(i>0)c.classList.add('col');c.querySelector(':scope>h2').addEventListener('click',e=>{if(e.target.closest('button,select,input,a'))return;c.classList.toggle('col')})}})}
 function go(p){if(!PAGES.some(x=>x[0]===p))p='home';PAGE=p;localStorage.setItem('page',p);
   document.querySelectorAll('.page').forEach(e=>e.classList.toggle('on',e.dataset.page===p));
   document.querySelectorAll('[data-p]').forEach(b=>b.dataset.p===p?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
@@ -363,7 +370,7 @@ async function boot(){
   $('sounds').innerHTML=Object.entries(SOUNDS).map(([k,n])=>`<button data-snd="${k}" data-for="sound">${n}</button>`).join('');
   $('bigSounds').innerHTML=Object.entries(SOUNDS).map(([k,n])=>`<button data-snd="${k}" data-for="bigSound">${n}</button>`).join('');
   $('msgPresets').innerHTML=['עוד 10 דקות לסיום!','תודה רבה לכל התורמים!','אפשר להצטרף גם עכשיו – סרקו את הקוד','הערב ממשיך בעוד רגע'].map(t=>`<button data-pre="${esc(t)}">${t}</button>`).join('');
-  await load();connect();go(PAGE);refreshStats();setInterval(refreshStats,60000);
+  await load();connect();accordion();go(PAGE);refreshStats();setInterval(refreshStats,60000);
 }
 async function loadCamps(){const cs=await api('GET','/api/campaigns');if(!cs.find(c=>c.slug===SLUG))SLUG=cs[0].slug;$('camp').innerHTML=cs.map(c=>`<option value="${c.slug}" ${c.slug===SLUG?'selected':''}>${esc(c.name)}</option>`).join('')}
 function quickBtns(){const s=ST&&ST.settings;const t=s&&(s.skin==='shtar'||s.skin==='royal')?[s.tier1Amt,s.tier2Amt,s.tier3Amt].filter(Boolean):[];const q=[...new Set([...t,...QUICK])].sort((x,y)=>x-y);$('quick').innerHTML=q.map(a=>`<button data-a="${a}" class="${t.includes(a)?'tier':''}">${fmt(a)}</button>`).join('')}

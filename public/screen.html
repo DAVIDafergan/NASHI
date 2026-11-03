@@ -387,6 +387,15 @@ body[data-tone="dark"] .card .d{color:#cfd5ee}
 body[data-tone="dark"] .card .b{color:#e0c27a}
 body[data-tone="dark"] .card .rays{opacity:.5;mix-blend-mode:screen}
 body[data-tone="dark"] .pop__veil{background:radial-gradient(60% 60% at 50% 50%,rgba(2,3,12,.5),rgba(1,2,8,.92))}
+/* ===== typographic polish ===== */
+body[data-skin="shtar"] .tile .n,body[data-skin="shtar"] .row .n{font-family:"Frank Ruhl Libre","Heebo",serif;font-weight:700;letter-spacing:.01em}
+body[data-skin="shtar"] .tile .a,body[data-skin="shtar"] .row .a,body[data-skin="shtar"] .tier b,body[data-skin="shtar"] .total b,body[data-skin="shtar"] .stats b{font-family:"Frank Ruhl Libre","Heebo",serif;font-weight:900}
+body[data-skin="shtar"] .tile,body[data-skin="shtar"] .tier,body[data-skin="shtar"] .row{position:relative}
+body[data-skin="shtar"] .tile::before,body[data-skin="shtar"] .tier::before{content:"";position:absolute;left:12%;right:12%;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(241,207,114,.9),transparent)}
+body[data-skin="shtar"] .ticker{font-family:"Frank Ruhl Libre",serif;font-weight:500;letter-spacing:.04em}
+body[data-skin="shtar"] .sk-paper{overflow:hidden}
+body[data-tone="dark"] .sk-paper::before{background-image:none}
+body[data-tone="dark"] .sk-scroll::after{content:"";position:absolute;inset:0;border-radius:2cqh;background:linear-gradient(105deg,transparent 40%,rgba(255,236,170,.10) 50%,transparent 60%) 220% 0/260% 100% no-repeat;animation:glint 9s ease-in-out infinite;pointer-events:none}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
