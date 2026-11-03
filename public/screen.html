@@ -568,7 +568,7 @@ body[data-skin="gala"] #frame::before{content:"";position:absolute;inset:0;backg
  repeating-linear-gradient(45deg,rgba(255,255,255,.028) 0 .5cqh,transparent .5cqh 1.6cqh),
  repeating-linear-gradient(-45deg,rgba(255,255,255,.028) 0 .5cqh,transparent .5cqh 1.6cqh);pointer-events:none}
 body[data-skin="gala"] .gala::before{content:"";position:absolute;left:50%;top:48%;width:44cqw;height:44cqw;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,225,140,.35),transparent 65%);pointer-events:none;z-index:0}
-body[data-skin="gala"] .gala{position:absolute;inset:0;z-index:2;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;padding:2cqh 2.2cqw 0;gap:1.4cqh;font-family:var(--fN,"Heebo"),"Heebo",sans-serif}
+body[data-skin="gala"] .gala{position:absolute;inset:0;z-index:2;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;padding:2cqh 4cqw 0;gap:1.4cqh;font-family:var(--fN,"Heebo"),"Heebo",sans-serif}
 .g-arch{position:absolute;left:50%;bottom:0;height:86%;width:58cqw;transform:translateX(-50%);z-index:0;pointer-events:none;overflow:visible}
 .g-top,.g-grid,.g-foot{position:relative;z-index:1}
 .g-top{display:flex;justify-content:center;align-items:center;gap:.8cqw;direction:rtl}
@@ -601,7 +601,13 @@ body[data-skin="gala"] .gala{position:absolute;inset:0;z-index:2;display:grid;gr
 .g-center .ded{position:relative;max-width:84%;white-space:nowrap;overflow:hidden;padding:1.5cqh 4cqw;border-radius:5cqh;border:.45cqh solid transparent;background:linear-gradient(180deg,#4b4aa3,#2c2a66 55%,#1b1a47) padding-box,linear-gradient(180deg,#fff3bf,#d9a93c 50%,#7a520e) border-box;box-shadow:0 .6cqh 0 #14133a,0 1.2cqh 0 #0c0b27,0 2.2cqh 3cqh rgba(0,0,0,.65),inset 0 .5cqh .7cqh rgba(255,255,255,.28);font-size:5.2cqh;font-weight:800;color:#fff;text-align:center;line-height:1.15;text-shadow:0 .35cqh 0 rgba(10,10,50,.7)}
 .g-center .crown{margin-top:auto;margin-bottom:auto;width:40cqh;filter:drop-shadow(0 1.2cqh 1.2cqh rgba(0,0,0,.6)) drop-shadow(0 0 2.4cqh rgba(255,215,100,.45));animation:gFloat 4s ease-in-out infinite}
 .g-center .crown svg{width:100%;display:block;overflow:visible}
-.g-foot{margin:0 -2.2cqw;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
+.orn{position:absolute;z-index:4;width:19cqh;height:19cqh;object-fit:contain;pointer-events:none;filter:drop-shadow(0 1.4cqh 1.4cqh rgba(0,0,0,.6));animation:ornIn 1.4s both cubic-bezier(.16,1,.3,1)}
+.o-tl{left:-1.2cqh;top:-1.2cqh}.o-tr{right:-1.2cqh;top:-1.2cqh;transform:scaleX(-1)}.o-bl{left:-1.2cqh;bottom:3.6cqh;transform:scaleY(-1)}.o-br{right:-1.2cqh;bottom:3.6cqh;transform:scale(-1,-1)}
+.g-center .feat .fo{position:absolute;z-index:3;width:10cqh;height:10cqh;top:-3.6cqh;object-fit:contain;filter:drop-shadow(0 1cqh 1cqh rgba(0,0,0,.6));pointer-events:none}
+.g-center .feat .fo.l{left:-3cqh;transform:scaleX(-1) rotate(0deg)}.g-center .feat .fo.r{right:-3cqh}
+.g-center .feat .fo.l{transform:none}.g-center .feat .fo.r{transform:scaleX(-1)}
+@keyframes ornIn{from{opacity:0;filter:blur(10px) drop-shadow(0 0 0 #000)}to{opacity:1}}
+.g-foot{margin:0 -4cqw;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
 .g-foot .ticker{font-size:2.5cqh;color:#ffe9a8;font-weight:700}
 @keyframes gcIn{from{opacity:0;transform:translateY(2cqh) scale(.96);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
 @keyframes gcFeat{0%{opacity:0;transform:scale(.88) translateZ(0);filter:blur(14px)}60%{transform:scale(1.03)}100%{opacity:1;transform:none}}
@@ -635,10 +641,9 @@ body[data-skin="gala"] .gala{position:absolute;inset:0;z-index:2;display:grid;gr
 <path d="M80,800 L80,330 C80,120 280,30 500,30 C720,30 920,120 920,330 L920,800" fill="rgba(20,60,150,.35)" stroke="url(#gGold)" stroke-width="12" filter="url(#gDrop)"/>
 <path d="M104,800 L104,334 C104,142 292,56 500,56 C708,56 896,142 896,334 L896,800" fill="none" stroke="#e9d6dc" stroke-width="3" opacity=".8"/>
 <path d="M128,800 L128,338 C128,164 304,82 500,82 C696,82 872,164 872,338 L872,800" fill="none" stroke="url(#gGold)" stroke-width="5"/>
-<use href="#gScroll" transform="translate(500,32) scale(1.1,1.1)"/><use href="#gScroll" transform="translate(500,32) scale(-1.1,1.1)"/>
-<use href="#gScroll" transform="translate(92,330) rotate(-100) scale(.95)"/><use href="#gScroll" transform="translate(908,330) rotate(-80) scale(-.95,.95)"/>
 <circle cx="500" cy="30" r="13" fill="url(#gRuby)" stroke="url(#gGold)" stroke-width="4"/>
 </svg>
+  <img class="orn o-tl" src="/orn/corner.png" alt=""><img class="orn o-tr" src="/orn/corner.png" alt=""><img class="orn o-bl" src="/orn/corner.png" alt=""><img class="orn o-br" src="/orn/corner.png" alt="">
   <div class="g-top"><div class="g-plaque"><small id="gLabel">עד כה התחייבו</small><b id="gTotal">0</b></div><div class="g-meter"><i id="gBar"></i></div></div>
   <div class="g-grid"><div class="g-col" id="gR"></div><div class="g-center" id="gC"></div><div class="g-col" id="gL"></div></div>
   <div class="g-foot"><div class="ticker" id="gTicker"></div></div>
@@ -764,9 +769,10 @@ function renderGala(st){
   const col=(arr,t)=>`<h4>${t}</h4>`+Array.from({length:4},(_,i)=>arr[i]?card(arr[i],i):ghost).join('');
   $('gR').innerHTML=col(R,'השותפים');
   $('gL').innerHTML=col(L,'השותפים');
+  const fo='<img class="fo l" src="/orn/corner.png" alt=""><img class="fo r" src="/orn/corner.png" alt="">';
   const plate='<svg viewBox="0 0 1000 120" preserveAspectRatio="none"><path d="M2,60 C44,60 50,5 116,5 L884,5 C950,5 956,60 998,60 C956,60 950,115 884,115 L116,115 C50,115 44,60 2,60 Z" fill="url(#gNavy)" stroke="url(#gGold)" stroke-width="7" vector-effect="non-scaling-stroke"/><path d="M26,60 C62,60 66,17 126,17 L874,17 C934,17 938,60 974,60 C938,60 934,103 874,103 L126,103 C66,103 62,60 26,60 Z" fill="none" stroke="#e9d6dc" stroke-width="2" opacity=".75" vector-effect="non-scaling-stroke"/><circle cx="14" cy="60" r="9" fill="url(#gRuby)" stroke="url(#gGold)" stroke-width="3" vector-effect="non-scaling-stroke"/><circle cx="986" cy="60" r="9" fill="url(#gRuby)" stroke="url(#gGold)" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>';
-  const medal=`<div class="crown"><svg viewBox="0 0 200 130"><use href="#gCrown"/></svg></div>`;
-  $('gC').innerHTML=top?`<div class="feat" data-k="${top.id}">${plate}<div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div>${top.dedication?`<div class="ded">${esc(top.dedication)}</div>`:''}${medal}`:`<div class="feat">${plate}<div class="n">${esc(settings.title||'')}</div></div>${medal}`;
+  const medal=settings.logo?`<div class="crown" style="width:34cqh"><img src="${settings.logo}" style="width:100%;display:block" alt=""></div>`:'';
+  $('gC').innerHTML=top?`<div class="feat" data-k="${top.id}">${plate}${fo}<div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div>${top.dedication?`<div class="ded">${esc(top.dedication)}</div>`:''}${medal}`:`<div class="feat">${plate}<div class="n">${esc(settings.title||'')}</div></div>${medal}`;
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
   setTimeout(fitAll,40);
 }
