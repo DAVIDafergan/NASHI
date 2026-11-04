@@ -818,6 +818,14 @@ body[data-skin="gala"] .pop.fly .gp .p2 .shine,body[data-skin="gala"] .pop.fly .
 .g-center .feat.land{animation:featLand 1s cubic-bezier(.2,1.2,.3,1) both!important}
 @keyframes featLand{0%{opacity:0;filter:brightness(2.4) drop-shadow(0 0 3cqh rgba(255,220,120,.95))}45%{opacity:1;filter:brightness(1.5) drop-shadow(0 0 2.4cqh rgba(255,220,120,.8))}100%{opacity:1;filter:drop-shadow(0 1.6cqh 1.4cqh rgba(0,0,0,.6))}}
 .g-center .sum b{overflow:hidden!important;max-width:100%!important}
+
+/* ---- v17: featured donor sits inside the arch, name over amount in a velvet card ---- */
+.g-center .feat{width:calc(29cqw*var(--lc,1))!important;aspect-ratio:1990/608!important}
+.g-center .feat>.in.in{left:9%!important;right:9%!important;top:18%!important;bottom:23%!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1.2fr) minmax(0,.8fr);align-content:center;justify-items:center;text-align:center}
+.g-center .feat .sep{display:none!important}
+.g-center .feat .n{order:1;font-size:calc(5.6cqh*var(--lc,1))!important;padding:0!important;width:100%;line-height:1.12;justify-content:center}
+.g-center .feat .amt{order:2;font-size:calc(4.2cqh*var(--lc,1))!important;line-height:1.1}
+.g-center .ded{width:calc(29cqw*var(--lc,1))!important;max-width:calc(29cqw*var(--lc,1))!important}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -971,7 +979,7 @@ function renderGala(st){
   $('gR').innerHTML=col(R,'השותפים');
   $('gL').innerHTML=col(L,'השותפים');
   const fo='<img class="fo l" src="/orn/corner.png" alt=""><img class="fo r" src="/orn/corner.png" alt="">';
-  const plate='<img class="plate" src="/orn/plate.png" alt="">';
+  const plate='<img class="plate" src="/orn/card.png" alt="">';
   const medal='';
   const goal=+st.goal||0,pct=goal>0?Math.min(100,(+st.total||0)/goal*100):0;
   const goalH=`<div class="sum"><div class="sc"><small>${esc(settings.galaLabel||'עד כה התחייבו')}</small><b><em>${esc(cur)}</em>${fmt(+st.total||0)}</b></div>${goal>0?`<div class="sep"></div><div class="sc"><small>יעד</small><b><em>${esc(cur)}</em>${fmt(goal)}</b></div>`:''}</div>${goal>0?`<div class="bar"><i style="width:${pct.toFixed(1)}%"></i><span>${Math.round(pct)}%</span></div>`:''}`;
