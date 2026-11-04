@@ -704,10 +704,10 @@ body[data-skin="gala"] .gala,.gc .n,.g-center .feat .n,.g-center .feat .amt,.g-c
 .g-center>.bar span{position:absolute;inset:0;display:grid;place-items:center;font-size:1.7cqh;color:#fff1c0;text-shadow:0 .15cqh .3cqh rgba(0,0,0,.95)}
 .g-center{gap:1.8cqh}
 body[data-skin="gala"] .gala{grid-template-rows:minmax(0,1fr) auto}
-.g-top{position:absolute!important;top:14.5cqh;left:0;right:0;margin:0!important;max-width:none!important;pointer-events:none;z-index:7}
+.g-top{position:absolute!important;top:13.5cqh;left:0;right:0;margin:0!important;max-width:none!important;pointer-events:none;z-index:7}
 .g-logo{max-width:none}
-.g-logo img{height:15.5cqh;width:22cqw;max-height:none;max-width:none;object-fit:contain}
-.g-center{padding-top:30.5cqh!important;gap:1cqh!important}
+.g-logo img{height:17.5cqh;width:25cqw;max-height:none;max-width:none;object-fit:contain}
+.g-center{padding-top:32cqh!important;gap:.9cqh!important}
 .g-center .ttl small{font-size:2cqh}.g-center .ttl b{font-size:4.6cqh}
 .g-center .sum b{font-size:6.2cqh}
 .g-foot{margin:0 -1.9cqw 3cqh;overflow:hidden;min-width:0;background:linear-gradient(180deg,rgba(8,16,60,.92),rgba(3,8,34,.96));border-top:.45cqh solid #d9a93c;min-height:5.2cqh;display:flex;align-items:center;box-shadow:0 -1cqh 2cqh rgba(0,0,0,.4)}
@@ -765,6 +765,15 @@ body[data-skin="gala"] .pop.out .gp{animation:gpOut .6s ease-in both}
 @keyframes gpShine{from{left:-40%}to{left:120%}}
 @keyframes gpSpark{0%{opacity:0;transform:translate(0,0) scale(.2)}15%{opacity:1}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(1.1) rotate(90deg)}}
 @keyframes gpOut{to{opacity:0;transform:scale(1.05);filter:blur(10px)}}
+
+/* ---- v14: total / goal row — roomier, lighter lettering ---- */
+.g-center .sum{gap:0;align-items:stretch;padding:0 1.5cqw}
+.g-center .sum .sc{gap:.9cqh;padding:0 1.2cqw;justify-content:flex-start}
+.g-center .sum small{font-size:2.1cqh;letter-spacing:.12em;line-height:1;white-space:nowrap}
+.g-center .sum b{direction:ltr;font-size:5.4cqh;line-height:1.15;letter-spacing:.045em;word-spacing:.1em;padding:.3cqh .4cqw;-webkit-text-stroke:.018em rgba(236,196,96,.9);filter:drop-shadow(0 .05em 0 #5a3a07) drop-shadow(0 .5cqh .5cqh rgba(0,0,0,.6));font-variant-numeric:tabular-nums}
+.g-center .sum b em{font-style:normal;font-size:.85em;margin-inline-end:.22em;letter-spacing:0;vertical-align:.12em}
+.g-center .sum .sep{margin-top:0;width:.25cqh}
+.g-center>.bar{margin-top:.4cqh}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -865,7 +874,7 @@ let raf=0;function loop(){raf=requestAnimationFrame(loop);cx.clearRect(0,0,cv.wi
 
 /* ---------- render ---------- */
 function applySettings(s0){
-  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
+  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';if(!s.currency||/ש.{0,2}ח|nis|ils/i.test(String(s.currency)))s.currency='₪';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
   settings=s;fitFrame();const r=document.documentElement.style;
   r.setProperty('--p',s.primary);r.setProperty('--bg1',s.bg1);r.setProperty('--bg2',s.bg2);r.setProperty('--t',s.text);r.setProperty('--f',`"${s.font}"`);{const serif=s.skin==='shtar'||s.skin==='royal'||s.skin==='grand';r.setProperty('--fd1',serif?'"Frank Ruhl Libre"':`"${s.font||'Heebo'}"`);r.setProperty('--fd2',`"${s.font||'Heebo'}"`);for(const [k,v] of [['--fT',s.fontTitle],['--fN',s.fontNames],['--fA',s.fontNums],['--fS',s.fontSub]]){if(v)r.setProperty(k,`"${v}"`);else r.removeProperty(k)}}r.setProperty('--dim',s.dim);
   document.body.dataset.layout=s.layout;document.body.dataset.skin=s.skin==='gala'?'gala':((s.skin==='shtar'||royal)?'shtar':'');document.body.dataset.tone=royal?'dark':'';document.body.dataset.fill=(grand||s.skin==='gala')?'1':'';fitFrame();initSkin(s);document.body.dataset.popup=s.popupStyle;
@@ -921,7 +930,7 @@ function renderGala(st){
   const plate='<img class="plate" src="/orn/plate.png" alt="">';
   const medal='';
   const goal=+st.goal||0,pct=goal>0?Math.min(100,(+st.total||0)/goal*100):0;
-  const goalH=`<div class="sum"><div class="sc"><small>${esc(settings.galaLabel||'עד כה התחייבו')}</small><b>${esc(cur)}${fmt(+st.total||0)}</b></div>${goal>0?`<div class="sep"></div><div class="sc"><small>יעד</small><b>${esc(cur)}${fmt(goal)}</b></div>`:''}</div>${goal>0?`<div class="bar"><i style="width:${pct.toFixed(1)}%"></i><span>${Math.round(pct)}%</span></div>`:''}`;
+  const goalH=`<div class="sum"><div class="sc"><small>${esc(settings.galaLabel||'עד כה התחייבו')}</small><b><em>${esc(cur)}</em>${fmt(+st.total||0)}</b></div>${goal>0?`<div class="sep"></div><div class="sc"><small>יעד</small><b><em>${esc(cur)}</em>${fmt(goal)}</b></div>`:''}</div>${goal>0?`<div class="bar"><i style="width:${pct.toFixed(1)}%"></i><span>${Math.round(pct)}%</span></div>`:''}`;
   $('gLogo').innerHTML=settings.logo?`<img src="${settings.logo}" alt="">`:'';
   const ttl=`<div class="ttl"><small>\u05e9\u05d8\u05e8 \u05e9\u05d5\u05ea\u05e4\u05d5\u05ea</small><b>${esc(settings.title||st.name||'')}</b></div>`;
   $('gC').innerHTML=top?ttl+goalH+`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/plate.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:ttl+goalH+`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
