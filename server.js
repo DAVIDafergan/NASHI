@@ -35,7 +35,7 @@ const DEFAULTS = {
   popupStyle: 'card', popupSeconds: 7, sound: 'chime', volume: 0.8, confetti: true, bigThreshold: 1000,
   bigSound: 'fanfare', showAmount: true, roundUp: true, ticker: 'תודה לכל התורמים! כל תרומה מקרבת אותנו ליעד', blessing: 'תזכו למצוות',
   goalMsg: 'הגענו ליעד! תודה!', speech: false, currency: '₪', dedicationShow: true, latestFirst: true, dim: 0.35, idleMsg: '', countUp: true,
-  wallCols: 3, screens: {}, skin: '', plaqueImg: '/skin/plaque.webp',
+  wallCols: 3, logoScale: 1, screens: {}, skin: '', plaqueImg: '/skin/plaque.webp',
   scrollTitle: '', scrollSub: '', quote: '',
   tier1Name: 'שותף כסף', tier1Sub: 'החזקת תלמיד', tier1Amt: 148, tier2Name: 'שותף זהב', tier2Sub: 'החזקת יום במוסדות', tier2Amt: 248, tier3Name: 'שותף יהלום', tier3Sub: 'החזקת שבוע במוסדות', tier3Amt: 512
 };
