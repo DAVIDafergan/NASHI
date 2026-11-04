@@ -127,6 +127,13 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
   const create = (t: AdminTab) => { go(t); window.setTimeout(() => requestCreate(t), 60); };
   const createTick = createReq.tab === active ? createReq.n : 0;
 
+  // main admin: who published what (regional managers by name)
+  const creators = useMemo(() => {
+    const m: Record<string, string> = {};
+    if (isMain) users.filter(u => u.role === 'regionAdmin').forEach(u => { m[idOf(u)] = u.name; });
+    return m;
+  }, [isMain, users]);
+
   const counts = useMemo(() => ({
     approvals: pendingUsers.length + pendingPosts.length + managerApps.length,
     stories: pendingStories.length,
@@ -156,7 +163,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
         showRegion={WITH_REGION.includes(active)} showSearch={WITH_SEARCH.includes(active)} loading={loading}
         allowed={lockRegion ? REGION_TABS : undefined} lockedRegionName={lockRegion ? regionName(lockRegion) : undefined}
       >
-        <AdminScopeContext.Provider value={{ lockRegion: lockRegion || undefined }}>
+        <AdminScopeContext.Provider value={{ lockRegion: lockRegion || undefined, creators: isMain ? creators : undefined }}>
         {active === 'dashboard' && lockRegion && (
           <RegionDashboard region={lockRegion} name={firstName} go={go} create={create} data={{ events, classes, lotteries, community, vacations }} perms={perms} />
         )}

@@ -129,7 +129,8 @@ export const ImagePicker: React.FC<{ value?: string; onChange: (dataUrl: string)
 /* ---------------- location & audience ---------------- */
 
 /** Set by AdminPage for a regional manager: forms only offer her/his region and local scope. */
-export const AdminScopeContext = React.createContext<{ lockRegion?: string }>({});
+/** lockRegion: a regional manager's region. creators: for the main admin, id → name of each regional manager (shown on the items she published). */
+export const AdminScopeContext = React.createContext<{ lockRegion?: string; creators?: Record<string, string> }>({});
 
 
 /** Searchable city picker grouped by region. */
@@ -254,15 +255,20 @@ export const LocationFields: React.FC<{ value: LocationValue; onChange: (patch: 
   );
 };
 
-export const LocationBadges: React.FC<{ item: any; showAudience?: boolean }> = ({ item, showAudience }) => (
+export const LocationBadges: React.FC<{ item: any; showAudience?: boolean }> = ({ item, showAudience }) => {
+  const { creators } = React.useContext(AdminScopeContext);
+  const by = creators && item?.createdBy ? creators[String(item.createdBy?._id || item.createdBy)] : '';
+  return (
   <div className="flex flex-wrap gap-1.5">
+    {by && <Badge tone="amber">הועלה ע״י {by}</Badge>}
     {item?.scope === 'national' ? <Badge tone="plum"><Globe2 size={11} /> ארצי</Badge>
       : item?.scope === 'online' ? <Badge tone="sky"><Wifi size={11} /> מקוון</Badge>
       : <Badge tone="rose"><MapPin size={11} /> {cityOfItem(item)}</Badge>}
     <AudienceBadge item={item} />
     {showAudience && (item?.audienceTags || (Array.isArray(item?.audience) ? item.audience : [])).slice(0, 2).map((a: string) => <Badge key={a} tone="slate">{a}</Badge>)}
   </div>
-);
+  );
+};
 
 /* ---------------- display ---------------- */
 
