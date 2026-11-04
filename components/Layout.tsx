@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LogOut, User as UserIcon, ShieldCheck, ChevronDown, Home, 
-  Calendar, MessageSquare, Users, Search, X, Menu, Heart, ArrowLeft, Sparkles
+  Calendar, MessageSquare, Users, Search, X, Menu, Heart, ArrowLeft, Sparkles, Palmtree
 } from 'lucide-react';
 import { shareLink } from '../utils/share';
 import InstallPrompt from './InstallPrompt';
@@ -24,6 +24,7 @@ interface LayoutProps {
 
 const MORE_LINKS = [
   { label: 'אישיות השבוע', path: '/personality-archive', hint: 'ראיונות מעוררי השראה' },
+  { label: 'נופשים', path: '/vacations', hint: 'נופשים, צימרים וסופי שבוע מאורגנים' },
   { label: 'הגרלות', path: '/lottery', hint: 'פרסים לחברי הקהילה' },
   { label: 'ניהול תרבות', path: '/become-manager', hint: 'להוביל את התרבות באזור שלכם' },
   { label: 'לספקים', path: '/suppliers/join', hint: `הצטרפות למאגר הספקים של ${BRAND.name}` },
@@ -171,6 +172,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpenLogin, 
   const searchTargets = [
     { label: 'אירועים', path: '/events', icon: <Calendar size={16} /> },
     { label: 'חוגים', path: '/classes', icon: <Sparkles size={16} /> },
+    { label: 'נופשים', path: '/vacations', icon: <Palmtree size={16} /> },
     { label: 'פורום', path: '/forum', icon: <MessageSquare size={16} /> },
     { label: 'קהילה ועסקים', path: '/community', icon: <Users size={16} /> },
   ];

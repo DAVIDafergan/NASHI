@@ -31,6 +31,8 @@ export interface User {
   isAdmin?: boolean;
   role?: 'member' | 'regionAdmin';
   adminRegion?: string;
+  managerType?: 'culture' | 'municipal' | 'other';
+  managerPerms?: string[];
   likedEventIds?: string[];
   avatar?: string;
   
@@ -83,6 +85,30 @@ export interface ClassItem {
   image: string;
   category: string;
   exceptions?: string;
+}
+
+export interface VacationItem {
+  id: string;
+  _id?: string;
+  title: string;
+  category?: string;
+  description?: string;
+  destination?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  nights?: number;
+  price?: number;
+  priceNote?: string;
+  contactName?: string;
+  contactPhone?: string;
+  registrationPhone?: string;
+  link?: string;
+  image?: string;
+  hidden?: boolean;
+  city?: string;
+  region?: string;
+  scope?: string;
+  createdBy?: string;
 }
 
 export interface NewsItem {

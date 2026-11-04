@@ -1,33 +1,37 @@
 import React, { useMemo } from 'react';
-import { CalendarDays, GraduationCap, HeartHandshake, Gift, Plus, ArrowLeft, MapPin } from 'lucide-react';
+import { CalendarDays, GraduationCap, HeartHandshake, Gift, Plus, ArrowLeft, MapPin, Palmtree } from 'lucide-react';
 import { AdminTab } from './AdminShell';
 import { regionName, CITIES } from '../../shared/regions';
 
 type Props = {
   region: string; name?: string;
   go: (t: AdminTab) => void; create: (t: AdminTab) => void;
-  data: { events: any[]; classes: any[]; lotteries: any[]; community: any[] };
+  data: { events: any[]; classes: any[]; lotteries: any[]; community: any[]; vacations?: any[] };
+  /** the sections this manager may publish in */
+  perms?: string[];
 };
 
 /** Home screen of a regional manager: what she has in her region + one-tap create. */
-const RegionDashboard: React.FC<Props> = ({ region, name, go, create, data }) => {
+const RegionDashboard: React.FC<Props> = ({ region, name, go, create, data, perms }) => {
   const upcoming = useMemo(() => data.events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => +new Date(a.date) - +new Date(b.date)), [data.events]);
-  const cards: { tab: AdminTab; label: string; n: number; icon: React.ReactNode; add: string }[] = [
-    { tab: 'events', label: 'אירועים קרובים', n: upcoming.length, icon: <CalendarDays size={20} />, add: 'אירוע חדש' },
+  const cards = ([
+    { tab: 'events' as AdminTab, label: 'אירועים קרובים', n: upcoming.length, icon: <CalendarDays size={20} />, add: 'אירוע חדש' },
     { tab: 'classes', label: 'חוגים', n: data.classes.length, icon: <GraduationCap size={20} />, add: 'חוג חדש' },
     { tab: 'community', label: 'קהילה וחסד', n: data.community.length, icon: <HeartHandshake size={20} />, add: 'פריט לקהילה' },
     { tab: 'lotteries', label: 'הגרלות', n: data.lotteries.length, icon: <Gift size={20} />, add: 'הגרלה חדשה' },
-  ];
+    { tab: 'vacations', label: 'נופשים', n: (data.vacations || []).length, icon: <Palmtree size={20} />, add: 'נופש חדש' },
+  ] as { tab: AdminTab; label: string; n: number; icon: React.ReactNode; add: string }[]).filter(c => !perms || perms.includes(c.tab));
+  const canEvents = !perms || perms.includes('events');
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-[2rem] bg-ink p-6 text-white md:p-8">
         <p className="flex items-center gap-1.5 text-sm text-rose-200"><MapPin size={14} /> ניהול תרבות</p>
         <h2 className="mt-2 text-3xl !text-white md:text-4xl">שלום{name ? ` ${name}` : ''}, האזור שלך: {regionName(region)}</h2>
-        <p className="mt-2 max-w-xl text-white/70">מה שעולה כאן יופיע באזור שלך (לגברים, לנשים או לכולם — לפי הבחירה בכל פריט), ובסינון של כל הארץ. הערים באזור: {(CITIES as any)[region]?.slice(0, 6).join(', ')}{(CITIES as any)[region]?.length > 6 ? ' ועוד' : ''}.</p>
-        <button onClick={() => go('tickets')} className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 font-strong text-sm text-rose-800 shadow-lift order-last">🎟️ הנפקת כרטיסים לאירוע</button>
+        <p className="mt-2 max-w-xl text-white/70">מה שעולה כאן יופיע באזור שלך (לגברים, לנשים או לכולם — לפי הבחירה בכל פריט), ובסינון של כל הארץ. הערים באזור: {(CITIES as any)[region]?.slice(0, 6).join(', ')}{(CITIES as any)[region]?.length > 6 ? ' ועוד' : ''}. כל מנהלת רואה ועורכת רק את מה שהעלתה בעצמה.</p>
+        {canEvents && <button onClick={() => go('tickets')} className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 font-strong text-sm text-rose-800 shadow-lift order-last">🎟️ הנפקת כרטיסים לאירוע</button>}
       </section>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {cards.map(c => (
           <div key={c.tab} className="rounded-[1.6rem] border border-rose-100 bg-white p-4 shadow-soft">
             <button onClick={() => go(c.tab)} className="w-full text-right">
@@ -40,7 +44,7 @@ const RegionDashboard: React.FC<Props> = ({ region, name, go, create, data }) =>
         ))}
       </section>
 
-      <section className="rounded-[1.8rem] border border-rose-100 bg-white p-5 shadow-soft md:p-6">
+      {canEvents && <section className="rounded-[1.8rem] border border-rose-100 bg-white p-5 shadow-soft md:p-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl">האירועים הקרובים באזור</h3>
           <button onClick={() => go('events')} className="flex items-center gap-1 text-sm text-rose-700">לכל האירועים <ArrowLeft size={14} /></button>
@@ -66,7 +70,7 @@ const RegionDashboard: React.FC<Props> = ({ region, name, go, create, data }) =>
             ))}
           </ul>
         )}
-      </section>
+      </section>}
     </div>
   );
 };

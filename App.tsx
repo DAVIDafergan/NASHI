@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import EventsPage from './pages/EventsPage';
 import ClassesPage from './pages/ClassesPage';
+import VacationsPage from './pages/VacationsPage';
 import ProfilePage from './pages/ProfilePage';
 import ContactPage from './pages/ContactPage';
 import AdminPage from './pages/AdminPage';
@@ -226,6 +227,7 @@ const App: React.FC = () => {
               element={<EventsPage events={events} onToggleLike={toggleEventLike} user={user} onAddPoints={handleAddPoints} onRateEvent={handleRateEvent} searchTerm={globalSearchTerm} />} 
             />
             
+            <Route path="/vacations" element={<VacationsPage />} />
             <Route path="/classes" element={<ClassesPage classes={classes} searchTerm={globalSearchTerm} />} />
             
             <Route 

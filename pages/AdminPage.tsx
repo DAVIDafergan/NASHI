@@ -16,7 +16,9 @@ import AdsAdmin from '../components/admin/AdsAdmin';
 import { BroadcastAdmin, ForumAdmin, SettingsAdmin, TicketsAdmin } from '../components/admin/MiscAdmin';
 import FlyersAdmin from '../components/admin/FlyersAdmin';
 import PersonalityAdmin from '../components/admin/PersonalityAdmin';
-import { ToastHost, AdminScopeContext, regionOfItem } from '../components/admin/ui';
+import { ToastHost, AdminScopeContext, regionOfItem, idOf } from '../components/admin/ui';
+import VacationsAdmin from '../components/admin/VacationsAdmin';
+import { permsOf } from '../shared/managers';
 import RegionDashboard from '../components/admin/RegionDashboard';
 import ManagerRequestsAdmin from '../components/admin/ManagerRequestsAdmin';
 import ImporterAdmin from '../components/admin/ImporterAdmin';
@@ -25,21 +27,24 @@ import { regionName } from '../shared/regions';
 
 const TABS = NAV.flatMap(g => g.items.map(i => i.id));
 const PRIMARY: Partial<Record<AdminTab, string>> = {
-  events: 'אירוע חדש', classes: 'חוג חדש', community: 'הוספה לקהילה', lotteries: 'הגרלה חדשה',
+  events: 'אירוע חדש', vacations: 'נופש חדש', classes: 'חוג חדש', community: 'הוספה לקהילה', lotteries: 'הגרלה חדשה',
   inspirations: 'השראה חדשה', ads: 'פרסום חדש', announcements: 'הודעה חדשה',
 };
-const WITH_REGION: AdminTab[] = ['events', 'classes', 'community', 'lotteries', 'users'];
-const WITH_SEARCH: AdminTab[] = ['events', 'classes', 'community', 'lotteries', 'users', 'messages', 'forum', 'inspirations', 'suppliers'];
+const WITH_REGION: AdminTab[] = ['events', 'vacations', 'classes', 'community', 'lotteries', 'users'];
+const WITH_SEARCH: AdminTab[] = ['events', 'vacations', 'classes', 'community', 'lotteries', 'users', 'messages', 'forum', 'inspirations', 'suppliers'];
 
 const arr = (x: any) => (Array.isArray(x) ? x : []);
-const REGION_TABS: AdminTab[] = ['dashboard', 'events', 'classes', 'community', 'lotteries', 'tickets'];
 
 const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> = ({ user }) => {
   const [params, setParams] = useSearchParams();
-  // main admin = everything; regional manager = her region's events, classes, community and lotteries
+  // main admin = everything; regional manager = only the sections her role allows, and only what she created herself
   const isMain = !!user?.isAdmin;
   const lockRegion = !isMain && user?.role === 'regionAdmin' && user?.adminRegion ? user.adminRegion : '';
   const canEnter = isMain || !!lockRegion;
+  const myId = idOf(user);
+  const perms = useMemo(() => (lockRegion ? permsOf(user as any) : []), [lockRegion, user]);
+  // events permission also gives the tickets of her own events
+  const REGION_TABS: AdminTab[] = useMemo(() => ['dashboard', ...(perms as AdminTab[]), ...(perms.includes('events') ? ['tickets' as AdminTab] : [])], [perms]);
   const allowedTabs = lockRegion ? REGION_TABS : TABS;
   const tabParam = params.get('tab') as AdminTab | null;
   const active: AdminTab = tabParam && allowedTabs.includes(tabParam) ? tabParam : 'dashboard';
@@ -57,6 +62,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
   const [classes, setClasses] = useState<any[]>([]);
   const [lotteries, setLotteries] = useState<any[]>([]);
   const [community, setCommunity] = useState<any[]>([]);
+  const [vacations, setVacations] = useState<any[]>([]);
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [pendingPosts, setPendingPosts] = useState<any[]>([]);
   const [pendingStories, setPendingStories] = useState<any[]>([]);
@@ -73,25 +79,27 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
 
   const loadCore = useCallback(async () => {
     const mainOnly = <T,>(p: () => Promise<T>, empty: any) => (lockRegion ? Promise.resolve(empty) : p().catch(() => empty));
-    const [u, ap, ev, cl, lo, co, ps, as, ms, mapps] = await Promise.all([
+    const [u, ap, ev, cl, lo, co, va, ps, as, ms, mapps] = await Promise.all([
       mainOnly(() => api.getUsers(), []),
       mainOnly(() => api.getAdminApprovals(), null),
       api.getEvents().catch(() => []),
       api.getClasses().catch(() => []),
       api.getLotteries().catch(() => []),
       api.getCommunityItems().catch(() => []),
+      api.getAdminVacations().catch(() => []),
       mainOnly(() => api.getPendingStories(), []),
       mainOnly(() => api.getActiveStoriesAdmin(), []),
       mainOnly(() => api.getContactMessages(), []),
       mainOnly(() => api.getManagerApplications('pending'), []),
     ]);
     setManagerApps(arr(mapps));
-    // a regional manager sees (and can edit) only the local items of her region
-    const own = (list: any) => (lockRegion ? arr(list).filter((x: any) => (x.scope || 'local') === 'local' && regionOfItem(x) === lockRegion) : arr(list));
-    setUsers(arr(u)); setEvents(own(ev)); setClasses(own(cl)); setLotteries(own(lo)); setCommunity(own(co));
+    // a regional manager sees (and can edit) only what she created herself, in her own region.
+    // Several managers of one city never see each other's items. (The server enforces the same.)
+    const own = (list: any) => (lockRegion ? arr(list).filter((x: any) => (x.scope || 'local') === 'local' && regionOfItem(x) === lockRegion && !!x.createdBy && String(x.createdBy?._id || x.createdBy) === myId) : arr(list));
+    setUsers(arr(u)); setEvents(own(ev)); setClasses(own(cl)); setLotteries(own(lo)); setCommunity(own(co)); setVacations(arr(va));
     setPendingUsers(arr(ap?.pendingUsers)); setPendingPosts(arr(ap?.pendingPosts));
     setPendingStories(arr(ps)); setActiveStories(arr(as)); setMessages(arr(ms));
-  }, [lockRegion]);
+  }, [lockRegion, myId]);
 
   const loadSection = useCallback(async (tab: AdminTab) => {
     if (tab === 'forum') setForumPosts(arr(await api.getForumPosts().catch(() => [])));
@@ -150,7 +158,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
       >
         <AdminScopeContext.Provider value={{ lockRegion: lockRegion || undefined }}>
         {active === 'dashboard' && lockRegion && (
-          <RegionDashboard region={lockRegion} name={firstName} go={go} create={create} data={{ events, classes, lotteries, community }} />
+          <RegionDashboard region={lockRegion} name={firstName} go={go} create={create} data={{ events, classes, lotteries, community, vacations }} perms={perms} />
         )}
         {active === 'dashboard' && !lockRegion && (
           <Dashboard go={go} create={create} data={{ users, events, classes, lotteries, community, pendingUsers, pendingPosts, pendingStories, activeStories, messages, managerApps }} />
@@ -164,6 +172,7 @@ const AdminPage: React.FC<{ user: User | null; onLogin: (user: User) => void }> 
         {active === 'stories' && <StoriesAdmin pending={pendingStories} active={activeStories} reload={reload} />}
         {active === 'messages' && <MessagesAdmin messages={messages} search={search} reload={reload} />}
         {active === 'events' && <EventsAdmin events={events} region={region} search={search} createTick={createTick} reload={reload} />}
+        {active === 'vacations' && <VacationsAdmin items={vacations} region={region} search={search} createTick={createTick} reload={reload} />}
         {active === 'classes' && <ClassesAdmin classes={classes} region={region} search={search} createTick={createTick} reload={reload} />}
         {active === 'community' && <CommunityAdmin items={community} region={region} search={search} createTick={createTick} reload={reload} />}
         {active === 'lotteries' && <LotteriesAdmin lotteries={lotteries} region={region} search={search} createTick={createTick} reload={reload} />}

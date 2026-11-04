@@ -36,6 +36,8 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, enum: ['member', 'regionAdmin'], default: 'member' }, // regionAdmin = מנהל/ת תרבות אזורי/ת
   gender: { type: String, enum: ['male', 'female'] }, // optional — only for wording emails / texts (missing → neutral)
   adminRegion: { type: String },
+  managerType: { type: String, enum: ['culture', 'municipal', 'other'] }, // missing on a regionAdmin → 'culture' (full)
+  managerPerms: { type: [String], default: undefined },                  // sections she may publish in; missing → the default of her type
   city: { type: String },
   region: { type: String },
   name: { type: String, required: true },
@@ -219,6 +221,32 @@ const ClassSchema = new mongoose.Schema({
 });
 ClassSchema.plugin(locationPlugin);
 const Class = mongoose.model('Class', ClassSchema);
+
+
+// נופשים — a new content category (retreats, holiday stays, getaways)
+const VacationSchema = new mongoose.Schema({
+  regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her/his region
+  ...locationFields,
+  ...audienceField,
+  title: { type: String, required: true },
+  category: { type: String },        // e.g. נופש משפחתי / צימר / סופ"ש / חו"ל
+  description: { type: String },
+  destination: { type: String },     // where
+  dateFrom: { type: String },        // YYYY-MM-DD
+  dateTo: { type: String },
+  nights: { type: Number },
+  price: { type: Number, default: 0 },
+  priceNote: { type: String },       // e.g. "לזוג", "כולל ארוחות"
+  contactName: { type: String },
+  contactPhone: { type: String },
+  registrationPhone: { type: String },
+  link: { type: String },
+  image: { type: String },
+  hidden: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
+VacationSchema.plugin(locationPlugin);
+const Vacation = mongoose.model('Vacation', VacationSchema);
 
 const LotterySchema = new mongoose.Schema({
   regionOnly: { type: Boolean },     // uploaded by a regional manager: shown only in her/his region
@@ -505,7 +533,7 @@ export {
   Supplier, ImportRun, ImportBlock,
   ManagerApplication,
   Flyer,
-  User, Event, Class, Lottery, Settings, GiftCode, 
+  User, Event, Class, Lottery, Vacation, Settings, GiftCode, 
   Personality, ForumPost, Community, Inspiration, Ad,
   Announcement, Challenge, ChallengeEntry, ContactMessage,
   Ticket,

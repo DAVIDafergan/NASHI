@@ -3,18 +3,21 @@ import { Check, Loader2, MapPin, MessageCircle, Phone, ShieldCheck, X } from 'lu
 import { api } from '../../services/api';
 import { regionName, REGIONS } from '../../shared/regions';
 import { Badge, fmtDate, idOf, toast } from './ui';
+import RoleSelect, { RoleValue, defaultRole, permsToSend } from './RoleSelect';
 
 /** Requests to become a regional culture manager — the main admin approves (and can change the region) or declines. */
 const ManagerRequestsAdmin: React.FC<{ items: any[]; reload: () => void }> = ({ items, reload }) => {
   const [busy, setBusy] = useState('');
   const [regionFor, setRegionFor] = useState<Record<string, string>>({});
+  const [roleFor, setRoleFor] = useState<Record<string, RoleValue>>({});
   if (!items.length) return null;
   const decide = async (a: any, decision: 'approve' | 'reject') => {
     if (decision === 'reject' && !window.confirm(`לדחות את הבקשה של ${a.name || a.user?.name}?`)) return;
     setBusy(idOf(a) + decision);
     try {
       const region = regionFor[idOf(a)] || a.region;
-      await api.decideManagerApplication(idOf(a), decision, region);
+      const role = roleFor[idOf(a)] || defaultRole();
+      await api.decideManagerApplication(idOf(a), decision, region, role.type, permsToSend(role));
       toast(decision === 'approve' ? `${a.name || a.user?.name} ${a.gender === 'male' ? 'מנהל' : a.gender === 'female' ? 'מנהלת' : 'מנהל/ת'} עכשיו את ${regionName(region)} ✨` : 'הבקשה נדחתה');
       reload();
     } catch (e: any) { toast(e?.message || 'הפעולה נכשלה', 'bad'); }
@@ -69,6 +72,9 @@ const ManagerRequestsAdmin: React.FC<{ items: any[]; reload: () => void }> = ({ 
                       className={`rounded-full border px-3 py-1.5 text-[12.5px] transition ${region === r.id ? 'border-rose-700 bg-rose-700 text-white' : 'border-rose-100 text-slate-600 hover:border-rose-300'}`}>{r.name}</button>
                   ))}
                 </div>
+              </div>
+              <div className="mt-4">
+                <RoleSelect value={roleFor[id] || defaultRole()} onChange={v => setRoleFor(m => ({ ...m, [id]: v }))} />
               </div>
               <div className="mt-4 flex gap-2">
                 <button disabled={!!busy} onClick={() => decide(a, 'approve')} className="btn-primary flex-1 disabled:opacity-60">

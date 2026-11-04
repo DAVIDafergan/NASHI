@@ -9,11 +9,12 @@ import { AUDIENCE_IDS, audienceQuery, normGender, g } from '../shared/audience.j
 import { BRAND, mailFrom } from '../shared/brand.js';
 import { avatarSvg, avatarPath } from './avatar.js';
 import { sendManagerWelcome } from './emails/managerWelcome.js';
+import { MANAGER_TYPES, normType, cleanPerms, permsOf, canDo } from '../shared/managers.js';
 // the same address regardless of capital/small letters
 const emailRe = (e) => new RegExp('^' + String(e).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i');
 const REGION_IDS = REGIONS.map(r => r.id);
 import { 
-    User, Event, Class, Lottery, Settings, GiftCode, 
+    User, Event, Class, Lottery, Vacation, Settings, GiftCode, 
     Announcement, // הוספת המודל החדש לייבוא
     Personality, ForumPost, Community, Inspiration, Ad,
     Challenge, ChallengeEntry, // הוספת המודלים של האתגרים לייבוא במקום שבת
@@ -139,7 +140,7 @@ const audienceParam = (req) => audienceQuery(req.query?.audience);
 // A regional manager (role 'regionAdmin' + adminRegion) may create, edit and delete events, classes,
 // community items and lotteries — only local items in her/his own region — and picks the audience of each item
 // (required). Main admins (isAdmin) can do everything.
-const canManage = (Model) => async (req, res, next) => {
+const canManage = (Model, section) => async (req, res, next) => {
     try {
         const writes = ['POST', 'PUT'].includes(req.method) && req.body && typeof req.body === 'object' && !req.path.includes('/run');
         if (writes) {
@@ -148,16 +149,22 @@ const canManage = (Model) => async (req, res, next) => {
             if (err) return res.status(400).json({ error: err });
         }
         if (req.user?.isAdmin) return next();
-        const me = await User.findById(req.user?.id).select('role adminRegion isAdmin');
+        const me = await User.findById(req.user?.id).select('role adminRegion isAdmin managerType managerPerms');
         if (me?.isAdmin) return next();
         if (me?.role !== 'regionAdmin' || !me.adminRegion) return res.status(403).json({ error: 'Admin access required' });
+        // her role decides which sections she may publish in (events / classes / community / lotteries / vacations)
+        if (section && !canDo(me, section)) return res.status(403).json({ error: 'התפקיד שלך לא כולל את האזור הזה' });
         req.regionAdmin = { id: me._id, region: me.adminRegion };
         if (req.params.id) {
             if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'not found' });
-            const doc = await Model.findById(req.params.id).select('region scope');
+            const doc = await Model.findById(req.params.id).select('region scope createdBy');
             if (!doc) return res.status(404).json({ error: 'not found' });
             if ((doc.region || 'north') !== me.adminRegion || (doc.scope && doc.scope !== 'local')) {
                 return res.status(403).json({ error: 'אפשר לערוך רק תוכן מקומי באזור שלך' });
+            }
+            // several managers can work in the same city — each one only touches what she published herself
+            if (!doc.createdBy || String(doc.createdBy) !== String(me._id)) {
+                return res.status(403).json({ error: 'אפשר לערוך רק תוכן שפרסמת בעצמך' });
             }
         }
         if (writes) {
@@ -184,17 +191,21 @@ router.put('/admin/users/:id/role', authenticate, isAdmin, async (req, res) => {
         const { role, adminRegion } = req.body || {};
         if (!['member', 'regionAdmin'].includes(role)) return res.status(400).json({ error: 'role' });
         if (role === 'regionAdmin' && !REGION_IDS.includes(adminRegion)) return res.status(400).json({ error: 'יש לבחור אזור' });
-        const before = await User.findById(req.params.id).select('role adminRegion').lean();
+        const before = await User.findById(req.params.id).select('role adminRegion managerType managerPerms').lean();
+        const type = normType(req.body?.managerType);
+        const perms = cleanPerms(req.body?.managerPerms);
         const user = await User.findByIdAndUpdate(req.params.id,
-            role === 'regionAdmin' ? { role, adminRegion } : { role: 'member', $unset: { adminRegion: 1 } },
+            role === 'regionAdmin'
+                ? { role, adminRegion, managerType: type, ...(perms && perms.length ? { managerPerms: perms } : { $unset: { managerPerms: 1 } }) }
+                : { role: 'member', $unset: { adminRegion: 1, managerType: 1, managerPerms: 1 } },
             { new: true }).select('-password -resetPasswordToken -resetPasswordExpires');
         if (!user) return res.status(404).json({ error: 'not found' });
         // newly appointed (or moved to another region) → the same welcome email
-        if (role === 'regionAdmin' && (before?.role !== 'regionAdmin' || before?.adminRegion !== adminRegion) && user.email) {
+        if (role === 'regionAdmin' && (before?.role !== 'regionAdmin' || before?.adminRegion !== adminRegion || normType(before?.managerType) !== type || JSON.stringify(permsOf(before)) !== JSON.stringify(permsOf(user))) && user.email) {
             const approver = await User.findById(req.user.id).select('email').lean();
             await sendManagerWelcome(req.resend, {
                 to: user.email, name: user.name, gender: normGender(user.gender),
-                regionLabel: (REGIONS.find(r => r.id === adminRegion) || {}).name || '', replyTo: approver?.email,
+                regionLabel: (REGIONS.find(r => r.id === adminRegion) || {}).name || '', managerType: type, managerPerms: perms && perms.length ? perms : undefined, replyTo: approver?.email,
             });
         }
         res.json(user);
@@ -258,7 +269,11 @@ router.post('/admin/manager-applications/:id/:decision(approve|reject)', authent
         appl.decidedAt = new Date();
         appl.decidedBy = req.user.id;
         await appl.save();
-        if (approve) await User.updateOne({ _id: appl.user._id }, { role: 'regionAdmin', adminRegion: region });
+        if (approve) {
+            const type = normType(req.body?.managerType);
+            const perms = cleanPerms(req.body?.managerPerms);
+            await User.updateOne({ _id: appl.user._id }, { role: 'regionAdmin', adminRegion: region, managerType: type, ...(perms && perms.length ? { managerPerms: perms } : { $unset: { managerPerms: 1 } }) });
+        }
         // the welcome email: approved + what she/he can do + how to start (reply goes to the approving admin)
         if (approve && appl.user?.email) {
             const approver = await User.findById(req.user.id).select('email').lean();
@@ -266,6 +281,7 @@ router.post('/admin/manager-applications/:id/:decision(approve|reject)', authent
                 to: appl.user.email, name: appl.user.name,
                 gender: normGender(appl.gender) || normGender(appl.user.gender),
                 regionLabel: (REGIONS.find(r => r.id === region) || {}).name || '',
+                managerType: normType(req.body?.managerType), managerPerms: cleanPerms(req.body?.managerPerms) || undefined,
                 replyTo: approver?.email,
             });
         }
@@ -409,7 +425,7 @@ router.put('/users/:id', authenticate, async (req, res) => {
         }
         // משתמשת רגילה יכולה לעדכן רק פרטים אישיים, לא הרשאות, נקודות או סיסמה
         const PROTECTED = ['_id', 'id', 'isAdmin', 'isMemberApproved', 'isMemberRequested', 'points', 'password', 'email',
-            'resetPasswordToken', 'resetPasswordExpires', 'referredBy', 'referralsCount', 'createdAt', 'lastZodiacWheelSpinAt', 'zodiacWheelSpinsCount', 'role', 'adminRegion'];
+            'resetPasswordToken', 'resetPasswordExpires', 'referredBy', 'referralsCount', 'createdAt', 'lastZodiacWheelSpinAt', 'zodiacWheelSpinsCount', 'role', 'adminRegion', 'managerType', 'managerPerms'];
         const update = { ...req.body };
         if (!req.user.isAdmin) PROTECTED.forEach(k => delete update[k]);
         // optional gender (only for wording emails / texts): male | female, '' / null clears it
@@ -456,15 +472,15 @@ router.get('/events/:id', async (req, res) => {
 // Main admin: all · regional manager: local events of her region.
 router.get('/admin/events/archive', authenticate, async (req, res) => {
     try {
-        const me = await User.findById(req.user.id).select('isAdmin role adminRegion');
-        if (!me?.isAdmin && !(me?.role === 'regionAdmin' && me.adminRegion)) return res.status(403).json({ error: 'Admin access required' });
+        const me = await User.findById(req.user.id).select('isAdmin role adminRegion managerType managerPerms');
+        if (!me?.isAdmin && !(me?.role === 'regionAdmin' && me.adminRegion && canDo(me, 'events'))) return res.status(403).json({ error: 'Admin access required' });
         const q = { archived: true };
-        if (!me.isAdmin) Object.assign(q, { region: me.adminRegion, scope: { $in: ['local', null] } });
+        if (!me.isAdmin) Object.assign(q, { region: me.adminRegion, scope: { $in: ['local', null] }, createdBy: me._id });
         res.json(await Event.find(q).select('-attendees').sort({ date: -1 }).limit(300));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/events', authenticate, canManage(Event), async (req, res) => {
+router.post('/events', authenticate, canManage(Event, 'events'), async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
@@ -477,7 +493,7 @@ router.post('/events', authenticate, canManage(Event), async (req, res) => {
 // fields that only the events agent writes
 const IMPORT_FIELDS = ['source', 'sourceId', 'sourceName', 'sourceUrl', 'sourceImageUrl', 'importedAt', 'lastSeenAt', 'importEdited', 'hidden', 'hiddenReason', 'archivedAt'];
 
-router.put('/events/:id', authenticate, canManage(Event), async (req, res) => {
+router.put('/events/:id', authenticate, canManage(Event, 'events'), async (req, res) => {
     try {
         const update = { ...req.body };
         IMPORT_FIELDS.forEach(k => delete update[k]);
@@ -492,7 +508,7 @@ router.put('/events/:id', authenticate, canManage(Event), async (req, res) => {
     catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/events/:id', authenticate, canManage(Event), async (req, res) => {
+router.delete('/events/:id', authenticate, canManage(Event, 'events'), async (req, res) => {
     try {
         const ev = await Event.findById(req.params.id).select('source sourceId title');
         // deleting an imported event also stops the agent from importing it again
@@ -508,7 +524,7 @@ router.get('/classes', async (req, res) => {
     try { res.json(await Class.find(audienceParam(req))); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/classes', authenticate, canManage(Class), async (req, res) => {
+router.post('/classes', authenticate, canManage(Class, 'classes'), async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
@@ -516,12 +532,44 @@ router.post('/classes', authenticate, canManage(Class), async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/classes/:id', authenticate, canManage(Class), async (req, res) => {
+router.put('/classes/:id', authenticate, canManage(Class, 'classes'), async (req, res) => {
     try { res.json(await Class.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/classes/:id', authenticate, canManage(Class), async (req, res) => {
+router.delete('/classes/:id', authenticate, canManage(Class, 'classes'), async (req, res) => {
     try { await Class.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ================= 4b. נופשים (VACATIONS) =================
+
+router.get('/vacations', async (req, res) => {
+    try { res.json(await Vacation.find({ ...audienceParam(req), hidden: { $ne: true } }).sort({ dateFrom: 1, createdAt: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// admin list (includes hidden). main admin: all · manager: only what she published
+router.get('/admin/vacations', authenticate, async (req, res) => {
+    try {
+        const me = await User.findById(req.user?.id).select('isAdmin role adminRegion managerType managerPerms');
+        if (!me?.isAdmin && !(me?.role === 'regionAdmin' && me.adminRegion && canDo(me, 'vacations'))) return res.status(403).json({ error: 'Admin access required' });
+        res.json(await Vacation.find(me.isAdmin ? {} : { createdBy: me._id }).sort({ createdAt: -1 }));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/vacations', authenticate, canManage(Vacation, 'vacations'), async (req, res) => {
+    try {
+        const data = { ...req.body };
+        if (data._id === '') delete data._id;
+        if (req.user?.isAdmin && !data.createdBy) data.createdBy = req.user.id;
+        res.json(await new Vacation(data).save());
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/vacations/:id', authenticate, canManage(Vacation, 'vacations'), async (req, res) => {
+    try { res.json(await Vacation.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/vacations/:id', authenticate, canManage(Vacation, 'vacations'), async (req, res) => {
+    try { await Vacation.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ================= 5. הגרלות (LOTTERIES) =================
@@ -530,7 +578,7 @@ router.get('/lotteries', async (req, res) => {
     try { res.json(await Lottery.find(audienceParam(req))); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/lotteries', authenticate, canManage(Lottery), async (req, res) => {
+router.post('/lotteries', authenticate, canManage(Lottery, 'lotteries'), async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
@@ -539,14 +587,14 @@ router.post('/lotteries', authenticate, canManage(Lottery), async (req, res) => 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/lotteries/:id', authenticate, canManage(Lottery), async (req, res) => {
+router.put('/lotteries/:id', authenticate, canManage(Lottery, 'lotteries'), async (req, res) => {
     try { 
         // הקוד כאן מעדכן את כל ה-body, כולל prizes (המערך) ו-prize2-7
         res.json(await Lottery.findByIdAndUpdate(req.params.id, req.body, { new: true })); 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/admin/lotteries/:id/run', authenticate, canManage(Lottery), async (req, res) => {
+router.post('/admin/lotteries/:id/run', authenticate, canManage(Lottery, 'lotteries'), async (req, res) => {
     try {
         const lottery = await Lottery.findById(req.params.id);
         if (!lottery) return res.status(404).json({ error: 'Lottery not found' });
@@ -561,11 +609,11 @@ router.post('/admin/lotteries/:id/run', authenticate, canManage(Lottery), async 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/lotteries/:id', authenticate, canManage(Lottery), async (req, res) => {
+router.delete('/lotteries/:id', authenticate, canManage(Lottery, 'lotteries'), async (req, res) => {
     try { await Lottery.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/admin/lotteries/:id/participants', authenticate, canManage(Lottery), async (req, res) => {
+router.get('/admin/lotteries/:id/participants', authenticate, canManage(Lottery, 'lotteries'), async (req, res) => {
     try {
         const lottery = await Lottery.findById(req.params.id).populate('participants', 'name phone email');
         if (!lottery) return res.status(404).json({ error: 'Lottery not found' });
@@ -809,7 +857,7 @@ router.get('/community', async (req, res) => {
     try { res.json(await Community.find(audienceParam(req)).sort({ createdAt: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/community', authenticate, canManage(Community), async (req, res) => {
+router.post('/community', authenticate, canManage(Community, 'community'), async (req, res) => {
     try {
         const data = { ...req.body };
         if (data._id === '') delete data._id;
@@ -817,11 +865,11 @@ router.post('/community', authenticate, canManage(Community), async (req, res) =
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/community/:id', authenticate, canManage(Community), async (req, res) => {
+router.put('/community/:id', authenticate, canManage(Community, 'community'), async (req, res) => {
     try { res.json(await Community.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/community/:id', authenticate, canManage(Community), async (req, res) => {
+router.delete('/community/:id', authenticate, canManage(Community, 'community'), async (req, res) => {
     try { await Community.findByIdAndDelete(req.params.id); res.json({ success: true }); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -1556,17 +1604,17 @@ router.put('/admin/messages/:id/read', authenticate, isAdmin, async (req, res) =
 const ticketManager = async (req, res, next) => {
     try {
         if (req.user?.isAdmin) { req.ticketScope = null; return next(); }
-        const me = await User.findById(req.user?.id).select('role adminRegion isAdmin');
+        const me = await User.findById(req.user?.id).select('role adminRegion isAdmin managerType managerPerms');
         if (me?.isAdmin) { req.ticketScope = null; return next(); }
-        if (me?.role === 'regionAdmin' && me.adminRegion) { req.ticketScope = me.adminRegion; return next(); }
+        if (me?.role === 'regionAdmin' && me.adminRegion && canDo(me, 'events')) { req.ticketScope = { region: me.adminRegion, userId: String(me._id) }; return next(); }
         res.status(403).json({ error: 'Admin access required' });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
-const eventInScope = (ev, region) => !region || (ev && (ev.region || 'north') === region && (ev.scope || 'local') === 'local');
+const eventInScope = (ev, sc) => !sc || (ev && (ev.region || 'north') === sc.region && (ev.scope || 'local') === 'local' && !!ev.createdBy && String(ev.createdBy) === sc.userId);
 
 router.get('/admin/tickets', authenticate, ticketManager, async (req, res) => {
     try {
-        const tickets = await Ticket.find().populate('eventId', 'title date location region scope city').sort({ createdAt: -1 });
+        const tickets = await Ticket.find().populate('eventId', 'title date location region scope city createdBy').sort({ createdAt: -1 });
         res.json(tickets.filter(t => eventInScope(t.eventId, req.ticketScope)));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -1574,7 +1622,7 @@ router.get('/admin/tickets', authenticate, ticketManager, async (req, res) => {
 router.post('/admin/tickets', authenticate, ticketManager, async (req, res) => {
     try {
         if (req.ticketScope) {
-            const ev = await Event.findById(req.body.eventId).select('region scope');
+            const ev = await Event.findById(req.body.eventId).select('region scope createdBy');
             if (!eventInScope(ev, req.ticketScope)) return res.status(403).json({ error: 'אפשר להנפיק כרטיסים רק לאירועים באזור שלך' });
         }
         const ticket = new Ticket(req.body);
@@ -1585,7 +1633,7 @@ router.post('/admin/tickets', authenticate, ticketManager, async (req, res) => {
 
 router.delete('/admin/tickets/:id', authenticate, ticketManager, async (req, res) => {
     try {
-        const t = await Ticket.findById(req.params.id).populate('eventId', 'region scope');
+        const t = await Ticket.findById(req.params.id).populate('eventId', 'region scope createdBy');
         if (!t) return res.status(404).json({ error: 'not found' });
         if (!eventInScope(t.eventId, req.ticketScope)) return res.status(403).json({ error: 'not allowed' });
         await t.deleteOne();
@@ -1596,7 +1644,7 @@ router.delete('/admin/tickets/:id', authenticate, ticketManager, async (req, res
 // סריקת הברקוד (Scanner endpoint)
 router.post('/admin/tickets/verify/:code', authenticate, ticketManager, async (req, res) => {
     try {
-        const ticket = await Ticket.findOne({ code: req.params.code }).populate('eventId', 'title region scope');
+        const ticket = await Ticket.findOne({ code: req.params.code }).populate('eventId', 'title region scope createdBy');
         if (!ticket) return res.status(404).json({ error: 'כרטיס מזויף או לא קיים במערכת!' });
         if (!eventInScope(ticket.eventId, req.ticketScope)) return res.status(403).json({ error: 'הכרטיס שייך לאירוע באזור אחר' });
 

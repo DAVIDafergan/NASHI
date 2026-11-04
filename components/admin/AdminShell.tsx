@@ -4,14 +4,14 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, CheckCircle2, PlayCircle, Mail, Calendar, GraduationCap, HeartHandshake, Gift, Sparkles,
   Quote, Image as ImageIcon, Megaphone, Bell, Users, MessageSquare, Ticket, Send, Settings, Menu, X, Plus,
-  Search, MapPin, ArrowRight, ExternalLink, Bot, Store,
+  Search, MapPin, ArrowRight, ExternalLink, Bot, Store, Palmtree,
 } from 'lucide-react';
 import { REGIONS } from '../../shared/regions';
 import Logo from '../Logo';
 
 export type AdminTab =
   | 'dashboard' | 'approvals' | 'stories' | 'messages'
-  | 'events' | 'classes' | 'community' | 'lotteries' | 'personality' | 'inspirations' | 'flyers' | 'ads' | 'announcements'
+  | 'events' | 'vacations' | 'classes' | 'community' | 'lotteries' | 'personality' | 'inspirations' | 'flyers' | 'ads' | 'announcements'
   | 'users' | 'forum' | 'tickets' | 'broadcast' | 'settings' | 'importer' | 'suppliers';
 
 export type NavItem = { id: AdminTab; label: string; icon: React.ReactNode; hint: string };
@@ -28,6 +28,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'תוכן באתר', items: [
       { id: 'events', label: 'אירועים', icon: <Calendar size={18} />, hint: 'כל האירועים, לפי עיר ואזור' },
+      { id: 'vacations', label: 'נופשים', icon: <Palmtree size={18} />, hint: 'נופשים, צימרים וסופי שבוע מאורגנים' },
       { id: 'classes', label: 'חוגים', icon: <GraduationCap size={18} />, hint: 'חוגים וסדנאות קבועים' },
       { id: 'community', label: 'קהילה וחסד', icon: <HeartHandshake size={18} />, hint: 'שיעורי תורה, גמ"חים ועסקים מקומיים' },
       { id: 'lotteries', label: 'הגרלות', icon: <Gift size={18} />, hint: 'הגרלות, משימות והגרלת שולחן שבת' },

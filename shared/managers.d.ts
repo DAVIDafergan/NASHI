@@ -1,0 +1,10 @@
+export type Section = 'events' | 'classes' | 'community' | 'lotteries' | 'vacations';
+export type ManagerType = 'culture' | 'municipal' | 'other';
+export const SECTIONS: Section[];
+export const SECTION_LABELS: Record<Section, string>;
+export const MANAGER_TYPES: Record<ManagerType, { label: string; perms: Section[] }>;
+export const MANAGER_TYPE_IDS: ManagerType[];
+export function normType(t: any): ManagerType;
+export function cleanPerms(a: any): Section[] | null;
+export function permsOf(u: any): Section[];
+export function canDo(u: any, section: Section): boolean;

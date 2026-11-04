@@ -1,3 +1,4 @@
+import RoleSelect, { RoleValue, defaultRole, permsToSend } from './RoleSelect';
 import React, { useMemo, useState } from 'react';
 import { Award, Check, Copy, Download, Mail, MapPin, Phone, Plus, ShieldCheck, Sparkles, Users } from 'lucide-react';
 import { api } from '../../services/api';
@@ -13,7 +14,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
   const [sort, setSort] = useState<'new' | 'points' | 'name'>('new');
   const [page, setPage] = useState(1);
   const [gift, setGift] = useState<{ open: boolean; user?: any; link?: string; busy?: boolean }>({ open: false });
-  const [roleFor, setRoleFor] = useState<{ user: any; region: string } | null>(null);
+  const [roleFor, setRoleFor] = useState<{ user: any; region: string; role: RoleValue } | null>(null);
   const [roleBusy, setRoleBusy] = useState(false);
   const [pointsFor, setPointsFor] = useState<{ user?: any; amount: number } | null>(null);
 
@@ -83,14 +84,14 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
                     </td>
                     <td className="p-3.5">{u.city ? <span>{u.city}<span className="block text-[11px] text-slate-400">{regionName(regionOfItem(u))}</span></span> : <span className="text-xs text-slate-400">לא נבחרה</span>}</td>
                     <td className="p-3.5 font-strong text-rose-700 tabular-nums">{(u.points || 0).toLocaleString('he-IL')}</td>
-                    <td className="p-3.5">{u.isAdmin ? <Badge tone="plum">הנהלה</Badge> : u.role === 'regionAdmin' ? <Badge tone="plum"><ShieldCheck size={10} /> ניהול {regionName(u.adminRegion)}</Badge> : u.isMemberApproved ? <Badge tone="green"><Sparkles size={10} /> חברת מעגל</Badge> : u.isMemberRequested ? <Badge tone="amber">ממתינה לאישור</Badge> : <Badge tone="slate">רשומה</Badge>}</td>
+                    <td className="p-3.5">{u.isAdmin ? <Badge tone="plum">הנהלה</Badge> : u.role === 'regionAdmin' ? <Badge tone="plum"><ShieldCheck size={10} /> {u.managerType === 'municipal' ? 'עירייה' : u.managerType === 'other' ? 'מנהל/ת' : 'ניהול'} {regionName(u.adminRegion)}</Badge> : u.isMemberApproved ? <Badge tone="green"><Sparkles size={10} /> חברת מעגל</Badge> : u.isMemberRequested ? <Badge tone="amber">ממתינה לאישור</Badge> : <Badge tone="slate">רשומה</Badge>}</td>
                     <td className="p-3.5 text-xs text-slate-500">{fmtDate(u.createdAt)}</td>
                     <td className="p-3.5">
                       <div className="flex justify-end gap-1.5">
                         {u.isMemberRequested && !u.isMemberApproved && <IconButton tone="good" title="אישור למעגל" aria-label="אישור" onClick={async () => { await api.approveMember(idOf(u)); toast(`${u.name} אושרה ✨`); reload(); }}><Check size={15} /></IconButton>}
                         <IconButton title="הוספת נקודות" aria-label="נקודות" onClick={() => setPointsFor({ user: u, amount: 50 })}><Plus size={15} /></IconButton>
                         <IconButton title="קישור להטבה אישית" aria-label="הטבה" onClick={() => makeGift(u)}><Award size={15} /></IconButton>
-                        {!u.isAdmin && <IconButton title="ניהול תרבות" aria-label="ניהול תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
+                        {!u.isAdmin && <IconButton title="ניהול תרבות" aria-label="ניהול תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '', role: defaultRole(u.managerType, u.managerPerms) })}><ShieldCheck size={15} /></IconButton>}
                         {!u.isAdmin && <DeleteButton name={u.name} onConfirm={async () => { await api.deleteUser(idOf(u)); reload(); }} />}
                       </div>
                     </td>
@@ -118,7 +119,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
                   {u.isMemberRequested && !u.isMemberApproved && <IconButton tone="good" aria-label="אישור" onClick={async () => { await api.approveMember(idOf(u)); toast(`${u.name} אושרה ✨`); reload(); }}><Check size={15} /></IconButton>}
                   <IconButton aria-label="נקודות" onClick={() => setPointsFor({ user: u, amount: 50 })}><Plus size={15} /></IconButton>
                   <IconButton aria-label="הטבה" onClick={() => makeGift(u)}><Award size={15} /></IconButton>
-                  {!u.isAdmin && <IconButton aria-label="ניהול תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '' })}><ShieldCheck size={15} /></IconButton>}
+                  {!u.isAdmin && <IconButton aria-label="ניהול תרבות" onClick={() => setRoleFor({ user: u, region: u.adminRegion || regionOfCity(u.city) || '', role: defaultRole(u.managerType, u.managerPerms) })}><ShieldCheck size={15} /></IconButton>}
                   {!u.isAdmin && <DeleteButton name={u.name} onConfirm={async () => { await api.deleteUser(idOf(u)); reload(); }} />}
                 </div>
               </li>
@@ -133,7 +134,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
           <div className="flex gap-2">
             <button disabled={roleBusy || !roleFor.region} className="btn-primary flex-1 disabled:opacity-50" onClick={async () => {
               setRoleBusy(true);
-              try { await api.setUserRole(idOf(roleFor.user), 'regionAdmin', roleFor.region); toast(`${roleFor.user.name} — ניהול תרבות ב${regionName(roleFor.region)} ✨`); setRoleFor(null); reload(); }
+              try { await api.setUserRole(idOf(roleFor.user), 'regionAdmin', roleFor.region, roleFor.role.type, permsToSend(roleFor.role)); toast(`${roleFor.user.name} — ניהול תרבות ב${regionName(roleFor.region)} ✨`); setRoleFor(null); reload(); }
               catch (e: any) { toast(e?.message || 'השמירה נכשלה', 'bad'); } finally { setRoleBusy(false); }
             }}>{roleFor.user.role === 'regionAdmin' ? 'שמירת שינוי' : 'מינוי לניהול תרבות'}</button>
             {roleFor.user.role === 'regionAdmin' && (
@@ -147,7 +148,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
         )}>
         {roleFor && (
           <div className="space-y-4">
-            <p className="text-sm leading-relaxed text-slate-600">מנהל/ת תרבות נכנס/ת ל"ניהול" עם המשתמש הרגיל, ויכול/ה להעלות, לערוך ולמחוק <b>אירועים, חוגים, פריטי קהילה והגרלות</b> באזור הזה בלבד, ובוחר/ת לכל פריט אם הוא לגברים, לנשים או לכולם. אין גישה למשתמשים, לפניות או להגדרות.</p>
+            <p className="text-sm leading-relaxed text-slate-600">מנהל/ת תרבות נכנס/ת ל"ניהול" עם המשתמש הרגיל, ויכול/ה להעלות, לערוך ולמחוק <b>את מה שהתפקיד מאפשר</b> באזור הזה בלבד, ובוחר/ת לכל פריט אם הוא לגברים, לנשים או לכולם. אין גישה למשתמשים, לפניות או להגדרות.</p>
             <Field label="איזה אזור לנהל?" required>
               <div className="grid grid-cols-2 gap-2">
                 {REGIONS.map(r => (
@@ -156,6 +157,7 @@ const UsersAdmin: React.FC<{ users: any[]; region: string; search: string; reloa
                 ))}
               </div>
             </Field>
+            <RoleSelect value={roleFor.role} onChange={role => setRoleFor(x => (x ? { ...x, role } : x))} />
           </div>
         )}
       </Sheet>

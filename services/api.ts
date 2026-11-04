@@ -1,4 +1,4 @@
-import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, ForumPost, CommunityItem } from '../types';
+import { User, EventItem, ClassItem, LotteryItem, Review, PersonalityProfile, ForumPost, CommunityItem, VacationItem } from '../types';
 
 export interface FlyerItem {
     _id: string;
@@ -221,6 +221,31 @@ export const api = {
             method: 'DELETE', 
             headers: getHeaders() 
         });
+    },
+
+    // ================= VACATIONS (נופשים) =================
+    async getVacations(): Promise<VacationItem[]> {
+        const res = await safeFetch(`${API_URL}/vacations`);
+        return res.json();
+    },
+    // for a manager: only what she created herself (the main admin gets everything)
+    async getAdminVacations(): Promise<VacationItem[]> {
+        const res = await safeFetch(`${API_URL}/admin/vacations`, { headers: getHeaders() });
+        if (!res.ok) return [];
+        return res.json();
+    },
+    async createVacation(v: Partial<VacationItem>): Promise<VacationItem> {
+        validateImageSize(v);
+        const res = await safeFetch(`${API_URL}/vacations`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(v) });
+        return res.json();
+    },
+    async updateVacation(id: string, v: Partial<VacationItem>): Promise<VacationItem> {
+        validateImageSize(v);
+        const res = await safeFetch(`${API_URL}/vacations/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(v) });
+        return res.json();
+    },
+    async deleteVacation(id: string): Promise<void> {
+        await safeFetch(`${API_URL}/vacations/${id}`, { method: 'DELETE', headers: getHeaders() });
     },
 
     // ================= LOTTERIES =================
@@ -907,8 +932,8 @@ export const api = {
         return json;
     },
 
-    async setUserRole(id: string, role: 'member' | 'regionAdmin', adminRegion?: string) {
-        const res = await safeFetch(`${API_URL}/admin/users/${id}/role`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify({ role, adminRegion }) });
+    async setUserRole(id: string, role: 'member' | 'regionAdmin', adminRegion?: string, managerType?: string, managerPerms?: string[]) {
+        const res = await safeFetch(`${API_URL}/admin/users/${id}/role`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify({ role, adminRegion, managerType, managerPerms }) });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || 'השמירה נכשלה');
         return json;
@@ -934,8 +959,8 @@ export const api = {
         return res.json();
     },
 
-    async decideManagerApplication(id: string, decision: 'approve' | 'reject', region?: string) {
-        const res = await safeFetch(`${API_URL}/admin/manager-applications/${id}/${decision}`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ region }) });
+    async decideManagerApplication(id: string, decision: 'approve' | 'reject', region?: string, managerType?: string, managerPerms?: string[]) {
+        const res = await safeFetch(`${API_URL}/admin/manager-applications/${id}/${decision}`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ region, managerType, managerPerms }) });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || 'הפעולה נכשלה');
         return json;
