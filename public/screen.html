@@ -826,6 +826,19 @@ body[data-skin="gala"] .pop.fly .gp .p2 .shine,body[data-skin="gala"] .pop.fly .
 .g-center .feat .n{order:1;font-size:calc(5.6cqh*var(--lc,1))!important;padding:0!important;width:100%;line-height:1.12;justify-content:center}
 .g-center .feat .amt{order:2;font-size:calc(4.2cqh*var(--lc,1))!important;line-height:1.1}
 .g-center .ded{width:calc(29cqw*var(--lc,1))!important;max-width:calc(29cqw*var(--lc,1))!important}
+
+/* ===== skin: חסידי – קטיפה כחולה, כתר, גליל וזהב ===== */
+body[data-gv="hasidi"] #frame{background:url(/skin/h-velvet.jpg) center/cover no-repeat,#0b1d3a}
+body[data-gv="hasidi"] #frame::before{background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(2,8,22,.5) 100%)}
+body[data-gv="hasidi"] .gala::before{display:none}
+body[data-gv="hasidi"] .g-arch{content:url(/skin/h-valance.webp);left:50%;top:.4cqh;width:44cqw;height:auto;object-fit:contain;transform:translateX(-50%);z-index:1;filter:drop-shadow(0 1.8cqh 1.8cqh rgba(0,0,0,.6))}
+body[data-gv="hasidi"] .g-top{top:9.2cqh}
+body[data-gv="hasidi"] .g-logo img{height:12cqh;width:22cqw}
+body[data-gv="hasidi"] .g-col h4>span{color:#12285a;text-shadow:0 .2cqh 0 rgba(255,246,214,.9);font-size:3.3cqh;padding-inline-end:9%}
+body[data-gv="hasidi"] .g-col h4>.tf{object-fit:contain}
+body[data-gv="hasidi"] .g-center .ttl b{background:linear-gradient(180deg,#fffbe6,#f3d98a 50%,#c8942c);-webkit-background-clip:text;background-clip:text}
+body[data-gv="hasidi"] .g-foot{background:linear-gradient(180deg,rgba(10,26,56,.94),rgba(4,12,32,.97));border-top:.45cqh solid #d9a93c}
+@media (max-aspect-ratio:1/1){body[data-gv="hasidi"] .g-arch{width:96cqw}}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -926,7 +939,7 @@ let raf=0;function loop(){raf=requestAnimationFrame(loop);cx.clearRect(0,0,cv.wi
 
 /* ---------- render ---------- */
 function applySettings(s0){
-  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';if(!s.currency||/ש.{0,2}ח|nis|ils/i.test(String(s.currency)))s.currency='₪';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
+  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const hasidi=s.skin==='hasidi';if(hasidi)s.skin='gala';document.body.dataset.gv=hasidi?'hasidi':'';if(!s.currency||/ש.{0,2}ח|nis|ils/i.test(String(s.currency)))s.currency='₪';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
   settings=s;fitFrame();const r=document.documentElement.style;{const ls=Math.min(1.8,Math.max(.4,Number(s.logoScale)||1));r.setProperty('--ls',ls);r.setProperty('--lc',ls>1?(1/(1+(ls-1)*.55)).toFixed(3):1)}
   r.setProperty('--p',s.primary);r.setProperty('--bg1',s.bg1);r.setProperty('--bg2',s.bg2);r.setProperty('--t',s.text);r.setProperty('--f',`"${s.font}"`);{const serif=s.skin==='shtar'||s.skin==='royal'||s.skin==='grand';r.setProperty('--fd1',serif?'"Frank Ruhl Libre"':`"${s.font||'Heebo'}"`);r.setProperty('--fd2',`"${s.font||'Heebo'}"`);for(const [k,v] of [['--fT',s.fontTitle],['--fN',s.fontNames],['--fA',s.fontNums],['--fS',s.fontSub]]){if(v)r.setProperty(k,`"${v}"`);else r.removeProperty(k)}}r.setProperty('--dim',s.dim);
   document.body.dataset.layout=s.layout;document.body.dataset.skin=s.skin==='gala'?'gala':((s.skin==='shtar'||royal)?'shtar':'');document.body.dataset.tone=royal?'dark':'';document.body.dataset.fill=(grand||s.skin==='gala')?'1':'';fitFrame();initSkin(s);document.body.dataset.popup=s.popupStyle;
@@ -975,7 +988,7 @@ function renderGala(st){
   const ghost='<div class="gc ghost"><img class="cf" src="/orn/card.png" alt=""></div>';
   const rest=items.slice(1,9);
   const R=[],L=[];rest.forEach((d,i)=>(i%2?L:R).push(d));
-  const col=(arr,t)=>`<h4><img class="tf" src="/orn/tab.png" alt=""><span>${t}</span></h4>`+Array.from({length:4},(_,i)=>arr[i]?card(arr[i],i):ghost).join('');
+  const col=(arr,t)=>`<h4><img class="tf" src="${document.body.dataset.gv==='hasidi'?'/skin/h-scroll.webp':'/orn/tab.png'}" alt=""><span>${t}</span></h4>`+Array.from({length:4},(_,i)=>arr[i]?card(arr[i],i):ghost).join('');
   $('gR').innerHTML=col(R,'השותפים');
   $('gL').innerHTML=col(L,'השותפים');
   const fo='<img class="fo l" src="/orn/corner.png" alt=""><img class="fo r" src="/orn/corner.png" alt="">';
