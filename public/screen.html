@@ -907,6 +907,12 @@ body[data-gv="hasidi"] .gc>.n,body[data-gv="hasidi"] .gc>.p{z-index:1}
 body[data-gv="hasidi"] .g-top{top:9.5cqh}
 body[data-gv="hasidi"] .g-logo img{height:calc(18cqh*var(--ls,1));width:min(calc(30cqw*var(--ls,1)),46cqw);filter:drop-shadow(0 .8cqh .8cqh rgba(0,0,0,.7)) drop-shadow(0 0 2cqh rgba(255,215,120,.4))}
 body[data-gv="hasidi"] .g-center{padding-top:calc(29cqh + (var(--ls,1) - 1)*6cqh)!important}
+
+/* גודל לוגו לפי בחירת המנהל – בכל הסקינים */
+.brand img{height:calc(9cqh*var(--ls,1));max-width:calc(22cqw*var(--ls,1))}
+body[data-fill="1"] .sk-plaque.logo,body[data-skin="shtar"] .sk-plaque.logo{width:calc(13cqh*var(--ls,1))!important;height:calc(13cqh*var(--ls,1))!important}
+body[data-fill="1"] .sk-plaque.logo{right:calc(5.6cqw - (var(--ls,1) - 1)*1.5cqw)!important}
+@media (max-aspect-ratio:1/1){.brand img{height:calc(7cqh*var(--ls,1));max-width:calc(30cqw*var(--ls,1))}}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
