@@ -1061,6 +1061,14 @@ body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat{width:calc(28cqw*
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .n{font-size:calc(4.1cqh*var(--gk,1))!important}
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .amt{font-size:calc(6cqh*var(--gk,1))!important}
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .ded{width:calc(28cqw*var(--gk,1))!important;max-width:calc(28cqw*var(--gk,1))!important}
+body[data-skin="gala"]{--gk:.8}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-logo img{height:min(calc(24cqh*var(--ls,1)),31cqh)!important;width:min(calc(30cqw*var(--ls,1)),38cqw)!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center{padding-top:calc(12cqh + min(24cqh*var(--ls,1),31cqh))!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat{width:26cqw!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat>.in.in{top:25%;bottom:24%;left:17%;right:17%}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .n{font-size:3.3cqh!important;white-space:nowrap}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .amt{font-size:5cqh!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .ded{width:26cqw!important;max-width:26cqw!important}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -1229,7 +1237,8 @@ function renderGala(st){
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
   setTimeout(()=>{fitAll();fitGalaCenter()},40);
 }
-function fitGalaCenter(){const c=document.getElementById('gC');if(!c||document.body.dataset.skin!=='gala')return;const ks=[...c.children];if(!ks.length)return;ks.forEach(k=>k.style.zoom='');
+function fitFeatName(){const n=document.querySelector('.g-center .feat .n');if(!n)return;n.style.fontSize='';const w=n.parentElement.clientWidth;let f=parseFloat(getComputedStyle(n).fontSize);let g=0;while(n.scrollWidth>w+1&&g++<30){f*=.93;n.style.setProperty('font-size',f+'px','important')}}
+function fitGalaCenter(){fitFeatName();const c=document.getElementById('gC');if(!c||document.body.dataset.skin!=='gala')return;const ks=[...c.children];if(!ks.length)return;ks.forEach(k=>k.style.zoom='');
   const cs=getComputedStyle(c);const gap=parseFloat(cs.rowGap)||0;const avail=c.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-6;
   let need=gap*(ks.length-1);ks.forEach(k=>{const m=getComputedStyle(k);need+=k.offsetHeight+parseFloat(m.marginTop)+parseFloat(m.marginBottom)});
   if(need>avail&&avail>40){const z=Math.max(.3,avail/need);ks.forEach(k=>{k.style.zoom=z})}}
