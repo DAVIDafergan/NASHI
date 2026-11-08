@@ -959,6 +959,17 @@ body[data-gv="hasidi"] .g-center{gap:.2cqh!important;min-height:0;overflow:hidde
 body[data-gv="hasidi"] .g-center .feat{width:calc(100% - 3cqw)!important;margin-inline:1.5cqw!important}
 body[data-gv="hasidi"] .g-center .feat .n{font-size:3.3cqh!important}
 body[data-gv="hasidi"] .g-center .feat .amt{font-size:3.3cqh!important}
+
+/* השותפים: גלילה עדינה, האחרונים תמיד ראשונים */
+body[data-skin="gala"] .g-col{display:flex;flex-direction:column;gap:1cqh}
+body[data-skin="gala"] .g-col h4{flex:none}
+body[data-skin="gala"] .gview{position:relative;flex:1;min-height:0;overflow:hidden;-webkit-mask-image:linear-gradient(transparent 0,#000 3%,#000 95%,transparent);mask-image:linear-gradient(transparent 0,#000 3%,#000 95%,transparent)}
+body[data-skin="gala"] .gtrack{display:flex;flex-direction:column;gap:1.4cqh;padding-bottom:1.4cqh;will-change:transform}
+body[data-skin="gala"] .gtrack:not(.still){animation:gScrollUp var(--gdur,40s) linear infinite}
+body[data-skin="gala"] .gtrack.still{height:100%}
+body[data-skin="gala"] .gtrack.still .gc{flex:1;min-height:0}
+body[data-skin="gala"] .gtrack:not(.still) .gc{flex:none;height:18.6cqh}
+@keyframes gScrollUp{0%,7%{transform:translateY(0)}100%{transform:translateY(-50%)}}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -1100,15 +1111,20 @@ function renderList(st){
 let __galaTop=null;
 function renderGala(st){
   const cur=settings.currency||'₪';
-  const items=(st.recent||[]);
+  const items=(st.wall&&st.wall.length?st.wall:(st.recent||[]));
   const top=items[0];
   $('gTotal').textContent=cur+fmt(st.total||0);
   $('gLabel').textContent=settings.galaLabel||'עד כה התחייבו';
   const card=(d,i)=>`<div class="gc" style="--i:${i}"><img class="cf" src="/orn/card.png" alt=""><div class="n">${esc(d.donor)}</div><div class="p">${d.dedication?`<span>${esc(d.dedication)}</span>`:''}${settings.showAmount===false&&d.dedication?'':`<b>${esc(cur)}${fmt(d.amount)}</b>`}</div></div>`;
   const ghost='<div class="gc ghost"><img class="cf" src="/orn/card.png" alt=""></div>';
-  const rest=items.slice(1,9);
+  const rest=items.slice(1);
   const R=[],L=[];rest.forEach((d,i)=>(i%2?L:R).push(d));
-  const col=(arr,t)=>`<h4><img class="tf" src="${document.body.dataset.gv==='hasidi'?'/skin/h-scroll.webp':'/orn/tab.png'}" alt=""><span>${t}</span></h4>`+Array.from({length:4},(_,i)=>arr[i]?card(arr[i],i):ghost).join('');
+  const col=(arr,t)=>{
+    const head=`<h4><img class="tf" src="${document.body.dataset.gv==='hasidi'?'/skin/h-scroll.webp':'/orn/tab.png'}" alt=""><span>${t}</span></h4>`;
+    const roll=arr.length>4;
+    const cards=arr.map((d,i)=>card(d,roll?Math.min(i,4):i)).join('');
+    const body=roll?`<div class="gtrack" style="--gdur:${Math.max(24,arr.length*6)}s">${cards}${cards}</div>`:`<div class="gtrack still">${cards}${Array.from({length:Math.max(0,4-arr.length)},()=>ghost).join('')}</div>`;
+    return head+`<div class="gview">${body}</div>`};
   $('gR').innerHTML=col(R,'השותפים');
   $('gL').innerHTML=col(L,'השותפים');
   const fo='<img class="fo l" src="/orn/corner.png" alt=""><img class="fo r" src="/orn/corner.png" alt="">';
