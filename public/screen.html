@@ -1027,6 +1027,21 @@ body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .ttl b{font-size:calc(5
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat{width:calc(25cqw*var(--lc,1))!important}
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .ded{width:calc(25cqw*var(--lc,1))!important;max-width:calc(25cqw*var(--lc,1))!important}
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center{gap:.6cqh!important}
+
+/* גאלה: סכומים גדולים וברורים, ותורם אחרון בלי חיתוך */
+body[data-skin="gala"] .gc .n{font-size:4cqh}
+body[data-skin="gala"] .gc .p{font-size:2.8cqh}
+body[data-skin="gala"] .gc .p b{font-size:3.8cqh!important;font-weight:800!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat{aspect-ratio:2434/760!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat>.in.in{top:22%;bottom:22%;left:13%;right:13%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3cqh}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .sep{display:none}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .n{font-size:calc(4.4cqh*var(--lc,1))!important;line-height:1.2;overflow:visible;padding:0;width:100%;max-width:100%}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .amt{font-size:calc(5.4cqh*var(--lc,1))!important;line-height:1.1;font-weight:800!important;color:#ffe9a0!important;-webkit-text-fill-color:#ffe9a0!important}
+body[data-skin="gala"] .g-center .sum .sc:first-child b{font-weight:800!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat{aspect-ratio:2434/900!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat>.in.in{top:25%;bottom:25%;left:15%;right:15%}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .n{font-size:calc(3.8cqh*var(--lc,1))!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .amt{font-size:calc(4.8cqh*var(--lc,1))!important}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -1190,7 +1205,7 @@ function renderGala(st){
   const goal=+st.goal||0,pct=goal>0?Math.min(100,(+st.total||0)/goal*100):0;
   const goalH=`<div class="sum"><div class="sc"><small>${esc(settings.galaLabel||'עד כה התחייבו')}</small><b><em>${esc(cur)}</em>${fmt(+st.total||0)}</b></div>${goal>0?`<div class="sep"></div><div class="sc"><small>יעד</small><b><em>${esc(cur)}</em>${fmt(goal)}</b></div>`:''}</div>${goal>0?`<div class="bar"><i style="width:${pct.toFixed(1)}%"></i><span>${Math.round(pct)}%</span></div>`:''}`;
   $('gLogo').innerHTML=settings.logo?`<img src="${settings.logo}" alt="">`:'';
-  const ttl=`<div class="ttl"><small>\u05e9\u05d8\u05e8 \u05e9\u05d5\u05ea\u05e4\u05d5\u05ea</small><b>${esc(settings.title||st.name||'')}</b></div>`;
+  const ttl=(settings.title||'').trim()?`<div class="ttl"><small>\u05e9\u05d8\u05e8 \u05e9\u05d5\u05ea\u05e4\u05d5\u05ea</small><b>${esc(settings.title)}</b></div>`:'';
   $('gC').innerHTML=top?ttl+goalH+`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/orn/plate.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:ttl+goalH+`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
   setTimeout(fitAll,40);
