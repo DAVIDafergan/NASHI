@@ -63,7 +63,7 @@ const totals = (cid) => db.prepare('SELECT COALESCE(SUM(amount),0) total, COUNT(
 const recent = (cid, n) => db.prepare('SELECT id,donor,amount,months,monthly,dedication,city,anonymous,created_at FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY id DESC LIMIT ?').all(cid, n);
 const top = (cid, n) => db.prepare('SELECT id,donor,amount,months,monthly,dedication,city,anonymous FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY amount DESC, id DESC LIMIT ?').all(cid, n);
 const amounts = (cid) => Object.fromEntries(db.prepare('SELECT amount a, COUNT(*) n FROM donations WHERE campaign_id=? AND hidden=0 GROUP BY amount').all(cid).map(r => [r.a, r.n]));
-const pub = (d) => { const o = { ...d, donor: d.anonymous ? 'תורם/ת אנונימי/ת' : d.donor }; if (d.months > 1 && d.monthly > 0) { const note = '₪' + d.monthly.toLocaleString('en-US') + ' × ' + d.months + ' חודשים'; o.dedication = d.dedication ? note + ' · ' + d.dedication : note; } return o; };
+const pub = (d) => { const o = { ...d, donor: d.anonymous ? 'תורם/ת אנונימי/ת' : d.donor }; return o; };
 const BUILD = String(Math.floor(fs.statSync(path.join(__dirname, 'public', 'screen.html')).mtimeMs));
 const state = (c) => { const t = totals(c.id); return { build: BUILD, slug: c.slug, name: c.name, goal: c.goal, total: t.total, count: t.count, settings: settingsOf(c), recent: recent(c.id, 30).map(pub), wall: recent(c.id, 300).map(pub), amounts: amounts(c.id), top: top(c.id, 10).map(pub) }; };
 

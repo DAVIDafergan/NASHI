@@ -1071,6 +1071,10 @@ body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .amt{font-size:5c
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .ded{width:26cqw!important;max-width:26cqw!important}
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-logo img{height:min(calc(27cqh*var(--ls,1)),33cqh)!important;width:min(calc(36cqw*var(--ls,1)),42cqw)!important}
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center{padding-top:calc(11cqh + min(27cqh*var(--ls,1),33cqh))!important}
+body[data-skin="gala"] .gc .p span{white-space:normal!important;text-overflow:clip!important;overflow:hidden!important;display:block;line-height:1.12!important;padding:0!important;max-height:6.2cqh;font-size:2.3cqh;text-align:center;flex:1 1 auto}
+body[data-skin="gala"] .gc .p{align-items:center}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat>.in.in{top:22%;bottom:22%;justify-content:center;align-items:center;gap:.4cqh}
+body[data-skin="gala"] .g-center .feat .n,body[data-skin="gala"] .g-center .feat .amt{text-align:center;margin:0!important;padding-top:0!important;padding-bottom:0!important;line-height:1.15!important}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -1240,7 +1244,8 @@ function renderGala(st){
   setTimeout(()=>{fitAll();fitGalaCenter()},40);
 }
 function fitFeatName(){const n=document.querySelector('.g-center .feat .n');if(!n)return;n.style.fontSize='';const w=n.parentElement.clientWidth;let f=parseFloat(getComputedStyle(n).fontSize);let g=0;while(n.scrollWidth>w+1&&g++<30){f*=.93;n.style.setProperty('font-size',f+'px','important')}}
-function fitGalaCenter(){fitFeatName();const c=document.getElementById('gC');if(!c||document.body.dataset.skin!=='gala')return;const ks=[...c.children];if(!ks.length)return;ks.forEach(k=>k.style.zoom='');
+function fitGalaCards(){document.querySelectorAll('.gc .p span').forEach(sp=>{sp.style.fontSize='';let f=parseFloat(getComputedStyle(sp).fontSize),g=0;while(sp.scrollHeight>sp.clientHeight+1&&g++<25){f*=.93;sp.style.setProperty('font-size',f+'px','important')}})}
+function fitGalaCenter(){fitGalaCards();fitFeatName();const c=document.getElementById('gC');if(!c||document.body.dataset.skin!=='gala')return;const ks=[...c.children];if(!ks.length)return;ks.forEach(k=>k.style.zoom='');
   const cs=getComputedStyle(c);const gap=parseFloat(cs.rowGap)||0;const avail=c.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-6;
   let need=gap*(ks.length-1);ks.forEach(k=>{const m=getComputedStyle(k);need+=k.offsetHeight+parseFloat(m.marginTop)+parseFloat(m.marginBottom)});
   if(need>avail&&avail>40){const z=Math.max(.3,avail/need);ks.forEach(k=>{k.style.zoom=z})}}
