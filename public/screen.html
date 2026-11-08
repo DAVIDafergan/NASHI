@@ -1012,6 +1012,21 @@ body[data-gv="hasidi"][data-skin="gala"] .gc .p b{color:#ffe9a0!important;-webki
 body[data-gv="hasidi"][data-skin="gala"] .gc .p span{color:#d9cfae!important;-webkit-text-fill-color:#d9cfae!important;text-shadow:0 .2cqh .4cqh rgba(0,0,0,.5)!important;font-weight:600}
 body[data-gv="hasidi"] .gc .p span+b{border-inline-start:.2cqh solid rgba(240,205,120,.45)}
 body[data-gv="hasidi"][data-skin="gala"] .g-col .gc .p b{color:#ffe9a0!important;-webkit-text-fill-color:#ffe9a0!important;text-shadow:0 .25cqh .6cqh rgba(0,0,0,.55)!important}
+
+/* גאלה: סכום והקדשה ישר על כרטיס התורם, בלי לוחית */
+body[data-skin="gala"] .gc .p{background:none!important;box-shadow:none!important;border:0!important;border-radius:0}
+body[data-skin="gala"] .gc .p span{color:#d9cfae!important;-webkit-text-fill-color:#d9cfae!important;text-shadow:0 .2cqh .4cqh rgba(0,0,0,.5)!important;font-weight:600!important}
+body[data-skin="gala"] .gc .p span+b{border-inline-start:.2cqh solid rgba(240,205,120,.45)}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .gc .p b{color:#ffe9a0!important;-webkit-text-fill-color:#ffe9a0!important}
+
+/* גאלה: צמצום כדי שהכל ייכנס מעל הפס התחתון */
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .sum .sc:first-child b{font-size:calc(6.8cqh*var(--lc,1))}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .sum .sep~.sc b{font-size:calc(3.2cqh*var(--lc,1))}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center>.bar{margin:.6cqh 0 1.4cqh}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .ttl b{font-size:calc(5.4cqh*var(--lc,1))}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat{width:calc(25cqw*var(--lc,1))!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .ded{width:calc(25cqw*var(--lc,1))!important;max-width:calc(25cqw*var(--lc,1))!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center{gap:.6cqh!important}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
