@@ -970,6 +970,24 @@ body[data-skin="gala"] .gtrack.still{height:100%}
 body[data-skin="gala"] .gtrack.still .gc{flex:1;min-height:0}
 body[data-skin="gala"] .gtrack:not(.still) .gc{flex:none;height:18.6cqh}
 @keyframes gScrollUp{0%,7%{transform:translateY(0)}100%{transform:translateY(-50%)}}
+
+/* טקסט נקי – בלי אפקט גרדיאנט/קו מתאר */
+body[data-skin="gala"] :is(.gc .n,.g-center .ttl b,.g-center .sum b,.g-center .goalb b,.gp .gn,.gp .ga,.g-center .feat .n,.g-center .feat .amt,.gc .p b,.g-center .ded>span){background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;-webkit-text-stroke:0!important;color:#f7e8b8!important;-webkit-text-fill-color:#f7e8b8!important;filter:none!important;text-shadow:0 .25cqh .6cqh rgba(0,0,0,.55)!important;font-weight:700!important}
+body[data-skin="gala"] .g-center .sum b{color:#ffe9a0!important;-webkit-text-fill-color:#ffe9a0!important}
+body[data-skin="gala"] .g-col h4>span{text-shadow:none!important}
+body[data-gv="hasidi"][data-skin="gala"] :is(.g-center .feat .n,.g-center .feat .amt,.gc .p b){color:#10245a!important;-webkit-text-fill-color:#10245a!important;text-shadow:0 .12cqh 0 rgba(255,250,225,.7)!important}
+body[data-gv="hasidi"][data-skin="gala"] .gc .p span{text-shadow:none!important}
+/* סרגל התקדמות נקי ומרווח */
+body[data-skin="gala"] .g-center>.bar{width:72%;height:1.8cqh;margin:1.2cqh 0 3.2cqh;border-radius:1cqh;border:.2cqh solid rgba(240,205,120,.75);background:rgba(4,10,32,.7);box-shadow:inset 0 .2cqh .5cqh rgba(0,0,0,.7)}
+body[data-skin="gala"] .g-center>.bar i{border-radius:1cqh;background:linear-gradient(180deg,#f9e7a6,#d9a93c);box-shadow:0 0 1.4cqh rgba(240,205,120,.55)}
+body[data-skin="gala"] .g-center>.bar i::after{display:none}
+body[data-skin="gala"] .g-center>.bar span{inset:auto;right:-6.5cqh;left:auto;top:50%;transform:translateY(-50%);width:auto;display:block;font-size:2.1cqh;color:#f7e8b8;text-shadow:none;font-weight:700}
+body[data-skin="gala"] .g-center>.bar{overflow:visible}
+body[data-skin="gala"] .g-center>.bar i{display:block}
+/* הסתרת שם הקמפיין לפי בחירה */
+body[data-ht="1"] .g-center .ttl,body[data-ht="1"] .sk-head h2,body[data-ht="1"] #title,body[data-ht="1"] #subtitle,body[data-ht="1"] .sk-head p{display:none!important}
+body[data-skin="gala"] .g-center>.bar{flex:none!important;min-height:1.8cqh;height:1.8cqh!important}
+body[data-gv="hasidi"] .g-center .feat{flex:none}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -1070,7 +1088,7 @@ let raf=0;function loop(){raf=requestAnimationFrame(loop);cx.clearRect(0,0,cv.wi
 
 /* ---------- render ---------- */
 function applySettings(s0){
-  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const hasidi=s.skin==='hasidi';if(hasidi)s.skin='gala';document.body.dataset.gv=hasidi?'hasidi':'';if(!s.currency||/ש.{0,2}ח|nis|ils/i.test(String(s.currency)))s.currency='₪';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
+  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const hasidi=s.skin==='hasidi';if(hasidi)s.skin='gala';document.body.dataset.gv=hasidi?'hasidi':'';document.body.dataset.ht=s.hideTitle?'1':'';if(!s.currency||/ש.{0,2}ח|nis|ils/i.test(String(s.currency)))s.currency='₪';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
   settings=s;fitFrame();const r=document.documentElement.style;{const ls=Math.min(2.6,Math.max(.4,Number(s.logoScale)||1));r.setProperty('--ls',ls);r.setProperty('--lc',ls>1?(1/(1+(ls-1)*.55)).toFixed(3):1)}
   r.setProperty('--p',s.primary);r.setProperty('--bg1',s.bg1);r.setProperty('--bg2',s.bg2);r.setProperty('--t',s.text);r.setProperty('--f',`"${s.font}"`);{const serif=s.skin==='shtar'||s.skin==='royal'||s.skin==='grand';r.setProperty('--fd1',serif?'"Frank Ruhl Libre"':`"${s.font||'Heebo'}"`);r.setProperty('--fd2',`"${s.font||'Heebo'}"`);for(const [k,v] of [['--fT',s.fontTitle],['--fN',s.fontNames],['--fA',s.fontNums],['--fS',s.fontSub]]){if(v)r.setProperty(k,`"${v}"`);else r.removeProperty(k)}}r.setProperty('--dim',s.dim);
   document.body.dataset.layout=s.layout;document.body.dataset.skin=s.skin==='gala'?'gala':((s.skin==='shtar'||royal)?'shtar':'');document.body.dataset.tone=royal?'dark':'';document.body.dataset.fill=(grand||s.skin==='gala')?'1':'';fitFrame();initSkin(s);document.body.dataset.popup=s.popupStyle;
