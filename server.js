@@ -40,6 +40,7 @@ const DEFAULTS = {
   tier1Name: 'שותף כסף', tier1Sub: 'החזקת תלמיד', tier1Amt: 148, tier2Name: 'שותף זהב', tier2Sub: 'החזקת יום במוסדות', tier2Amt: 248, tier3Name: 'שותף יהלום', tier3Sub: 'החזקת שבוע במוסדות', tier3Amt: 512
 };
 const getCampaign = (slug) => db.prepare('SELECT * FROM campaigns WHERE slug=?').get(slug);
+for (const col of ['months INTEGER DEFAULT 1','monthly INTEGER DEFAULT 0']) { try { db.exec('ALTER TABLE donations ADD COLUMN ' + col); } catch {} }
 const settingsOf = (c) => ({ ...DEFAULTS, ...JSON.parse(c.settings || '{}') });
 if (!db.prepare('SELECT COUNT(*) n FROM campaigns').get().n) {
   db.prepare('INSERT INTO campaigns(slug,name,goal,settings) VALUES(?,?,?,?)').run('main', 'קמפיין ראשי', 100000, '{}');
@@ -59,10 +60,10 @@ if (!db.prepare('SELECT COUNT(*) n FROM campaigns').get().n) {
   }
 }
 const totals = (cid) => db.prepare('SELECT COALESCE(SUM(amount),0) total, COUNT(*) count FROM donations WHERE campaign_id=? AND hidden=0').get(cid);
-const recent = (cid, n) => db.prepare('SELECT id,donor,amount,dedication,city,anonymous,created_at FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY id DESC LIMIT ?').all(cid, n);
-const top = (cid, n) => db.prepare('SELECT id,donor,amount,dedication,city,anonymous FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY amount DESC, id DESC LIMIT ?').all(cid, n);
+const recent = (cid, n) => db.prepare('SELECT id,donor,amount,months,monthly,dedication,city,anonymous,created_at FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY id DESC LIMIT ?').all(cid, n);
+const top = (cid, n) => db.prepare('SELECT id,donor,amount,months,monthly,dedication,city,anonymous FROM donations WHERE campaign_id=? AND hidden=0 ORDER BY amount DESC, id DESC LIMIT ?').all(cid, n);
 const amounts = (cid) => Object.fromEntries(db.prepare('SELECT amount a, COUNT(*) n FROM donations WHERE campaign_id=? AND hidden=0 GROUP BY amount').all(cid).map(r => [r.a, r.n]));
-const pub = (d) => ({ ...d, donor: d.anonymous ? 'תורם/ת אנונימי/ת' : d.donor });
+const pub = (d) => { const o = { ...d, donor: d.anonymous ? 'תורם/ת אנונימי/ת' : d.donor }; if (d.months > 1 && d.monthly > 0) { const note = '₪' + d.monthly.toLocaleString('en-US') + ' × ' + d.months + ' חודשים'; o.dedication = d.dedication ? note + ' · ' + d.dedication : note; } return o; };
 const BUILD = String(Math.floor(fs.statSync(path.join(__dirname, 'public', 'screen.html')).mtimeMs));
 const state = (c) => { const t = totals(c.id); return { build: BUILD, slug: c.slug, name: c.name, goal: c.goal, total: t.total, count: t.count, settings: settingsOf(c), recent: recent(c.id, 30).map(pub), wall: recent(c.id, 300).map(pub), amounts: amounts(c.id), top: top(c.id, 10).map(pub) }; };
 
@@ -109,9 +110,10 @@ app.put('/api/c/:slug', auth, (req, res) => {
 });
 app.post('/api/c/:slug/donations', auth, (req, res) => {
   const c = getCampaign(req.params.slug); if (!c) return res.status(404).json({ error: 'not found' });
-  const { donor, amount, dedication = '', city = '', anonymous = 0 } = req.body || {};
-  const amt = Math.round(Number(amount)); if (!donor?.trim() || !(amt > 0)) return res.status(400).json({ error: 'שם וסכום חובה' });
-  const r = db.prepare('INSERT INTO donations(campaign_id,donor,amount,dedication,city,anonymous) VALUES(?,?,?,?,?,?)').run(c.id, donor.trim(), amt, dedication, city, anonymous ? 1 : 0);
+  const { donor, amount, dedication = '', city = '', anonymous = 0, months = 1 } = req.body || {};
+  let amt = Math.round(Number(amount)); if (!donor?.trim() || !(amt > 0)) return res.status(400).json({ error: 'שם וסכום חובה' });
+  const mo = Math.max(1, Math.min(240, Math.round(Number(months)) || 1)); const monthly = mo > 1 ? amt : 0; if (mo > 1) amt = monthly * mo;
+  const r = db.prepare('INSERT INTO donations(campaign_id,donor,amount,months,monthly,dedication,city,anonymous) VALUES(?,?,?,?,?,?,?,?)').run(c.id, donor.trim(), amt, mo, monthly, dedication, city, anonymous ? 1 : 0);
   const d = pub(db.prepare('SELECT * FROM donations WHERE id=?').get(r.lastInsertRowid));
   const t = totals(c.id);
   broadcast(c.slug, { type: 'donation', donation: d, total: t.total, count: t.count, goal: c.goal });
@@ -120,7 +122,7 @@ app.post('/api/c/:slug/donations', auth, (req, res) => {
 app.post('/api/c/:slug/test', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); const t = totals(c.id); broadcast(c.slug, { type: 'donation', test: true, donation: { donor: req.body?.donor || 'תורם לדוגמה', amount: Number(req.body?.amount) || 180, dedication: req.body?.dedication || 'לרפואה שלמה', city: '' }, total: t.total, count: t.count, goal: c.goal }); res.json({ ok: true }); });
 app.delete('/api/c/:slug/donations/:id', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); db.prepare('UPDATE donations SET hidden=1 WHERE id=? AND campaign_id=?').run(req.params.id, c.id); pushState(c); res.json({ ok: true }); });
 app.post('/api/c/:slug/donations/:id/restore', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); db.prepare('UPDATE donations SET hidden=0 WHERE id=? AND campaign_id=?').run(req.params.id, c.id); pushState(c); res.json({ ok: true }); });
-app.put('/api/c/:slug/donations/:id', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); const { donor, amount, dedication, city, anonymous } = req.body || {}; db.prepare('UPDATE donations SET donor=COALESCE(?,donor), amount=COALESCE(?,amount), dedication=COALESCE(?,dedication), city=COALESCE(?,city), anonymous=COALESCE(?,anonymous) WHERE id=? AND campaign_id=?').run(donor ?? null, amount != null ? Math.round(Number(amount)) : null, dedication ?? null, city ?? null, anonymous != null ? (anonymous ? 1 : 0) : null, req.params.id, c.id); pushState(c); res.json({ ok: true }); });
+app.put('/api/c/:slug/donations/:id', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); const { donor, amount, dedication, city, anonymous, months } = req.body || {}; let amt = amount != null ? Math.round(Number(amount)) : null; let mo = null, monthly = null; if (months != null) { mo = Math.max(1, Math.min(240, Math.round(Number(months)) || 1)); if (amt != null) { monthly = mo > 1 ? amt : 0; if (mo > 1) amt = monthly * mo; } } db.prepare('UPDATE donations SET donor=COALESCE(?,donor), amount=COALESCE(?,amount), months=COALESCE(?,months), monthly=COALESCE(?,monthly), dedication=COALESCE(?,dedication), city=COALESCE(?,city), anonymous=COALESCE(?,anonymous) WHERE id=? AND campaign_id=?').run(donor ?? null, amt, mo, monthly, dedication ?? null, city ?? null, anonymous != null ? (anonymous ? 1 : 0) : null, req.params.id, c.id); pushState(c); res.json({ ok: true }); });
 app.post('/api/c/:slug/message', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); broadcast(c.slug, { type: 'message', text: String(req.body?.text || ''), seconds: Number(req.body?.seconds) || 10 }); res.json({ ok: true }); });
 app.post('/api/c/:slug/command', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); broadcast(c.slug, { type: 'command', cmd: String(req.body?.cmd || ''), arg: req.body?.arg }); res.json({ ok: true }); });
 app.post('/api/c/:slug/reset', auth, (req, res) => { const c = getCampaign(req.params.slug); if (!c) return res.status(404).end(); db.prepare('UPDATE donations SET hidden=1 WHERE campaign_id=?').run(c.id); pushState(c); res.json({ ok: true }); });
