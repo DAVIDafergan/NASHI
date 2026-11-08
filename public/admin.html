@@ -227,7 +227,7 @@ th{background:#fff;border-bottom-color:#ECE9E1}td{border-bottom-color:#F2EFE8}
           <div class="f"><input id="q" class="in" placeholder="חיפוש לפי שם, הקדשה, עיר או סכום"></div>
           <div class="seg" id="flt"><button data-f="all" aria-pressed="true">הכול</button><button data-f="live">פעילות</button><button data-f="hidden">מוסתרות</button><button data-f="anon">אנונימיות</button></div>
         </div>
-        <div class="inl" style="margin-bottom:10px"><button class="btn ghost sm" id="undoBtn">ביטול האחרונה</button><a class="btn ghost sm" id="csv" href="#">ייצוא CSV</a><button class="btn ghost sm" id="impBtn">יבוא רשימה</button><button class="btn ghost sm" data-go="live">+ תרומה חדשה</button></div>
+        <div class="inl" style="margin-bottom:10px"><button class="btn ghost sm" id="undoBtn">ביטול האחרונה</button><button class="btn danger sm" id="resetBtn2">איפוס כל התרומות</button><a class="btn ghost sm" id="csv" href="#">ייצוא CSV</a><button class="btn ghost sm" id="impBtn">יבוא רשימה</button><button class="btn ghost sm" data-go="live">+ תרומה חדשה</button></div>
         <div style="overflow:auto;max-height:640px"><table><thead><tr><th>#</th><th>תורם</th><th>סכום</th><th>הקדשה</th><th>עיר</th><th>זמן</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
       </div>
      </section>
@@ -523,6 +523,7 @@ $('msgBtn').onclick=()=>{const t=$('msgText').value.trim();if(!t)return toast('�
 $('copyUrl').onclick=async()=>{try{await navigator.clipboard.writeText($('screenUrl').textContent);toast('הקישור הועתק')}catch(e){toast('סמנו והעתיקו ידנית')}};
 
 /* tools */
+$('resetBtn2').onclick=()=>$('resetBtn').onclick();
 $('resetBtn').onclick=async()=>{if(!confirm('לאפס את כל התרומות של הקמפיין מהמסך? הן יישארו בייצוא.'))return;await api('POST','/api/c/'+SLUG+'/reset');toast('אופס')};
 $('newCamp').onclick=async()=>{const name=prompt('שם הקמפיין החדש');if(!name)return;const goal=prompt('יעד','100000');try{const c=await api('POST','/api/campaigns',{name,goal});SLUG=c.slug;localStorage.setItem('slug',SLUG);await loadCamps();await load();connect();toast('הקמפיין נוצר')}catch(e){toast(e.message)}};
 $('dupCamp').onclick=async()=>{try{const c=await api('POST','/api/c/'+SLUG+'/duplicate');SLUG=c.slug;localStorage.setItem('slug',SLUG);await loadCamps();await load();connect();toast('שוכפל (בלי תרומות)')}catch(e){toast(e.message)}};
