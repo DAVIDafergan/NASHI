@@ -902,6 +902,11 @@ body[data-gv="hasidi"] .gc .p span+b{border-inline-start:.22cqh solid rgba(15,34
 body[data-gv="hasidi"] .gc.ghost{background:rgba(10,24,60,.3);border:.25cqh dashed rgba(217,169,60,.35);box-shadow:none}
 body[data-gv="hasidi"] .gc.ghost::before,body[data-gv="hasidi"] .gc.ghost::after{display:none}
 body[data-gv="hasidi"] .gc>.n,body[data-gv="hasidi"] .gc>.p{z-index:1}
+
+/* חסידי: לוגו גדול בתוך הווילון, מתחשב בסקאלה מהאדמין */
+body[data-gv="hasidi"] .g-top{top:9.5cqh}
+body[data-gv="hasidi"] .g-logo img{height:calc(18cqh*var(--ls,1));width:min(calc(30cqw*var(--ls,1)),46cqw);filter:drop-shadow(0 .8cqh .8cqh rgba(0,0,0,.7)) drop-shadow(0 0 2cqh rgba(255,215,120,.4))}
+body[data-gv="hasidi"] .g-center{padding-top:calc(29cqh + (var(--ls,1) - 1)*6cqh)!important}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -1003,7 +1008,7 @@ let raf=0;function loop(){raf=requestAnimationFrame(loop);cx.clearRect(0,0,cv.wi
 /* ---------- render ---------- */
 function applySettings(s0){
   const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const hasidi=s.skin==='hasidi';if(hasidi)s.skin='gala';document.body.dataset.gv=hasidi?'hasidi':'';if(!s.currency||/ש.{0,2}ח|nis|ils/i.test(String(s.currency)))s.currency='₪';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
-  settings=s;fitFrame();const r=document.documentElement.style;{const ls=Math.min(1.8,Math.max(.4,Number(s.logoScale)||1));r.setProperty('--ls',ls);r.setProperty('--lc',ls>1?(1/(1+(ls-1)*.55)).toFixed(3):1)}
+  settings=s;fitFrame();const r=document.documentElement.style;{const ls=Math.min(2.6,Math.max(.4,Number(s.logoScale)||1));r.setProperty('--ls',ls);r.setProperty('--lc',ls>1?(1/(1+(ls-1)*.55)).toFixed(3):1)}
   r.setProperty('--p',s.primary);r.setProperty('--bg1',s.bg1);r.setProperty('--bg2',s.bg2);r.setProperty('--t',s.text);r.setProperty('--f',`"${s.font}"`);{const serif=s.skin==='shtar'||s.skin==='royal'||s.skin==='grand';r.setProperty('--fd1',serif?'"Frank Ruhl Libre"':`"${s.font||'Heebo'}"`);r.setProperty('--fd2',`"${s.font||'Heebo'}"`);for(const [k,v] of [['--fT',s.fontTitle],['--fN',s.fontNames],['--fA',s.fontNums],['--fS',s.fontSub]]){if(v)r.setProperty(k,`"${v}"`);else r.removeProperty(k)}}r.setProperty('--dim',s.dim);
   document.body.dataset.layout=s.layout;document.body.dataset.skin=s.skin==='gala'?'gala':((s.skin==='shtar'||royal)?'shtar':'');document.body.dataset.tone=royal?'dark':'';document.body.dataset.fill=(grand||s.skin==='gala')?'1':'';fitFrame();initSkin(s);document.body.dataset.popup=s.popupStyle;
   $('title').textContent=s.title;$('subtitle').textContent=s.subtitle;$('subtitle').hidden=!s.subtitle;
