@@ -1042,6 +1042,12 @@ body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat{aspect-ratio:2434
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat>.in.in{top:25%;bottom:25%;left:15%;right:15%}
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .n{font-size:calc(3.8cqh*var(--lc,1))!important}
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat .amt{font-size:calc(4.8cqh*var(--lc,1))!important}
+
+/* שמות: בלי חיתוך של הרגליים (ק ך ן ף ץ) */
+body[data-skin="gala"] .gc .n,body[data-skin="gala"] .g-center .feat .n,body[data-skin="gala"] .gp .gn,body[data-skin="gala"] .gp .ga,body[data-skin="gala"] .g-center .ded>span{line-height:1.35!important;padding-top:.08em!important;padding-bottom:.22em!important;overflow-y:visible}
+body[data-skin="gala"] .gc .n,body[data-skin="gala"] .g-center .feat .n,body[data-skin="gala"] .gp .gn{overflow:hidden;overflow-clip-margin:.3em}
+@supports (overflow:clip){body[data-skin="gala"] .gc .n,body[data-skin="gala"] .g-center .feat .n,body[data-skin="gala"] .gp .gn{overflow-x:clip;overflow-y:visible}}
+body[data-skin="gala"] .g-center .feat>.in.in{overflow:visible}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
