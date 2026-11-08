@@ -991,6 +991,20 @@ body[data-gv="hasidi"] .g-center .feat{flex:none}
 body[data-skin="gala"] .g-center>.bar{min-height:2.9cqh;height:2.9cqh!important;overflow:hidden;border-radius:1.5cqh}
 body[data-skin="gala"] .g-center>.bar i{border-radius:1.5cqh}
 body[data-skin="gala"] .g-center>.bar span{position:absolute;inset:0!important;right:0;left:0;top:0;transform:none;display:grid;place-items:center;font-size:1.9cqh;font-weight:800;color:#fff;text-shadow:0 .1cqh .35cqh rgba(0,0,0,.9),0 0 .6cqh rgba(0,0,0,.6)}
+
+/* חסידי: כשהלוגו מוגדל – כל השאר מצטמצם כדי שהכל ייכנס */
+body[data-gv="hasidi"]{--hk:calc(1 / (1 + (var(--ls,1) - 1) * .65))}
+body[data-gv="hasidi"] .g-center{padding-top:calc(28.6cqh + (var(--ls,1) - 1)*18cqh)!important}
+body[data-gv="hasidi"] .g-center .ttl b{font-size:calc(4.4cqh*var(--hk))!important}
+body[data-skin="gala"][data-gv="hasidi"] .g-center .sum .sc:first-child b{font-size:calc(7.6cqh*var(--hk))}
+body[data-skin="gala"][data-gv="hasidi"] .g-center .sum .sep~.sc b{font-size:calc(3.8cqh*var(--hk))}
+body[data-skin="gala"][data-gv="hasidi"] .g-center .sum .sep~.sc small{font-size:calc(2.6cqh*var(--hk))}
+body[data-skin="gala"][data-gv="hasidi"] .g-center>.bar{margin:calc(1.2cqh*var(--hk)) 0 calc(3.2cqh*var(--hk))}
+body[data-gv="hasidi"] .g-center .feat{width:calc((100% - 3cqw)*var(--hk))!important;margin-inline:auto!important}
+body[data-gv="hasidi"] .g-center .feat .n{font-size:calc(3.3cqh*var(--hk))!important}
+body[data-gv="hasidi"] .g-center .feat .amt{font-size:calc(3.3cqh*var(--hk))!important}
+body[data-gv="hasidi"] .g-center .ded{padding:calc(.5cqh*var(--hk)) 3cqw}
+body[data-gv="hasidi"] .g-center .ded>span{font-size:calc(3cqh*var(--hk))}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
