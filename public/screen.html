@@ -921,6 +921,44 @@ body[data-skin="gala"] .g-center .feat .amt,body[data-skin="gala"] .gc .p b,body
 body[data-skin="gala"] .g-center .ttl b,body[data-skin="gala"] .g-col h4>span{font-family:var(--fT,var(--fN,var(--gf))),"Heebo",serif!important}
 body[data-skin="gala"] .g-center .ttl small,body[data-skin="gala"] .g-center .sum small,body[data-skin="gala"] .gc .p,body[data-skin="gala"] .gc .p span,body[data-skin="gala"] .g-center .ded>span,body[data-skin="gala"] .g-plaque small,body[data-skin="gala"] .g-foot .ticker,body[data-skin="gala"] .gp .gk,body[data-skin="gala"] .gp .gd{font-family:var(--fS,var(--fN,var(--gf))),"Heebo",serif!important}
 body[data-skin="gala"] .gc .p b{font-family:var(--fA,var(--fN,var(--gf))),"Heebo",serif!important}
+
+/* סכום גדול, יעד מתחתיו, סרגל התקדמות מעוצב */
+body[data-skin="gala"] .g-center .sum{flex-direction:column;align-items:center;gap:.2cqh}
+body[data-skin="gala"] .g-center .sum .sep{display:none}
+body[data-skin="gala"] .g-center .sum .sc{flex:none;width:100%}
+body[data-skin="gala"] .g-center .sum .sc:first-child b{font-size:9.4cqh}
+body[data-skin="gala"] .g-center .sum .sc:first-child small{font-size:2.5cqh}
+body[data-skin="gala"] .g-center .sum .sc+.sc{flex-direction:row;justify-content:center;align-items:baseline;gap:1cqw}
+body[data-skin="gala"] .g-center .sum .sc+.sc small{font-size:2.5cqh;letter-spacing:.2em}
+body[data-skin="gala"] .g-center .sum .sc+.sc b{font-size:3.8cqh;-webkit-text-stroke:.03em rgba(236,196,96,.9)}
+body[data-skin="gala"] .g-center>.bar{width:80%;height:3.6cqh;margin-top:.6cqh;border-radius:2cqh;border:.35cqh solid transparent;background:linear-gradient(180deg,#040a24,#0b1a4a) padding-box,linear-gradient(135deg,#fff3bf,#d9a93c 40%,#7a520e 60%,#f2d27a) border-box;box-shadow:0 .7cqh 1.2cqh rgba(0,0,0,.6),inset 0 .4cqh .7cqh rgba(0,0,0,.8)}
+body[data-skin="gala"] .g-center>.bar i{position:relative;border-radius:2cqh;background:repeating-linear-gradient(115deg,rgba(255,255,255,.28) 0 1.2cqh,transparent 1.2cqh 2.4cqh),linear-gradient(180deg,#fff6c8,#f0cf78 40%,#c8942c 80%,#9a6a12);box-shadow:0 0 2cqh rgba(255,215,120,.75),inset 0 .3cqh .4cqh rgba(255,255,255,.7)}
+body[data-skin="gala"] .g-center>.bar i::after{content:"";position:absolute;inset:0;border-radius:2cqh;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.65) 50%,transparent 70%);background-size:250% 100%;animation:gSheen 3.5s infinite linear}
+body[data-skin="gala"] .g-center>.bar span{font-size:2.3cqh;font-weight:900;color:#fff7d0;text-shadow:0 .2cqh .4cqh rgba(0,0,0,.95),0 0 .8cqh rgba(0,0,0,.8);z-index:2}
+body[data-gv="hasidi"] .g-center{padding-top:calc(27cqh + (var(--ls,1) - 1)*6cqh)!important;gap:.4cqh!important}
+body[data-gv="hasidi"] .g-center .ttl b{font-size:5cqh}
+body[data-gv="hasidi"] .g-center .feat{width:calc(100% - 8cqw)!important;margin-inline:4cqw!important}
+body[data-gv="hasidi"] .g-center .ded{padding:.7cqh 3cqw}
+
+body[data-skin="gala"] .g-center .sum .sep~.sc{flex-direction:row;justify-content:center;align-items:baseline;gap:1cqw}
+body[data-skin="gala"] .g-center .sum .sep~.sc small{font-size:2.6cqh;letter-spacing:.2em}
+body[data-skin="gala"] .g-center .sum .sep~.sc b{font-size:3.8cqh}
+body[data-skin="gala"] .g-center .sum .sc:first-child small{display:none}
+body[data-skin="gala"] .g-center .sum .sc:first-child b{font-size:8.4cqh}
+body[data-gv="hasidi"] .g-center{padding-top:calc(25.5cqh + (var(--ls,1) - 1)*6cqh)!important}
+body[data-gv="hasidi"] .g-center .ttl b{font-size:4.4cqh}
+body[data-gv="hasidi"] .g-center .feat{width:calc(100% - 16cqw)!important;margin-inline:8cqw!important}
+body[data-skin="gala"] .g-center>.bar{height:3cqh;margin-top:.4cqh}
+body[data-skin="gala"] .g-grid{min-height:0;overflow:hidden}
+body[data-gv="hasidi"] .g-center .feat{width:calc(100% - 2cqw)!important;margin-inline:1cqw!important}
+body[data-gv="hasidi"] .g-center{padding-top:calc(28.6cqh + (var(--ls,1) - 1)*6cqh)!important}
+body[data-gv="hasidi"] .g-center .feat{width:calc(100% - 9cqw)!important;margin-inline:4.5cqw!important}
+body[data-gv="hasidi"] .g-center .sum .sc:first-child b{font-size:7.6cqh}
+body[data-gv="hasidi"] .g-center .ded{padding:.5cqh 3cqw}
+body[data-gv="hasidi"] .g-center{gap:.2cqh!important;min-height:0;overflow:hidden}
+body[data-gv="hasidi"] .g-center .feat{width:calc(100% - 3cqw)!important;margin-inline:1.5cqw!important}
+body[data-gv="hasidi"] .g-center .feat .n{font-size:3.3cqh!important}
+body[data-gv="hasidi"] .g-center .feat .amt{font-size:3.3cqh!important}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
