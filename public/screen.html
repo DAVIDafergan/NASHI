@@ -1079,6 +1079,14 @@ body[data-skin="gala"] .g-center .feat .n,body[data-skin="gala"] .g-center .feat
 body[data-hg="1"] :is(.g-center .sum>.sep,.g-center .sum>.sep~.sc,.g-center>.bar,.g-meter,.meter,#of,.stats span:nth-child(2),.goalhit){display:none!important}
 body[data-skin="gala"] .g-center .ded{height:auto;aspect-ratio:1992/400}
 body[data-skin="gala"] .g-center .ded>span{max-width:78%!important;white-space:normal!important;text-align:center;line-height:1.15!important;overflow:hidden!important;text-overflow:clip!important;max-height:72%;display:block}
+body[data-skin="gala"] .gc .n{box-sizing:border-box!important;padding-inline:10%!important}
+body[data-skin="gala"] .gc .p{box-sizing:border-box;padding-inline:9%!important}
+body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat>.in.in{top:27%!important;bottom:25%!important;left:20%!important;right:20%!important}
+body[data-skin="gala"] .g-center .feat .n{font-size:3cqh!important}
+body[data-skin="gala"] .g-center .feat .amt{font-size:4.6cqh!important}
+body[data-skin="gala"] .g-center .ded>span{max-width:68%!important;max-height:58%!important}
+body[data-skin="gala"] .gc .p{padding-inline:4%!important}
+body[data-skin="gala"] .gc .p span{max-height:5.4cqh!important}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -1248,13 +1256,15 @@ function renderGala(st){
   setTimeout(()=>{fitAll();fitGalaCenter()},40);
 }
 function fitFeatName(){const n=document.querySelector('.g-center .feat .n');if(!n)return;n.style.fontSize='';const w=n.parentElement.clientWidth;let f=parseFloat(getComputedStyle(n).fontSize);let g=0;while(n.scrollWidth>w+1&&g++<30){f*=.93;n.style.setProperty('font-size',f+'px','important')}}
-function fitGalaCards(){document.querySelectorAll('.gc .p span').forEach(sp=>{sp.style.fontSize='';let f=parseFloat(getComputedStyle(sp).fontSize),g=0;while(sp.scrollHeight>sp.clientHeight+1&&g++<25){f*=.93;sp.style.setProperty('font-size',f+'px','important')}})}
+function fitGalaNames(){document.querySelectorAll('.gc').forEach(c=>{const n=c.querySelector('.n');if(!n)return;n.style.fontSize='';const lim=c.clientWidth*.74;let f=parseFloat(getComputedStyle(n).fontSize),g=0;const w=()=>{const o=n.style.width;n.style.setProperty('width','max-content','important');const x=n.getBoundingClientRect().width-(parseFloat(getComputedStyle(n).paddingLeft)||0)-(parseFloat(getComputedStyle(n).paddingRight)||0);n.style.width=o;return x};while(w()>lim&&g++<30){f*=.94;n.style.setProperty('font-size',f+'px','important')}})}
+function fitGalaCards(){fitGalaNames();document.querySelectorAll('.gc .p span').forEach(sp=>{sp.style.fontSize='';let f=parseFloat(getComputedStyle(sp).fontSize),g=0;while(sp.scrollHeight>sp.clientHeight+1&&g++<25){f*=.93;sp.style.setProperty('font-size',f+'px','important')}})}
 function fitDed(){document.querySelectorAll('.g-center .ded>span').forEach(sp=>{sp.style.fontSize='';let f=parseFloat(getComputedStyle(sp).fontSize),g=0;while((sp.scrollHeight>sp.clientHeight+1||sp.scrollWidth>sp.clientWidth+1)&&g++<30){f*=.93;sp.style.setProperty('font-size',f+'px','important')}})}
 function fitGalaCenter(){fitGalaCards();fitDed();fitFeatName();const c=document.getElementById('gC');if(!c||document.body.dataset.skin!=='gala')return;const ks=[...c.children];if(!ks.length)return;ks.forEach(k=>k.style.zoom='');
   const cs=getComputedStyle(c);const gap=parseFloat(cs.rowGap)||0;const avail=c.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-6;
   let need=gap*(ks.length-1);ks.forEach(k=>{const m=getComputedStyle(k);need+=k.offsetHeight+parseFloat(m.marginTop)+parseFloat(m.marginBottom)});
   if(need>avail&&avail>40){const z=Math.max(.3,avail/need);ks.forEach(k=>{k.style.zoom=z})}}
 addEventListener('resize',()=>setTimeout(fitGalaCenter,120));
+{const _o=fitAll;fitAll=function(){_o();if(document.body.dataset.skin==='gala'){fitGalaCards();fitDed();fitFeatName()}}}
 
 /* ---- flying dust (white specks carried by the wind) ---- */
 (function(){const c=document.getElementById('gDust');if(!c)return;const x=c.getContext('2d');let W=0,H=0,P=[],last=0,t0=0;
