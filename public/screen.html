@@ -1076,6 +1076,9 @@ body[data-skin="gala"] .gc .p{align-items:center}
 body[data-skin="gala"]:not([data-gv="hasidi"]) .g-center .feat>.in.in{top:22%;bottom:22%;justify-content:center;align-items:center;gap:.4cqh}
 body[data-skin="gala"] .g-center .feat .n,body[data-skin="gala"] .g-center .feat .amt{text-align:center;margin:0!important;padding-top:0!important;padding-bottom:0!important;line-height:1.15!important}
 .gp .gk{font-size:calc(var(--u)*2.5)!important;letter-spacing:.06em!important;padding-inline-start:0!important;max-width:calc(var(--u)*22);text-align:center;overflow:hidden}
+body[data-hg="1"] :is(.g-center .sum>.sep,.g-center .sum>.sep~.sc,.g-center>.bar,.g-meter,.meter,#of,.stats span:nth-child(2),.goalhit){display:none!important}
+body[data-skin="gala"] .g-center .ded{height:auto;aspect-ratio:1992/400}
+body[data-skin="gala"] .g-center .ded>span{max-width:78%!important;white-space:normal!important;text-align:center;line-height:1.15!important;overflow:hidden!important;text-overflow:clip!important;max-height:72%;display:block}
 </style>
 </head>
 <body data-layout="split" data-popup="card">
@@ -1176,7 +1179,7 @@ let raf=0;function loop(){raf=requestAnimationFrame(loop);cx.clearRect(0,0,cv.wi
 
 /* ---------- render ---------- */
 function applySettings(s0){
-  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const hasidi=s.skin==='hasidi';if(hasidi)s.skin='gala';document.body.dataset.gv=hasidi?'hasidi':'';document.body.dataset.ht=s.hideTitle?'1':'';if(!s.currency||/ש.{0,2}ח|nis|ils/i.test(String(s.currency)))s.currency='₪';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
+  const ov=(s0.screens&&SID&&s0.screens[SID])||{};const s={...s0,...ov};if(s.skin==='classic')s.skin='';const hasidi=s.skin==='hasidi';if(hasidi)s.skin='gala';document.body.dataset.gv=hasidi?'hasidi':'';document.body.dataset.ht=s.hideTitle?'1':'';document.body.dataset.hg=s.hideGoal?'1':'';if(!s.currency||/ש.{0,2}ח|nis|ils/i.test(String(s.currency)))s.currency='₪';const grand=s.skin==='grand',royal=s.skin==='royal'||grand;
   settings=s;fitFrame();const r=document.documentElement.style;{const ls=Math.min(2.6,Math.max(.4,Number(s.logoScale)||1));r.setProperty('--ls',ls);r.setProperty('--lc',ls>1?(1/(1+(ls-1)*.55)).toFixed(3):1)}
   r.setProperty('--p',s.primary);r.setProperty('--bg1',s.bg1);r.setProperty('--bg2',s.bg2);r.setProperty('--t',s.text);r.setProperty('--f',`"${s.font}"`);{const serif=s.skin==='shtar'||s.skin==='royal'||s.skin==='grand';r.setProperty('--fd1',serif?'"Frank Ruhl Libre"':`"${s.font||'Heebo'}"`);r.setProperty('--fd2',`"${s.font||'Heebo'}"`);for(const [k,v] of [['--fT',s.fontTitle],['--fN',s.fontNames],['--fA',s.fontNums],['--fS',s.fontSub]]){if(v)r.setProperty(k,`"${v}"`);else r.removeProperty(k)}}r.setProperty('--dim',s.dim);
   document.body.dataset.layout=s.layout;document.body.dataset.skin=s.skin==='gala'?'gala':((s.skin==='shtar'||royal)?'shtar':'');document.body.dataset.tone=royal?'dark':'';document.body.dataset.fill=(grand||s.skin==='gala')?'1':'';fitFrame();initSkin(s);document.body.dataset.popup=s.popupStyle;
@@ -1246,7 +1249,8 @@ function renderGala(st){
 }
 function fitFeatName(){const n=document.querySelector('.g-center .feat .n');if(!n)return;n.style.fontSize='';const w=n.parentElement.clientWidth;let f=parseFloat(getComputedStyle(n).fontSize);let g=0;while(n.scrollWidth>w+1&&g++<30){f*=.93;n.style.setProperty('font-size',f+'px','important')}}
 function fitGalaCards(){document.querySelectorAll('.gc .p span').forEach(sp=>{sp.style.fontSize='';let f=parseFloat(getComputedStyle(sp).fontSize),g=0;while(sp.scrollHeight>sp.clientHeight+1&&g++<25){f*=.93;sp.style.setProperty('font-size',f+'px','important')}})}
-function fitGalaCenter(){fitGalaCards();fitFeatName();const c=document.getElementById('gC');if(!c||document.body.dataset.skin!=='gala')return;const ks=[...c.children];if(!ks.length)return;ks.forEach(k=>k.style.zoom='');
+function fitDed(){document.querySelectorAll('.g-center .ded>span').forEach(sp=>{sp.style.fontSize='';let f=parseFloat(getComputedStyle(sp).fontSize),g=0;while((sp.scrollHeight>sp.clientHeight+1||sp.scrollWidth>sp.clientWidth+1)&&g++<30){f*=.93;sp.style.setProperty('font-size',f+'px','important')}})}
+function fitGalaCenter(){fitGalaCards();fitDed();fitFeatName();const c=document.getElementById('gC');if(!c||document.body.dataset.skin!=='gala')return;const ks=[...c.children];if(!ks.length)return;ks.forEach(k=>k.style.zoom='');
   const cs=getComputedStyle(c);const gap=parseFloat(cs.rowGap)||0;const avail=c.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-6;
   let need=gap*(ks.length-1);ks.forEach(k=>{const m=getComputedStyle(k);need+=k.offsetHeight+parseFloat(m.marginTop)+parseFloat(m.marginBottom)});
   if(need>avail&&avail>40){const z=Math.max(.3,avail/need);ks.forEach(k=>{k.style.zoom=z})}}
