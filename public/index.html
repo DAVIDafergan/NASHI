@@ -356,7 +356,6 @@ p{margin:0}
   .menu__foot{flex-direction:column;align-items:stretch;text-align:center;margin-top:26px;font-size:13.5px}
   .menu__foot .btn{justify-content:center}
 }
-}
 
 /* ── luxury pass II: gold accents, lighter orange, hairline frames, quiet surfaces ── */
 :root{--gold:#C9A961;--gold-2:#E3CC93}
@@ -700,7 +699,8 @@ a.wa{background:var(--green);border:1px solid var(--gold);color:var(--gold-2)}
 h1,h2,h3{font-family:var(--f-d);font-weight:300;letter-spacing:-.005em}
 .sec-head h2{font-size:clamp(38px,5.2vw,74px);line-height:1.08}
 .sec-head h2 b,.hero h1 b,.contact h2 b{font-weight:500}
-.hero h1{font-weight:300;line-height:1.22}
+.hero h1{font-family:var(--f);font-weight:200;line-height:1.25;letter-spacing:0}
+.hero h1 b{font-weight:500}
 .sec-head .lat{letter-spacing:.34em;font-size:11px;text-transform:uppercase}
 .lat{letter-spacing:.3em}
 .ribbon,.hero .lockup .ribbon{background:transparent;border:1px solid rgba(201,169,97,.6);color:var(--gold-2);font-weight:300;letter-spacing:.14em}
@@ -721,7 +721,7 @@ h1,h2,h3{font-family:var(--f-d);font-weight:300;letter-spacing:-.005em}
 .klist svg{color:var(--gold)}
 .hero__trust a{color:var(--gold-2)}
 .hero h1 em,.contact h2 b{color:var(--gold-2)}
-.hero__frame,.hero__media::before{border-radius:4px}
+.hero__frame,.hero__media::before,.hero__media::after{border-radius:4px}
 .hero__frame{clip-path:inset(100% 0 0 0 round 4px)}
 @keyframes unveil{to{clip-path:inset(0 0 0 0 round 4px)}}
 .welcome__grid img,.occ__card,.reel figure,[data-rv]{border-radius:2px}
