@@ -725,6 +725,13 @@ h1,h2,h3{font-family:var(--f-d);font-weight:300;letter-spacing:-.005em}
 .hero__frame{clip-path:inset(100% 0 0 0 round 4px)}
 @keyframes unveil{to{clip-path:inset(0 0 0 0 round 4px)}}
 .welcome__grid img,.occ__card,.reel figure,[data-rv]{border-radius:2px}
+
+/* welcome: no headline, quiet editorial statement */
+.welcome .sec-head{gap:0}
+.welcome .sec-head .lat{font-size:12px;letter-spacing:.42em}
+.welcome p{font-family:var(--f-d);font-weight:300;font-size:clamp(19px,1.7vw,25px);line-height:1.85;color:var(--paper);max-width:46ch;margin-top:30px}
+.welcome p+p{font-family:var(--f);font-weight:300;font-size:16.5px;line-height:1.9;color:var(--mist);margin-top:22px}
+.welcome p+p::first-letter{color:var(--gold-2)}
 </style>
 
 <div class="intro" id="intro" aria-hidden="true">
@@ -1461,7 +1468,7 @@ fill="currentColor" stroke="none">
   <div class="grain"></div>
   <div class="wrap welcome__grid">
     <div>
-      <div class="sec-head"><span class="lat" data-a>מי אנחנו</span><h2 data-a>שפע איכות<br><b>ושפע כמות.</b></h2></div>
+      <div class="sec-head"><span class="lat" data-a>מי אנחנו</span></div>
       <p data-a>לואיזה נולדה מאהבה לאוכל אמיתי ולאירוח ברוח הבית. אנחנו מאמינים שאירוע מתחיל בשולחן: בטעמים שמספרים סיפור, בחומרי גלם שנבחרו בקפידה, ובתשומת לב לכל פרט קטן. כל מנה מבושלת ביום האירוע, נארזת בתרמובוקסים ומגיעה אליכם טרייה ולוהטת, כאילו יצאה הרגע מהמטבח.</p>
       <p data-a>אצלנו לא עושים "עסקה", אלא פותחים מערכת יחסים. אנחנו מקשיבים, מתאימים את התפריט והכמויות לאופי האירוע, ומלווים אותכם בשקט ובדייקנות עד שהאורח האחרון מתפנק מהביס האחרון.</p>
       <div class="orn" data-a><svg viewBox="0 0 941.000000 790.000000" fill="currentColor"><g transform="translate(0.000000,790.000000) scale(0.100000,-0.100000)"
