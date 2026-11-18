@@ -221,7 +221,7 @@ app.get('/api/c/:slug', (req, res) => {
     donations: db.prepare("SELECT * FROM donations WHERE campaign_id=? AND status='paid' AND test=? ORDER BY paid_at DESC, id DESC LIMIT 60").all(c.id, test ? 1 : 0).map(publicDonation)
   });
 });
-app.get('/api/c/:slug/donations', (req, res) => { const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const off = +req.query.offset || 0; const team = +req.query.team || 0; res.json(db.prepare(`SELECT * FROM donations WHERE campaign_id=? AND status='paid' AND test=? ${team ? 'AND team_id=' + team : ''} ORDER BY paid_at DESC, id DESC LIMIT 60 OFFSET ?`).all(c.id, isTest(c) ? 1 : 0, off).map(publicDonation)); });
+app.get('/api/c/:slug/donations', (req, res) => { const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const off = +req.query.offset || 0; const team = +req.query.team || 0; const q = String(req.query.q || '').slice(0, 60); const p = [c.id, isTest(c) ? 1 : 0]; let w = ''; if (team) { w += ' AND team_id=?'; p.push(team); } if (q) { w += " AND anonymous=0 AND (name LIKE ? OR dedication LIKE ?)"; p.push('%' + q + '%', '%' + q + '%'); } p.push(off); res.json(db.prepare(`SELECT * FROM donations WHERE campaign_id=? AND status='paid' AND test=?${w} ORDER BY ${req.query.sort === 'top' ? 'amount DESC, id DESC' : 'paid_at DESC, id DESC'} LIMIT 60 OFFSET ?`).all(...p).map(publicDonation)); });
 app.get('/api/c/:slug/stream', (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).end();
   res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' }); res.write(':ok\n\n');

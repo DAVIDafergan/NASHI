@@ -3,251 +3,289 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!--META-->
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--c:#1d4ed8;--c2:#1e40af;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--bg:#f6f7fb;--f:"Heebo",system-ui,sans-serif;--r:14px}
+:root{
+  --c:#ff6a1f;--c2:#ff2d7a;--teal:#1aa893;--ink:#1b1f2a;--mut:#6b7280;--line:#eceef3;--bg:#fffbf7;--card:#fff;--soft:#fff3ea;--soft2:#eefaf7;
+  --grad:linear-gradient(90deg,#ffb020 0%,#ff6a1f 45%,#ff2d7a 100%);
+  --f:"Heebo",system-ui,sans-serif;--fh:"Rubik","Heebo",system-ui,sans-serif;--r:28px;--sh:0 10px 40px -18px rgba(27,31,42,.18)
+}
+html[data-theme=dark]{--ink:#f3f4f6;--mut:#a1a7b3;--line:#2a2f3a;--bg:#12151c;--card:#1a1e27;--soft:#2a211c;--soft2:#17272a;--sh:0 10px 40px -18px rgba(0,0,0,.6)}
 *{box-sizing:border-box;margin:0;padding:0}[hidden]{display:none!important}
-html{scroll-behavior:smooth}
-html,body{overflow-x:clip}
-body{font:400 16px/1.6 var(--f);color:var(--ink);background:var(--bg);-webkit-text-size-adjust:100%}
+html{scroll-behavior:smooth}html,body{overflow-x:clip}
+body{font:400 16px/1.65 var(--f);color:var(--ink);background:var(--bg);-webkit-text-size-adjust:100%;position:relative}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(rgba(27,31,42,.08) 1px,transparent 1px);background-size:26px 26px;opacity:.5}
+html[data-theme=dark] body::before{background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px)}
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(45% 35% at 85% 0%,rgba(255,106,31,.14),transparent 60%),radial-gradient(40% 30% at 5% 30%,rgba(255,45,122,.08),transparent 60%),radial-gradient(40% 30% at 50% 100%,rgba(26,168,147,.08),transparent 60%)}
+header,main,footer,.sticky,.mod,.toast{position:relative;z-index:1}
 a{color:inherit;text-decoration:none}img{display:block;max-width:100%}
 button,input,select,textarea{font:inherit;color:inherit}button{background:none;border:0;cursor:pointer}
 .wrap{width:min(1180px,100% - 32px);margin-inline:auto}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 24px;border-radius:12px;font-weight:700;font-size:16px;background:var(--c);color:#fff;transition:.2s;box-shadow:0 8px 24px -10px var(--c)}
-.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.btn.o{background:#fff;color:var(--c);border:1.5px solid var(--c);box-shadow:none}
-.btn.wa{background:#25d366;box-shadow:0 8px 24px -10px #25d366}
+h1,h2,h3,h4,.fh{font-family:var(--fh)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 26px;border-radius:999px;font:700 16px var(--fh);color:#fff;background:var(--grad);background-size:200% 100%;transition:.3s;box-shadow:0 12px 30px -12px rgba(255,80,80,.6);white-space:nowrap}
+.btn:hover{background-position:100% 0;transform:translateY(-2px);box-shadow:0 18px 36px -12px rgba(255,80,80,.65)}
+.btn .ar{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:13px}
+.btn.o{background:var(--card);color:var(--ink);border:1.5px solid var(--line);box-shadow:none}
+.btn.o:hover{border-color:var(--c)}
+.btn.teal{background:var(--teal);box-shadow:0 12px 30px -12px rgba(26,168,147,.6)}
+.btn.wa{background:#25d366;box-shadow:0 12px 30px -12px rgba(37,211,102,.6)}
 .btn:disabled{opacity:.5;transform:none}
-.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:22px;min-width:0}
-h2.t{font-size:24px;font-weight:900;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px;box-shadow:var(--sh);min-width:0}
+.card .hd{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.card .hd h2{font-size:20px;font-weight:800}
+.ic{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;font-size:20px;flex:none;background:var(--soft);color:var(--c);position:relative}
+.ic.t{background:var(--soft2);color:var(--teal)}.ic.p{background:#f3eefc;color:#8b5cf6}
+.ic::after{content:"";position:absolute;top:-3px;inset-inline-end:-3px;width:10px;height:10px;border-radius:50%;background:#ffb020;border:2px solid var(--card)}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700;background:var(--soft2);color:var(--teal)}
+.chip.o{background:var(--soft);color:#c2410c}.chip.v{background:#f3eefc;color:#7c3aed}
+/* shapes */
+.shp{position:fixed;z-index:0;pointer-events:none;opacity:.55;animation:float 9s ease-in-out infinite}
+.shp.sq{width:70px;height:70px;border:2px solid #c7d2fe;border-radius:10px;transform:rotate(18deg)}
+.shp.sq2{width:52px;height:52px;border:2px solid #fde68a;border-radius:8px}
+.shp.ci{width:30px;height:30px;border-radius:50%;background:#fed7aa}
+.shp.tri{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:24px solid #fbcfe8}
+@keyframes float{50%{transform:translateY(-14px) rotate(24deg)}}
 /* header */
-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-header .wrap{display:flex;align-items:center;justify-content:space-between;height:62px;gap:12px}
-header .brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:18px;min-width:0}
-header .brand img{height:38px;width:auto;border-radius:8px}
-header .brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-header .btn{min-height:40px;padding:0 18px;font-size:14px}
-.langs{display:flex;gap:2px;margin-inline-start:auto}.langs button{font-size:12px;font-weight:700;color:var(--mut);padding:6px 7px;border-radius:8px}.langs button.on{background:var(--bg);color:var(--c)}
-@media(max-width:520px){.langs{display:none}}
-.testbar{background:#fef3c7;color:#92400e;text-align:center;font-size:13px;font-weight:500;padding:6px 10px}
-/* hero */
-.hero{position:relative;background:#0b1020;color:#fff;overflow:hidden}
-.hero .bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.55;filter:saturate(1.1)}
-.hero .bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,16,32,.2),rgba(11,16,32,.85) 90%)}
-.hero .in{position:relative;padding:clamp(40px,8vw,90px) 0 30px;max-width:760px}
-.hero .lbl{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:500}
-.hero .lbl b{color:#fde68a}
-.hero h1{font-size:clamp(30px,5.2vw,56px);font-weight:900;line-height:1.1;margin-top:16px;text-shadow:0 2px 20px rgba(0,0,0,.3)}
-.hero p{font-size:clamp(16px,2vw,20px);opacity:.9;margin-top:12px;max-width:60ch}
-/* layout */
-.main>*{min-width:0}
-.main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;margin-top:-10px;padding-block:24px 60px;align-items:start}
-.side{position:sticky;top:78px;display:grid;gap:16px}
-@media(max-width:900px){.main{grid-template-columns:1fr}.side{position:static}}
-/* progress */
-.prog .nums{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
-.prog .big{font-size:38px;font-weight:900;line-height:1;color:var(--c)}
-.prog .big small{font-size:16px;color:var(--mut);font-weight:500;margin-inline-start:6px}
-.prog .goal{color:var(--mut);font-size:14px}
-.prog .goal b{color:var(--ink)}
-.bar{height:14px;background:#eef1f7;border-radius:99px;overflow:hidden;margin:14px 0 10px;position:relative}
-.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--c),var(--c2));border-radius:99px;width:0;transition:width 1.2s cubic-bezier(.22,1,.36,1);position:relative}
-.bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sh 2.2s linear infinite}
+header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:66px;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font:800 17px var(--fh);min-width:0}
+.brand img{height:38px;width:auto;border-radius:10px}
+.brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
+.nav{display:flex;gap:22px;font-weight:500;font-size:14.5px;color:var(--mut)}
+.nav a:hover{color:var(--ink)}
+.hacts{display:flex;align-items:center;gap:8px}
+.hacts .btn{min-height:40px;padding:0 18px;font-size:14px}
+.ib{width:38px;height:38px;border-radius:999px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--mut);font-size:15px}
+.ib:hover{color:var(--ink);border-color:var(--c)}
+.langs{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+.langs button{font-size:12px;font-weight:700;color:var(--mut);padding:5px 9px;border-radius:999px}
+.langs button.on{background:var(--ink);color:var(--bg)}
+html[data-theme=dark] .langs button.on{background:#fff;color:#111}
+@media(max-width:860px){.nav{display:none}.hacts .share-b{display:none}}
+.testbar{background:#fff4d6;color:#92400e;text-align:center;font-size:13px;font-weight:500;padding:7px 10px}
+/* cover */
+.cover{margin-top:22px}
+.cover .fr{position:relative;border-radius:30px;overflow:hidden;aspect-ratio:21/9;background:linear-gradient(135deg,#ffe3d1,#ffd1e3);box-shadow:var(--sh)}
+.cover .fr .bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.cover .fr .ov{position:absolute;inset:auto 0 0 0;padding:clamp(18px,4vw,40px);background:linear-gradient(transparent,rgba(20,15,30,.75));color:#fff}
+.cover h1{font-size:clamp(28px,4.6vw,54px);font-weight:900;line-height:1.1;text-shadow:0 4px 24px rgba(0,0,0,.35)}
+.cover p{font-size:clamp(15px,1.7vw,19px);opacity:.95;margin-top:8px;max-width:70ch}
+.cover .lbl{position:absolute;top:18px;inset-inline-start:18px;background:rgba(255,255,255,.92);color:#1b1f2a;border-radius:999px;padding:7px 14px;font:700 13px var(--fh);box-shadow:0 8px 20px -8px rgba(0,0,0,.4)}
+html[data-theme=dark] .cover .lbl{background:rgba(26,30,39,.92);color:#fff}
+@media(max-width:640px){.cover .fr{aspect-ratio:4/3;border-radius:22px}}
+/* stats hero */
+.hero{text-align:center;padding:34px 0 10px}
+.hero .big{font:900 clamp(44px,7vw,74px)/1 var(--fh);color:var(--teal);letter-spacing:-.02em}
+.hero .big .cur{font-size:.55em;vertical-align:top;margin-inline-end:4px;opacity:.9}
+.hero .of{color:var(--mut);font-size:15px;margin-top:8px}.hero .of b{color:var(--ink)}
+.bar{height:16px;background:#ececf1;border-radius:999px;overflow:hidden;margin:20px auto 12px;max-width:900px;position:relative}
+html[data-theme=dark] .bar{background:#2a2f3a}
+.bar i{display:block;height:100%;background:var(--grad);border-radius:999px;width:0;transition:width 1.4s cubic-bezier(.22,1,.36,1);position:relative}
+.bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:sh 2.4s linear infinite}
 @keyframes sh{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
-.bar .bonus{position:absolute;top:0;bottom:0;width:2px;background:#f59e0b}
-.meta{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--mut)}
-.meta b{color:var(--ink);font-weight:700}
-.mult{display:inline-flex;align-items:center;gap:6px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:8px;padding:4px 10px;font-weight:700;font-size:13px}
-.timer{display:flex;gap:10px;justify-content:space-between;margin-top:16px}
-.timer div{flex:1;text-align:center;background:var(--bg);border-radius:10px;padding:10px 4px}
-.timer b{display:block;font-size:26px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.bar .bonus{position:absolute;top:0;bottom:0;width:3px;background:#8b5cf6}
+.meta{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:14px;color:var(--mut)}
+.meta b{color:var(--ink);font-weight:800;font-family:var(--fh)}
+.mult{display:inline-flex;align-items:center;gap:6px;background:var(--soft);color:#c2410c;border-radius:999px;padding:4px 12px;font-weight:800;font-size:13px;font-family:var(--fh)}
+.timer{display:flex;gap:10px;justify-content:center;margin:22px auto 0;max-width:520px}
+.timer div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 4px;box-shadow:var(--sh)}
+.timer b{display:block;font:900 28px/1 var(--fh);background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
 .timer span{font-size:11px;color:var(--mut)}
-.timer.over{display:block;text-align:center;font-weight:700;color:var(--mut)}
-/* donate box */
-.dbox h3{font-size:20px;font-weight:900;margin-bottom:12px}
-.amts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.amt{border:1.5px solid var(--line);border-radius:10px;padding:12px 6px;text-align:center;font-weight:700;font-size:17px;transition:.15s;background:#fff}
-.amt small{display:block;font-size:11px;color:var(--mut);font-weight:500;margin-top:2px}
-.amt:hover,.amt.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 7%,#fff);color:var(--c)}
-.amt.off{opacity:.4;pointer-events:none}
-.cust{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:10px;margin-top:8px;padding:0 12px;background:#fff}
-.cust span{color:var(--mut);font-weight:700}
-.cust input{flex:1;border:0;outline:0;padding:13px 8px;font-size:18px;font-weight:700;background:none;min-width:0;-moz-appearance:textfield}
-.cust input::-webkit-outer-spin-button,.cust input::-webkit-inner-spin-button{-webkit-appearance:none}
-.cust:focus-within{border-color:var(--c)}
-.eq{font-size:13px;color:var(--mut);margin-top:8px;min-height:20px}
-.eq b{color:var(--c)}
-.dbox .btn{width:100%;margin-top:12px;min-height:54px;font-size:17px}
-.share{display:flex;gap:8px;margin-top:10px}
-.share a{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:9px;font-size:13px;font-weight:500;background:#fff}
-.share a:hover{border-color:var(--c);color:var(--c)}
-.share svg{width:16px;height:16px}
+.timer.over{display:block;font:700 18px var(--fh);color:var(--mut);background:none;border:0}
+/* donate pill */
+.dpill{display:flex;gap:10px;justify-content:center;align-items:stretch;margin:26px auto 0;max-width:560px;flex-wrap:wrap}
+.dpill .cust{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:0 20px;box-shadow:var(--sh)}
+.dpill .cust:focus-within{border-color:var(--c)}
+.dpill .cust span{color:var(--mut);font-weight:700}
+.dpill .cust input{flex:1;min-width:0;border:0;outline:0;background:none;font:700 18px var(--fh);padding:14px 4px;-moz-appearance:textfield}
+.dpill .cust input::-webkit-outer-spin-button,.dpill .cust input::-webkit-inner-spin-button{-webkit-appearance:none}
+.dpill .btn{min-height:56px;padding:0 32px;font-size:18px}
+.amts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.amt{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:9px 16px;font:700 15px var(--fh);transition:.15s}
+.amt small{display:block;font:500 11px var(--f);color:var(--mut)}
+.amt:hover,.amt.on{border-color:var(--c);background:var(--soft);color:#c2410c}
+.eq{font-size:13px;color:var(--mut);margin-top:10px;min-height:20px;text-align:center}
+.eq b{color:var(--teal)}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.chips a.chip{cursor:pointer}
 /* team box */
-.tbox{display:flex;gap:12px;align-items:center}
-.tbox img,.tbox .av{width:56px;height:56px;border-radius:50%;object-fit:cover;background:var(--c);color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px;flex:none}
-.tbox b{display:block;font-size:16px}
+.tbox{display:flex;gap:14px;align-items:center;max-width:620px;margin:22px auto 0}
+.tbox img,.tbox .av{width:60px;height:60px;border-radius:50%;object-fit:cover;background:var(--grad);color:#fff;display:grid;place-items:center;font:900 22px var(--fh);flex:none}
+.tbox b{display:block;font:800 17px var(--fh)}
 .tbox small{color:var(--mut);font-size:13px}
-.tbox .bar{margin:8px 0 4px;height:8px}
-/* story */
-.story{font-size:17px;line-height:1.8;color:#1e293b}
+.tbox .bar{margin:8px 0 4px;height:9px;max-width:none}
+/* grid */
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;margin-top:40px;align-items:start}
+.grid>*{min-width:0}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.story{font-size:16.5px;line-height:1.85;color:var(--ink)}
 .story p{margin-bottom:12px}
-.story h3{font-size:20px;margin:18px 0 8px;font-weight:900}
-.video{aspect-ratio:16/9;border-radius:var(--r);overflow:hidden;margin-bottom:18px;background:#000}
+.video{aspect-ratio:16/9;border-radius:20px;overflow:hidden;margin-bottom:18px;background:#000}
 .video iframe{width:100%;height:100%;border:0}
-/* levels */
-.lv{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-.lv button{text-align:start;border:1.5px solid var(--line);border-radius:12px;padding:14px;background:#fff;transition:.15s;display:grid;gap:4px}
-.lv button:hover{border-color:var(--c);transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(0,0,0,.3)}
-.lv b{font-size:20px;color:var(--c)}
-.lv span{font-weight:700}
-.lv small{color:var(--mut);font-size:13px}
-.lv .st{font-size:11px;color:#b45309;background:#fffbeb;border-radius:6px;padding:2px 6px;justify-self:start}
-.lv button.off{opacity:.45;pointer-events:none}
 /* donors */
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:12px}
-.tabs button{padding:10px 14px;font-weight:700;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1px}
-.tabs button.on{color:var(--c);border-color:var(--c)}
-.dl{display:grid;gap:8px}
-.dn{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;animation:in .6s cubic-bezier(.22,1,.36,1)}
+.tabs{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:14px}
+.tabs button{flex:1;padding:8px 10px;border-radius:999px;font:700 13.5px var(--fh);color:var(--mut);display:flex;align-items:center;justify-content:center;gap:6px}
+.tabs button.on{background:var(--card);color:var(--ink);box-shadow:0 4px 12px -6px rgba(0,0,0,.25)}
+.srch{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:0 14px;margin-bottom:12px;background:var(--bg)}
+.srch input{flex:1;border:0;outline:0;background:none;padding:10px 4px;font-size:14px;min-width:0}
+.dl{display:grid;gap:10px}
+.dn{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:14px 16px;border:1px solid var(--line);border-radius:20px;background:var(--bg);animation:in .6s cubic-bezier(.22,1,.36,1)}
 @keyframes in{from{opacity:0;transform:translateY(-10px)}}
-.dn .av{width:40px;height:40px;border-radius:50%;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c);display:grid;place-items:center;font-weight:900;flex:none}
-.dn .i{flex:1;min-width:0}
-.dn b{display:block}
-.dn small{color:var(--mut);font-size:13px;display:block;overflow-wrap:anywhere}
-.dn .a{font-weight:900;color:var(--c);white-space:nowrap;font-size:17px}
-.dn .a small{font-size:11px;color:var(--mut);display:block;text-align:end}
-.more{display:block;margin:14px auto 0;color:var(--c);font-weight:700}
-.empty{text-align:center;color:var(--mut);padding:24px}
+.dn .av{width:42px;height:42px;border-radius:50%;background:var(--soft);color:var(--c);display:grid;place-items:center;font:900 16px var(--fh)}
+.dn .i{min-width:0}
+.dn b{display:block;font:800 15px var(--fh)}
+.dn small{color:var(--mut);font-size:12.5px;display:block;overflow-wrap:anywhere}
+.dn .tg{display:inline-block;font-size:11px;font-weight:700;background:var(--soft2);color:var(--teal);border-radius:999px;padding:2px 8px;margin-top:4px}
+.dn .a{font:900 18px var(--fh);color:var(--teal);white-space:nowrap;text-align:end}
+.dn .a small{font-size:11px;color:var(--mut);display:block;font-family:var(--f);font-weight:500}
+.dn .ded{grid-column:1/-1;background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:8px 12px;font-size:13.5px;color:var(--ink)}
+.more{display:block;margin:14px auto 0;color:var(--c);font:700 14px var(--fh)}
+.empty{text-align:center;color:var(--mut);padding:26px}
+/* levels */
+.lv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.lv button{text-align:start;border:1.5px solid var(--line);border-radius:22px;padding:18px;background:var(--bg);transition:.2s;display:grid;gap:4px;position:relative;overflow:hidden}
+.lv button::before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:var(--grad)}
+.lv button:hover{border-color:var(--c);transform:translateY(-3px);box-shadow:var(--sh)}
+.lv b{font:900 24px var(--fh);color:var(--teal)}
+.lv span{font:800 16px var(--fh)}
+.lv small{color:var(--mut);font-size:13px}
+.lv .st{font-size:11px;color:#b45309;background:var(--soft);border-radius:999px;padding:2px 8px;justify-self:start;font-weight:700}
+.lv button.off{opacity:.45;pointer-events:none}
 /* teams */
-.tl{display:grid;gap:8px}
-.tm{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;transition:.15s}
-.tm:hover{border-color:var(--c)}
-.tm .rk{width:26px;font-weight:900;color:var(--mut);text-align:center}
-.tm img,.tm .av{width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--c);color:#fff;display:grid;place-items:center;font-weight:900;flex:none}
+.tl{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.tm{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:22px;background:var(--bg);transition:.2s}
+.tm:hover{border-color:var(--c);transform:translateY(-2px)}
+.tm .rk{width:26px;height:26px;border-radius:50%;background:var(--soft);color:#c2410c;display:grid;place-items:center;font:900 12px var(--fh);flex:none}
+.tm .rk.g{background:#ffe9a6;color:#8a5a00}
+.tm img,.tm .av{width:46px;height:46px;border-radius:50%;object-fit:cover;background:var(--grad);color:#fff;display:grid;place-items:center;font:900 18px var(--fh);flex:none}
 .tm .i{flex:1;min-width:0}
-.tm b{display:block}
-.tm .bar{margin:6px 0 0;height:6px}
+.tm b{display:block;font:800 15px var(--fh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm .bar{margin:6px 0 0;height:6px;max-width:none}
 .tm .s{text-align:end;white-space:nowrap}
-.tm .s b{color:var(--c)}
-.tm .s small{display:block;color:var(--mut);font-size:12px}
-.matchers{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
-.matchers div{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 14px;background:#fff;font-weight:700}
-.matchers img{height:36px;width:auto}
+.tm .s b{color:var(--teal)}
+.tm .s small{display:block;color:var(--mut);font-size:11.5px}
+.matchers{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.matchers div{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:999px;padding:8px 16px 8px 10px;background:var(--bg);font:700 14px var(--fh)}
+.matchers img{height:34px;width:auto;border-radius:8px}
+.matchers i{width:30px;height:30px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#fff;font-style:normal;font-size:14px}
 /* sticky mobile */
-.sticky{position:fixed;bottom:0;left:0;right:0;width:100%;z-index:19;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:none;gap:10px;align-items:center}
-.sticky .btn{flex:1;min-width:0;padding:0 12px}
-.sticky .s{font-size:13px;color:var(--mut)}.sticky .s b{display:block;color:var(--c);font-size:18px}
-@media(max-width:900px){.sticky{display:flex}body{padding-bottom:80px}}
+.sticky{position:fixed;bottom:0;left:0;right:0;width:100%;z-index:19;background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:none;gap:10px;align-items:center;transform:translateY(110%);transition:.4s cubic-bezier(.22,1,.36,1)}
+.sticky.on{transform:none}
+.sticky .btn{flex:1;min-width:0;padding:0 14px}
+.sticky .s{font-size:12px;color:var(--mut)}.sticky .s b{display:block;color:var(--teal);font:900 20px var(--fh)}
+@media(max-width:900px){.sticky{display:flex}body{padding-bottom:84px}}
 /* modal */
-.mod{position:fixed;inset:0;z-index:50;background:rgba(15,23,42,.6);display:none;align-items:flex-end;justify-content:center;padding:0}
+.mod{position:fixed;inset:0;z-index:50;background:rgba(20,15,30,.55);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center}
 .mod.on{display:flex}
-.mod .pnl{background:#fff;width:min(560px,100%);max-height:94vh;overflow:auto;border-radius:20px 20px 0 0;padding:22px 22px 30px;animation:up .35s cubic-bezier(.22,1,.36,1)}
+.pnl{position:relative;background:var(--card);width:min(640px,100%);max-height:94vh;overflow:auto;border-radius:30px 30px 0 0;padding:26px 22px 34px;animation:up .4s cubic-bezier(.22,1,.36,1)}
 @keyframes up{from{transform:translateY(40px);opacity:0}}
-@media(min-width:640px){.mod{align-items:center;padding:20px}.mod .pnl{border-radius:20px;padding:28px}}
-.mod h3{font-size:22px;font-weight:900}
-.mod .x{position:absolute;top:14px;inset-inline-end:14px;width:36px;height:36px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:20px}
-.pnl{position:relative}
-.sum{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:12px;padding:12px 14px;margin:14px 0}
-.sum b{font-size:22px;color:var(--c)}
+@media(min-width:680px){.mod{align-items:center;padding:20px}.pnl{border-radius:30px;padding:32px}}
+.pnl h3{font:800 22px var(--fh);display:flex;align-items:center;gap:10px}
+.pnl h3 .n{width:30px;height:30px;border-radius:50%;background:var(--grad);color:#fff;font-size:14px;display:grid;place-items:center}
+.pnl .x{position:absolute;top:16px;inset-inline-end:16px;width:38px;height:38px;border-radius:50%;background:var(--bg);border:1px solid var(--line);display:grid;place-items:center;font-size:18px}
+.sum{display:flex;justify-content:space-between;align-items:center;background:var(--soft2);border-radius:18px;padding:14px 18px;margin:16px 0}
+.sum b{font:900 24px var(--fh);color:var(--teal)}
 .sum button{color:var(--c);font-weight:700;font-size:13px}
-.f{display:grid;gap:10px}
-.f label{font-size:13px;font-weight:500;color:var(--mut);display:grid;gap:4px}
-.f input,.f select,.f textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px;font-size:16px;outline:0;background:#fff;-webkit-appearance:none}
-.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--c)}
-.f .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.f .chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)}
-.f .chk input{width:18px;height:18px;accent-color:var(--c);-webkit-appearance:checkbox}
-.err{color:#dc2626;font-size:14px;min-height:20px;margin-top:6px}
-.payframe{width:100%;min-height:520px;border:0;border-radius:12px;background:#fff}
-.thx{text-align:center;padding:20px 0}
-.thx .ok{width:84px;height:84px;border-radius:50%;background:#dcfce7;color:#16a34a;display:grid;place-items:center;margin:0 auto 16px;font-size:40px;animation:pop .6s cubic-bezier(.22,1,.36,1)}
+.f{display:grid;gap:12px}
+.f label{font-size:13px;font-weight:500;color:var(--mut);display:grid;gap:5px}
+.f label>span{display:flex;gap:6px;align-items:center}
+.f label>span i{font-style:normal;color:var(--c)}
+.f input,.f select,.f textarea{width:100%;border:1.5px solid var(--line);border-radius:14px;padding:13px 14px;font-size:16px;outline:0;background:var(--bg);color:var(--ink);-webkit-appearance:none}
+.f input:focus,.f select:focus{border-color:var(--c);box-shadow:0 0 0 4px rgba(255,106,31,.12)}
+.f .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f .chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);border:1.5px solid var(--line);border-radius:14px;padding:11px 14px;background:var(--bg);cursor:pointer}
+.f .chk input{width:18px;height:18px;accent-color:var(--c);-webkit-appearance:checkbox;padding:0;margin:0}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.how label{border:1.5px solid var(--line);border-radius:16px;padding:12px;text-align:center;cursor:pointer;background:var(--bg);display:grid;gap:2px;font-size:12px;color:var(--mut)}
+.how label b{font:800 14px var(--fh);color:var(--ink)}
+.how label:has(input:checked){border-color:var(--c);background:var(--soft)}
+.how input{display:none}
+.err{color:#dc2626;font-size:14px;min-height:20px;margin-top:6px;text-align:center}
+.payframe{width:100%;min-height:520px;border:0;border-radius:16px;background:#fff}
+.thx{text-align:center;padding:16px 0 4px}
+.thx .ok{width:96px;height:96px;border-radius:50%;background:var(--soft2);color:var(--teal);display:grid;place-items:center;margin:0 auto 16px;font-size:44px;animation:pop .6s cubic-bezier(.22,1,.36,1)}
 @keyframes pop{from{transform:scale(.5);opacity:0}}
-.thx p{color:var(--mut);margin:8px 0 18px}
+.thx h3{justify-content:center;font-size:28px}
+.thx p{color:var(--mut);margin:10px 0 20px}
 .thx .btn{width:100%;margin-top:8px}
 #paypal-btn{margin-top:14px}
-.secure{font-size:12px;color:var(--mut);text-align:center;margin-top:10px}
-footer{text-align:center;padding:30px 16px;color:var(--mut);font-size:13px}
+.secure{font-size:12px;color:var(--mut);text-align:center;margin-top:12px}
+footer{text-align:center;padding:40px 16px calc(30px + 60px);color:var(--mut);font-size:13px}
 footer a{color:var(--c);font-weight:700}
+@media(min-width:901px){footer{padding-bottom:40px}}
 [data-r]{opacity:0;transform:translateY(16px);transition:.7s cubic-bezier(.22,1,.36,1)}[data-r].in{opacity:1;transform:none}
-.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:.3s;pointer-events:none;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);max-width:92vw}
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;z-index:60;opacity:0;transition:.3s;pointer-events:none;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);max-width:92vw}
 .toast.on{opacity:1;transform:translateX(-50%)}
-.toast b{color:#fde68a}
+.toast b{color:#ffb020}
+.sec{margin-top:22px}
 </style>
 </head>
 <body>
-<div class="testbar" id="testbar" hidden>⚠️ מצב בדיקה: התרומות כאן מדומות ואינן נסלקות. בעל הקמפיין יעביר אותו לאוויר כשיהיה מוכן.</div>
+<i class="shp sq" style="top:120px;inset-inline-start:4%"></i><i class="shp sq2" style="top:40%;inset-inline-end:3%;animation-delay:-3s"></i><i class="shp ci" style="top:70%;inset-inline-start:6%;animation-delay:-5s"></i><i class="shp tri" style="top:22%;inset-inline-end:9%;animation-delay:-7s"></i>
+<div class="testbar" id="testbar" hidden></div>
 <header><div class="wrap">
   <a class="brand" href="#top"><img id="hLogo" alt="" hidden><span id="hTitle"></span></a>
-  <a class="btn" href="#donate" onclick="openDonate();return false" data-i="donate">תרומה</a><div class="langs" id="langs"></div>
+  <nav class="nav"><a href="#top" data-i="navHome">ראשי</a><a href="#about" data-i="navAbout">אודות</a><a href="#donors" data-i="donors">תורמים</a><a href="#teams" id="navTeams" hidden data-i="ambassadors">שגרירים</a></nav>
+  <div class="hacts"><div class="langs" id="langs"></div><button class="ib" id="theme" title="מצב כהה">☾</button><a class="ib share-b" id="shWaTop" target="_blank" rel="noopener" title="שיתוף">⤴</a><a class="btn" href="#donate" onclick="openDonate();return false" data-i="donate">תרומה</a></div>
 </div></header>
 
-<section class="hero" id="top"><div class="bg" id="heroBg"></div><div class="wrap in">
-  <div class="lbl" id="lbl"></div>
-  <h1 id="title"></h1>
-  <p id="subtitle"></p>
-</div></section>
+<main class="wrap" id="top">
+<section class="cover"><div class="fr"><div class="bg" id="heroBg"></div><div class="lbl" id="lbl"></div><div class="ov"><h1 id="title"></h1><p id="subtitle"></p></div></div></section>
 
-<main class="wrap main">
-<div class="col">
-  <div class="card prog" data-r>
-    <div class="nums"><div class="big"><span id="raised">0</span><small id="cur">₪</small></div><div class="goal"><span data-i="ofGoal">מתוך יעד של</span> <b id="goal"></b></div></div>
-    <div class="bar"><i id="bar"></i><span class="bonus" id="bonusMark" hidden></span></div>
-    <div class="meta"><span><b id="pct">0%</b> <span data-i="ofGoalShort">מהיעד</span></span><span><b id="count">0</b> <span data-i="donors">תורמים</span></span><span id="multWrap" hidden><span class="mult">✕<span id="mult"></span> <span data-i="multiplied">כל תרומה מוכפלת</span></span></span><span id="bonusTxt" hidden></span></div>
-    <div class="timer" id="timer"></div>
+<section class="hero" id="donate">
+  <div class="big"><span class="cur" id="cur">₪</span><span id="raised">0</span></div>
+  <div class="of"><span data-i="ofGoal">מתוך יעד של</span> <b id="goal"></b></div>
+  <div class="bar"><i id="bar"></i><span class="bonus" id="bonusMark" hidden></span></div>
+  <div class="meta"><span><b id="pct">0%</b> <span data-i="ofGoalShort">מהיעד</span></span><span><b id="count">0</b> <span data-i="donors">תורמים</span></span><span id="multWrap" hidden><span class="mult">✕<span id="mult"></span> <span data-i="multiplied">כל תרומה מוכפלת</span></span></span><span id="bonusTxt" hidden></span></div>
+  <div class="timer" id="timer"></div>
+  <div class="dpill"><div class="cust"><span id="curSym">₪</span><input type="number" id="custAmt" data-ip="otherAmount" placeholder="הזינו סכום" inputmode="numeric" min="1"></div><button class="btn" id="goDonate"><span class="ar">←</span><span data-i="donateNow">תרמו</span></button></div>
+  <div class="amts" id="amts"></div>
+  <div class="eq" id="eq"></div>
+  <div class="chips"><span class="chip" id="provChip">🔒 <span id="provName"></span></span><span class="chip o" id="s46" hidden>סעיף 46</span><a class="chip v" href="#teams" id="teamsChip" hidden>👥 <span id="tCount"></span> <span data-i="ambassadors">שגרירים</span></a><a class="chip" id="shCopy" href="#">🔗 <span data-i="copyLink">העתקת קישור</span></a><a class="chip" id="shWa" target="_blank" rel="noopener" style="background:#e9fbef;color:#128c4a">💬 <span data-i="share">שיתוף</span></a></div>
+  <div class="tbox card" id="teamCard" hidden><img id="tImg" alt="" hidden><div class="av" id="tAv"></div><div style="flex:1;min-width:0"><small data-i="creditTo">התרומה שלכם נזקפת לזכות</small><b id="tName"></b><small id="tDescr"></small><div class="bar"><i id="tBar"></i></div><small><b id="tRaised"></b> <span id="tGoal"></span></small></div></div>
+</section>
+
+<div class="grid">
+  <div style="display:grid;gap:22px">
+    <section class="card" id="about" data-r><div class="hd"><div class="ic t">📖</div><h2 data-i="navAbout">אודות</h2></div><div class="video" id="video" hidden></div><div class="story" id="story"></div></section>
+    <section class="card" id="levelsCard" hidden data-r><div class="hd"><div class="ic">🎁</div><h2 data-i="levels">רמות תרומה</h2></div><div class="lv" id="levels"></div></section>
+    <section class="card" id="teams" hidden data-r><div class="hd"><div class="ic p">👥</div><h2 data-i="ambassadors">שגרירים</h2></div><div class="tl" id="teamsList"></div></section>
+    <section class="card" id="matchersCard" hidden data-r><div class="hd"><div class="ic">🤝<span id="multIc" hidden></span></div><h2 data-i="matchers">השותפים המכפילים</h2></div><div class="matchers" id="matchers"></div></section>
   </div>
-
-  <div class="card" id="teamCard" hidden data-r style="margin-top:16px">
-    <div class="tbox"><img id="tImg" alt="" hidden><div class="av" id="tAv"></div><div style="flex:1;min-width:0"><small data-i="creditTo">התרומה שלכם נזקפת לזכות</small><b id="tName"></b><small id="tDescr"></small><div class="bar"><i id="tBar"></i></div><small><b id="tRaised"></b> <span id="tGoal"></span></small></div></div>
-  </div>
-
-  <div class="card" style="margin-top:16px" data-r id="storyCard">
-    <div class="video" id="video" hidden></div>
-    <div class="story" id="story"></div>
-  </div>
-
-  <div class="card" style="margin-top:16px" data-r id="levelsCard" hidden><h2 class="t" data-i="levels">רמות תרומה</h2><div class="lv" id="levels"></div></div>
-
-  <div class="card" style="margin-top:16px" data-r id="matchersCard" hidden><h2 class="t" data-i="matchers">השותפים המכפילים</h2><div class="matchers" id="matchers"></div></div>
-
-  <div class="card" style="margin-top:16px" data-r>
-    <div class="tabs"><button class="on" data-tab="donors"><span data-i="donors">תורמים</span> <span id="dCount"></span></button><button data-tab="teams" id="teamsTab" hidden><span data-i="ambassadors">שגרירים</span> <span id="tCount"></span></button></div>
-    <div id="tab-donors"><div class="dl" id="donors"></div><button class="more" id="more" hidden data-i="moreDonors">עוד תורמים</button></div>
-    <div id="tab-teams" hidden><div class="tl" id="teams"></div></div>
-  </div>
+  <section class="card" id="donors" data-r>
+    <div class="hd"><div class="ic">❤</div><h2><span data-i="donors">תורמים</span> <span id="dCount" style="color:var(--mut);font-weight:500;font-size:15px"></span></h2></div>
+    <div class="tabs"><button class="on" data-tab="recent">🕒 <span data-i="recent">אחרונות</span></button><button data-tab="top">🏆 <span data-i="topD">המובילים</span></button></div>
+    <div class="srch">🔍<input id="dq" data-ip="searchDonor" placeholder="חיפוש תורם"></div>
+    <div class="dl" id="donorsList"></div><button class="more" id="more" hidden data-i="moreDonors">עוד תורמים</button>
+  </section>
 </div>
-
-<aside class="side">
-  <div class="card dbox" id="donate" data-r>
-    <h3 data-i="chooseAmount">בחרו סכום לתרומה</h3>
-    <div class="amts" id="amts"></div>
-    <div class="cust"><span id="curSym">₪</span><input type="number" id="custAmt" data-ip="otherAmount" placeholder="סכום אחר" inputmode="numeric" min="1"></div>
-    <div class="eq" id="eq"></div>
-    <button class="btn" id="goDonate" data-i="continue">המשך לתרומה</button>
-    <div class="share"><a id="shWa" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.4-.5.3-.5c.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.3-.6-.4zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg><span data-i="share">שיתוף</span></a><a id="shCopy" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span data-i="copyLink">העתקת קישור</span></a></div>
-    <div class="secure">🔒 <span data-i="secure">תשלום מאובטח</span> · <span id="provName"></span></div>
-  </div>
-</aside>
+<!-- legacy ids kept for JS -->
+<div id="storyCard" hidden></div><div id="teamsTab" hidden></div><div id="sPct" hidden></div><div id="sRaised" hidden></div>
 </main>
 
-<div class="sticky" id="sticky"><div class="s"><b id="sRaised"></b><span id="sPct"></span></div><button class="btn" onclick="openDonate()" data-i="donateNow">תרומה עכשיו</button></div>
+<div class="sticky" id="sticky"><div class="s"><b id="sRaised2"></b><span id="sPct2"></span></div><button class="btn" onclick="openDonate()"><span class="ar">←</span><span data-i="donateNow">תרמו</span></button></div>
 
 <div class="mod" id="mod"><div class="pnl">
   <button class="x" onclick="closeMod()">✕</button>
   <div id="stepForm">
-    <h3 data-i="details">פרטי התרומה</h3>
+    <h3><span class="n">1</span><span data-i="details">פרטי התרומה</span></h3>
     <div class="sum"><span data-i="amount">סכום התרומה</span><div><b id="mAmt"></b> <button onclick="closeMod()" data-i="change">שינוי</button></div></div>
     <div class="f">
-      <label><span data-i="fullName">שם מלא</span><input id="fName" autocomplete="name" data-ip="namePh" placeholder="כפי שיופיע ברשימת התורמים"></label>
+      <label><span><span data-i="fullName">שם מלא</span><i>*</i></span><input id="fName" autocomplete="name" data-ip="namePh" placeholder="כפי שיופיע ברשימת התורמים"></label>
       <div class="row"><label><span data-i="phone">טלפון</span><input id="fPhone" type="tel" inputmode="tel" autocomplete="tel" dir="ltr"></label><label><span data-i="email">אימייל</span><input id="fEmail" type="email" autocomplete="email" dir="ltr"></label></div>
       <label><span data-i="dedication">הקדשה / ברכה (לא חובה)</span><input id="fDed" maxlength="300" data-ip="dedPh" placeholder="לעילוי נשמת… / לרפואת… / בהצלחה!"></label>
       <label id="teamSelWrap" hidden><span data-i="forTeam">לזכות שגריר</span><select id="fTeam"><option value="">ללא</option></select></label>
-      <div class="row"><label id="instWrap" hidden><span data-i="installments">תשלומים</span><select id="fInst"></select></label><label class="chk" id="monthlyWrap" hidden style="align-self:end;padding-bottom:12px"><input type="checkbox" id="fMonthly"><span data-i="monthly">תרומה חודשית (הו״ק)</span></label></div>
+      <div class="how" id="howWrap"><label><input type="radio" name="how" value="once" checked><b data-i="howOnce">תשלום אחד</b><span data-i="howOnceD">כל הסכום עכשיו</span></label><label id="instWrap" hidden><input type="radio" name="how" value="split"><b data-i="howSplit">פיצול</b><span data-i="howSplitD">לתשלומים חודשיים</span></label><label id="monthlyWrap" hidden><input type="radio" name="how" value="monthly"><b data-i="howMonthly">חודשי</b><span data-i="howMonthlyD">הסכום הזה כל חודש</span></label></div>
+      <label id="instSel" hidden><span data-i="installments">תשלומים</span><select id="fInst"></select></label>
+      <input type="checkbox" id="fMonthly" hidden>
       <label class="chk" id="anonWrap"><input type="checkbox" id="fAnon"><span data-i="anon">תרומה אנונימית (השם לא יוצג)</span></label>
     </div>
     <div class="err" id="err"></div>
-    <button class="btn" id="pay" style="width:100%;min-height:54px;margin-top:6px" data-i="toPay">מעבר לתשלום מאובטח</button>
+    <button class="btn" id="pay" style="width:100%;min-height:56px;margin-top:6px"><span class="ar">←</span><span data-i="toPay">מעבר לתשלום מאובטח</span></button>
+    <div class="secure">🔒 <span data-i="secure">תשלום מאובטח</span></div>
   </div>
-  <div id="stepPay" hidden><h3 data-i="secure">תשלום מאובטח</h3><div id="payArea"></div></div>
+  <div id="stepPay" hidden><h3><span class="n">2</span><span data-i="secure">תשלום מאובטח</span></h3><div id="payArea" style="margin-top:14px"></div></div>
   <div id="stepThx" hidden class="thx"><div class="ok">✓</div><h3 id="thxH">תודה רבה!</h3><p id="thxP"></p><a class="btn wa" id="thxWa" target="_blank" rel="noopener" data-i="shareWa">שתפו בוואטסאפ כדי שעוד יתרמו</a><button class="btn o" onclick="closeMod()" data-i="back">חזרה לקמפיין</button></div>
 </div></div>
 <div class="toast" id="toast"></div>
@@ -260,13 +298,13 @@ const SYM={ILS:'₪',USD:'$'};const fmt=n=>Math.round(n).toLocaleString('he-IL')
 const parts=location.pathname.split('/').filter(Boolean);const slug=parts[1],teamSlug=parts[2]||'';
 let D=null,sel=0,selLevel=null,offset=60,cur='₪';
 const I18N={
-he:{dir:'rtl',donate:'תרומה',ofGoal:'מתוך יעד של',ofGoalShort:'מהיעד',donors:'תורמים',multiplied:'כל תרומה מוכפלת',creditTo:'התרומה שלכם נזקפת לזכות',levels:'רמות תרומה',matchers:'השותפים המכפילים',ambassadors:'שגרירים',moreDonors:'עוד תורמים',chooseAmount:'בחרו סכום לתרומה',otherAmount:'סכום אחר',continue:'המשך לתרומה',share:'שיתוף',copyLink:'העתקת קישור',secure:'תשלום מאובטח',donateNow:'תרומה עכשיו',details:'פרטי התרומה',amount:'סכום התרומה',change:'שינוי',fullName:'שם מלא',namePh:'כפי שיופיע ברשימת התורמים',phone:'טלפון',email:'אימייל',dedication:'הקדשה / ברכה (לא חובה)',dedPh:'לעילוי נשמת… / לרפואת… / בהצלחה!',forTeam:'לזכות שגריר',installments:'תשלומים',monthly:'תרומה חודשית (הו״ק)',anon:'תרומה אנונימית (השם לא יוצג)',toPay:'מעבר לתשלום מאובטח',shareWa:'שתפו בוואטסאפ כדי שעוד יתרמו',back:'חזרה לקמפיין',poweredBy:'קמפיין זה פועל על',createOwn:'הקימו קמפיין משלכם',
+he:{navHome:'ראשי',navAbout:'אודות',recent:'אחרונות',topD:'המובילים',searchDonor:'חיפוש תורם',howOnce:'תשלום אחד',howOnceD:'כל הסכום עכשיו',howSplit:'פיצול',howSplitD:'לתשלומים חודשיים',howMonthly:'חודשי',howMonthlyD:'הסכום הזה כל חודש',minAgo:'לפני {n} דק׳',hrAgo:'לפני {n} שעות',dayAgo:'לפני {n} ימים',dir:'rtl',donate:'תרומה',ofGoal:'מתוך יעד של',ofGoalShort:'מהיעד',donors:'תורמים',multiplied:'כל תרומה מוכפלת',creditTo:'התרומה שלכם נזקפת לזכות',levels:'רמות תרומה',matchers:'השותפים המכפילים',ambassadors:'שגרירים',moreDonors:'עוד תורמים',chooseAmount:'בחרו סכום לתרומה',otherAmount:'סכום אחר',continue:'המשך לתרומה',share:'שיתוף',copyLink:'העתקת קישור',secure:'תשלום מאובטח',donateNow:'תרומה עכשיו',details:'פרטי התרומה',amount:'סכום התרומה',change:'שינוי',fullName:'שם מלא',namePh:'כפי שיופיע ברשימת התורמים',phone:'טלפון',email:'אימייל',dedication:'הקדשה / ברכה (לא חובה)',dedPh:'לעילוי נשמת… / לרפואת… / בהצלחה!',forTeam:'לזכות שגריר',installments:'תשלומים',monthly:'תרומה חודשית (הו״ק)',anon:'תרומה אנונימית (השם לא יוצג)',toPay:'מעבר לתשלום מאובטח',shareWa:'שתפו בוואטסאפ כדי שעוד יתרמו',back:'חזרה לקמפיין',poweredBy:'קמפיין זה פועל על',createOwn:'הקימו קמפיין משלכם',
  anonDonor:'תורם אנונימי',none:'ללא',onePay:'תשלום אחד',pays:'תשלומים',days:'ימים',hours:'שעות',mins:'דקות',secs:'שניות',ended:'הקמפיין הסתיים',startsIn:'הקמפיין יתחיל בעוד',active:'קמפיין פעיל',multLbl:'🔥 כל תרומה מוכפלת <b>פי {m}</b>',eqTxt:'התרומה שלך של {a} שווה <b>{b}</b> לקמפיין',first:'היו הראשונים לתרום!',noTeams:'אין שגרירים עדיין',left:'נשארו {n}',soldOut:'אזל',forT:'לזכות',monthlyTag:'חודשי',pickAmount:'בחרו סכום לתרומה',copied:'הקישור הועתק',cancelled:'התשלום בוטל',redirect:'מעבירים אותך לדף התשלום המאובטח…',opening:'פותחים את עמוד הבדיקה…',nedarimNote:'הסליקה מתבצעת באתר נדרים פלוס המאובטח',failed:'התשלום נכשל',thanksName:'תודה רבה, {n}!',received:'קיבלנו את הפרטים',pendingTxt:'התרומה תאושר לאחר השלמת התשלום.',testTag:' (תרומת בדיקה)',donated:'תרמתי ל{t} – הצטרפו גם אתם!',newDon:'🎉 <b>{n}</b> תרם/ה {a}',bonusHit:'🎯 היעד הושג! עכשיו ליעד הבונוס <b>{b}</b>',bonus:'יעד בונוס: <b>{b}</b>',outOf:'מתוך {g}',netErr:'שגיאת רשת',unsupported:'אמצעי תשלום לא נתמך',testProv:'מצב בדיקה',testBar:'⚠️ מצב בדיקה: התרומות כאן מדומות ואינן נסלקות.'},
-en:{dir:'ltr',donate:'Donate',ofGoal:'of a goal of',ofGoalShort:'of goal',donors:'donors',multiplied:'every gift is matched',creditTo:'Your gift is credited to',levels:'Giving levels',matchers:'Our matching partners',ambassadors:'Ambassadors',moreDonors:'More donors',chooseAmount:'Choose an amount',otherAmount:'Other amount',continue:'Continue',share:'Share',copyLink:'Copy link',secure:'Secure payment',donateNow:'Donate now',details:'Your details',amount:'Donation amount',change:'Change',fullName:'Full name',namePh:'As it will appear on the donor wall',phone:'Phone',email:'Email',dedication:'Dedication (optional)',dedPh:'In memory of… / In honor of…',forTeam:'Credit an ambassador',installments:'Installments',monthly:'Monthly gift',anon:'Anonymous (hide my name)',toPay:'Proceed to secure payment',shareWa:'Share on WhatsApp',back:'Back to campaign',poweredBy:'Powered by',createOwn:'Start your own campaign',
+en:{navHome:'Home',navAbout:'About',recent:'Recent',topD:'Top',searchDonor:'Search donors',howOnce:'One-time',howOnceD:'Full amount now',howSplit:'Split',howSplitD:'Monthly installments',howMonthly:'Monthly',howMonthlyD:'This amount every month',minAgo:'{n} min ago',hrAgo:'{n} h ago',dayAgo:'{n} days ago',dir:'ltr',donate:'Donate',ofGoal:'of a goal of',ofGoalShort:'of goal',donors:'donors',multiplied:'every gift is matched',creditTo:'Your gift is credited to',levels:'Giving levels',matchers:'Our matching partners',ambassadors:'Ambassadors',moreDonors:'More donors',chooseAmount:'Choose an amount',otherAmount:'Other amount',continue:'Continue',share:'Share',copyLink:'Copy link',secure:'Secure payment',donateNow:'Donate now',details:'Your details',amount:'Donation amount',change:'Change',fullName:'Full name',namePh:'As it will appear on the donor wall',phone:'Phone',email:'Email',dedication:'Dedication (optional)',dedPh:'In memory of… / In honor of…',forTeam:'Credit an ambassador',installments:'Installments',monthly:'Monthly gift',anon:'Anonymous (hide my name)',toPay:'Proceed to secure payment',shareWa:'Share on WhatsApp',back:'Back to campaign',poweredBy:'Powered by',createOwn:'Start your own campaign',
  anonDonor:'Anonymous',none:'None',onePay:'Single payment',pays:'payments',days:'days',hours:'hours',mins:'min',secs:'sec',ended:'Campaign ended',startsIn:'Campaign starts in',active:'Live campaign',multLbl:'🔥 Every gift matched <b>×{m}</b>',eqTxt:'Your {a} gift is worth <b>{b}</b> to the campaign',first:'Be the first to give!',noTeams:'No ambassadors yet',left:'{n} left',soldOut:'Sold out',forT:'for',monthlyTag:'monthly',pickAmount:'Pick an amount',copied:'Link copied',cancelled:'Payment cancelled',redirect:'Redirecting to secure payment…',opening:'Opening test checkout…',nedarimNote:'Processed securely by Nedarim Plus',failed:'Payment failed',thanksName:'Thank you, {n}!',received:'We got your details',pendingTxt:'Your gift will be confirmed once payment completes.',testTag:' (test donation)',donated:'I just gave to {t} – join me!',newDon:'🎉 <b>{n}</b> gave {a}',bonusHit:'🎯 Goal reached! On to the bonus goal <b>{b}</b>',bonus:'Bonus goal: <b>{b}</b>',outOf:'of {g}',netErr:'Network error',unsupported:'Unsupported payment method',testProv:'Test mode',testBar:'⚠️ Test mode: donations here are simulated and not charged.'},
-fr:{dir:'ltr',donate:'Faire un don',ofGoal:"sur un objectif de",ofGoalShort:"de l'objectif",donors:'donateurs',multiplied:'chaque don est multiplié',creditTo:'Votre don est attribué à',levels:'Niveaux de don',matchers:'Nos partenaires',ambassadors:'Ambassadeurs',moreDonors:'Plus de donateurs',chooseAmount:'Choisissez un montant',otherAmount:'Autre montant',continue:'Continuer',share:'Partager',copyLink:'Copier le lien',secure:'Paiement sécurisé',donateNow:'Donner maintenant',details:'Vos coordonnées',amount:'Montant du don',change:'Modifier',fullName:'Nom complet',namePh:'Tel qu’il apparaîtra sur le mur des donateurs',phone:'Téléphone',email:'E-mail',dedication:'Dédicace (facultatif)',dedPh:'À la mémoire de… / En l’honneur de…',forTeam:'Au profit d’un ambassadeur',installments:'Versements',monthly:'Don mensuel',anon:'Anonyme (masquer mon nom)',toPay:'Paiement sécurisé',shareWa:'Partager sur WhatsApp',back:'Retour à la campagne',poweredBy:'Propulsé par',createOwn:'Lancez votre campagne',
+fr:{navHome:'Accueil',navAbout:'À propos',recent:'Récents',topD:'Top',searchDonor:'Rechercher un donateur',howOnce:'Unique',howOnceD:'Tout le montant',howSplit:'Fractionné',howSplitD:'Versements mensuels',howMonthly:'Mensuel',howMonthlyD:'Ce montant chaque mois',minAgo:'il y a {n} min',hrAgo:'il y a {n} h',dayAgo:'il y a {n} j',dir:'ltr',donate:'Faire un don',ofGoal:"sur un objectif de",ofGoalShort:"de l'objectif",donors:'donateurs',multiplied:'chaque don est multiplié',creditTo:'Votre don est attribué à',levels:'Niveaux de don',matchers:'Nos partenaires',ambassadors:'Ambassadeurs',moreDonors:'Plus de donateurs',chooseAmount:'Choisissez un montant',otherAmount:'Autre montant',continue:'Continuer',share:'Partager',copyLink:'Copier le lien',secure:'Paiement sécurisé',donateNow:'Donner maintenant',details:'Vos coordonnées',amount:'Montant du don',change:'Modifier',fullName:'Nom complet',namePh:'Tel qu’il apparaîtra sur le mur des donateurs',phone:'Téléphone',email:'E-mail',dedication:'Dédicace (facultatif)',dedPh:'À la mémoire de… / En l’honneur de…',forTeam:'Au profit d’un ambassadeur',installments:'Versements',monthly:'Don mensuel',anon:'Anonyme (masquer mon nom)',toPay:'Paiement sécurisé',shareWa:'Partager sur WhatsApp',back:'Retour à la campagne',poweredBy:'Propulsé par',createOwn:'Lancez votre campagne',
  anonDonor:'Anonyme',none:'Aucun',onePay:'Paiement unique',pays:'versements',days:'jours',hours:'heures',mins:'min',secs:'sec',ended:'Campagne terminée',startsIn:'La campagne commence dans',active:'Campagne en cours',multLbl:'🔥 Chaque don multiplié <b>×{m}</b>',eqTxt:'Votre don de {a} vaut <b>{b}</b> pour la campagne',first:'Soyez le premier à donner !',noTeams:'Pas encore d’ambassadeurs',left:'{n} restants',soldOut:'Épuisé',forT:'pour',monthlyTag:'mensuel',pickAmount:'Choisissez un montant',copied:'Lien copié',cancelled:'Paiement annulé',redirect:'Redirection vers le paiement sécurisé…',opening:'Ouverture du paiement test…',nedarimNote:'Traité en toute sécurité par Nedarim Plus',failed:'Paiement échoué',thanksName:'Merci, {n} !',received:'Coordonnées reçues',pendingTxt:'Votre don sera confirmé après le paiement.',testTag:' (don test)',donated:'Je viens de donner à {t} – rejoignez-moi !',newDon:'🎉 <b>{n}</b> a donné {a}',bonusHit:'🎯 Objectif atteint ! Vers l’objectif bonus <b>{b}</b>',bonus:'Objectif bonus : <b>{b}</b>',outOf:'sur {g}',netErr:'Erreur réseau',unsupported:'Moyen de paiement non pris en charge',testProv:'Mode test',testBar:'⚠️ Mode test : les dons sont simulés et non débités.'},
-es:{dir:'ltr',donate:'Donar',ofGoal:'de una meta de',ofGoalShort:'de la meta',donors:'donantes',multiplied:'cada donación se multiplica',creditTo:'Tu donación se acredita a',levels:'Niveles de donación',matchers:'Nuestros socios',ambassadors:'Embajadores',moreDonors:'Más donantes',chooseAmount:'Elige un monto',otherAmount:'Otro monto',continue:'Continuar',share:'Compartir',copyLink:'Copiar enlace',secure:'Pago seguro',donateNow:'Donar ahora',details:'Tus datos',amount:'Monto de la donación',change:'Cambiar',fullName:'Nombre completo',namePh:'Como aparecerá en el muro de donantes',phone:'Teléfono',email:'Correo',dedication:'Dedicatoria (opcional)',dedPh:'En memoria de… / En honor a…',forTeam:'A nombre de un embajador',installments:'Cuotas',monthly:'Donación mensual',anon:'Anónimo (ocultar mi nombre)',toPay:'Ir al pago seguro',shareWa:'Compartir en WhatsApp',back:'Volver a la campaña',poweredBy:'Impulsado por',createOwn:'Crea tu propia campaña',
+es:{navHome:'Inicio',navAbout:'Acerca de',recent:'Recientes',topD:'Top',searchDonor:'Buscar donante',howOnce:'Único',howOnceD:'Todo el monto ahora',howSplit:'Dividido',howSplitD:'Cuotas mensuales',howMonthly:'Mensual',howMonthlyD:'Este monto cada mes',minAgo:'hace {n} min',hrAgo:'hace {n} h',dayAgo:'hace {n} días',dir:'ltr',donate:'Donar',ofGoal:'de una meta de',ofGoalShort:'de la meta',donors:'donantes',multiplied:'cada donación se multiplica',creditTo:'Tu donación se acredita a',levels:'Niveles de donación',matchers:'Nuestros socios',ambassadors:'Embajadores',moreDonors:'Más donantes',chooseAmount:'Elige un monto',otherAmount:'Otro monto',continue:'Continuar',share:'Compartir',copyLink:'Copiar enlace',secure:'Pago seguro',donateNow:'Donar ahora',details:'Tus datos',amount:'Monto de la donación',change:'Cambiar',fullName:'Nombre completo',namePh:'Como aparecerá en el muro de donantes',phone:'Teléfono',email:'Correo',dedication:'Dedicatoria (opcional)',dedPh:'En memoria de… / En honor a…',forTeam:'A nombre de un embajador',installments:'Cuotas',monthly:'Donación mensual',anon:'Anónimo (ocultar mi nombre)',toPay:'Ir al pago seguro',shareWa:'Compartir en WhatsApp',back:'Volver a la campaña',poweredBy:'Impulsado por',createOwn:'Crea tu propia campaña',
  anonDonor:'Anónimo',none:'Ninguno',onePay:'Pago único',pays:'cuotas',days:'días',hours:'horas',mins:'min',secs:'seg',ended:'Campaña finalizada',startsIn:'La campaña comienza en',active:'Campaña activa',multLbl:'🔥 Cada donación multiplicada <b>×{m}</b>',eqTxt:'Tu donación de {a} vale <b>{b}</b> para la campaña',first:'¡Sé el primero en donar!',noTeams:'Aún no hay embajadores',left:'quedan {n}',soldOut:'Agotado',forT:'para',monthlyTag:'mensual',pickAmount:'Elige un monto',copied:'Enlace copiado',cancelled:'Pago cancelado',redirect:'Redirigiendo al pago seguro…',opening:'Abriendo pago de prueba…',nedarimNote:'Procesado de forma segura por Nedarim Plus',failed:'Pago fallido',thanksName:'¡Gracias, {n}!',received:'Recibimos tus datos',pendingTxt:'Tu donación se confirmará al completar el pago.',testTag:' (donación de prueba)',donated:'Acabo de donar a {t} – ¡únete!',newDon:'🎉 <b>{n}</b> donó {a}',bonusHit:'🎯 ¡Meta alcanzada! Vamos por la meta extra <b>{b}</b>',bonus:'Meta extra: <b>{b}</b>',outOf:'de {g}',netErr:'Error de red',unsupported:'Método de pago no admitido',testProv:'Modo de prueba',testBar:'⚠️ Modo de prueba: las donaciones son simuladas y no se cobran.'}};
 let LANG='he';const T=(k,v={})=>Object.entries(v).reduce((s,[a,b])=>s.replace('{'+a+'}',b),(I18N[LANG]||I18N.he)[k]??I18N.he[k]??k);
 function setLang(l){LANG=I18N[l]?l:'he';document.documentElement.lang=LANG;document.documentElement.dir=I18N[LANG].dir;$$('[data-i]').forEach(e=>e.textContent=T(e.dataset.i));$$('[data-ip]').forEach(e=>e.placeholder=T(e.dataset.ip));$('#testbar').textContent=T('testBar');$$('#langs button').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));try{localStorage.setItem('gx_lang',LANG)}catch{}}
@@ -288,7 +326,7 @@ async function load(){
   $('#lbl').innerHTML=c.multiplier>1?T('multLbl',{m:c.multiplier}):(c.status==='ended'?T('ended'):T('active'));
   $('#provName').textContent={test:T('testProv'),nedarim:'Nedarim Plus',meshulam:'Meshulam',paypal:'PayPal',link:'SSL'}[c.providerType]||'';
   if(c.video){const m=c.video.match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/);if(m){$('#video').innerHTML=`<iframe src="https://www.youtube.com/embed/${m[1]}?rel=0" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;$('#video').hidden=false}}
-  $('#story').innerHTML=c.story?c.story.split(/\n{2,}/).map(p=>`<p>${esc(p).replace(/\n/g,'<br>')}</p>`).join(''):'';if(!c.story&&!c.video)$('#storyCard').hidden=true;
+  $('#story').innerHTML=c.story?c.story.split(/\n{2,}/).map(p=>`<p>${esc(p).replace(/\n/g,'<br>')}</p>`).join(''):'';if(!c.story&&!c.video)$('#about').hidden=true;
   // amounts
   const s=c.settings||{};const presets=(s.presets||[100,180,360,500,1000,1800]).slice(0,6);
   $('#amts').innerHTML=presets.map(a=>`<button class="amt" data-a="${a}">${cur}${fmt(a)}${c.multiplier>1?`<small>= ${cur}${fmt(a*c.multiplier)}</small>`:''}</button>`).join('');
@@ -302,10 +340,10 @@ async function load(){
   // team
   if(D.team){const t=D.teams.find(x=>x.id===D.team.id)||D.team;$('#teamCard').hidden=false;$('#tName').textContent=t.name;$('#tDescr').textContent=t.descr||'';if(t.photo){$('#tImg').src=t.photo;$('#tImg').hidden=false;$('#tAv').style.display='none'}else $('#tAv').textContent=t.name[0];updTeamCard(t)}
   // form options
-  if(D.teams.length){$('#teamsTab').hidden=false;$('#teamSelWrap').hidden=false;$('#fTeam').innerHTML=`<option value="">${T('none')}</option>`+D.teams.map(t=>`<option value="${t.id}" ${D.team&&D.team.id===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}
+  if(D.teams.length){$('#teams').hidden=false;$('#navTeams').hidden=false;$('#teamsChip').hidden=false;$('#teamSelWrap').hidden=false;$('#fTeam').innerHTML=`<option value="">${T('none')}</option>`+D.teams.map(t=>`<option value="${t.id}" ${D.team&&D.team.id===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}
   if((s.installments||1)>1){$('#instWrap').hidden=false;$('#fInst').innerHTML=Array.from({length:s.installments},(_,i)=>`<option value="${i+1}">${i+1===1?T('onePay'):i+1+' '+T('pays')}</option>`).join('')}
   $('#monthlyWrap').hidden=s.allowMonthly===false;$('#anonWrap').hidden=s.allowAnon===false;
-  const url=location.origin+location.pathname;$('#shWa').href=`https://wa.me/?text=${encodeURIComponent(c.title+'\n'+url)}`;
+  const url=location.origin+location.pathname;$('#shWa').href=$('#shWaTop').href=`https://wa.me/?text=${encodeURIComponent(c.title+'\n'+url)}`;if(s.s46)$('#s46').hidden=false;
   $('#shCopy').onclick=e=>{e.preventDefault();navigator.clipboard?.writeText(url);toast(T('copied'))};
   try{const u=JSON.parse(localStorage.getItem('gx_u')||'null');if(u){$('#fName').value=u.name||'';$('#fPhone').value=u.phone||'';$('#fEmail').value=u.email||''}}catch{}
   renderStats(D.stats);renderDonors(D.donations,true);renderTeams(D.teams);timer();setInterval(timer,1000);stream();
@@ -314,25 +352,30 @@ async function load(){
 }
 function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;[r,g,b]=[r,g,b].map(v=>Math.max(0,Math.min(255,v)));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0')}
 function eq(){const c=D.campaign;$('#eq').innerHTML=sel>0&&c.multiplier>1?T('eqTxt',{a:cur+fmt(sel),b:cur+fmt(sel*c.multiplier)}):''}
-function rerender(){if(!D)return;renderStats(D.stats);renderTeams(D.teams);eq();timer();$('#lbl').innerHTML=D.campaign.multiplier>1?T('multLbl',{m:D.campaign.multiplier}):(D.campaign.status==='ended'?T('ended'):T('active'));$('#provName').textContent={test:T('testProv'),nedarim:'Nedarim Plus',meshulam:'Meshulam',paypal:'PayPal',link:'SSL'}[D.campaign.providerType]||'';$('#donors').innerHTML='';offset=60;fetch(`/api/c/${slug}/donations${D.team?'?team='+D.team.id:''}`).then(r=>r.json()).then(l=>renderDonors(l,true))}
+function rerender(){if(!D)return;renderStats(D.stats);renderTeams(D.teams);eq();timer();$('#lbl').innerHTML=D.campaign.multiplier>1?T('multLbl',{m:D.campaign.multiplier}):(D.campaign.status==='ended'?T('ended'):T('active'));$('#provName').textContent={test:T('testProv'),nedarim:'Nedarim Plus',meshulam:'Meshulam',paypal:'PayPal',link:'SSL'}[D.campaign.providerType]||'';reloadDonors()}
 function renderStats(s){const c=D.campaign;$('#raised').textContent=fmt(s.total);$('#goal').textContent=cur+fmt(s.goal);$('#pct').textContent=Math.min(s.pct,999)+'%';$('#count').textContent=s.count;
   const goalAll=s.bonus_goal>s.goal?s.bonus_goal:s.goal;requestAnimationFrame(()=>$('#bar').style.width=Math.min(100,s.total/goalAll*100)+'%');
   if(s.bonus_goal>s.goal){$('#bonusMark').hidden=false;$('#bonusMark').style.insetInlineStart=(s.goal/goalAll*100)+'%';$('#bonusTxt').hidden=false;$('#bonusTxt').innerHTML=s.total>=s.goal?T('bonusHit',{b:cur+fmt(s.bonus_goal)}):T('bonus',{b:cur+fmt(s.bonus_goal)})}
-  if(c.multiplier>1){$('#multWrap').hidden=false;$('#mult').textContent=c.multiplier}
-  $('#sRaised').textContent=cur+fmt(s.total);$('#sPct').textContent=s.pct+'% '+T('ofGoalShort');$('#dCount').textContent=s.count?`(${s.count})`:''}
+  if(c.multiplier>1){$('#multWrap').hidden=false;$('#mult').textContent=c.multiplier;$('#multIc').textContent=c.multiplier}
+  $('#sRaised2').textContent=cur+fmt(s.total);$('#sPct2').textContent=s.pct+'% '+T('ofGoalShort');$('#dCount').textContent=s.count?`(${s.count})`:''}
 function timer(){const c=D.campaign;const el=$('#timer');const end=new Date(c.end_at);const start=new Date(c.start_at);const now=new Date();let diff=end-now;let lbl='';
   if(start>now){diff=start-now;lbl=T('startsIn')}
   if(diff<=0||c.status==='ended'){el.className='timer over';el.textContent=T('ended');return}
   const d=Math.floor(diff/864e5),h=Math.floor(diff%864e5/36e5),m=Math.floor(diff%36e5/6e4),s=Math.floor(diff%6e4/1e3);
   el.innerHTML=(lbl?`<div style="flex:100%;background:none;padding:0;font-size:13px;color:var(--mut)">${lbl}</div>`:'')+[[d,T('days')],[h,T('hours')],[m,T('mins')],[s,T('secs')]].map(([v,l])=>`<div><b>${String(v).padStart(2,'0')}</b><span>${l}</span></div>`).join('')}
-function donorRow(d){const name=d.anonymous||!d.name?T('anonDonor'):d.name;const t=d.team_id&&D.teams.find(x=>x.id===d.team_id);return `<div class="dn"><div class="av">${esc(name[0])}</div><div class="i"><b>${esc(name)}</b>${d.dedication?`<small>${esc(d.dedication)}</small>`:''}${t?`<small>${T('forT')} ${esc(t.name)}</small>`:''}</div><div class="a">${cur}${fmt(d.amount)}${D.campaign.multiplier>1?`<small>= ${cur}${fmt(d.amount*D.campaign.multiplier)}</small>`:''}${d.monthly?`<small>${T('monthlyTag')}</small>`:''}</div></div>`}
-function renderDonors(list,reset){const el=$('#donors');if(reset)el.innerHTML='';if(!list.length&&reset){el.innerHTML=`<div class="empty">${T('first')}</div>`;$('#more').hidden=true;return}el.insertAdjacentHTML('beforeend',list.map(donorRow).join(''));$('#more').hidden=list.length<60}
-$('#more').onclick=async()=>{const l=await fetch(`/api/c/${slug}/donations?offset=${offset}${D.team?'&team='+D.team.id:''}`).then(r=>r.json());offset+=60;renderDonors(l,false)};
-function renderTeams(ts){D.teams=ts;$('#tCount').textContent=ts.length?`(${ts.length})`:'';$('#teams').innerHTML=ts.map((t,i)=>`<a class="tm" href="/c/${slug}/${t.slug}"><div class="rk">${i+1}</div>${t.photo?`<img src="${esc(t.photo)}" alt="">`:`<div class="av">${esc(t.name[0])}</div>`}<div class="i"><b>${esc(t.name)}</b>${t.goal?`<div class="bar"><i style="width:${Math.min(100,t.total/t.goal*100)}%"></i></div>`:''}</div><div class="s"><b>${cur}${fmt(t.total)}</b><small>${t.n} ${T('donors')}${t.goal?' · '+Math.round(t.total/t.goal*100)+'%':''}</small></div></a>`).join('')||`<div class="empty">${T('noTeams')}</div>`;
+function ago(s){if(!s)return '';const t=new Date(s.includes('T')?s:s.replace(' ','T')+'Z');const m=Math.max(0,Math.round((Date.now()-t)/6e4));if(m<60)return T('minAgo',{n:m});const h=Math.round(m/60);if(h<48)return T('hrAgo',{n:h});return T('dayAgo',{n:Math.round(h/24)})}
+function donorRow(d){const name=d.anonymous||!d.name?T('anonDonor'):d.name;const t=d.team_id&&D.teams.find(x=>x.id===d.team_id);return `<div class="dn"><div class="av">${esc(name[0])}</div><div class="i"><b>${esc(name)}</b><small>${ago(d.created)}</small>${t?`<span class="tg">${T('forT')} ${esc(t.name)}</span>`:''}</div><div class="a">${cur}${fmt(d.amount)}${D.campaign.multiplier>1?`<small>= ${cur}${fmt(d.amount*D.campaign.multiplier)}</small>`:''}${d.monthly?`<small>${T('monthlyTag')}</small>`:''}</div>${d.dedication?`<div class="ded">“${esc(d.dedication)}”</div>`:''}</div>`}
+function renderDonors(list,reset){const el=$('#donorsList');if(reset)el.innerHTML='';if(!list.length&&reset){el.innerHTML=`<div class="empty">${T('first')}</div>`;$('#more').hidden=true;return}el.insertAdjacentHTML('beforeend',list.map(donorRow).join(''));$('#more').hidden=list.length<60}
+$('#more').onclick=async()=>{const l=await fetch(`/api/c/${slug}/donations?offset=${offset}&sort=${dTab}&q=${encodeURIComponent(dQ)}${D.team?'&team='+D.team.id:''}`).then(r=>r.json());offset+=60;renderDonors(l,false)};
+function renderTeams(ts){D.teams=ts;$('#tCount').textContent=ts.length;$('#teamsList').innerHTML=ts.map((t,i)=>`<a class="tm" href="/c/${slug}/${t.slug}"><div class="rk ${i===0?'g':''}">${i+1}</div>${t.photo?`<img src="${esc(t.photo)}" alt="">`:`<div class="av">${esc(t.name[0])}</div>`}<div class="i"><b>${esc(t.name)}</b>${t.goal?`<div class="bar"><i style="width:${Math.min(100,t.total/t.goal*100)}%"></i></div>`:''}</div><div class="s"><b>${cur}${fmt(t.total)}</b><small>${t.n} ${T('donors')}${t.goal?' · '+Math.round(t.total/t.goal*100)+'%':''}</small></div></a>`).join('')||`<div class="empty">${T('noTeams')}</div>`;
   if(D.team){const t=ts.find(x=>x.id===D.team.id);if(t)updTeamCard(t)}}
 function updTeamCard(t){$('#tRaised').textContent=cur+fmt(t.total);$('#tGoal').textContent=t.goal?T('outOf',{g:cur+fmt(t.goal)}):`· ${t.n} ${T('donors')}`;$('#tBar').style.width=t.goal?Math.min(100,t.total/t.goal*100)+'%':'0'}
-$$('.tabs button').forEach(b=>b.onclick=()=>{$$('.tabs button').forEach(x=>x.classList.toggle('on',x===b));$('#tab-donors').hidden=b.dataset.tab!=='donors';$('#tab-teams').hidden=b.dataset.tab!=='teams'});
-function stream(){const es=new EventSource(`/api/c/${slug}/stream`);es.addEventListener('donation',e=>{const {donation,stats,teams}=JSON.parse(e.data);renderStats(stats);renderTeams(teams);if(!D.team||donation.team_id===D.team.id){const el=$('#donors');if(el.querySelector('.empty'))el.innerHTML='';el.insertAdjacentHTML('afterbegin',donorRow(donation))}const nm=donation.anonymous||!donation.name?T('anonDonor'):donation.name;toast(T('newDon',{n:esc(nm),a:cur+fmt(donation.amount)}))});es.addEventListener('refresh',e=>{const {stats,teams}=JSON.parse(e.data);renderStats(stats);renderTeams(teams)})}
+let dTab='recent',dQ='';
+$$('input[name=how]').forEach(r=>r.onchange=()=>{$('#instSel').hidden=r.value!=='split'||!(D.campaign.settings.installments>1)});
+$$('.tabs button').forEach(b=>b.onclick=()=>{$$('.tabs button').forEach(x=>x.classList.toggle('on',x===b));dTab=b.dataset.tab;reloadDonors()});
+$('#dq').oninput=e=>{dQ=e.target.value.trim();clearTimeout(reloadDonors.t);reloadDonors.t=setTimeout(reloadDonors,250)};
+async function reloadDonors(){offset=60;const l=await fetch(`/api/c/${slug}/donations?sort=${dTab}&q=${encodeURIComponent(dQ)}${D.team?'&team='+D.team.id:''}`).then(r=>r.json());renderDonors(l,true)}
+function stream(){const es=new EventSource(`/api/c/${slug}/stream`);es.addEventListener('donation',e=>{const {donation,stats,teams}=JSON.parse(e.data);renderStats(stats);renderTeams(teams);if(!D.team||donation.team_id===D.team.id){const el=$('#donorsList');if(el.querySelector('.empty'))el.innerHTML='';el.insertAdjacentHTML('afterbegin',donorRow(donation))}const nm=donation.anonymous||!donation.name?T('anonDonor'):donation.name;toast(T('newDon',{n:esc(nm),a:cur+fmt(donation.amount)}))});es.addEventListener('refresh',e=>{const {stats,teams}=JSON.parse(e.data);renderStats(stats);renderTeams(teams)})}
 
 // ---- donate flow ----
 function openDonate(){if(!D)return;if(!(sel>0)){document.getElementById('donate').scrollIntoView({behavior:'smooth',block:'center'});toast(T('pickAmount'));return}
@@ -340,7 +383,7 @@ function openDonate(){if(!D)return;if(!(sel>0)){document.getElementById('donate'
 function closeMod(){$('#mod').classList.remove('on');document.body.style.overflow='';$('#payArea').innerHTML='';if(location.search.includes('thanks'))history.replaceState(null,'',location.pathname)}
 $('#goDonate').onclick=openDonate;
 $('#pay').onclick=async()=>{const b=$('#pay');b.disabled=true;$('#err').textContent='';
-  const body={amount:sel,level_id:selLevel,name:$('#fName').value,phone:$('#fPhone').value,email:$('#fEmail').value,dedication:$('#fDed').value,team_id:$('#fTeam').value||null,installments:$('#fInst').value||1,monthly:$('#fMonthly').checked,anonymous:$('#fAnon').checked};
+  const how=(document.querySelector('input[name=how]:checked')||{}).value||'once';const body={amount:sel,level_id:selLevel,name:$('#fName').value,phone:$('#fPhone').value,email:$('#fEmail').value,dedication:$('#fDed').value,team_id:$('#fTeam').value||null,installments:how==='split'?($('#fInst').value||1):1,monthly:how==='monthly',anonymous:$('#fAnon').checked};
   try{localStorage.setItem('gx_u',JSON.stringify({name:body.name,phone:body.phone,email:body.email}))}catch{}
   try{const r=await fetch(`/api/c/${slug}/donate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok){$('#err').textContent=j.error||'שגיאה';return}startPay(j)}catch{$('#err').textContent=T('netErr')}finally{b.disabled=false}};
 function startPay(j){$('#stepForm').hidden=true;$('#stepPay').hidden=false;const A=$('#payArea');
