@@ -47,7 +47,8 @@ function publicDonation(d) { return { id: d.id, name: d.anonymous ? '' : d.name,
 function markPaid(id, { ref = '', meta = {}, amount } = {}) {
   const d = db.prepare('SELECT * FROM donations WHERE id=?').get(id); if (!d) return null;
   if (d.status === 'paid') return d;
-  db.prepare("UPDATE donations SET status='paid', ref=?, meta=?, amount=COALESCE(?,amount), paid_at=datetime('now') WHERE id=?").run(String(ref), JSON.stringify(meta).slice(0, 4000), amount || null, id);
+  const verified = meta.verified === undefined ? 1 : (meta.verified ? 1 : 0);
+  db.prepare("UPDATE donations SET status='paid', ref=?, meta=?, amount=COALESCE(?,amount), verified=?, paid_at=datetime('now') WHERE id=?").run(String(ref), JSON.stringify(meta).slice(0, 4000), amount || null, verified, id);
   const nd = db.prepare('SELECT * FROM donations WHERE id=?').get(id);
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id);
   emit(c.id, 'donation', { donation: publicDonation(nd), stats: stats(c, nd.test), teams: teamStats(c, nd.test) });
@@ -271,13 +272,57 @@ app.post('/pay/test/:token', (req, res) => {
   markPaid(d.id, { ref: 'TEST-' + d.id, meta: { simulated: true } }); res.json({ ok: true });
 });
 app.get('/pay/return/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return res.redirect('/'); if (d.status === 'pending' && d.provider === 'link') { /* manual providers: keep pending, owner confirms */ } res.redirect(`/c/${d.slug}?thanks=${d.token}`); });
-app.all('/pay/nedarim/callback', (req, res) => {
+// Nedarim Plus → our server. Trust model: the donation is matched by id+token, the amount must equal what the
+// donor asked for, Mosad (if sent) must be ours, a TransactionId is required, and when ApiPassword is set we
+// re-read the transaction from Nedarim's own history before counting it. Anything short of that is logged, not counted.
+app.all('/pay/nedarim/callback', limit(120, 60000), async (req, res) => {
   const b = { ...req.query, ...req.body }; const r = providers.nedarim.callback(b);
-  const d = r.donationId ? db.prepare('SELECT * FROM donations WHERE id=?').get(r.donationId) : (r.token ? db.prepare('SELECT * FROM donations WHERE token=?').get(r.token) : null);
+  const d = r.donationId ? db.prepare('SELECT * FROM donations WHERE id=? AND token=?').get(r.donationId, String(r.token || '')) : null;
   if (!d) return res.status(404).send('no donation');
-  if (r.paid) markPaid(d.id, { ref: r.ref, meta: r.meta, amount: b.Amount ? Math.round(+b.Amount) : undefined }); else db.prepare("UPDATE donations SET status='failed', meta=? WHERE id=?").run(JSON.stringify(r.meta).slice(0, 4000), d.id);
-  res.send('OK');
+  res.send('OK'); // answer Nedarim immediately; the work below is idempotent
+  if (d.status === 'paid') return;
+  const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id); const cfg = J(c.provider);
+  const log = (note, extra = {}) => db.prepare("UPDATE donations SET note=?, meta=? WHERE id=?").run(note, JSON.stringify({ ...r.meta, ...extra, at: new Date().toISOString() }).slice(0, 4000), d.id);
+  if (!r.paid) { db.prepare("UPDATE donations SET status='failed' WHERE id=? AND status='pending'").run(d.id); return log('נדרים: העסקה נדחתה (' + String(b.Status || '') + ')'); }
+  if (!r.ref) return log('⚠ התקבל אישור ללא מספר עסקה – לא נספר. בדקו בנדרים.');
+  if (r.mosad && cfg.mosadId && r.mosad !== String(cfg.mosadId)) return log('⚠ מספר מוסד לא תואם – לא נספר.');
+  if (r.amount && Math.abs(r.amount - d.amount) > 1) return log(`⚠ סכום לא תואם (נדרים: ${r.amount}, בקשה: ${d.amount}) – לא נספר.`);
+  let verified = 0;
+  if (cfg.apiPassword) {
+    try { const v = await providers.nedarim.verify({ cfg, transactionId: r.ref }); if (v.checked && !v.found) return log('⚠ העסקה לא נמצאה בהיסטוריית נדרים – לא נספר. לחצו "סנכרון מול נדרים".'); if (v.found && Math.abs(v.amount - d.amount) > 1) return log(`⚠ סכום בנדרים (${v.amount}) שונה מהבקשה (${d.amount}) – לא נספר.`); verified = v.found ? 1 : 0; }
+    catch (e) { verified = 0; r.meta._verifyError = e.message; }
+  }
+  markPaid(d.id, { ref: r.ref, meta: { ...r.meta, verified }, amount: Math.round(r.amount || d.amount) });
+  db.prepare('UPDATE donations SET verified=?, note=? WHERE id=?').run(verified, verified ? 'אומת מול שרת נדרים ✓' : (cfg.apiPassword ? 'שולם; אימות מול נדרים נכשל זמנית – יושלם בסנכרון' : 'שולם לפי הודעת נדרים (הוסיפו ApiPassword לאימות מלא)'), d.id);
 });
+// Reconcile: pull Nedarim history and match it against our donations (missed callbacks, unverified rows)
+async function reconcileNedarim(c) {
+  const cfg = J(c.provider); if (cfg.type !== 'nedarim' || !cfg.apiPassword) throw new Error('סנכרון דורש נדרים פלוס עם ApiPassword');
+  {
+    const rows = await providers.nedarim.fetchHistory({ cfg, max: 300 });
+    const byRef = new Map(rows.map(x => [String(x.TransactionId), x]));
+    let verified = 0, recovered = 0;
+    for (const d of db.prepare("SELECT * FROM donations WHERE campaign_id=? AND provider='nedarim' AND test=0 AND (status='pending' OR verified=0) AND created > datetime('now','-14 days')").all(c.id)) {
+      let rec = d.ref && byRef.get(String(d.ref));
+      if (!rec && d.status === 'pending') { // match a missed callback by phone+amount within 2h
+        const ph = String(d.phone || '').replace(/\D/g, '').slice(-9); const t0 = new Date(d.created + 'Z').getTime();
+        rec = rows.find(x => Math.abs(+x.Amount - d.amount) <= 1 && String(x.Phone || '').replace(/\D/g, '').slice(-9) === ph && ph && Math.abs(new Date(x.TransactionTime).getTime() - t0) < 2 * 3600e3 && !db.prepare("SELECT 1 FROM donations WHERE ref=? AND status='paid'").get(String(x.TransactionId)));
+        if (rec) recovered++;
+      }
+      if (!rec) continue;
+      if (d.status !== 'paid') markPaid(d.id, { ref: String(rec.TransactionId), meta: { fromHistory: rec, verified: 1 }, amount: Math.round(+rec.Amount) });
+      db.prepare("UPDATE donations SET verified=1, note='אומת מול שרת נדרים ✓ (סנכרון)', ref=COALESCE(NULLIF(ref,''),?) WHERE id=?").run(String(rec.TransactionId), d.id); verified++;
+    }
+    return { ok: true, pulled: rows.length, verified, recovered };
+  }
+}
+app.post('/api/campaigns/:id/reconcile', auth, own, async (req, res) => { try { res.json(await reconcileNedarim(req.c)); } catch (e) { bad(res, e.message, 502); } });
+// every 10 minutes: reconcile live Nedarim campaigns that have unverified/pending donations in the last 2 days
+setInterval(async () => {
+  for (const c of db.prepare("SELECT c.* FROM campaigns c WHERE c.status='live' AND c.provider LIKE '%nedarim%' AND EXISTS(SELECT 1 FROM donations d WHERE d.campaign_id=c.id AND d.provider='nedarim' AND d.test=0 AND (d.status='pending' OR d.verified=0) AND d.created > datetime('now','-2 days'))").all()) {
+    try { await reconcileNedarim(c); } catch (e) { console.error('reconcile', c.id, e.message); }
+  }
+}, 10 * 60000).unref();
 app.all('/pay/meshulam/webhook', (req, res) => {
   const b = { ...req.query, ...req.body }; const r = providers.meshulam.callback(b);
   const d = r.donationId ? db.prepare('SELECT * FROM donations WHERE id=?').get(r.donationId) : (r.token ? db.prepare('SELECT * FROM donations WHERE token=?').get(r.token) : null);
@@ -324,6 +369,9 @@ const setKV = (k, v) => db.prepare('INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(
 const mask = o => ({ ...o, token: o.token ? '••••' : '', secret: o.secret ? '••••' : '' });
 app.get('/api/admin/msg', auth, adm, (_, res) => { const m = getKV('msg'); res.json({ sms: mask(m.sms || {}), wa: mask(m.wa || {}) }); });
 app.put('/api/admin/msg', auth, adm, (req, res) => { const cur = getKV('msg'); const b = req.body || {}; const merge = (o = {}, n = {}) => { const x = { ...o, ...n }; if (n.token === '••••') x.token = o.token; if (n.secret === '••••') x.secret = o.secret; return x; }; setKV('msg', { sms: merge(cur.sms, b.sms), wa: merge(cur.wa, b.wa) }); res.json({ ok: true }); });
+// platform support contact (shown as a help button everywhere)
+app.get('/api/support', (_, res) => { const s = getKV('support'); res.json({ phone: s.phone || '', email: s.email || process.env.ADMIN_EMAIL || '', text: s.text || 'שלום, אני צריך עזרה עם TTM' }); });
+app.put('/api/admin/support', auth, adm, (req, res) => { const b = req.body || {}; setKV('support', { phone: String(b.phone || '').replace(/[^\d+]/g, '').slice(0, 20), email: String(b.email || '').slice(0, 120), text: String(b.text || '').slice(0, 200) }); res.json({ ok: true }); });
 app.get('/api/msg-channels', auth, (_, res) => { const m = getKV('msg'); res.json({ sms: !!(m.sms && m.sms.type), wa: !!(m.wa && m.wa.type) }); });
 app.get('/api/me/sms', auth, (req, res) => { const u = db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id); const c = J(u.sms); res.json({ ...c, token: c.token ? '••••' : '' }); });
 app.put('/api/me/sms', auth, (req, res) => { const b = req.body || {}; const cur = J(db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id).sms); const next = { type: b.type || '', sid: b.sid || '', token: b.token && b.token !== '••••' ? b.token : cur.token || '', from: b.from || '', url: b.url || '', method: b.method || 'GET', intl: !!b.intl }; db.prepare('UPDATE users SET sms=? WHERE id=?').run(JSON.stringify(next), req.user.id); res.json({ ok: true }); });
