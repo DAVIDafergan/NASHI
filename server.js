@@ -59,7 +59,7 @@ function teamStats(c, test) {
 const isTest = c => c.status !== 'live' && c.status !== 'ended';
 
 // ---------- auth ----------
-app.post('/api/register', (req, res) => {
+app.post('/api/register', limit(5, 600000), (req, res) => {
   const { email, password, name, phone, org } = req.body || {};
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email || '')) return bad(res, 'אימייל לא תקין');
   if (String(password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים');
@@ -70,7 +70,7 @@ app.post('/api/register', (req, res) => {
   res.cookie('sid', sign({ uid: r.lastInsertRowid, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT });
   res.json({ ok: true });
 });
-app.post('/api/login', (req, res) => {
+app.post('/api/login', limit(10, 60000), (req, res) => {
   const u = db.prepare('SELECT * FROM users WHERE email=?').get(String(req.body?.email || '').toLowerCase());
   if (!u || !checkPw(String(req.body?.password || ''), u.pass)) return bad(res, 'אימייל או סיסמה שגויים', 401);
   res.cookie('sid', sign({ uid: u.id, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT });
@@ -226,11 +226,14 @@ app.get('/api/c/:slug/stream', (req, res) => {
   const ping = setInterval(() => { try { res.write(':p\n\n'); } catch { } }, 25000);
   req.on('close', () => { clearInterval(ping); subs.get(c.id)?.delete(res); });
 });
-app.post('/api/c/:slug/donate', async (req, res) => {
+const hits = new Map();
+const limit = (n, win) => (req, res, next) => { const k = req.ip + req.path; const now = Date.now(); const a = (hits.get(k) || []).filter(t => now - t < win); a.push(now); hits.set(k, a); if (a.length > n) return bad(res, 'יותר מדי ניסיונות, נסו שוב בעוד דקה', 429); next(); };
+setInterval(() => { const now = Date.now(); for (const [k, a] of hits) if (!a.some(t => now - t < 60000)) hits.delete(k); }, 60000).unref();
+app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404);
   if (c.status === 'ended') return bad(res, 'הקמפיין הסתיים');
   const s = J(c.settings); const b = req.body || {};
-  const amount = Math.round(+b.amount || 0); if (amount < (s.minAmount || 1)) return bad(res, `סכום מינימלי ₪${s.minAmount || 1}`);
+  const amount = Math.round(+b.amount || 0); if (amount < (s.minAmount || 1)) return bad(res, `סכום מינימלי ₪${s.minAmount || 1}`); if (amount > 5000000) return bad(res, 'סכום גבוה מדי');
   const name = String(b.name || '').trim().slice(0, 80); if (name.length < 2) return bad(res, 'נא להזין שם');
   const phone = String(b.phone || '').replace(/[^\d+]/g, '').slice(0, 20); const email = String(b.email || '').trim().slice(0, 120);
   if (phone.replace(/\D/g, '').length < 9 && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad(res, 'נא להזין טלפון או אימייל');
@@ -292,7 +295,7 @@ const SYS = `אתה "המדריך" של Tatzil (תציל), פלטפורמת גי
 async function llm(messages, context) {
   const sys = SYS + (context || '');
   if (process.env.ANTHROPIC_API_KEY) {
-    const body = JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5', max_tokens: 1200, system: sys, messages: messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content).slice(0, 6000) })) });
+    const body = JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5', max_tokens: 1200, system: sys, messages: messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content).slice(0, 6000) })) });
     const r = await new Promise((resolve, reject) => { const q = https.request({ hostname: 'api.anthropic.com', path: '/v1/messages', method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Length': Buffer.byteLength(body) } }, res => { let d = ''; res.on('data', c => d += c); res.on('end', () => resolve(d)); }); q.on('error', reject); q.write(body); q.end(); });
     const j = JSON.parse(r); if (j.error) throw new Error(j.error.message); return j.content?.map(x => x.text || '').join('') || '';
   }
@@ -328,5 +331,6 @@ app.get(['/c/:slug', '/c/:slug/:team'], (req, res) => {
 });
 app.get(['/app', '/app/*'], (_, res) => res.sendFile(pub('app.html')));
 app.get('/', (_, res) => res.sendFile(pub('index.html')));
+app.get('/robots.txt', (_, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /pay/\nDisallow: /api/\n'));
 app.use((_, res) => res.status(404).sendFile(pub('404.html')));
 app.listen(process.env.PORT || 3000, () => console.log('tatzil up'));
