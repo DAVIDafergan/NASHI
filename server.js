@@ -85,7 +85,7 @@ function fetchJson(url) { return new Promise((resolve, reject) => { https.get(ur
 const AMUTOT_RES = process.env.AMUTOT_RESOURCE || 'be5b7935-3922-45d4-9638-08871b17ec95';
 async function lookupOrg(number) {
   const n = String(number).replace(/\D/g, ''); if (!/^5[0-9]{8}$/.test(n)) throw new Error('מספר עמותה לא תקין (9 ספרות, מתחיל ב-5)');
-  const j = await fetchJson(`https://data.gov.il/api/3/action/datastore_search?resource_id=${AMUTOT_RES}&filters=${encodeURIComponent(JSON.stringify({ 'מספר עמותה': n }))}&limit=1`);
+  const j = await fetchJson(`https://data.gov.il/api/3/action/datastore_search?resource_id=${AMUTOT_RES}&filters=${encodeURIComponent(JSON.stringify({ 'מספר עמותה': Number(n) }))}&limit=1`);
   const rec = j?.result?.records?.[0]; if (!rec) return null;
   const pick = re => { const k = Object.keys(rec).find(k => re.test(k)); return k ? String(rec[k] ?? '') : ''; };
   return { number: n, name: pick(/שם.*עברית|שם עמותה/), status: pick(/סטטוס/), goals: pick(/מטרות/).slice(0, 500), city: pick(/ישוב|עיר/), proper: pick(/ניהול תקין/), raw: rec };
