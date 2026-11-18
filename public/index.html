@@ -25,7 +25,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 h1,h2,h3{font-weight:800;letter-spacing:-.025em}
 .wrap{width:min(1160px,100% - 40px);margin-inline:auto}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 26px;border-radius:16px;font-weight:700;font-size:16px;color:#fff;background:var(--ink);transition:.25s cubic-bezier(.22,1,.36,1);white-space:nowrap;position:relative;overflow:hidden;box-shadow:0 12px 30px -12px rgba(14,15,20,.5)}
-.btn::before{content:"";position:absolute;inset:0;background:var(--grad);opacity:0;transition:.3s}.btn>*{position:relative}
+.btn{isolation:isolate}.btn::before{content:"";position:absolute;inset:0;background:var(--grad);opacity:0;transition:.3s;z-index:-1}.btn>*{position:relative}
 .btn:hover{transform:translateY(-2px)}.btn:hover::before{opacity:1}
 .btn .ar{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:13px}
 html[data-theme=dark] .btn{background:#fff;color:#0e0f14}html[data-theme=dark] .btn:hover{color:#fff}
@@ -42,13 +42,13 @@ nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 7
 nav .wrap{display:flex;align-items:center;justify-content:space-between;height:70px;gap:10px}
 .logo{font-weight:900;font-size:26px;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
 .logo img{width:38px;height:38px}
-.logo small{font-weight:500;font-size:11px;color:var(--mut);margin-top:8px;letter-spacing:0}
+.logo .wm{font-weight:900;letter-spacing:-.06em;background:var(--gtxt);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:28px}
 nav .links{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px;font-weight:600;color:var(--mut);font-size:14px}
 nav .links a{padding:7px 14px;border-radius:999px;transition:.2s}nav .links a:hover{background:var(--soft);color:var(--ink)}
 nav .acts{display:flex;gap:8px;align-items:center}
 nav .btn{min-height:42px;padding:0 18px;font-size:14px;border-radius:12px}
 .ib{width:40px;height:40px;border-radius:12px;border:1px solid var(--line2);background:var(--card);display:grid;place-items:center;color:var(--ink);cursor:pointer}
-@media(max-width:860px){nav .links,nav .btn.o,.logo small{display:none}}
+@media(max-width:860px){nav .links,nav .btn.o{display:none}}
 /* hero */
 .hero{padding:clamp(56px,8vw,100px) 0 40px;text-align:center}
 .hero h1{font-size:clamp(44px,7.2vw,92px);line-height:1;letter-spacing:-.04em;margin-top:24px;font-weight:900}
@@ -95,7 +95,7 @@ nav .btn{min-height:42px;padding:0 18px;font-size:14px;border-radius:12px}
 /* features (bento) */
 .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
 .fc{border:1px solid var(--line);border-radius:26px;padding:26px;background:var(--card);backdrop-filter:blur(14px);transition:.3s cubic-bezier(.22,1,.36,1);box-shadow:var(--sh);position:relative;overflow:hidden}
-.fc::after{content:"";position:absolute;inset:auto -30% -40% auto;width:60%;aspect-ratio:1;border-radius:50%;background:var(--grad);opacity:0;filter:blur(40px);transition:.4s}
+.fc{isolation:isolate}.fc::after{content:"";position:absolute;inset:auto -30% -40% auto;width:60%;aspect-ratio:1;border-radius:50%;background:var(--grad);opacity:0;filter:blur(40px);transition:.4s;z-index:-1}
 .fc:hover{transform:translateY(-4px)}.fc:hover::after{opacity:.35}
 .fc>*{position:relative}
 .fc .ic{width:50px;height:50px;border-radius:16px;background:var(--soft);display:grid;place-items:center;font-size:24px;margin-bottom:16px}
@@ -148,11 +148,11 @@ footer .links{display:flex;gap:18px}
 </head>
 <body>
 <div class="aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
-<nav><div class="wrap"><a class="logo" href="/"><img src="/logo.svg" alt="TTM">TTM<small>צדקה תציל ממות</small></a><div class="links"><a href="#features">יכולות</a><a href="#how">איך זה עובד</a><a href="#pricing">מחיר</a><a href="#faq">שאלות</a></div><div class="acts"><button class="ib" id="theme" title="מצב כהה">☾</button><a class="btn o" href="/app">כניסה</a><a class="btn" href="/app#reg"><span class="ar">←</span>פתיחת קמפיין</a></div></div></nav>
+<nav><div class="wrap"><a class="logo" href="/"><img src="/logo.svg" alt="TTM"><span class="wm">TTM</span></a><div class="links"><a href="#features">יכולות</a><a href="#how">איך זה עובד</a><a href="#pricing">מחיר</a><a href="#faq">שאלות</a></div><div class="acts"><button class="ib" id="theme" title="מצב כהה">☾</button><a class="btn o" href="/app">כניסה</a><a class="btn" href="/app#reg"><span class="ar">←</span>פתיחת קמפיין</a></div></div></nav>
 
 <header class="hero"><div class="wrap">
-  <span class="lbl">צדקה תציל ממות · פלטפורמת גיוס לעמותות</span>
-  <h1>כל שקל שלכם<br><span>שווה שלושה</span></h1>
+  <span class="lbl">פלטפורמת גיוס ומאצ׳ינג לעמותות</span>
+  <h1>הקמפיין הבא שלכם<br><span>מגייס יותר.</span></h1>
   <p>דף קמפיין חי עם מכפיל, שגרירים עם קישור אישי, הסליקה שלכם בלי עמלת פלטפורמה, מסך אירוע ומדריך חכם. מהרעיון ליעד, תוך חצי שעה.</p>
   <div class="cta"><a class="btn" href="/app#reg"><span class="ar">←</span>פותחים קמפיין</a><a class="btn o" href="/c/demo">צפו בקמפיין לדוגמה ↗</a></div>
   <div class="tr"><span>0% עמלה מהתרומות</span><span>מצב בדיקה לפני העלייה לאוויר</span><span>אימות מול רשם העמותות</span><span>4 שפות</span></div>
@@ -219,7 +219,7 @@ footer .links{display:flex;gap:18px}
 
 <section style="padding-top:0"><div class="wrap"><div class="cta2" data-r><h2>מחר הקמפיין שלכם כבר באוויר</h2><p>פותחים חשבון, מאמתים עמותה, ובונים. המדריך החכם איתכם בכל צעד.</p><a class="btn w" href="/app#reg" style="margin-top:22px">פתיחת קמפיין חינם ←</a></div></div></section>
 
-<footer><div class="wrap"><div><b>TTM</b> · Tzedaka Tatzil Mimavet · צדקה תציל ממות · © <span id="y"></span></div><div class="links"><a href="/app">כניסה</a><a href="#faq">שאלות</a><a href="mailto:hello@ttm.co.il">צור קשר</a></div></div></footer>
+<footer><div class="wrap"><div style="display:flex;align-items:center;gap:12px"><img src="/logo.svg" alt="" style="width:34px"><div><b style="font-size:16px;color:var(--ink)">TTM</b><div style="font-size:12px;letter-spacing:.08em">TZEDAKA TATZIL MIMAVET · © <span id="y"></span></div></div></div><div class="links"><a href="/app">כניסה</a><a href="#faq">שאלות</a><a href="mailto:hello@ttm.co.il">צור קשר</a></div></div></footer>
 <script>try{if(localStorage.getItem('gx_theme')==='dark')document.documentElement.dataset.theme='dark'}catch{}document.getElementById('theme').onclick=()=>{const d=document.documentElement.dataset.theme==='dark'?'':'dark';document.documentElement.dataset.theme=d;try{localStorage.setItem('gx_theme',d)}catch{}};document.getElementById('y').textContent=new Date().getFullYear();const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});document.querySelectorAll('[data-r]').forEach(el=>io.observe(el));</script>
 </body>
 </html>

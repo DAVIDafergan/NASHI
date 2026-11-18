@@ -27,7 +27,7 @@ input,select,textarea{font-size:16px}
 .wrap{width:min(1180px,100% - 32px);margin-inline:auto}
 h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 24px;border-radius:16px;font-weight:700;font-size:16px;color:#fff;background:var(--ink);transition:.25s cubic-bezier(.22,1,.36,1);white-space:nowrap;position:relative;overflow:hidden;box-shadow:0 10px 30px -12px rgba(14,15,20,.5)}
-.btn::before{content:"";position:absolute;inset:0;background:var(--grad);opacity:0;transition:.3s}
+.btn{isolation:isolate}.btn::before{content:"";position:absolute;inset:0;background:var(--grad);opacity:0;transition:.3s;z-index:-1}
 .btn:hover{transform:translateY(-2px)}.btn:hover::before{opacity:1}
 .btn>*{position:relative}
 .btn .ar{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:13px}
@@ -145,7 +145,7 @@ html[data-theme=dark] .dn .tg{background:var(--soft);color:#c4b5ff}
 /* levels */
 .lv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
 .lv button{text-align:start;border:1px solid var(--line);border-radius:20px;padding:18px;background:var(--cardS);transition:.25s;display:grid;gap:4px;position:relative;overflow:hidden}
-.lv button::before{content:"";position:absolute;inset:0;background:var(--grad);opacity:0;transition:.3s}
+.lv button{isolation:isolate}.lv button::before{content:"";position:absolute;inset:0;background:var(--grad);opacity:0;transition:.3s;z-index:-1}
 .lv button>*{position:relative}
 .lv button:hover{transform:translateY(-3px);box-shadow:0 20px 40px -20px rgba(60,50,120,.4);color:#fff}
 .lv button:hover::before{opacity:1}
@@ -298,7 +298,7 @@ footer a{color:var(--v);font-weight:700}
   <div id="jDone" hidden class="thx"><div class="ok">🙌</div><h3 data-i="joinDone">הדף שלכם מוכן!</h3><p data-i="joinDoneP">זה הקישור האישי שלכם. שתפו אותו עם חברים ומשפחה:</p><div class="sum" style="direction:ltr;word-break:break-all;font-size:14px"><span id="jLink"></span></div><a class="btn wa" id="jWa" target="_blank" rel="noopener" data-i="shareWa">שתפו בוואטסאפ</a><button class="btn o" id="jCopy" data-i="copyLink">העתקת קישור</button><a class="btn o" id="jOpen" data-i="joinOpen">לדף האישי שלי</a></div>
 </div></div>
 <div class="toast" id="toast"></div>
-<footer><img src="/logo.svg" alt="" style="width:28px;margin:0 auto 8px"><span data-i="poweredBy">קמפיין זה פועל על</span> <a href="/">TTM</a> · <a href="/" data-i="createOwn">הקימו קמפיין משלכם</a></footer>
+<footer><img src="/logo.svg" alt="" style="width:30px;margin:0 auto 8px"><div style="font-size:11px;letter-spacing:.1em;margin-bottom:6px">TZEDAKA TATZIL MIMAVET</div><span data-i="poweredBy">קמפיין זה פועל על</span> <a href="/">TTM</a> · <a href="/" data-i="createOwn">הקימו קמפיין משלכם</a></footer>
 
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
