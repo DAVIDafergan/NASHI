@@ -31,7 +31,7 @@ label>b{color:var(--ink);font-weight:500}
 .b:disabled{opacity:.5;pointer-events:none}
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
 .card h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.grid{display:grid;gap:14px}.gw{grid-template-columns:1.2fr .8fr}.gm{grid-template-columns:1fr 1.2fr}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.grid{display:grid;gap:14px}.grid>*{min-width:0}.card{min-width:0}.gw{grid-template-columns:1.2fr .8fr}.gm{grid-template-columns:1fr 1.2fr}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
 .row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.row>*{flex:1;min-width:140px}.row>.x{flex:0;min-width:0}
 .tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:#f1f5f9;color:var(--mut)}
 .tag.live{background:#e3fbe8;color:#0f7f4b}.tag.test{background:#fef3c7;color:#b45309}.tag.draft{background:#f1f5f9;color:#64748b}.tag.ended{background:#fee2e2;color:#b91c1c}.tag.paid{background:#dcfce7;color:#15803d}.tag.pending{background:#fef3c7;color:#b45309}.tag.failed{background:#fee2e2;color:#b91c1c}.tag.ok{background:#dcfce7;color:#15803d}
@@ -202,6 +202,7 @@ html[dir=rtl] .guide{transform:translateX(100%)}
 .typing{color:var(--mut);font-size:13px;padding:0 16px 8px}
 main input,main select,main textarea{min-width:0;max-width:100%}
 .dcards{display:none;gap:10px}
+.rl{display:grid;gap:6px;max-height:520px;overflow:auto}.ri{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px}.ri .av{width:34px;height:34px;border-radius:10px;background:var(--bg);display:grid;place-items:center;font-weight:700;flex:none}.ri .i{flex:1;min-width:0}.ri b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ri span{font-size:12px;color:var(--mut)}.ri.done{opacity:.55}.ri .b{flex:none}
 .dc{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:6px;box-shadow:var(--sh)}
 .dc-h{display:flex;justify-content:space-between;align-items:center;font-size:15px}.dc-h .amt{font-weight:900;font-size:17px}
 .dc-m{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -253,6 +254,8 @@ input[type=datetime-local],input[type=date],input[type=time]{width:100%;min-widt
   .qa .b,.chk a{font-size:13px}
   .vsteps{grid-template-columns:1fr}
   .copy span{font-size:12px}
+  .tabs{flex-wrap:wrap;gap:4px;border:0}.tabs a{border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;margin:0}.tabs a.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .guide:not(.on){visibility:hidden}
   .guide,html[dir=rtl] .guide{top:auto;bottom:0;inset-inline:0;width:100%;height:82dvh;border-radius:22px 22px 0 0;border:0;transform:translateY(110%);box-shadow:0 -20px 60px -20px rgba(15,23,42,.5)}
   .guide .hd{padding:12px 16px}.guide .hd::before{content:"";position:absolute;top:6px;left:50%;width:40px;height:4px;border-radius:99px;background:#d4d7e3;transform:translateX(-50%)}.guide{position:fixed}.guide .hd{position:relative;padding-top:16px}
   .guide .x{width:36px;height:36px;border-radius:10px;background:#f1f5f9;display:grid;place-items:center}
@@ -531,13 +534,13 @@ pages.c_messages=async()=>{setTop('הודעות',C.title);const chs=await api('/
     <div id="smsBox" hidden><div class="small muted" id="chNote"></div><button class="b p" id="mSendSms" style="margin-top:10px">שליחה לכל הנמענים</button><div class="hint" id="mRes"></div></div>
     <div id="waBox"><div class="hint">וואטסאפ נשלח מהטלפון שלכם: לוחצים "שלח" ליד כל נמען, ההודעה נפתחת מוכנה בוואטסאפ. הנשלחו מסומנים.</div><div class="row" style="margin-top:8px"><button class="b" id="mCopyAll">העתקת כל המספרים</button><button class="b" id="mReset">איפוס סימונים</button></div></div>
   </div></div>
-  <div><div class="card"><h3>נמענים <span class="muted small" id="mCount"></span></h3><div class="tblwrap"><table class="tbl" id="mTbl"></table></div></div>
+  <div><div class="card"><h3>נמענים <span class="muted small" id="mCount"></span></h3><div class="rl" id="mTbl"></div></div>
   <div class="card" style="margin-top:14px"><h3>היסטוריה</h3><div id="mHist" class="list"></div></div></div></div>`;
   let ch='whatsapp',list=[];
   const tpls=()=>{const t=TPL[$('#mAud').value]||[];$('#tplRow').innerHTML=t.map((x,i)=>`<button class="b s" data-i="${i}">${x[0]}</button>`).join('');$$('#tplRow button').forEach(b=>b.onclick=()=>{$('#mText').value=t[b.dataset.i][1];load()});if(!$('#mText').value&&t[0])$('#mText').value=t[0][1]};
   const key=()=>`${C.id}:${$('#mAud').value}`;
   const load=async()=>{list=await api(`/campaigns/${C.id}/recipients?audience=${$('#mAud').value}&text=${encodeURIComponent($('#mText').value)}`);$('#mCount').textContent=`(${list.length})`;$('#mPrev').textContent=list[0]?'תצוגה: '+list[0].text:'';const done=msgSent[key()]||{};
-    $('#mTbl').innerHTML='<tr><th>שם</th><th>טלפון</th><th>סכום</th><th></th></tr>'+(list.map(r=>`<tr class="${done[r.phone]?'muted':''}"><td><b>${esc(r.name)}</b></td><td dir="ltr">${esc(r.phone)}</td><td>${r.amount?'₪'+fmt(r.amount):''}</td><td class="right">${ch==='whatsapp'?`<a class="b s ${done[r.phone]?'':'g'}" target="_blank" href="https://wa.me/${r.phone.replace(/^0/,'972')}?text=${encodeURIComponent(r.text)}" data-ph="${r.phone}">${done[r.phone]?'✓ נשלח':'שלח'}</a>`:''}</td></tr>`).join('')||'<tr><td colspan="4"><div class="empty">אין נמענים</div></td></tr>');
+    $('#mTbl').innerHTML=list.map(r=>`<div class="ri ${done[r.phone]?'done':''}"><div class="av">${esc((r.name||'?')[0])}</div><div class="i"><b>${esc(r.name)}</b><span dir="ltr">${esc(r.phone)}${r.amount?' · ₪'+fmt(r.amount):''}</span></div>${ch==='whatsapp'?`<a class="b s ${done[r.phone]?'':'g'}" target="_blank" href="https://wa.me/${r.phone.replace(/^0/,'972')}?text=${encodeURIComponent(r.text)}" data-ph="${r.phone}">${done[r.phone]?'✓ נשלח':'שלח'}</a>`:''}</div>`).join('')||'<div class="empty">אין נמענים</div>';
     $$('#mTbl a[data-ph]').forEach(a=>a.addEventListener('click',()=>{msgSent[key()]=msgSent[key()]||{};msgSent[key()][a.dataset.ph]=1;try{localStorage.setItem('ttm_sent',JSON.stringify(msgSent))}catch{}a.textContent='✓ נשלח';a.classList.remove('g');api(`/campaigns/${C.id}/messages/log`,{method:'POST',body:{audience:$('#mAud').value,text:$('#mText').value,total:list.length,sent:Object.keys(msgSent[key()]).length}})}))};
   const hist=async()=>{const h=await api(`/campaigns/${C.id}/messages`);$('#mHist').innerHTML=h.map(m=>`<div class="bk"><div class="t" style="font-size:13px">${m.channel==='sms'?'📱':m.channel==='wa'?'🤖':'💬'}</div><div class="i"><b>${m.audience==='donors'?'תורמים':m.audience==='ambassadors'?'שגרירים':'לא הושלמו'} · ${m.sent}/${m.total}${m.failed?' · נכשלו '+m.failed:''}</b><span>${esc(m.text).slice(0,120)}</span><span>${dt(m.created)}</span></div></div>`).join('')||'<div class="muted small">עדיין לא נשלחו הודעות</div>'};
   $$('.tabs a[data-ch]').forEach(a=>a.onclick=e=>{e.preventDefault();$$('.tabs a[data-ch]').forEach(x=>x.classList.toggle('on',x===a));ch=a.dataset.ch;$('#smsBox').hidden=ch==='whatsapp';$('#waBox').hidden=ch!=='whatsapp';const on=ch==='sms'?chs.sms:chs.wa;$('#chNote').innerHTML=on?('השליחה מתבצעת דרך ספק ההודעות של TTM לכל הנמענים ברשימה.'):('<span class="tag pending">עדיין לא הופעל</span> הערוץ יופעל על ידי TTM. בינתיים אפשר לשלוח מהטלפון.');$('#mSendSms').disabled=!on;load()});
