@@ -319,6 +319,12 @@ async function sendSms(cfg, phone, text) {
   throw new Error('ספק SMS לא מוגדר');
 }
 const form = (o) => Object.entries(o).map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)).join('&');
+const getKV = k => J(db.prepare('SELECT v FROM kv WHERE k=?').get(k)?.v);
+const setKV = (k, v) => db.prepare('INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').run(k, JSON.stringify(v));
+const mask = o => ({ ...o, token: o.token ? '••••' : '', secret: o.secret ? '••••' : '' });
+app.get('/api/admin/msg', auth, adm, (_, res) => { const m = getKV('msg'); res.json({ sms: mask(m.sms || {}), wa: mask(m.wa || {}) }); });
+app.put('/api/admin/msg', auth, adm, (req, res) => { const cur = getKV('msg'); const b = req.body || {}; const merge = (o = {}, n = {}) => { const x = { ...o, ...n }; if (n.token === '••••') x.token = o.token; if (n.secret === '••••') x.secret = o.secret; return x; }; setKV('msg', { sms: merge(cur.sms, b.sms), wa: merge(cur.wa, b.wa) }); res.json({ ok: true }); });
+app.get('/api/msg-channels', auth, (_, res) => { const m = getKV('msg'); res.json({ sms: !!(m.sms && m.sms.type), wa: !!(m.wa && m.wa.type) }); });
 app.get('/api/me/sms', auth, (req, res) => { const u = db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id); const c = J(u.sms); res.json({ ...c, token: c.token ? '••••' : '' }); });
 app.put('/api/me/sms', auth, (req, res) => { const b = req.body || {}; const cur = J(db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id).sms); const next = { type: b.type || '', sid: b.sid || '', token: b.token && b.token !== '••••' ? b.token : cur.token || '', from: b.from || '', url: b.url || '', method: b.method || 'GET', intl: !!b.intl }; db.prepare('UPDATE users SET sms=? WHERE id=?').run(JSON.stringify(next), req.user.id); res.json({ ok: true }); });
 app.get('/api/campaigns/:id/recipients', auth, own, (req, res) => res.json(recipients(req.c, req.query.audience).map(r => ({ ...r, text: fill(req.query.text || '', r, req.c, base(req)) }))));
@@ -326,15 +332,15 @@ app.get('/api/campaigns/:id/messages', auth, own, (req, res) => res.json(db.prep
 app.post('/api/campaigns/:id/messages', auth, own, async (req, res) => {
   const b = req.body || {}; const text = String(b.text || '').trim().slice(0, 600); if (!text) return bad(res, 'טקסט');
   const list = recipients(req.c, b.audience); if (!list.length) return bad(res, 'אין נמענים');
-  const cfg = J(db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id).sms); if (!cfg.type) return bad(res, 'הגדירו ספק SMS בחשבון');
-  if (list.length > 2000) return bad(res, 'עד 2000 נמענים בשליחה אחת');
-  const m = db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total) VALUES(?,?,?,?,?,?)').run(req.c.id, req.user.id, 'sms', b.audience || 'donors', text, list.length);
+  const ch = b.channel === 'wa' ? 'wa' : 'sms'; const cfg = (getKV('msg')[ch]) || {}; if (!cfg.type) return bad(res, ch === 'wa' ? 'שליחת וואטסאפ אוטומטית עדיין לא הופעלה במערכת' : 'שליחת SMS עדיין לא הופעלה במערכת');
+  if (list.length > 5000) return bad(res, 'עד 5000 נמענים בשליחה אחת');
+  const m = db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total) VALUES(?,?,?,?,?,?)').run(req.c.id, req.user.id, ch, b.audience || 'donors', text, list.length);
   let sent = 0, failed = 0, firstErr = '';
   for (const r of list) { try { await sendSms(cfg, r.phone, fill(text, r, req.c, base(req))); sent++; } catch (e) { failed++; if (!firstErr) firstErr = e.message; } }
   db.prepare('UPDATE messages SET sent=?,failed=? WHERE id=?').run(sent, failed, m.lastInsertRowid);
   res.json({ ok: true, sent, failed, error: firstErr });
 });
-app.post('/api/campaigns/:id/messages/log', auth, own, (req, res) => { const b = req.body || {}; db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total,sent) VALUES(?,?,?,?,?,?,?)').run(req.c.id, req.user.id, 'whatsapp', b.audience || 'donors', String(b.text || '').slice(0, 600), +b.total || 0, +b.sent || 0); res.json({ ok: true }); });
+app.post('/api/campaigns/:id/messages/log', auth, own, (req, res) => { const b = req.body || {}; db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total,sent) VALUES(?,?,?,?,?,?,?)').run(req.c.id, req.user.id, 'manual', b.audience || 'donors', String(b.text || '').slice(0, 600), +b.total || 0, +b.sent || 0); res.json({ ok: true }); });
 
 // ---------- AI guide ----------
 function ctxFor(uid, cid) {
@@ -377,7 +383,7 @@ app.get(['/c/:slug', '/c/:slug/:team'], (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).sendFile(pub('404.html'));
   let html = fs.readFileSync(pub('c.html'), 'utf8');
   const esc = s => String(s || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  const img = c.cover ? (c.cover.startsWith('http') ? c.cover : base(req) + c.cover) : '';
+  const sh = J(c.settings).share || c.cover; const img = sh ? (sh.startsWith('http') ? sh : base(req) + sh) : base(req) + '/icon.svg';
   html = html.replace('<!--META-->', `<title>${esc(c.title)}</title><meta name="description" content="${esc(c.subtitle)}"><meta property="og:title" content="${esc(c.title)}"><meta property="og:description" content="${esc(c.subtitle)}"><meta property="og:image" content="${esc(img)}"><meta property="og:type" content="website"><meta name="theme-color" content="${esc(c.color)}">`).replace('<html lang="he" dir="rtl">', `<html lang="${c.lang}" dir="${c.lang === 'en' ? 'ltr' : 'rtl'}">`);
   res.setHeader('Cache-Control', 'no-cache'); res.send(html);
 });
