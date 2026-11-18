@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TTM widget</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:400 14px/1.5 Rubik,system-ui,sans-serif;color:#1c1917;background:transparent;padding:4px}
+.w{background:#fff;border:1px solid #e9e6e2;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(28,25,23,.06);display:grid;grid-template-columns:110px 1fr}
+.im{background:#1c1917 center/cover no-repeat;min-height:120px}
+.b{padding:14px 16px;min-width:0}
+h3{font-size:16px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.big{font-size:24px;font-weight:800;margin-top:4px}.big small{font-size:13px;font-weight:400;color:#6b6762}
+.bar{height:8px;background:#f5f4f1;border-radius:99px;overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;background:linear-gradient(120deg,#7c5cff,#22d3ee 55%,#a3ff6f);border-radius:99px;transition:width 1s}
+.m{display:flex;justify-content:space-between;font-size:12px;color:#6b6762}
+a.btn{display:flex;justify-content:center;align-items:center;margin-top:10px;height:40px;border-radius:999px;background:#7c5cff;color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+.ttm{text-align:center;font-size:10px;color:#6b6762;margin-top:6px;letter-spacing:.06em}
+@media(max-width:360px){.w{grid-template-columns:1fr}.im{min-height:90px}}
+</style>
+</head>
+<body>
+<div class="w"><div class="im" id="im"></div><div class="b"><h3 id="t"></h3><div class="big"><span id="r"></span> <small id="g"></small></div><div class="bar"><i id="bar"></i></div><div class="m"><span id="n"></span><span id="p"></span></div><a class="btn" id="go" target="_top">תרומה</a><div class="ttm">POWERED BY TTM</div></div></div>
+<script>
+const slug=location.pathname.split('/')[2];const f=n=>Math.round(+n||0).toLocaleString('he-IL');
+async function load(){const d=await fetch('/api/c/'+slug).then(r=>r.json());const c=d.campaign,s=d.stats;const cur=c.currency==='USD'?'$':'₪';
+  document.getElementById('t').textContent=c.title;document.getElementById('r').textContent=cur+f(s.total);document.getElementById('g').textContent='מתוך '+cur+f(s.goal);
+  document.getElementById('bar').style.width=Math.min(100,s.pct)+'%';document.getElementById('n').textContent=f(s.count)+' תורמים';document.getElementById('p').textContent=Math.round(s.pct)+'%';
+  const cov=c.cover||((c.settings.media||{}).default||{}).desktop?.[0];if(cov)document.getElementById('im').style.backgroundImage=`url("${cov}")`;
+  document.getElementById('go').href=location.origin+'/c/'+slug+'?donate=1';}
+load();setInterval(load,30000);
+</script>
+</body>
+</html>

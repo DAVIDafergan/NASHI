@@ -9,6 +9,14 @@ const providers = require('./lib/providers');
 
 const app = express();
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin'); res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (process.env.RAILWAY_ENVIRONMENT) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  if (!/^\/c\/[^/]+\/(widget|screen)/.test(req.path) && !req.path.startsWith('/pay/')) res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
+const mail = require('./lib/mail');
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -52,7 +60,18 @@ function markPaid(id, { ref = '', meta = {}, amount } = {}) {
   const nd = db.prepare('SELECT * FROM donations WHERE id=?').get(id);
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id);
   emit(c.id, 'donation', { donation: publicDonation(nd), stats: stats(c, nd.test), teams: teamStats(c, nd.test) });
+  thankMail(c, nd).catch(() => { });
   return nd;
+}
+async function thankMail(c, d) {
+  if (!mail.enabled() || !d.email || d.test) return;
+  const s = J(c.settings); const url = `${process.env.BASE_URL || ''}/c/${c.slug}`; const cur = c.currency === 'USD' ? '$' : '₪';
+  const owner = db.prepare('SELECT email, org_name, org FROM users WHERE id=?').get(c.user_id) || {};
+  const body = `<p style="font-size:16px">${mail.esc(d.name.split(' ')[0])}, ${mail.esc(s.thanks || 'תודה רבה! התרומה שלך התקבלה.')}</p>
+  <div style="background:#f5f4f1;border-radius:12px;padding:14px 18px;margin:16px 0"><div style="color:#6b6762;font-size:13px">סכום התרומה</div><div style="font-size:26px;font-weight:700">${cur}${d.amount.toLocaleString('he-IL')}${d.monthly ? ' / חודש' : ''}</div>${d.ref ? `<div style="color:#6b6762;font-size:12px;margin-top:4px">אסמכתה: ${mail.esc(d.ref)}</div>` : ''}${d.dedication ? `<div style="margin-top:8px">“${mail.esc(d.dedication)}”</div>` : ''}</div>
+  <p>הקבלה תישלח על ידי <b>${mail.esc(owner.org_name || owner.org || 'העמותה')}</b> דרך מערכת הסליקה. לשאלות על התרומה פנו לעמותה.</p>
+  <p style="margin-top:20px"><a href="${url}" style="background:#1c1917;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block;font-weight:600">שתפו את הקמפיין ועזרו לנו להגיע ליעד</a></p>`;
+  await mail.send({ to: d.email, subject: `תודה על התרומה לקמפיין "${c.title}"`, html: mail.layout('תודה רבה! 💜', body), replyTo: owner.email });
 }
 function teamStats(c, test) {
   return db.prepare("SELECT t.id,t.slug,t.name,t.goal,t.photo,t.descr, COUNT(d.id) n, COALESCE(SUM(d.amount),0) s FROM teams t LEFT JOIN donations d ON d.team_id=t.id AND d.status='paid' AND d.test=? WHERE t.campaign_id=? GROUP BY t.id ORDER BY s DESC, t.pos, t.id").all(test ? 1 : 0, c.id).map(t => ({ ...t, total: Math.round(t.s) }));
@@ -126,6 +145,22 @@ app.post('/api/verify-org', auth, async (req, res) => {
   }
 });
 app.post('/api/logout', (_, res) => { res.clearCookie('sid'); res.json({ ok: true }); });
+app.post('/api/forgot', limit(5, 600000), async (req, res) => {
+  const u = db.prepare('SELECT id,email,name FROM users WHERE email=?').get(String(req.body?.email || '').toLowerCase());
+  if (u && mail.enabled()) {
+    const token = crypto.randomBytes(24).toString('hex'); db.prepare('INSERT INTO resets(token,user_id,exp) VALUES(?,?,?)').run(token, u.id, Date.now() + 3600e3);
+    const url = `${base(req)}/app#reset=${token}`;
+    await mail.send({ to: u.email, subject: 'איפוס סיסמה ל-TTM', html: mail.layout('איפוס סיסמה', `<p>שלום ${mail.esc(u.name || '')}, לחצו על הקישור כדי לבחור סיסמה חדשה (תקף לשעה):</p><p><a href="${url}" style="background:#1c1917;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block;font-weight:600">בחירת סיסמה חדשה</a></p><p style="color:#6b6762;font-size:13px">אם לא ביקשתם איפוס – התעלמו מהמייל.</p>`) }).catch(() => { });
+  }
+  res.json({ ok: true, mail: mail.enabled() });
+});
+app.post('/api/reset', limit(10, 600000), (req, res) => {
+  const r = db.prepare('SELECT * FROM resets WHERE token=?').get(String(req.body?.token || '')); if (!r || r.exp < Date.now()) return bad(res, 'הקישור פג תוקף. בקשו איפוס חדש.');
+  if (String(req.body?.password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים');
+  db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(req.body.password), r.user_id); db.prepare('DELETE FROM resets WHERE user_id=?').run(r.user_id);
+  res.cookie('sid', sign({ uid: r.user_id, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); res.json({ ok: true });
+});
+app.post('/api/me/password', auth, (req, res) => { const u = db.prepare('SELECT pass FROM users WHERE id=?').get(req.user.id); if (!checkPw(String(req.body?.current || ''), u.pass)) return bad(res, 'הסיסמה הנוכחית שגויה'); if (String(req.body?.password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים'); db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(req.body.password), req.user.id); res.json({ ok: true }); });
 app.get('/api/me', (req, res) => { const u = user(req); if (!u) return res.json({ user: null }); const x = db.prepare('SELECT org_number,org_name,org_verified,org_status FROM users WHERE id=?').get(u.id); res.json({ user: { ...u, ...x } }); });
 app.put('/api/me', auth, (req, res) => { const b = req.body || {}; db.prepare('UPDATE users SET name=?,phone=?,org=? WHERE id=?').run(String(b.name || '').slice(0, 60), String(b.phone || '').slice(0, 20), String(b.org || '').slice(0, 80), req.user.id); if (b.password && b.password.length >= 6) db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(b.password), req.user.id); res.json({ ok: true }); });
 
@@ -186,6 +221,9 @@ app.post('/api/campaigns/:id/teams', auth, own, (req, res) => { const b = req.bo
 app.put('/api/campaigns/:id/teams/:tid', auth, own, (req, res) => { const b = req.body || {}; db.prepare('UPDATE teams SET name=?,goal=?,phone=?,photo=?,descr=?,pos=? WHERE id=? AND campaign_id=?').run(String(b.name || '').slice(0, 80), +b.goal || 0, String(b.phone || '').slice(0, 20), String(b.photo || '').slice(0, 300), String(b.descr || '').slice(0, 300), +b.pos || 0, req.params.tid, req.c.id); res.json({ ok: true }); });
 app.delete('/api/campaigns/:id/teams/:tid', auth, own, (req, res) => { db.prepare('DELETE FROM teams WHERE id=? AND campaign_id=?').run(req.params.tid, req.c.id); db.prepare('UPDATE donations SET team_id=NULL WHERE team_id=?').run(req.params.tid); res.json({ ok: true }); });
 // donations (owner)
+app.get('/api/campaigns/:id/updates', auth, own, (req, res) => res.json(db.prepare('SELECT * FROM updates WHERE campaign_id=? ORDER BY id DESC').all(req.c.id)));
+app.post('/api/campaigns/:id/updates', auth, own, (req, res) => { const b = req.body || {}; if (!String(b.title || b.body || '').trim()) return bad(res, 'נא להזין תוכן'); const r = db.prepare('INSERT INTO updates(campaign_id,title,body,image) VALUES(?,?,?,?)').run(req.c.id, String(b.title || '').slice(0, 120), String(b.body || '').slice(0, 4000), String(b.image || '').slice(0, 300)); emit(req.c.id, 'update', { id: r.lastInsertRowid }); res.json({ ok: true, id: r.lastInsertRowid }); });
+app.delete('/api/campaigns/:id/updates/:uid', auth, own, (req, res) => { db.prepare('DELETE FROM updates WHERE id=? AND campaign_id=?').run(req.params.uid, req.c.id); res.json({ ok: true }); });
 app.get('/api/campaigns/:id/donations', auth, own, (req, res) => {
   const { q, status, test } = req.query; let sql = 'SELECT d.*, t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.campaign_id=?'; const p = [req.c.id];
   if (status) { sql += ' AND d.status=?'; p.push(status); }
@@ -226,6 +264,8 @@ app.get('/api/admin/overview', auth, adm, (req, res) => res.json({
   today: db.prepare("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE status='paid' AND test=0 AND date(paid_at)=date('now')").get(),
   daily: db.prepare("SELECT date(paid_at) d, COUNT(*) n, SUM(amount) s FROM donations WHERE status='paid' AND test=0 AND paid_at>=date('now','-30 day') GROUP BY d ORDER BY d").all()
 }));
+app.post('/api/admin/users/:id/reset', auth, adm, (req, res) => { const pw = 'Ttm' + crypto.randomBytes(3).toString('hex') + '!'; db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(pw), req.params.id); res.json({ ok: true, password: pw }); });
+app.get('/api/admin/mail', auth, adm, (_, res) => res.json({ enabled: mail.enabled(), from: process.env.MAIL_FROM || '' }));
 app.patch('/api/admin/users/:id', auth, adm, (req, res) => { const b = req.body || {}; db.prepare("UPDATE users SET role=COALESCE(?,role), org_verified=COALESCE(?,org_verified), org_status=CASE WHEN ? IS NULL THEN org_status ELSE 'אומת ידנית' END, org_name=COALESCE(?,org_name) WHERE id=?").run(b.role || null, b.org_verified ?? null, b.org_verified ?? null, b.org_name || null, req.params.id); res.json({ ok: true }); });
 app.delete('/api/admin/users/:id', auth, adm, (req, res) => { if (+req.params.id === req.user.id) return bad(res, 'self'); db.prepare('DELETE FROM users WHERE id=?').run(req.params.id); res.json({ ok: true }); });
 app.post('/api/admin/campaigns/:id/status', auth, adm, (req, res) => { db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(['draft', 'test', 'live', 'ended'].includes(req.body?.status) ? req.body.status : 'draft', req.params.id); res.json({ ok: true }); });
@@ -237,7 +277,7 @@ app.get('/api/c/:slug', (req, res) => {
   const test = isTest(c); const s = J(c.settings);
   const t = req.query.team ? db.prepare('SELECT id,slug,name,goal,photo,descr FROM teams WHERE campaign_id=? AND slug=?').get(c.id, req.query.team) : null;
   res.json({
-    campaign: { payMethods: payMethods(c), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test' },
+    campaign: { payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test' },
     levels: db.prepare('SELECT id,name,amount,descr,stock,icon,monthly,(SELECT COUNT(*) FROM donations WHERE level_id=levels.id AND status=\'paid\' AND test=?) used FROM levels WHERE campaign_id=? ORDER BY pos,id').all(test ? 1 : 0, c.id),
     teams: teamStats(c, test), team: t, matchers: db.prepare('SELECT name,logo FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id),
     stats: stats(c, test),
@@ -456,6 +496,7 @@ app.post('/api/assist', auth, async (req, res) => {
 const pub = f => path.join(__dirname, 'public', f);
 app.use(express.static(pub(''), { maxAge: '1h', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.get('/c/:slug/screen', (_, res) => res.sendFile(pub('screen.html')));
+app.get('/c/:slug/widget', (_, res) => res.sendFile(pub('widget.html')));
 app.get(['/c/:slug', '/c/:slug/:team'], (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).sendFile(pub('404.html'));
   let html = fs.readFileSync(pub('c.html'), 'utf8');
