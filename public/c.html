@@ -342,7 +342,7 @@ $$('[data-r]').forEach(el=>io.observe(el));
 
 async function load(){
   const r=await fetch(`/api/c/${slug}${teamSlug?'?team='+encodeURIComponent(teamSlug):''}`);if(!r.ok){document.body.innerHTML='<div class="empty" style="padding:80px">הקמפיין לא נמצא</div>';return}
-  D=await r.json();const c=D.campaign;cur=SYM[c.currency]||'₪';
+  D=await r.json();const c=D.campaign;cur=SYM[c.currency]||'₪';if(c.settings&&c.settings.demo)$('#testbar').dataset.demo='1';
   const langs=(c.settings&&c.settings.langs&&c.settings.langs.length?c.settings.langs:[c.lang||'he']);$('#langs').innerHTML=langs.length>1?langs.map(l=>`<button data-l="${l}">${l.toUpperCase()}</button>`).join(''):'';$$('#langs button').forEach(b=>b.onclick=()=>{setLang(b.dataset.l);rerender()});
   let want=new URLSearchParams(location.search).get('lang');try{want=want||localStorage.getItem('gx_lang')}catch{}setLang(langs.includes(want)?want:(c.lang||'he'));
   document.documentElement.style.setProperty('--c',c.color);document.documentElement.style.setProperty('--c2',shade(c.color,-18));
