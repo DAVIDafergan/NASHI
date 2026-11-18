@@ -107,8 +107,8 @@ app.get('/api/me', (req, res) => { const u = user(req); if (!u) return res.json(
 app.put('/api/me', auth, (req, res) => { const b = req.body || {}; db.prepare('UPDATE users SET name=?,phone=?,org=? WHERE id=?').run(String(b.name || '').slice(0, 60), String(b.phone || '').slice(0, 20), String(b.org || '').slice(0, 80), req.user.id); if (b.password && b.password.length >= 6) db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(b.password), req.user.id); res.json({ ok: true }); });
 
 // ---------- uploads ----------
-const upload = multer({ storage: multer.diskStorage({ destination: path.join(DATA_DIR, 'uploads'), filename: (_, f, cb) => cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + path.extname(f.originalname).toLowerCase()) }), limits: { fileSize: 10e6 }, fileFilter: (_, f, cb) => cb(null, /image\/(jpeg|png|webp|gif|svg\+xml)/.test(f.mimetype)) });
-app.post('/api/upload', auth, upload.single('file'), (req, res) => req.file ? res.json({ url: '/u/' + req.file.filename }) : bad(res, 'no file'));
+const upload = multer({ storage: multer.diskStorage({ destination: path.join(DATA_DIR, 'uploads'), filename: (_, f, cb) => cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + path.extname(f.originalname).toLowerCase()) }), limits: { fileSize: 80e6 }, fileFilter: (_, f, cb) => cb(null, /image\/(jpeg|png|webp|gif|svg\+xml)|video\/(mp4|webm|quicktime)/.test(f.mimetype)) });
+app.post('/api/upload', auth, upload.single('file'), (req, res) => req.file ? res.json({ url: '/u/' + req.file.filename, type: req.file.mimetype }) : bad(res, 'no file'));
 app.use('/u', express.static(path.join(DATA_DIR, 'uploads'), { maxAge: '30d', immutable: true }));
 
 // ---------- campaigns (owner) ----------
