@@ -221,9 +221,27 @@ footer a{color:var(--v);font-weight:700}
 .toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-size:14px;z-index:60;opacity:0;transition:.3s;pointer-events:none;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);max-width:92vw}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .toast b{color:var(--g)}
+
+.loader{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-content:center;justify-items:center;gap:14px;transition:opacity .5s,visibility .5s}
+.loader.off{opacity:0;visibility:hidden}
+.loader .ring{animation:ldraw 1.1s cubic-bezier(.22,1,.36,1) forwards}.loader .heart{animation:ldraw 1s .35s cubic-bezier(.22,1,.36,1) forwards}
+html[data-theme=dark] .loader .heart{stroke:#fff}
+@keyframes ldraw{to{stroke-dashoffset:0}}
+.loader .lt{font-weight:900;letter-spacing:-.05em;font-size:22px;opacity:0;animation:lfade .6s .7s forwards}
+@keyframes lfade{to{opacity:1}}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:99}
+.hero .big{display:inline-block;transition:transform .3s}
+.hero .big.bump{animation:bump .6s cubic-bezier(.22,1,.36,1)}
+@keyframes bump{30%{transform:scale(1.06)}}
+.heartf{position:fixed;z-index:98;pointer-events:none;font-size:28px;animation:hf 1.6s ease-out forwards}
+@keyframes hf{to{transform:translateY(-140px) scale(1.6);opacity:0}}
+.dn.new{animation:in .8s cubic-bezier(.22,1,.36,1),glow 2.4s ease-out}
+@keyframes glow{0%{box-shadow:0 0 0 0 rgba(124,92,255,.5)}100%{box-shadow:0 0 0 18px rgba(124,92,255,0)}}
 </style>
 </head>
 <body>
+<div class="loader" id="loader"><svg viewBox="0 0 120 120" width="88" height="88"><circle class="ring" cx="60" cy="60" r="46" fill="none" stroke="url(#lg)" stroke-width="10" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/><path class="heart" d="M60 92 C42 78 24 66 24 48 a17 17 0 0 1 36-8 a17 17 0 0 1 36 8 c0 18-18 30-36 44z" fill="none" stroke="#0e0f14" stroke-width="5" stroke-linejoin="round" stroke-dasharray="260" stroke-dashoffset="260"/><defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset=".55" stop-color="#22d3ee"/><stop offset="1" stop-color="#a3ff6f"/></linearGradient></defs></svg><div class="lt">TTM</div></div>
+<canvas id="confetti"></canvas>
 <div class="aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
 <div class="testbar" id="testbar" hidden></div>
 <header><div class="wrap">
@@ -356,14 +374,15 @@ async function load(){
   const url=location.origin+location.pathname;$('#shWa').href=$('#shWaTop').href=`https://wa.me/?text=${encodeURIComponent(c.title+'\n'+url)}`;if(s.s46)$('#s46').hidden=false;
   $('#shCopy').onclick=e=>{e.preventDefault();navigator.clipboard?.writeText(url);toast(T('copied'))};
   try{const u=JSON.parse(localStorage.getItem('gx_u')||'null');if(u){$('#fName').value=u.name||'';$('#fPhone').value=u.phone||'';$('#fEmail').value=u.email||''}}catch{}
-  renderStats(D.stats);renderDonors(D.donations,true);renderTeams(D.teams);timer();setInterval(timer,1000);stream();
+  renderStats(D.stats);renderDonors(D.donations,true);renderTeams(D.teams);timer();setInterval(timer,1000);stream();setTimeout(()=>$('#loader').classList.add('off'),900);
   const th=new URLSearchParams(location.search).get('thanks');if(th)showThanks(th);
   if(new URLSearchParams(location.search).get('cancel'))toast(T('cancelled'));
 }
 function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;[r,g,b]=[r,g,b].map(v=>Math.max(0,Math.min(255,v)));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0')}
 function eq(){const c=D.campaign;$('#eq').innerHTML=sel>0&&c.multiplier>1?T('eqTxt',{a:cur+fmt(sel),b:cur+fmt(sel*c.multiplier)}):''}
 function rerender(){if(!D)return;renderStats(D.stats);renderTeams(D.teams);eq();timer();$('#lbl').innerHTML=D.campaign.multiplier>1?T('multLbl',{m:D.campaign.multiplier}):(D.campaign.status==='ended'?T('ended'):T('active'));$('#provName').textContent={test:T('testProv'),nedarim:'Nedarim Plus',meshulam:'Meshulam',paypal:'PayPal',link:'SSL'}[D.campaign.providerType]||'';reloadDonors()}
-function renderStats(s){const c=D.campaign;$('#raised').textContent=fmt(s.total);$('#goal').textContent=cur+fmt(s.goal);$('#pct').textContent=Math.min(s.pct,999)+'%';$('#count').textContent=s.count;
+let shown=0;function countUp(el,to){const from=shown;shown=to;if(from===to){el.textContent=fmt(to);return}const t0=performance.now(),d=Math.min(1400,400+Math.abs(to-from)/50);const step=n=>{const k=Math.min(1,(n-t0)/d);const e=1-Math.pow(1-k,3);el.textContent=fmt(from+(to-from)*e);if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
+function renderStats(s){const c=D.campaign;countUp($('#raised'),s.total);$('#goal').textContent=cur+fmt(s.goal);$('#pct').textContent=Math.min(s.pct,999)+'%';$('#count').textContent=s.count;
   const goalAll=s.bonus_goal>s.goal?s.bonus_goal:s.goal;requestAnimationFrame(()=>$('#bar').style.width=Math.min(100,s.total/goalAll*100)+'%');
   if(s.bonus_goal>s.goal){$('#bonusMark').hidden=false;$('#bonusMark').style.insetInlineStart=(s.goal/goalAll*100)+'%';$('#bonusTxt').hidden=false;$('#bonusTxt').innerHTML=s.total>=s.goal?T('bonusHit',{b:cur+fmt(s.bonus_goal)}):T('bonus',{b:cur+fmt(s.bonus_goal)})}
   if(c.multiplier>1){$('#multWrap').hidden=false;$('#mult').textContent=c.multiplier;$('#multIc').textContent=c.multiplier}
@@ -385,7 +404,7 @@ $$('input[name=how]').forEach(r=>r.onchange=()=>{$('#instSel').hidden=r.value!==
 $$('.tabs button').forEach(b=>b.onclick=()=>{$$('.tabs button').forEach(x=>x.classList.toggle('on',x===b));dTab=b.dataset.tab;reloadDonors()});
 $('#dq').oninput=e=>{dQ=e.target.value.trim();clearTimeout(reloadDonors.t);reloadDonors.t=setTimeout(reloadDonors,250)};
 async function reloadDonors(){offset=60;const l=await fetch(`/api/c/${slug}/donations?sort=${dTab}&q=${encodeURIComponent(dQ)}${D.team?'&team='+D.team.id:''}`).then(r=>r.json());renderDonors(l,true)}
-function stream(){const es=new EventSource(`/api/c/${slug}/stream`);es.addEventListener('donation',e=>{const {donation,stats,teams}=JSON.parse(e.data);renderStats(stats);renderTeams(teams);if(!D.team||donation.team_id===D.team.id){const el=$('#donorsList');if(el.querySelector('.empty'))el.innerHTML='';el.insertAdjacentHTML('afterbegin',donorRow(donation))}const nm=donation.anonymous||!donation.name?T('anonDonor'):donation.name;toast(T('newDon',{n:esc(nm),a:cur+fmt(donation.amount)}))});es.addEventListener('refresh',e=>{const {stats,teams}=JSON.parse(e.data);renderStats(stats);renderTeams(teams)})}
+function stream(){const es=new EventSource(`/api/c/${slug}/stream`);es.addEventListener('donation',e=>{const {donation,stats,teams}=JSON.parse(e.data);renderStats(stats);renderTeams(teams);const big=$('.hero .big');big.classList.remove('bump');void big.offsetWidth;big.classList.add('bump');hearts(5);if(!D.team||donation.team_id===D.team.id){const el=$('#donorsList');if(el.querySelector('.empty'))el.innerHTML='';el.insertAdjacentHTML('afterbegin',donorRow(donation));el.firstElementChild.classList.add('new')}const nm=donation.anonymous||!donation.name?T('anonDonor'):donation.name;toast(T('newDon',{n:esc(nm),a:cur+fmt(donation.amount)}))});es.addEventListener('refresh',e=>{const {stats,teams}=JSON.parse(e.data);renderStats(stats);renderTeams(teams)})}
 
 // ---- donate flow ----
 function openDonate(){if(!D)return;if(!(sel>0)){document.getElementById('donate').scrollIntoView({behavior:'smooth',block:'center'});toast(T('pickAmount'));return}
@@ -410,8 +429,10 @@ function startPay(j){$('#stepForm').hidden=true;$('#stepPay').hidden=false;const
   if(j.mode==='paypal'){A.innerHTML='<div id="paypal-btn"></div><div class="secure">תשלום דרך PayPal</div>';const s=document.createElement('script');s.src=`https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(j.clientId)}&currency=${j.currency}&locale=he_IL`;s.onload=()=>paypal.Buttons({createOrder:(_,a)=>a.order.create({purchase_units:[{amount:{value:String(j.amount),currency_code:j.currency},custom_id:String(j.donationId)}]}),onApprove:async(data)=>{const r=await fetch('/pay/paypal/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:j.token,orderId:data.orderID})});if(r.ok)showThanks(j.token);else $('#payArea').insertAdjacentHTML('beforeend',`<div class="err">${T('failed')}</div>`)}}).render('#paypal-btn');document.head.appendChild(s);return}
   A.innerHTML=`<div class="empty">${T('unsupported')}</div>`}
 async function pollThanks(token){for(let i=0;i<10;i++){const d=await fetch('/api/d/'+token).then(r=>r.json());if(d.status==='paid')return showThanks(token);await new Promise(r=>setTimeout(r,1200))}showThanks(token)}
+function hearts(n){for(let i=0;i<n;i++){const h=document.createElement('div');h.className='heartf';h.textContent=['💜','💙','💚','🤍'][i%4];h.style.left=(40+Math.random()*20)+'vw';h.style.top=(55+Math.random()*20)+'vh';h.style.animationDelay=(i*.12)+'s';document.body.appendChild(h);setTimeout(()=>h.remove(),2000)}}
+function confetti(){const cv=$('#confetti'),x=cv.getContext('2d');cv.width=innerWidth;cv.height=innerHeight;const P=Array.from({length:160},()=>({x:innerWidth/2,y:innerHeight*.4,vx:(Math.random()-.5)*16,vy:-Math.random()*14-4,r:4+Math.random()*6,c:['#7c5cff','#22d3ee','#a3ff6f','#ff5c8a','#ffd166'][Math.random()*5|0],a:Math.random()*6,s:Math.random()*.3-.15}));let t=0;const go=()=>{x.clearRect(0,0,cv.width,cv.height);P.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.a+=p.s;x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.c;x.fillRect(-p.r/2,-p.r/2,p.r,p.r*.6);x.restore()});if(++t<140)requestAnimationFrame(go);else x.clearRect(0,0,cv.width,cv.height)};go()}
 async function showThanks(token){const d=await fetch('/api/d/'+token).then(r=>r.ok?r.json():null);if(!d)return;$('#mod').classList.add('on');document.body.style.overflow='hidden';$('#stepForm').hidden=true;$('#stepPay').hidden=true;$('#stepThx').hidden=false;
-  const pending=d.status!=='paid';$('#thxH').textContent=pending?T('received'):T('thanksName',{n:d.name.split(' ')[0]});$('#thxP').textContent=pending?T('pendingTxt'):(d.thanks||'')+(d.test?T('testTag'):'');
+  const pending=d.status!=='paid';if(!pending){confetti();hearts(8)}$('#thxH').textContent=pending?T('received'):T('thanksName',{n:d.name.split(' ')[0]});$('#thxP').textContent=pending?T('pendingTxt'):(d.thanks||'')+(d.test?T('testTag'):'');
   const url=location.origin+location.pathname;$('#thxWa').href=`https://wa.me/?text=${encodeURIComponent(T('donated',{t:d.title})+' '+url)}`}
 load();
 </script>

@@ -294,6 +294,48 @@ app.post('/pay/iframe-done/:token', (req, res) => { // Nedarim Plus iframe repor
   const d = db.prepare('SELECT status FROM donations WHERE token=?').get(req.params.token); res.json({ status: d?.status || 'unknown' });
 });
 
+// ---------- messaging (SMS / WhatsApp lists) ----------
+const recipients = (c, audience) => {
+  const test = isTest(c) ? 1 : 0; const seen = new Set(); const out = [];
+  const push = r => { const ph = String(r.phone || '').replace(/\D/g, ''); if (ph.length < 9 || seen.has(ph)) return; seen.add(ph); out.push({ name: r.name, phone: ph, amount: r.amount || 0, link: r.link || '' }); };
+  if (audience === 'ambassadors') db.prepare('SELECT name,phone,slug FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id).forEach(t => push({ ...t, link: '/c/' + c.slug + '/' + t.slug }));
+  else if (audience === 'pending') db.prepare("SELECT name,phone,amount FROM donations WHERE campaign_id=? AND status='pending' AND test=? ORDER BY id DESC").all(c.id, test).forEach(push);
+  else db.prepare("SELECT name,phone,amount FROM donations WHERE campaign_id=? AND status='paid' AND test=? ORDER BY id DESC").all(c.id, test).forEach(push);
+  return out;
+};
+const fill = (tpl, r, c, baseUrl) => String(tpl).replace(/\{name\}/g, (r.name || '').split(' ')[0]).replace(/\{fullname\}/g, r.name || '').replace(/\{amount\}/g, r.amount ? String(r.amount) : '').replace(/\{link\}/g, baseUrl + (r.link || '/c/' + c.slug)).replace(/\{campaign\}/g, c.title).replace(/\{raised\}/g, String(stats(c, isTest(c)).total));
+async function sendSms(cfg, phone, text) {
+  const to = phone.startsWith('0') ? '+972' + phone.slice(1) : (phone.startsWith('+') ? phone : '+' + phone);
+  if (cfg.type === 'twilio') {
+    const body = form({ To: to, From: cfg.from, Body: text });
+    const r = await new Promise((resolve, reject) => { const q = https.request({ hostname: 'api.twilio.com', path: `/2010-04-01/Accounts/${cfg.sid}/Messages.json`, method: 'POST', headers: { Authorization: 'Basic ' + Buffer.from(cfg.sid + ':' + cfg.token).toString('base64'), 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) } }, res => { let d = ''; res.on('data', x => d += x); res.on('end', () => resolve({ s: res.statusCode, d })); }); q.on('error', reject); q.write(body); q.end(); });
+    if (r.s >= 300) throw new Error('Twilio ' + r.s); return true;
+  }
+  if (cfg.type === 'http') {
+    const url = String(cfg.url || '').replace('{phone}', encodeURIComponent(cfg.intl ? to : phone)).replace('{text}', encodeURIComponent(text));
+    const r = await new Promise((resolve, reject) => { const u = new URL(url); const q = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: cfg.method === 'POST' ? 'POST' : 'GET' }, res => { let d = ''; res.on('data', x => d += x); res.on('end', () => resolve({ s: res.statusCode, d })); }); q.on('error', reject); q.end(); });
+    if (r.s >= 300) throw new Error('HTTP ' + r.s); return true;
+  }
+  throw new Error('ספק SMS לא מוגדר');
+}
+const form = (o) => Object.entries(o).map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)).join('&');
+app.get('/api/me/sms', auth, (req, res) => { const u = db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id); const c = J(u.sms); res.json({ ...c, token: c.token ? '••••' : '' }); });
+app.put('/api/me/sms', auth, (req, res) => { const b = req.body || {}; const cur = J(db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id).sms); const next = { type: b.type || '', sid: b.sid || '', token: b.token && b.token !== '••••' ? b.token : cur.token || '', from: b.from || '', url: b.url || '', method: b.method || 'GET', intl: !!b.intl }; db.prepare('UPDATE users SET sms=? WHERE id=?').run(JSON.stringify(next), req.user.id); res.json({ ok: true }); });
+app.get('/api/campaigns/:id/recipients', auth, own, (req, res) => res.json(recipients(req.c, req.query.audience).map(r => ({ ...r, text: fill(req.query.text || '', r, req.c, base(req)) }))));
+app.get('/api/campaigns/:id/messages', auth, own, (req, res) => res.json(db.prepare('SELECT * FROM messages WHERE campaign_id=? ORDER BY id DESC LIMIT 50').all(req.c.id)));
+app.post('/api/campaigns/:id/messages', auth, own, async (req, res) => {
+  const b = req.body || {}; const text = String(b.text || '').trim().slice(0, 600); if (!text) return bad(res, 'טקסט');
+  const list = recipients(req.c, b.audience); if (!list.length) return bad(res, 'אין נמענים');
+  const cfg = J(db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id).sms); if (!cfg.type) return bad(res, 'הגדירו ספק SMS בחשבון');
+  if (list.length > 2000) return bad(res, 'עד 2000 נמענים בשליחה אחת');
+  const m = db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total) VALUES(?,?,?,?,?,?)').run(req.c.id, req.user.id, 'sms', b.audience || 'donors', text, list.length);
+  let sent = 0, failed = 0, firstErr = '';
+  for (const r of list) { try { await sendSms(cfg, r.phone, fill(text, r, req.c, base(req))); sent++; } catch (e) { failed++; if (!firstErr) firstErr = e.message; } }
+  db.prepare('UPDATE messages SET sent=?,failed=? WHERE id=?').run(sent, failed, m.lastInsertRowid);
+  res.json({ ok: true, sent, failed, error: firstErr });
+});
+app.post('/api/campaigns/:id/messages/log', auth, own, (req, res) => { const b = req.body || {}; db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total,sent) VALUES(?,?,?,?,?,?,?)').run(req.c.id, req.user.id, 'whatsapp', b.audience || 'donors', String(b.text || '').slice(0, 600), +b.total || 0, +b.sent || 0); res.json({ ok: true }); });
+
 // ---------- AI guide ----------
 function ctxFor(uid, cid) {
   const c = cid ? db.prepare('SELECT * FROM campaigns WHERE id=? AND user_id=?').get(cid, uid) : null; if (!c) return '';

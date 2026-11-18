@@ -82,6 +82,7 @@ main{min-width:0;padding:22px clamp(14px,3vw,36px) 100px}
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
 .tabs a{padding:10px 14px;font-weight:700;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-size:14px}
 .tabs a.on{color:var(--p);border-color:var(--p)}
+.tabs a[data-ch]{cursor:pointer}
 .ov{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:14px}
 .ov2{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-top:14px}
 @media(max-width:1100px){.ov{grid-template-columns:1fr 1fr}}@media(max-width:900px){.ov2{grid-template-columns:1fr}}@media(max-width:560px){.ov{grid-template-columns:1fr}}
@@ -219,6 +220,7 @@ html[dir=rtl] .guide{transform:translateX(100%)}
     <a data-p="c/donations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>תרומות</a>
     <a data-p="c/teams"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4.5-6.2"/></svg>שגרירים</a>
     <a data-p="c/payment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 11h20M6 15h4"/></svg>סליקה ועלייה לאוויר</a>
+    <a data-p="c/messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg>הודעות (SMS / וואטסאפ)</a>
     <a data-p="c/share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>שיתוף ומסך אירוע</a>
   </div>
   <div class="sec">חשבון</div>
@@ -287,7 +289,11 @@ pages.account=async()=>{setTop('העמותה והחשבון');const {user}=await
       <div id="orgRes" class="vres">${U.org_name?`<div class="vorg"><b>${esc(U.org_name)}</b><span>${esc(U.org_status||'')}</span></div>`:''}</div>
       <div class="vsteps"><div><b>1</b>מזינים מספר</div><div><b>2</b>בודקים ברשם</div><div><b>3</b>פותחים קמפיין</div></div>
     </div></div>
-  <div class="card"><h3>פרטי החשבון</h3><div class="grid"><label>שם<input id="aName" value="${esc(U.name||'')}"></label><label>שם העמותה (לתצוגה)<input id="aOrg" value="${esc(U.org||'')}"></label><label>טלפון<input id="aPhone" value="${esc(U.phone||'')}" dir="ltr"></label><label>סיסמה חדשה (לא חובה)<input id="aPass" type="password"></label><button class="b p" id="aSave">שמירה</button></div></div></div>`;
+  <div class="card" style="grid-column:1/-1"><h3>ספק SMS (לשליחת הודעות לתורמים ולשגרירים)</h3><div class="grid g2" style="align-items:end"><label>סוג<select id="smsType"><option value="">ללא</option><option value="twilio">Twilio</option><option value="http">HTTP API (019, InforU, SMS4Free וכו׳)</option></select></label>
+  <div id="smsTw" hidden class="grid g3"><label>Account SID<input id="smsSid" dir="ltr"></label><label>Auth Token<input id="smsTok" dir="ltr" type="password"></label><label>מספר שולח (From)<input id="smsFrom" dir="ltr" placeholder="+1…"></label></div>
+  <div id="smsHttp" hidden class="grid"><label>כתובת API עם {phone} ו-{text}<input id="smsUrl" dir="ltr" placeholder="https://.../send?user=..&pass=..&to={phone}&msg={text}"></label><div class="row"><label>שיטה<select id="smsMethod"><option>GET</option><option>POST</option></select></label><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="smsIntl">לשלוח מספר בפורמט בינלאומי (+972…)</label></div></div></div>
+  <button class="b p" id="smsSave" style="margin-top:12px">שמירת הגדרות SMS</button></div>
+<div class="card"><h3>פרטי החשבון</h3><div class="grid"><label>שם<input id="aName" value="${esc(U.name||'')}"></label><label>שם העמותה (לתצוגה)<input id="aOrg" value="${esc(U.org||'')}"></label><label>טלפון<input id="aPhone" value="${esc(U.phone||'')}" dir="ltr"></label><label>סיסמה חדשה (לא חובה)<input id="aPass" type="password"></label><button class="b p" id="aSave">שמירה</button></div></div></div>`;
   const go=async()=>{const n=$('#orgNum').value.replace(/\D/g,'');if(n.length!==9||n[0]!=='5'){$('#orgRes').innerHTML='<div class="err">מספר עמותה הוא 9 ספרות ומתחיל ב-5 (למשל 580123456)</div>';return}
     const b=$('#orgGo');b.disabled=true;b.textContent='בודקים…';$('#orgRes').innerHTML='<div class="muted small vwait">מתחברים לרשם העמותות…</div>';
     try{const r=await api('/verify-org',{method:'POST',body:{number:n}});
@@ -295,7 +301,10 @@ pages.account=async()=>{setTop('העמותה והחשבון');const {user}=await
       const {user}=await api('/me');U=user;$('#uOrg').textContent=U.org_name||U.org||'';if(r.verified)setTimeout(pages.account,2500)}
     catch(e){$('#orgRes').innerHTML=`<div class="err">${esc(e.message)}</div>`}finally{b.disabled=false;b.textContent='בדיקה ואימות'}};
   $('#orgGo').onclick=go;$('#orgNum').onkeydown=e=>{if(e.key==='Enter')go()};
-  $('#aSave').onclick=async()=>{await api('/me',{method:'PUT',body:{name:$('#aName').value,org:$('#aOrg').value,phone:$('#aPhone').value,password:$('#aPass').value}});toast('נשמר');boot()}};
+  $('#aSave').onclick=async()=>{await api('/me',{method:'PUT',body:{name:$('#aName').value,org:$('#aOrg').value,phone:$('#aPhone').value,password:$('#aPass').value}});toast('נשמר');boot()};
+  const sc=await api('/me/sms');$('#smsType').value=sc.type||'';$('#smsSid').value=sc.sid||'';$('#smsTok').value=sc.token||'';$('#smsFrom').value=sc.from||'';$('#smsUrl').value=sc.url||'';$('#smsMethod').value=sc.method||'GET';$('#smsIntl').checked=!!sc.intl;
+  const smsUi=()=>{$('#smsTw').hidden=$('#smsType').value!=='twilio';$('#smsHttp').hidden=$('#smsType').value!=='http'};$('#smsType').onchange=smsUi;smsUi();
+  $('#smsSave').onclick=async()=>{await api('/me/sms',{method:'PUT',body:{type:$('#smsType').value,sid:$('#smsSid').value,token:$('#smsTok').value,from:$('#smsFrom').value,url:$('#smsUrl').value,method:$('#smsMethod').value,intl:$('#smsIntl').checked}});toast('הגדרות SMS נשמרו')}};
 
 // ---- campaign: overview ----
 let chartData=[];
@@ -406,6 +415,38 @@ pages.c_payment=async()=>{C=await api('/campaigns/'+C.id);setTop('סליקה ו�
 async function saveProv(){const prov={type:$('#pType').value};$$('[data-pf]').forEach(i=>prov[i.dataset.pf]=i.value.trim());C=await api('/campaigns/'+C.id,{method:'PUT',body:{provider:prov}});toast('נשמר ✓');pages.c_payment()}
 async function setStatus(status){await api(`/campaigns/${C.id}/status`,{method:'POST',body:{status}});toast('עודכן');pages.c_payment()}
 async function goLive(){if(!confirm('לעלות לאוויר? תרומות הבדיקה יימחקו והסליקה האמיתית תופעל.'))return;try{await api(`/campaigns/${C.id}/status`,{method:'POST',body:{status:'live',clearTest:true}});toast('🚀 הקמפיין באוויר!');location.hash=`#/c/${C.id}/overview`}catch{}}
+
+// ---- campaign: messages ----
+const TPL={donors:[['תודה לתורמים','היי {name}, תודה מכל הלב על התרומה לקמפיין "{campaign}"! בזכותך כבר גייסנו ₪{raised}. שתפו: {link}'],['דחיפה אחרונה','{name}, נשארו שעות אחרונות לקמפיין "{campaign}" וכל תרומה מוכפלת. עזרו לנו להגיע ליעד: {link}'],['עדכון התקדמות','שלום {name}, עברנו ₪{raised} בקמפיין "{campaign}"! תודה שאתם שותפים. לשיתוף: {link}']],
+ ambassadors:[['קישור אישי','היי {name}, זה הקישור האישי שלך לקמפיין "{campaign}": {link} — כל תרומה דרכו נזקפת לזכותך. בהצלחה!'],['עידוד','{name}, אתם מדהימים! כבר גייסנו ₪{raised}. עוד דחיפה קטנה בוואטסאפ ובסטטוס: {link}'],['שעות אחרונות','{name}, נשארו שעות אחרונות! שתפו שוב את הקישור שלכם: {link}']],
+ pending:[['השלמת תרומה','היי {name}, ראינו שהתחלתם תרומה של ₪{amount} ל"{campaign}" ולא הושלמה. אפשר להשלים כאן: {link}']]};
+let msgSent={};try{msgSent=JSON.parse(localStorage.getItem('ttm_sent')||'{}')}catch{}
+pages.c_messages=async()=>{setTop('הודעות',C.title);const cfg=await api('/me/sms');
+  $('#content').innerHTML=`<div class="grid g2" style="grid-template-columns:1fr 1.2fr;align-items:start">
+  <div class="card"><h3>הודעה חדשה</h3><div class="grid">
+    <label>למי<select id="mAud"><option value="donors">תורמים (ששילמו)</option><option value="ambassadors">שגרירים</option><option value="pending">תרומות שלא הושלמו</option></select></label>
+    <div class="tabs" style="margin:0"><a href="#" class="on" data-ch="whatsapp">💬 וואטסאפ</a><a href="#" data-ch="sms">📱 SMS</a></div>
+    <div id="tplRow" class="qa"></div>
+    <label>טקסט ההודעה <span class="hint">משתנים: {name} {fullname} {amount} {link} {campaign} {raised}</span><textarea id="mText" rows="5"></textarea></label>
+    <div class="hint" id="mPrev"></div>
+    <div id="smsBox" hidden>${cfg.type?`<div class="small muted">ספק SMS: <b>${cfg.type==='twilio'?'Twilio':'HTTP API'}</b> · <a href="#/account" style="color:var(--p)">שינוי</a></div>`:`<div class="golive card" style="padding:12px"><b>אין ספק SMS מוגדר</b><div class="small muted">הגדירו Twilio או API של ספק ישראלי (019, InforU, SMS4Free…) בעמוד החשבון.</div><a class="b s" href="#/account" style="margin-top:8px">להגדרה</a></div>`}<button class="b p" id="mSendSms" ${cfg.type?'':'disabled'} style="margin-top:10px">שליחת SMS לכל הנמענים</button><div class="hint" id="mRes"></div></div>
+    <div id="waBox"><div class="hint">וואטסאפ נשלח מהטלפון שלכם: לוחצים "שלח" ליד כל נמען, ההודעה נפתחת מוכנה בוואטסאפ. הנשלחו מסומנים.</div><div class="row" style="margin-top:8px"><button class="b" id="mCopyAll">העתקת כל המספרים</button><button class="b" id="mReset">איפוס סימונים</button></div></div>
+  </div></div>
+  <div><div class="card"><h3>נמענים <span class="muted small" id="mCount"></span></h3><div class="tblwrap"><table class="tbl" id="mTbl"></table></div></div>
+  <div class="card" style="margin-top:14px"><h3>היסטוריה</h3><div id="mHist" class="list"></div></div></div></div>`;
+  let ch='whatsapp',list=[];
+  const tpls=()=>{const t=TPL[$('#mAud').value]||[];$('#tplRow').innerHTML=t.map((x,i)=>`<button class="b s" data-i="${i}">${x[0]}</button>`).join('');$$('#tplRow button').forEach(b=>b.onclick=()=>{$('#mText').value=t[b.dataset.i][1];load()});if(!$('#mText').value&&t[0])$('#mText').value=t[0][1]};
+  const key=()=>`${C.id}:${$('#mAud').value}`;
+  const load=async()=>{list=await api(`/campaigns/${C.id}/recipients?audience=${$('#mAud').value}&text=${encodeURIComponent($('#mText').value)}`);$('#mCount').textContent=`(${list.length})`;$('#mPrev').textContent=list[0]?'תצוגה: '+list[0].text:'';const done=msgSent[key()]||{};
+    $('#mTbl').innerHTML='<tr><th>שם</th><th>טלפון</th><th>סכום</th><th></th></tr>'+(list.map(r=>`<tr class="${done[r.phone]?'muted':''}"><td><b>${esc(r.name)}</b></td><td dir="ltr">${esc(r.phone)}</td><td>${r.amount?'₪'+fmt(r.amount):''}</td><td class="right">${ch==='whatsapp'?`<a class="b s ${done[r.phone]?'':'g'}" target="_blank" href="https://wa.me/${r.phone.replace(/^0/,'972')}?text=${encodeURIComponent(r.text)}" data-ph="${r.phone}">${done[r.phone]?'✓ נשלח':'שלח'}</a>`:''}</td></tr>`).join('')||'<tr><td colspan="4"><div class="empty">אין נמענים</div></td></tr>');
+    $$('#mTbl a[data-ph]').forEach(a=>a.addEventListener('click',()=>{msgSent[key()]=msgSent[key()]||{};msgSent[key()][a.dataset.ph]=1;try{localStorage.setItem('ttm_sent',JSON.stringify(msgSent))}catch{}a.textContent='✓ נשלח';a.classList.remove('g');api(`/campaigns/${C.id}/messages/log`,{method:'POST',body:{audience:$('#mAud').value,text:$('#mText').value,total:list.length,sent:Object.keys(msgSent[key()]).length}})}))};
+  const hist=async()=>{const h=await api(`/campaigns/${C.id}/messages`);$('#mHist').innerHTML=h.map(m=>`<div class="bk"><div class="t" style="font-size:13px">${m.channel==='sms'?'📱':'💬'}</div><div class="i"><b>${m.audience==='donors'?'תורמים':m.audience==='ambassadors'?'שגרירים':'לא הושלמו'} · ${m.sent}/${m.total}${m.failed?' · נכשלו '+m.failed:''}</b><span>${esc(m.text).slice(0,120)}</span><span>${dt(m.created)}</span></div></div>`).join('')||'<div class="muted small">עדיין לא נשלחו הודעות</div>'};
+  $$('.tabs a[data-ch]').forEach(a=>a.onclick=e=>{e.preventDefault();$$('.tabs a[data-ch]').forEach(x=>x.classList.toggle('on',x===a));ch=a.dataset.ch;$('#smsBox').hidden=ch!=='sms';$('#waBox').hidden=ch!=='whatsapp';load()});
+  $('#mAud').onchange=()=>{$('#mText').value='';tpls();load()};$('#mText').oninput=()=>{clearTimeout(load.t);load.t=setTimeout(load,300)};
+  $('#mCopyAll').onclick=()=>{navigator.clipboard.writeText(list.map(r=>r.phone).join('\n'));toast('הועתקו '+list.length+' מספרים')};
+  $('#mReset').onclick=()=>{delete msgSent[key()];try{localStorage.setItem('ttm_sent',JSON.stringify(msgSent))}catch{}load()};
+  $('#mSendSms').onclick=async()=>{if(!confirm(`לשלוח SMS ל-${list.length} נמענים?`))return;const b=$('#mSendSms');b.disabled=true;$('#mRes').textContent='שולחים…';try{const r=await api(`/campaigns/${C.id}/messages`,{method:'POST',body:{audience:$('#mAud').value,text:$('#mText').value}});$('#mRes').textContent=`נשלחו ${r.sent}, נכשלו ${r.failed}${r.error?' · '+r.error:''}`;hist()}catch(e){$('#mRes').textContent=e.message}finally{b.disabled=false}};
+  tpls();load();hist()};
 
 // ---- campaign: share ----
 pages.c_share=async()=>{setTop('שיתוף ומסך אירוע',C.title);const url=`${location.origin}/c/${C.slug}`;
