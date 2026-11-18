@@ -71,7 +71,8 @@ header .wrap{display:flex;align-items:center;justify-content:space-between;heigh
 .cover .fr::before{content:"";position:absolute;inset:-40%;background:var(--grad);opacity:.35;filter:blur(60px);mix-blend-mode:screen;pointer-events:none}
 .cover .fr .ov{position:absolute;inset:auto 0 0 0;padding:clamp(18px,4vw,40px);background:linear-gradient(transparent,rgba(10,10,18,.8));color:#fff}
 .cover h1{font-size:clamp(30px,4.8vw,58px);line-height:1.06;letter-spacing:-.03em}
-.cover p{font-size:clamp(15px,1.7vw,19px);opacity:.92;margin-top:10px;max-width:70ch}
+.cover p{font-size:clamp(15px,1.7vw,19px);opacity:.95;margin-top:10px;max-width:70ch;line-height:1.45}
+@media(max-width:640px){.cover .fr .ov{padding:16px 16px 20px}.cover h1{font-size:26px}.cover p{font-size:14px}}
 .cover .lbl{position:absolute;top:16px;inset-inline-start:16px;background:rgba(255,255,255,.14);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px}
 @media(max-width:640px){.cover .fr{height:min(100vw,520px)}}
 .cover .fr .bg{opacity:0;transition:opacity 1.2s ease}.cover .fr .bg.on{opacity:1}
@@ -269,7 +270,7 @@ html[data-theme=dark] .loader .heart{stroke:#fff}
 .mshare{display:flex;gap:6px}
 .mcta{flex-wrap:wrap}.mcta .cust.pc{flex:1 1 180px;display:flex;align-items:center;gap:8px;background:var(--cardS);border:1px solid var(--line2);border-radius:999px;padding:0 18px;min-height:54px}.mcta .cust.pc input{flex:1;min-width:0;border:0;outline:0;background:none;font-weight:800;font-size:18px;color:var(--ink);-moz-appearance:textfield}.mcta .cust.pc input::-webkit-outer-spin-button,.mcta .cust.pc input::-webkit-inner-spin-button{-webkit-appearance:none}.mcta .cust.pc:focus-within{border-color:var(--v);box-shadow:0 0 0 4px rgba(124,92,255,.14)}
 .mcta{max-width:640px;margin-inline:auto}.mcta .btn.grad{flex:1 1 200px;border-radius:999px;min-height:54px;font-size:18px;background:var(--grad);color:#0e0f14;box-shadow:0 16px 36px -12px rgba(124,92,255,.7)}.mcta .btn.grad::before{background:#0e0f14}.mcta .btn.grad:hover{color:#fff}.mcta .btn.grad .ar{background:rgba(0,0,0,.15)}
-.mshare{flex:1 1 100%;justify-content:center;flex-wrap:wrap;gap:8px}.mshare .ib{display:none}
+.mshare{flex:1 1 100%;justify-content:center;flex-wrap:wrap;gap:14px;margin-top:4px}.mshare .ib{display:none}.mshare .chip{background:none;border:0;padding:0;color:var(--mut);font-size:12.5px;font-weight:600;backdrop-filter:none}.mshare .chip:hover{color:var(--ink)}
 .pcard .amts{justify-content:center;margin-top:12px}.pcard .amt{min-width:92px}.pcard .secure{margin-top:10px}
 .card .hd{justify-content:space-between}
 .card .hd .cnt{color:var(--mut);font-weight:500;font-size:15px}
@@ -308,7 +309,7 @@ html[dir=rtl] .ncard{transform:translateX(-120%)}
 .ncard .av{width:40px;height:40px;border-radius:12px;background:var(--grad);color:#0e0f14;display:grid;place-items:center;font-weight:900}
 .ncard .i{min-width:0}.ncard small{display:block;font-size:11px;color:var(--mut)}.ncard b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ncard span{display:block;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ncard .a{font-weight:900;font-size:17px;letter-spacing:-.02em;background:var(--gtxt);-webkit-background-clip:text;background-clip:text;color:transparent}
-@media(max-width:640px){.pcard{padding:18px 16px;border-radius:20px;margin-top:-28px;position:relative;z-index:2}.pcard .big{font-size:40px}.pcard .pct{min-width:70px;padding:8px 10px}.pcard .pct b{font-size:18px}.card{padding:18px;border-radius:20px}.maincol{gap:12px}.layout{gap:12px}.mcta .btn.grad{flex-basis:100%}.pcard .amt{min-width:0;flex:1 1 30%}.amt.lvb{min-width:0;flex:1 1 46%}.ncard{top:auto;bottom:96px}}
+@media(max-width:640px){.pcard{padding:18px 16px;border-radius:20px;margin-top:12px}.pcard .big{font-size:40px}.pcard .pct{min-width:70px;padding:8px 10px}.pcard .pct b{font-size:18px}.card{padding:18px;border-radius:20px}.maincol{gap:12px}.layout{gap:12px}.mcta .btn.grad{flex-basis:100%}.pcard .amt{min-width:0;flex:1 1 30%}.amt.lvb{min-width:0;flex:1 1 46%}.ncard{top:auto;bottom:96px}}
 </style>
 </head>
 <body>
@@ -332,8 +333,9 @@ html[dir=rtl] .ncard{transform:translateX(-120%)}
     <div class="bar"><i id="bar"></i><span class="bonus" id="bonusMark" hidden></span></div>
     <div class="meta"><span><b id="count">0</b> <span data-i="donors">תורמים</span></span><span id="multWrap" hidden><span class="mult">✕<span id="mult"></span> <span data-i="multiplied">כל תרומה מוכפלת</span></span></span><span id="bonusTxt" hidden></span></div>
     <div class="timer" id="timer"></div>
-    <div class="mcta"><div class="cust pc"><span id="curSymP">₪</span><input type="number" id="custAmtP" data-ip="otherAmount" placeholder="הזינו סכום" inputmode="numeric" min="1"></div><button class="btn grad" id="pDonate"><span class="ar">←</span><span data-i="donateNow">תרמו עכשיו</span></button><div class="mshare"><a class="chip" id="shWa2" target="_blank" rel="noopener">💬 <span data-i="share">שיתוף</span></a><a class="chip" id="shCopy2" href="#">🔗 <span data-i="copyLink">העתקת קישור</span></a><a class="chip" id="teamsChip" href="#teams" hidden>👥 <span data-i="ambassadors">שגרירים</span></a><a class="ib" id="shWa" target="_blank" rel="noopener" title="WhatsApp">💬</a><a class="ib" id="shCopy" href="#" title="Copy">🔗</a><a class="ib" id="joinChip" href="#" hidden title="Join">🙋</a></div></div>
+    <div class="mcta"><div class="cust pc"><span id="curSymP">₪</span><input type="number" id="custAmtP" data-ip="otherAmount" placeholder="הזינו סכום" inputmode="numeric" min="1"></div><button class="btn grad" id="pDonate"><span class="ar">←</span><span data-i="donateNow">תרמו עכשיו</span></button></div>
     <div class="amts" id="amts"></div><div class="eq" id="eq"></div><div class="secure">🔒 <span data-i="secure">תשלום מאובטח</span> · <span id="provName"></span> <span id="s46" hidden>· סעיף 46</span></div>
+    <div class="mshare"><a class="chip" id="shWa2" target="_blank" rel="noopener">💬 <span data-i="share">שיתוף</span></a><a class="chip" id="shCopy2" href="#">🔗 <span data-i="copyLink">העתקת קישור</span></a><a class="chip" id="teamsChip" href="#teams" hidden>👥 <span data-i="ambassadors">שגרירים</span></a><a class="ib" id="shWa" target="_blank" rel="noopener" title="WhatsApp">💬</a><a class="ib" id="shCopy" href="#" title="Copy">🔗</a><a class="ib" id="joinChip" href="#" hidden title="Join">🙋</a></div>
   </section>
 <div class="layout">
 <div class="maincol">
