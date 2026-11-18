@@ -21,7 +21,7 @@ const verify = t => { if (!t) return null; const [p, s] = t.split('.'); if (!p |
 const hashPw = pw => { const salt = crypto.randomBytes(16).toString('hex'); return salt + ':' + crypto.scryptSync(pw, salt, 32).toString('hex'); };
 const checkPw = (pw, h) => { const [salt, k] = (h || '').split(':'); if (!salt) return false; return crypto.timingSafeEqual(Buffer.from(k, 'hex'), crypto.scryptSync(pw, salt, 32)); };
 const J = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
-const slugify = s => String(s || '').toLowerCase().replace(/[^a-z0-9֐-׿]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || crypto.randomBytes(3).toString('hex');
+const slugify = s => { const t = String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40); return t.length >= 2 ? t : 'p-' + crypto.randomBytes(2).toString('hex'); };
 const base = req => process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 const bad = (res, m, c = 400) => res.status(c).json({ error: m });
 
@@ -250,6 +250,16 @@ app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
     if (out.ref) db.prepare('UPDATE donations SET ref=? WHERE id=?').run(String(out.ref), donation.id);
     res.json({ ...out, donationId: donation.id, token, returnUrl: `${base(req)}/pay/return/${token}` });
   } catch (e) { db.prepare("UPDATE donations SET status='failed', meta=? WHERE id=?").run(JSON.stringify({ error: e.message }), donation.id); bad(res, 'שגיאה בחיבור לספק הסליקה: ' + e.message, 502); }
+});
+app.post('/api/c/:slug/join', limit(5, 600000), (req, res) => {
+  const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const s = J(c.settings); if (s.allowJoin === false || c.status === 'ended') return bad(res, 'ההצטרפות סגורה');
+  const b = req.body || {}; const name = String(b.name || '').trim().slice(0, 80); const phone = String(b.phone || '').replace(/[^\d+]/g, '').slice(0, 20);
+  if (name.length < 2) return bad(res, 'נא להזין שם'); if (phone.replace(/\D/g, '').length < 9) return bad(res, 'נא להזין טלפון תקין');
+  if (db.prepare('SELECT 1 FROM teams WHERE campaign_id=? AND phone=?').get(c.id, phone)) { const t = db.prepare('SELECT slug FROM teams WHERE campaign_id=? AND phone=?').get(c.id, phone); return res.json({ ok: true, slug: t.slug, existed: true }); }
+  let slug = slugify(b.slug || name); while (db.prepare('SELECT 1 FROM teams WHERE campaign_id=? AND slug=?').get(c.id, slug)) slug += crypto.randomBytes(1).toString('hex');
+  db.prepare('INSERT INTO teams(campaign_id,slug,name,goal,phone,descr,pos) VALUES(?,?,?,?,?,?,99)').run(c.id, slug, name, Math.max(0, +b.goal || 0), phone, String(b.descr || '').slice(0, 300));
+  emit(c.id, 'refresh', { stats: stats(c, isTest(c)), teams: teamStats(c, isTest(c)) });
+  res.json({ ok: true, slug });
 });
 app.get('/api/d/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slug, c.title, c.settings FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return bad(res, 'not found', 404); res.json({ id: d.id, status: d.status, amount: d.amount, currency: d.currency, name: d.name, slug: d.slug, title: d.title, thanks: J(d.settings).thanks, test: !!d.test, provider: d.provider }); });
 
