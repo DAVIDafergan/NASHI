@@ -426,6 +426,31 @@ async function reconcileNedarim(c) {
     return { ok: true, pulled: rows.length, verified, recovered };
   }
 }
+app.post('/api/campaigns/:id/provider/test', auth, own, limit(10, 60000), async (req, res) => {
+  const cfg = J(req.c.provider); const t = cfg.type || 'test';
+  try {
+    if (t === 'test') return res.json({ ok: true, msg: 'מצב בדיקה – אין ספק אמיתי' });
+    if (t === 'nedarim') {
+      if (!cfg.mosadId || !cfg.apiValid) return res.json({ ok: false, msg: 'חסר מספר מוסד או ApiValid' });
+      if (!cfg.apiPassword) return res.json({ ok: true, msg: 'מספר מוסד ו-ApiValid הוזנו. בלי ApiPassword אי אפשר לבדוק את החיבור מראש – מומלץ להוסיף.' });
+      const rows = await providers.nedarim.fetchHistory({ cfg, max: 3 });
+      return res.json({ ok: true, msg: `החיבור לנדרים עובד (מוסד ${cfg.mosadId}). נמצאו ${rows.length} עסקאות אחרונות בהיסטוריה.` });
+    }
+    if (t === 'meshulam') {
+      if (!cfg.pageCode || !cfg.userId) return res.json({ ok: false, msg: 'חסר Page code או User ID' });
+      try { await providers.meshulam.start({ base: base(req), donation: { id: 0, amount: 1, name: 'בדיקה', phone: '', email: '', installments: 1, token: 'test' }, campaign: req.c, cfg }); return res.json({ ok: true, msg: 'Grow יצר דף תשלום בהצלחה – המזהים נכונים.' }); } catch (e) { return res.json({ ok: false, msg: e.message }); }
+    }
+    if (t === 'paypal') {
+      if (!cfg.clientId || !cfg.secret) return res.json({ ok: false, msg: 'חסר Client ID או Secret' });
+      const host = String(cfg.sandbox) === 'true' ? 'api-m.sandbox.paypal.com' : 'api-m.paypal.com';
+      const https = require('https'); const auth = Buffer.from(cfg.clientId + ':' + cfg.secret).toString('base64');
+      const r = await new Promise((resolve, reject) => { const q = https.request({ hostname: host, path: '/v1/oauth2/token', method: 'POST', headers: { Authorization: 'Basic ' + auth, 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': 29 } }, rs => { let d = ''; rs.on('data', c => d += c); rs.on('end', () => resolve({ status: rs.statusCode, body: d })); }); q.on('error', reject); q.write('grant_type=client_credentials'); q.end(); });
+      return res.json({ ok: r.status === 200, msg: r.status === 200 ? 'PayPal אישר את המפתחות.' : 'PayPal דחה את המפתחות (' + r.status + ')' });
+    }
+    if (t === 'link') { const ok = /^https:\/\//.test(cfg.url || ''); return res.json({ ok, msg: ok ? 'הקישור תקין. זכרו: אישור התרומות ידני.' : 'הקישור חייב להתחיל ב-https://' }); }
+    res.json({ ok: false, msg: 'ספק לא מוכר' });
+  } catch (e) { res.json({ ok: false, msg: e.message }); }
+});
 app.post('/api/campaigns/:id/reconcile', auth, own, async (req, res) => { try { res.json(await reconcileNedarim(req.c)); } catch (e) { bad(res, e.message, 502); } });
 // every 10 minutes: reconcile live Nedarim campaigns that have unverified/pending donations in the last 2 days
 setInterval(async () => {
