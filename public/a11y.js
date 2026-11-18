@@ -3,10 +3,10 @@
   const K = 'ttm_a11y';
   let st = {}; try { st = JSON.parse(localStorage.getItem(K) || '{}'); } catch { }
   const css = `
-  .a11y-btn{position:fixed;bottom:120px;inset-inline-start:0;transform:none;z-index:9000;width:44px;height:44px;border-radius:0 14px 14px 0;background:#1c1917;color:#fff;display:grid;place-items:center;border:0;cursor:pointer;box-shadow:0 8px 24px -8px rgba(0,0,0,.5);font-size:22px}
+  .a11y-btn{position:fixed;bottom:24px;inset-inline-start:0;transform:none;z-index:9000;width:44px;height:44px;border-radius:0 14px 14px 0;background:#1c1917;color:#fff;display:grid;place-items:center;border:0;cursor:pointer;box-shadow:0 8px 24px -8px rgba(0,0,0,.5);font-size:22px}
   html[dir=rtl] .a11y-btn{border-radius:14px 0 0 14px}
   .a11y-btn:focus-visible{outline:3px solid #ffd600;outline-offset:2px}
-  .a11y-pnl{position:fixed;bottom:120px;inset-inline-start:52px;transform:none;z-index:9001;width:min(300px,calc(100vw - 70px));background:#fff;color:#1c1917;border:1px solid #e9e6e2;border-radius:16px;padding:14px;box-shadow:0 24px 60px -20px rgba(0,0,0,.4);font:14px/1.5 Rubik,system-ui,sans-serif;display:none}
+  .a11y-pnl{position:fixed;bottom:24px;inset-inline-start:52px;transform:none;z-index:9001;width:min(300px,calc(100vw - 70px));background:#fff;color:#1c1917;border:1px solid #e9e6e2;border-radius:16px;padding:14px;box-shadow:0 24px 60px -20px rgba(0,0,0,.4);font:14px/1.5 Rubik,system-ui,sans-serif;display:none}
   .a11y-pnl.on{display:block}.a11y-pnl h4{font-size:15px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
   .a11y-pnl button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border:1px solid #e9e6e2;border-radius:10px;background:#fff;color:inherit;font:inherit;cursor:pointer;margin-bottom:6px;text-align:start}
   .a11y-pnl button[aria-pressed=true]{background:#1c1917;color:#fff;border-color:#1c1917}

@@ -184,7 +184,7 @@ html[data-theme=dark] .dn .tg{background:var(--soft);color:#c4b5ff}
 .sticky.on{transform:none}
 .sticky .btn{flex:1;min-width:0;padding:0 14px}
 .sticky .s{font-size:12px;color:var(--mut);padding-inline-start:6px}.sticky .s b{display:block;color:var(--ink);font-weight:900;font-size:20px;letter-spacing:-.02em}
-@media(max-width:900px){.sticky{display:flex}body{padding-bottom:96px}}
+@media(max-width:900px){.sticky{display:flex}body{padding-bottom:96px}.a11y-btn{bottom:100px!important}.a11y-pnl{bottom:100px!important}}
 /* modal */
 .mod{position:fixed;inset:0;z-index:50;background:rgba(10,10,18,.5);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center}
 .mod.on{display:flex}
@@ -552,6 +552,6 @@ async function showThanks(token){const d=await fetch('/api/d/'+token).then(r=>r.
   const url=location.origin+location.pathname;$('#thxWa').href=`https://wa.me/?text=${encodeURIComponent(T('donated',{t:d.title})+' '+url)}`}
 load();
 </script>
-<script src="/a11y.js" defer></script>
+<script src="/a11y.js?v=3" defer></script>
 </body>
 </html>
