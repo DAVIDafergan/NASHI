@@ -246,7 +246,7 @@ app.post('/api/campaigns/:id/donations', auth, own, (req, res) => {
 app.patch('/api/campaigns/:id/donations/:did', auth, own, (req, res) => {
   const d = db.prepare('SELECT * FROM donations WHERE id=? AND campaign_id=?').get(req.params.did, req.c.id); if (!d) return bad(res, 'not found', 404);
   const b = req.body || {};
-  if (b.status === 'paid' && d.status !== 'paid') markPaid(d.id, { ref: b.ref || d.ref || 'manual' });
+  if (b.status === 'paid' && d.status !== 'paid') { markPaid(d.id, { ref: b.ref || d.ref || 'manual', meta: { ...J(d.meta), manualBy: req.user.email, manualAt: new Date().toISOString(), verified: 1 } }); db.prepare('UPDATE donations SET note=? WHERE id=?').run(`אושר ידנית על ידי ${req.user.email}`, d.id); }
   else db.prepare('UPDATE donations SET status=COALESCE(?,status), name=COALESCE(?,name), phone=COALESCE(?,phone), email=COALESCE(?,email), dedication=COALESCE(?,dedication), anonymous=COALESCE(?,anonymous), team_id=? , amount=COALESCE(?,amount) WHERE id=?').run(b.status || null, b.name ?? null, b.phone ?? null, b.email ?? null, b.dedication ?? null, b.anonymous === undefined ? null : (b.anonymous ? 1 : 0), b.team_id === undefined ? d.team_id : (+b.team_id || null), b.amount ? Math.round(+b.amount) : null, d.id);
   emit(req.c.id, 'refresh', { stats: stats(req.c, d.test), teams: teamStats(req.c, d.test) }); res.json({ ok: true });
 });
@@ -355,14 +355,18 @@ app.all('/pay/nedarim/callback', limit(120, 60000), async (req, res) => {
   if (!r.paid) { db.prepare("UPDATE donations SET status='failed' WHERE id=? AND status='pending'").run(d.id); return log('נדרים: העסקה נדחתה (' + String(b.Status || '') + ')'); }
   if (!r.ref) return log('⚠ התקבל אישור ללא מספר עסקה – לא נספר. בדקו בנדרים.');
   if (r.mosad && cfg.mosadId && r.mosad !== String(cfg.mosadId)) return log('⚠ מספר מוסד לא תואם – לא נספר.');
-  if (r.amount && Math.abs(r.amount - d.amount) > 1) return log(`⚠ סכום לא תואם (נדרים: ${r.amount}, בקשה: ${d.amount}) – לא נספר.`);
+  const perPay = d.installments > 1 ? d.amount / d.installments : d.amount; // Nedarim may report the per-installment amount
+  const amtOk = !r.amount || Math.abs(r.amount - d.amount) <= 1 || Math.abs(r.amount - perPay) <= 1;
+  if (!amtOk) return log(`⚠ סכום לא תואם (נדרים: ${r.amount}, בקשה: ${d.amount}) – לא נספר.`);
+  const isHK = !!d.monthly || String(b.PaymentType || '').toUpperCase() === 'HK' || (!!b.KevaId && !b.TransactionId);
   let verified = 0;
-  if (cfg.apiPassword) {
-    try { const v = await providers.nedarim.verify({ cfg, transactionId: r.ref }); if (v.checked && !v.found) return log('⚠ העסקה לא נמצאה בהיסטוריית נדרים – לא נספר. לחצו "סנכרון מול נדרים".'); if (v.found && Math.abs(v.amount - d.amount) > 1) return log(`⚠ סכום בנדרים (${v.amount}) שונה מהבקשה (${d.amount}) – לא נספר.`); verified = v.found ? 1 : 0; }
+  if (cfg.apiPassword && !isHK) {
+    try { const v = await providers.nedarim.verify({ cfg, transactionId: r.ref }); if (v.checked && !v.found) return log('⚠ העסקה לא נמצאה בהיסטוריית נדרים – לא נספר. לחצו "סנכרון מול נדרים".'); if (v.found && Math.abs(v.amount - d.amount) > 1 && Math.abs(v.amount - perPay) > 1) return log(`⚠ סכום בנדרים (${v.amount}) שונה מהבקשה (${d.amount}) – לא נספר.`); verified = v.found ? 1 : 0; }
     catch (e) { verified = 0; r.meta._verifyError = e.message; }
   }
-  markPaid(d.id, { ref: r.ref, meta: { ...r.meta, verified }, amount: Math.round(r.amount || d.amount) });
-  db.prepare('UPDATE donations SET verified=?, note=? WHERE id=?').run(verified, verified ? 'אומת מול שרת נדרים ✓' : (cfg.apiPassword ? 'שולם; אימות מול נדרים נכשל זמנית – יושלם בסנכרון' : 'שולם לפי הודעת נדרים (הוסיפו ApiPassword לאימות מלא)'), d.id);
+  markPaid(d.id, { ref: r.ref, meta: { ...r.meta, verified, hk: isHK }, amount: d.amount });
+  const note = isHK ? `הוראת קבע נרשמה בנדרים (מזהה ${r.ref}). החיובים החודשיים מתבצעים ומנוהלים בנדרים פלוס.` : verified ? 'אומת מול שרת נדרים ✓' : (cfg.apiPassword ? 'שולם; אימות מול נדרים נכשל זמנית – יושלם בסנכרון' : 'שולם לפי הודעת נדרים (הוסיפו ApiPassword לאימות מלא)');
+  db.prepare('UPDATE donations SET verified=?, note=? WHERE id=?').run(isHK ? 1 : verified, note, d.id);
 });
 // Reconcile: pull Nedarim history and match it against our donations (missed callbacks, unverified rows)
 async function reconcileNedarim(c) {
@@ -371,7 +375,7 @@ async function reconcileNedarim(c) {
     const rows = await providers.nedarim.fetchHistory({ cfg, max: 300 });
     const byRef = new Map(rows.map(x => [String(x.TransactionId), x]));
     let verified = 0, recovered = 0;
-    for (const d of db.prepare("SELECT * FROM donations WHERE campaign_id=? AND provider='nedarim' AND test=0 AND (status='pending' OR verified=0) AND created > datetime('now','-14 days')").all(c.id)) {
+    for (const d of db.prepare("SELECT * FROM donations WHERE campaign_id=? AND provider='nedarim' AND test=0 AND monthly=0 AND (status='pending' OR verified=0) AND created > datetime('now','-14 days')").all(c.id)) {
       let rec = d.ref && byRef.get(String(d.ref));
       if (!rec && d.status === 'pending') { // match a missed callback by phone+amount within 2h
         const ph = String(d.phone || '').replace(/\D/g, '').slice(-9); const t0 = new Date(d.created + 'Z').getTime();
@@ -394,10 +398,16 @@ setInterval(async () => {
 }, 10 * 60000).unref();
 app.all('/pay/meshulam/webhook', (req, res) => {
   const b = { ...req.query, ...req.body }; const r = providers.meshulam.callback(b);
-  const d = r.donationId ? db.prepare('SELECT * FROM donations WHERE id=?').get(r.donationId) : (r.token ? db.prepare('SELECT * FROM donations WHERE token=?').get(r.token) : null);
+  // must match BOTH our id and the secret token; amount must equal what the donor asked for; a transaction id is required
+  const d = r.donationId && r.token ? db.prepare('SELECT * FROM donations WHERE id=? AND token=?').get(r.donationId, String(r.token)) : null;
   if (!d) return res.status(404).send('no donation');
-  if (r.paid) markPaid(d.id, { ref: r.ref, meta: r.meta }); else db.prepare("UPDATE donations SET status='failed', meta=? WHERE id=?").run(JSON.stringify(r.meta).slice(0, 4000), d.id);
-  res.send('OK');
+  res.send('OK'); if (d.status === 'paid') return;
+  const log = (note) => db.prepare('UPDATE donations SET note=?, meta=? WHERE id=?').run(note, JSON.stringify({ ...r.meta, at: new Date().toISOString() }).slice(0, 4000), d.id);
+  if (!r.paid) { db.prepare("UPDATE donations SET status='failed' WHERE id=? AND status='pending'").run(d.id); return log('משולם: העסקה לא אושרה'); }
+  if (!r.ref) return log('⚠ אישור ללא מספר עסקה – לא נספר');
+  const amt = +(b.sum || b.data?.sum || b.amount || b.data?.amount || 0);
+  if (amt && Math.abs(amt - d.amount) > 1 && !(d.installments > 1 && Math.abs(amt * d.installments - d.amount) <= d.installments)) return log(`⚠ סכום לא תואם (משולם: ${amt}, בקשה: ${d.amount}) – לא נספר`);
+  markPaid(d.id, { ref: r.ref, meta: { ...r.meta, verified: 1 } });
 });
 app.post('/pay/paypal/capture', async (req, res) => {
   const { token, orderId } = req.body || {}; const d = db.prepare('SELECT * FROM donations WHERE token=?').get(token); if (!d) return bad(res, 'not found', 404);
