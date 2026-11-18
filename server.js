@@ -291,7 +291,7 @@ function ctxFor(uid, cid) {
   const lastHour = db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND paid_at>=datetime('now','-1 hour')").get(c.id).n;
   return `\nקמפיין נוכחי: "${c.title}" (${c.status}), יעד ${c.goal} ${c.currency}, מכפיל ${c.multiplier}, מסתיים ${c.end_at}. גויסו ${st.total} (${st.pct}%) מ-${st.count} תורמים. תרומות בשעה האחרונה: ${lastHour}. ספק סליקה: ${J(c.provider).type}. שגרירים: ${db.prepare('SELECT COUNT(*) n FROM teams WHERE campaign_id=?').get(c.id).n}. רמות: ${db.prepare('SELECT name,amount FROM levels WHERE campaign_id=?').all(c.id).map(l => l.name + ' ' + l.amount).join(', ')}. סיפור: ${(c.story || '').slice(0, 600)}. תרומות אחרונות: ${last.map(d => d.name + ' ' + d.amount).join(', ')}`;
 }
-const SYS = `אתה "המדריך" של Tatzil (תציל), פלטפורמת גיוס תרומות ישראלית לעמותות. אתה עוזר למנהלי קמפיינים: כתיבת סיפור קמפיין, כותרות, רמות תרומה, הודעות וואטסאפ לשגרירים ולתורמים, טיפים לקמפיין מאצ'ינג, הסבר על המערכת (אשף קמפיין, מצב בדיקה, חיבור סליקה: נדרים פלוס, משולם/Grow, PayPal, דף תשלום חיצוני; שגרירים עם קישור אישי; מסך אירוע חי; ייצוא CSV; רב-לשוניות). ענה בשפה של המשתמש, קצר, מעשי, עם דוגמאות מוכנות להעתקה. כשמבקשים טקסט, תן את הטקסט עצמו. אל תמציא נתונים שאינם בהקשר.`;
+const SYS = `אתה "המדריך" של TTM (ראשי תיבות: צדקה תציל ממות), פלטפורמת גיוס תרומות ישראלית לעמותות. אתה עוזר למנהלי קמפיינים: כתיבת סיפור קמפיין, כותרות, רמות תרומה, הודעות וואטסאפ לשגרירים ולתורמים, טיפים לקמפיין מאצ'ינג, הסבר על המערכת (אשף קמפיין, מצב בדיקה, חיבור סליקה: נדרים פלוס, משולם/Grow, PayPal, דף תשלום חיצוני; שגרירים עם קישור אישי; מסך אירוע חי; ייצוא CSV; רב-לשוניות). ענה בשפה של המשתמש, קצר, מעשי, עם דוגמאות מוכנות להעתקה. כשמבקשים טקסט, תן את הטקסט עצמו. אל תמציא נתונים שאינם בהקשר.`;
 async function llm(messages, context) {
   const sys = SYS + (context || '');
   if (process.env.ANTHROPIC_API_KEY) {
@@ -333,4 +333,4 @@ app.get(['/app', '/app/*'], (_, res) => res.sendFile(pub('app.html')));
 app.get('/', (_, res) => res.sendFile(pub('index.html')));
 app.get('/robots.txt', (_, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /pay/\nDisallow: /api/\n'));
 app.use((_, res) => res.status(404).sendFile(pub('404.html')));
-app.listen(process.env.PORT || 3000, () => console.log('tatzil up'));
+app.listen(process.env.PORT || 3000, () => console.log('ttm up'));

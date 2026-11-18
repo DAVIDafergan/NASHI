@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Tatzil · ניהול</title><meta name="robots" content="noindex">
+<title>TTM · ניהול</title><meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{--p:#ff6a1f;--p2:#e85a12;--ink:#1b1f2a;--mut:#6b7280;--line:#eceef3;--bg:#fffbf7;--ok:#1aa893;--warn:#d97706;--bad:#dc2626;--f:"Heebo",system-ui,sans-serif;--fh:"Rubik","Heebo",sans-serif;--r:22px;--sh:0 1px 2px rgba(27,31,42,.03),0 10px 30px -18px rgba(27,31,42,.18);--grad:linear-gradient(90deg,#ffb020,#ff6a1f 45%,#ff2d7a)}
@@ -182,8 +182,8 @@ html[dir=rtl] .guide{transform:translateX(100%)}
 </head>
 <body>
 <div class="auth" id="auth">
-  <div class="art"><div><div class="logo">Tatzil<small>צדקה תציל ממות</small></div><h1 style="margin-top:50px">קמפיין גיוס שעובד,<br>תוך חצי שעה.</h1><p>פלטפורמת מאצ'ינג לעמותות: דף קמפיין חי, שגרירים, סליקה שלכם, מסך אירוע ומדריך חכם שמלווה אתכם.</p>
-    <ul><li>הסליקה שלכם, בלי עמלת פלטפורמה</li><li>מצב בדיקה מלא לפני העלייה לאוויר</li><li>עברית, אנגלית, צרפתית, ספרדית</li><li>אימות עמותה מול רשם העמותות</li></ul></div><div class="small" style="opacity:.6">© Tatzil</div></div>
+  <div class="art"><div><div class="logo">TTM<small>Tzedaka Tatzil Mimavet · צדקה תציל ממות</small></div><h1 style="margin-top:50px">קמפיין גיוס שעובד,<br>תוך חצי שעה.</h1><p>פלטפורמת מאצ'ינג לעמותות: דף קמפיין חי, שגרירים, סליקה שלכם, מסך אירוע ומדריך חכם שמלווה אתכם.</p>
+    <ul><li>הסליקה שלכם, בלי עמלת פלטפורמה</li><li>מצב בדיקה מלא לפני העלייה לאוויר</li><li>עברית, אנגלית, צרפתית, ספרדית</li><li>אימות עמותה מול רשם העמותות</li></ul></div><div class="small" style="opacity:.6">© TTM</div></div>
   <div class="frm">
     <form id="loginF"><h2>כניסה לחשבון</h2><label>אימייל<input type="email" id="lEmail" autocomplete="email" dir="ltr" required></label><label>סיסמה<input type="password" id="lPass" autocomplete="current-password" required></label><div class="err" id="lErr"></div><button class="b p" type="submit">כניסה</button><div class="sw">אין לכם חשבון? <a href="#" onclick="swap('reg');return false">הרשמה חינם</a></div></form>
     <form id="regF" hidden><h2>פתיחת חשבון</h2><label>שם מלא<input id="rName" autocomplete="name" required></label><label>שם העמותה<input id="rOrg"></label><div class="row"><label>אימייל<input type="email" id="rEmail" autocomplete="email" dir="ltr" required></label><label>טלפון<input type="tel" id="rPhone" dir="ltr"></label></div><label>סיסמה (6+ תווים)<input type="password" id="rPass" autocomplete="new-password" required></label><div class="err" id="rErr"></div><button class="b p" type="submit">יצירת חשבון</button><div class="sw">כבר רשומים? <a href="#" onclick="swap('login');return false">כניסה</a></div></form>
@@ -192,7 +192,7 @@ html[dir=rtl] .guide{transform:translateX(100%)}
 
 <div class="shell" id="shell">
 <aside id="side">
-  <div class="logo">Tatzil <small>ניהול</small></div>
+  <div class="logo">TTM <small>ניהול</small></div>
   <a href="#/" data-p="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg>הקמפיינים שלי</a>
   <div id="campNav" hidden>
     <div class="sec">קמפיין</div><div class="camp" id="campName"></div>
@@ -216,7 +216,7 @@ html[dir=rtl] .guide{transform:translateX(100%)}
 
 <button class="gbtn" id="gbtn" title="המדריך" hidden>✦</button>
 <div class="guide" id="guide">
-  <div class="hd"><div class="ic">✦</div><div><b>המדריך של Tatzil</b><small>שואלים, מקבלים טקסטים מוכנים וטיפים</small></div><button class="x" onclick="toggleGuide(false)">✕</button></div>
+  <div class="hd"><div class="ic">✦</div><div><b>המדריך של TTM</b><small>שואלים, מקבלים טקסטים מוכנים וטיפים</small></div><button class="x" onclick="toggleGuide(false)">✕</button></div>
   <div class="msgs" id="gMsgs"></div>
   <div class="typing" id="gTyping" hidden>המדריך כותב…</div>
   <div class="sug" id="gSug"></div>
@@ -355,7 +355,7 @@ async function delTeam(id){if(!confirm('למחוק שגריר? התרומות ש
 // ---- campaign: payment & go live ----
 pages.c_payment=async()=>{C=await api('/campaigns/'+C.id);setTop('סליקה ועלייה לאוויר',C.title);const p=C.provider||{type:'test'};
   const stepsOk=[[!!C.title&&C.goal>0,'פרטי קמפיין'],[!!C.story||!!C.cover,'סיפור או תמונה'],[C.levels.length>0,'רמות תרומה'],[p.type&&p.type!=='test','ספק סליקה מחובר'],[C.status!=='draft','בוצעה תרומת בדיקה']];
-  $('#content').innerHTML=`<div class="grid g2"><div class="card"><h3>ספק הסליקה</h3><div class="hint" style="margin-bottom:10px">הכסף נכנס ישירות לחשבון העמותה אצל הספק. Tatzil לא נוגעת בכסף.</div><label>ספק<select id="pType">${PROVS.map(x=>`<option value="${x.type}" ${p.type===x.type?'selected':''}>${esc(x.label)}</option>`).join('')}</select></label><div class="grid" id="pFields" style="margin-top:10px"></div><div class="hint" id="pHelp" style="margin-top:8px"></div><button class="b p" style="margin-top:12px" onclick="saveProv()">שמירת הגדרות סליקה</button></div>
+  $('#content').innerHTML=`<div class="grid g2"><div class="card"><h3>ספק הסליקה</h3><div class="hint" style="margin-bottom:10px">הכסף נכנס ישירות לחשבון העמותה אצל הספק. TTM לא נוגעת בכסף.</div><label>ספק<select id="pType">${PROVS.map(x=>`<option value="${x.type}" ${p.type===x.type?'selected':''}>${esc(x.label)}</option>`).join('')}</select></label><div class="grid" id="pFields" style="margin-top:10px"></div><div class="hint" id="pHelp" style="margin-top:8px"></div><button class="b p" style="margin-top:12px" onclick="saveProv()">שמירת הגדרות סליקה</button></div>
   <div class="card golive ${C.status==='live'?'live':''}"><h3>${C.status==='live'?'הקמפיין באוויר ✓':'רשימת בדיקה לפני עלייה לאוויר'}</h3>
     <div class="grid" style="gap:8px">${stepsOk.map(([ok,l])=>`<div style="display:flex;gap:8px;align-items:center"><span class="tag ${ok?'ok':''}">${ok?'✓':'•'}</span>${l}</div>`).join('')}</div>
     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">${C.status==='live'?`<button class="b" onclick="setStatus('ended')">סיום הקמפיין</button><button class="b" onclick="setStatus('test')">חזרה למצב בדיקה</button>`:`<button class="b p" onclick="goLive()" ${stepsOk[3][0]?'':'disabled'}>🚀 עלייה לאוויר</button>${C.status==='draft'?`<button class="b" onclick="setStatus('test')">הפעלת מצב בדיקה</button>`:''}<a class="b" href="/c/${C.slug}" target="_blank">תרומת בדיקה בדף</a>`}</div>
@@ -387,7 +387,7 @@ async function admSt(id,status){await api(`/admin/campaigns/${id}/status`,{metho
 
 // ---- guide ----
 let gHist=[];
-function toggleGuide(on){$('#guide').classList.toggle('on',on);if(on){if(!gHist.length)gMsg('a','שלום! אני המדריך של Tatzil. אני מכיר את הקמפיין שאתם עובדים עליו ויכול לכתוב טקסטים, להסביר על סליקה ושגרירים, ולתת טיפים לגיוס. מה נעשה?');$('#gIn').focus();renderSug()}}
+function toggleGuide(on){$('#guide').classList.toggle('on',on);if(on){if(!gHist.length)gMsg('a','שלום! אני המדריך של TTM. אני מכיר את הקמפיין שאתם עובדים עליו ויכול לכתוב טקסטים, להסביר על סליקה ושגרירים, ולתת טיפים לגיוס. מה נעשה?');$('#gIn').focus();renderSug()}}
 $('#gbtn').onclick=()=>toggleGuide(!$('#guide').classList.contains('on'));
 function gMsg(r,t){const el=document.createElement('div');el.className='msg '+r;el.textContent=t;if(r==='a'&&t.length>60){const c=document.createElement('span');c.className='cp';c.textContent='העתקה';c.onclick=()=>{navigator.clipboard.writeText(t);toast('הועתק')};el.appendChild(c)}$('#gMsgs').appendChild(el);$('#gMsgs').scrollTop=1e9}
 function renderSug(){const s=C?['כתוב הודעת וואטסאפ לשגרירים','כתוב 3 פוסטים לרשתות','איך מחברים נדרים פלוס?','טיפים ליום האחרון של הקמפיין','הצע רמות תרומה']:['איך פותחים קמפיין?','מה זה מאצ\'ינג?','איך עובד מצב הבדיקה?','אילו ספקי סליקה נתמכים?'];$('#gSug').innerHTML=s.map(x=>`<button>${esc(x)}</button>`).join('');$$('#gSug button').forEach(b=>b.onclick=()=>askGuide(b.textContent))}
