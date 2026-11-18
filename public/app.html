@@ -169,6 +169,7 @@ canvas.chart{width:100%;height:180px;display:block}
 .mli{position:relative;width:96px;height:72px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}.mli img{width:100%;height:100%;object-fit:cover}.mli .b{position:absolute;top:3px;inset-inline-end:3px;padding:2px 6px;font-size:11px;background:rgba(255,255,255,.9)}
 .up.mini{width:96px;height:72px;display:grid;place-items:center;padding:0;font-size:12px}
 .emo{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px;align-items:center}.emo .b{padding:4px 8px;font-size:16px}
+.guide-box{border:1px solid var(--line);border-radius:14px;padding:12px 16px;background:#fafaff;margin-top:6px}.guide-box summary{font-weight:700;cursor:pointer}.guide-box ol{margin:10px 0 0;padding-inline-start:20px;display:grid;gap:8px;font-size:14px}.guide-box code{background:#eef0f6;padding:2px 6px;border-radius:6px;font-size:12px}
 /* modal */
 .mod{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:40;display:none;place-items:center;padding:16px}
 .mod.on{display:grid}
@@ -431,7 +432,17 @@ pages.c_payment=async()=>{C=await api('/campaigns/'+C.id);setTop('סליקה ו�
     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">${C.status==='live'?`<button class="b" onclick="setStatus('ended')">סיום הקמפיין</button><button class="b" onclick="setStatus('test')">חזרה למצב בדיקה</button>`:`<button class="b p" onclick="goLive()" ${stepsOk[3][0]?'':'disabled'}>🚀 עלייה לאוויר</button>${C.status==='draft'?`<button class="b" onclick="setStatus('test')">הפעלת מצב בדיקה</button>`:''}<a class="b" href="/c/${C.slug}" target="_blank">תרומת בדיקה בדף</a>`}</div>
     <div class="hint" style="margin-top:10px">בעלייה לאוויר תרומות הבדיקה נמחקות, הספק האמיתי מופעל, והדף מפסיק להציג את פס "מצב בדיקה".</div></div></div>`;
   const render=()=>{const t=$('#pType').value;const P=PROVS.find(x=>x.type===t);$('#pFields').innerHTML=P.fields.map(f=>`<label>${esc(f.l)}<input data-pf="${f.k}" value="${esc(p[f.k]||'')}" dir="ltr" autocomplete="off"></label>`).join('')||'<div class="muted small">מצב בדיקה: תרומות מדומות בלבד. בחרו ספק אמיתי כדי לעלות לאוויר.</div>';
-    $('#pHelp').innerHTML={nedarim:'הזינו את מספר המוסד ו-ApiValid מהממשק של נדרים פלוס. כתובת ה-Callback שצריך לאשר אצלם: <code dir="ltr">'+location.origin+'/pay/nedarim/callback</code>',meshulam:'ב-Grow/משולם צרו דף תשלום מסוג API, והעתיקו Page code ו-User ID. כתובת ה-Webhook: <code dir="ltr">'+location.origin+'/pay/meshulam/webhook</code>',paypal:'ב-PayPal Developer צרו App וקבלו Client ID ו-Secret. לבדיקה השתמשו ב-Sandbox=true.',link:'כל דף תשלום מאובטח שיש לכם (קארדקום, טרנזילה, פייבוקס). התרומה תירשם כ"ממתינה" ותאושר ידנית או לפי דוח הספק.',test:''}[t]||''};
+    $('#pHelp').innerHTML={nedarim:`<details class="guide-box" open><summary>📘 מדריך חיבור נדרים פלוס (3 דקות)</summary><ol>
+<li>נכנסים למערכת נדרים פלוס → <b>הגדרות</b> → <b>מפתחות API</b>.</li>
+<li>בחלק העליון, <b>"סיסמת אימות לדף התשלום (ApiValid)"</b>: לוחצים <b>העתקה</b> ומדביקים בשדה ApiValid כאן. (זה הערך הציבורי שמוטמע בדף; הוא לא מאפשר משיכת מידע.)</li>
+<li><b>מספר המוסד</b> מופיע בפינה העליונה של נדרים ליד שם המוסד ("מוסד 7011515"). מדביקים בשדה מספר מוסד.</li>
+<li><b>לא צריך</b> ליצור "מפתח API חדש" (ApiPassword) בשביל קבלת תרומות. הוא נדרש רק אם תרצו בעתיד סנכרון דוחות אוטומטי.</li>
+<li>שומרים כאן, ועושים <b>תרומת בדיקה</b> מהדף: הטופס של נדרים נפתח בתוך דף הקמפיין, מזינים כרטיס, והתרומה מופיעה בטבלת התרומות עם אסמכתא של נדרים.</li>
+<li>כתובת ה-Callback שלנו נשלחת אוטומטית עם כל עסקה: <code dir="ltr">${location.origin}/pay/nedarim/callback</code>. אם נדרים מבקשים לאשר כתובת, זו הכתובת.</li></ol>
+<div class="hint">טיפ: בנדרים אפשר להגדיר "קבוצה" לכל קמפיין כדי לראות אותו בנפרד בדוחות שלהם. הזינו את שם הקבוצה בשדה השלישי.</div></details>`,
+meshulam:`<details class="guide-box" open><summary>📘 מדריך חיבור משולם / Grow</summary><ol><li>ב-Grow: <b>הגדרות → דפי תשלום → יצירת דף תשלום מסוג API</b>.</li><li>מעתיקים את <b>Page code</b> ואת <b>User ID</b> (apiKey) מפרטי הדף.</li><li>מדביקים כאן. לבדיקות: Sandbox = true (ו-Page code מסביבת הסנדבוקס).</li><li>בדף התשלום ב-Grow מגדירים כתובת Webhook/Notify: <code dir="ltr">${location.origin}/pay/meshulam/webhook</code>.</li><li>תרומת בדיקה מהדף: הגולש מועבר לדף Grow וחוזר לקמפיין עם אישור.</li></ol></details>`,
+paypal:`<details class="guide-box" open><summary>📘 מדריך חיבור PayPal</summary><ol><li>נכנסים ל-<b>developer.paypal.com</b> → Apps & Credentials → Create App.</li><li>מעתיקים <b>Client ID</b> ו-<b>Secret</b> (Live). לבדיקות: Sandbox = true ומפתחות Sandbox.</li><li>מדביקים כאן ושומרים. כפתור PayPal יופיע בשלב התשלום בדף.</li></ol></details>`,
+link:`<details class="guide-box" open><summary>📘 דף תשלום חיצוני (קארדקום, טרנזילה, פייבוקס…)</summary><ol><li>מדביקים את כתובת דף התשלום שלכם. אפשר להשתמש ב-{amount} {name} {phone} {email} {id} והמערכת תמלא אותם.</li><li>התרומה נרשמת אצלנו כ"ממתינה" ומאושרת ידנית בטבלת התרומות (או לפי דוח הספק).</li></ol></details>`,test:''}[t]||''};
   $('#pType').onchange=render;render()};
 async function saveProv(){const prov={type:$('#pType').value};$$('[data-pf]').forEach(i=>prov[i.dataset.pf]=i.value.trim());C=await api('/campaigns/'+C.id,{method:'PUT',body:{provider:prov}});toast('נשמר ✓');pages.c_payment()}
 async function setStatus(status){await api(`/campaigns/${C.id}/status`,{method:'POST',body:{status}});toast('עודכן');pages.c_payment()}
