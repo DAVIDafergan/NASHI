@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ניהול · Uriya Biton</title><meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0f16">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0f16;--card:#111925;--line:rgba(212,179,106,.2);--gold:#d4b36a;--gold2:#f3dea3;--paper:#f1ede3;--mist:#9aa3ae;--dim:#6b7580;--ok:#5ad38a;--bad:#f08a8a;--f:"Heebo",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--paper);font:400 15px/1.6 var(--f);min-height:100vh}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+input,select,textarea{width:100%;background:#0c1219;border:1px solid var(--line);padding:10px 12px;border-radius:8px;outline:0;color:var(--paper);-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold);-webkit-appearance:checkbox}
+select{background:#0c1219 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23d4b36a' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat 12px center;padding-inline-start:30px}
+label{font-size:12px;color:var(--mist);display:block;margin-bottom:4px;letter-spacing:.04em}
+.b{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:8px;border:1px solid var(--line);font-weight:500;font-size:14px;transition:.2s;white-space:nowrap}
+.b:hover{border-color:var(--gold);color:var(--gold2)}
+.b.p{background:linear-gradient(135deg,#f1d791,#c9a95a);color:#1a1409;border-color:transparent}
+.b.p:hover{filter:brightness(1.08);color:#1a1409}
+.b.s{padding:6px 10px;font-size:13px}
+.b.r{color:var(--bad);border-color:rgba(240,138,138,.3)}
+.b.g{color:var(--ok);border-color:rgba(90,211,138,.3)}
+.b:disabled{opacity:.5;cursor:default}
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login form{width:min(360px,100%);border:1px solid var(--line);padding:34px 28px;border-radius:14px;background:var(--card);text-align:center}
+.login h1{font-weight:300;font-size:26px;margin-bottom:4px}
+.login h1 b{color:var(--gold2);font-weight:500}
+.login p{color:var(--mist);font-size:13px;margin-bottom:22px}
+.login input{text-align:center;font-size:22px;letter-spacing:.3em;margin-bottom:12px}
+.login .err{color:var(--bad);font-size:13px;min-height:20px;margin-top:8px}
+/* layout */
+.app{display:none;min-height:100vh}
+.app.on{display:grid;grid-template-columns:230px 1fr}
+aside{border-inline-end:1px solid rgba(212,179,106,.12);padding:22px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px}
+aside .brand{font-size:18px;font-weight:300;padding:4px 10px 18px}
+aside .brand b{color:var(--gold2);font-weight:500}
+aside .brand small{display:block;font-size:11px;color:var(--mist);letter-spacing:.2em}
+aside a{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:8px;color:var(--mist);font-size:15px;transition:.2s}
+aside a:hover{color:var(--paper);background:rgba(255,255,255,.03)}
+aside a.on{background:rgba(212,179,106,.12);color:var(--gold2)}
+aside a .n{margin-inline-start:auto;background:var(--gold);color:#1a1409;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px}
+aside .foot{margin-top:auto;display:grid;gap:6px}
+aside .foot a{font-size:13px}
+main{padding:22px clamp(14px,3vw,36px) 90px;min-width:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.top h2{font-weight:300;font-size:26px}
+.top h2 b{font-weight:500;color:var(--gold2)}
+.page{display:none}.page.on{display:block}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card);border:1px solid rgba(212,179,106,.12);border-radius:12px;padding:18px}
+.card h3{font-weight:500;font-size:15px;color:var(--gold2);margin-bottom:12px;letter-spacing:.04em}
+.stat{text-align:center;padding:20px 10px}
+.stat b{display:block;font-size:34px;font-weight:300;color:var(--gold2);line-height:1}
+.stat span{font-size:12px;color:var(--mist);letter-spacing:.06em}
+.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.row>*{flex:1;min-width:120px}
+.row>.x{flex:0}
+.list{display:grid;gap:8px}
+.bk{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid rgba(212,179,106,.12);border-radius:10px;background:rgba(255,255,255,.015)}
+.bk .t{font-size:20px;font-weight:300;color:var(--gold2);line-height:1;direction:ltr;text-align:center}
+.bk .t small{display:block;font-size:11px;color:var(--dim);margin-top:4px}
+.bk .i b{font-weight:500}
+.bk .i span{display:block;font-size:13px;color:var(--mist)}
+.bk .i span.tag{display:inline-block}
+.bk .a{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.bk.cancelled{opacity:.45}.bk.done{border-color:rgba(90,211,138,.25)}.bk.new{border-color:rgba(212,179,106,.4)}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mist);margin-inline-start:6px;vertical-align:middle}
+.tag.new{color:var(--gold2);border-color:var(--gold)}.tag.confirmed{color:#8fc1ff;border-color:rgba(143,193,255,.4)}.tag.done{color:var(--ok);border-color:rgba(90,211,138,.4)}.tag.cancelled{color:var(--bad);border-color:rgba(240,138,138,.4)}
+.dayhead{font-size:13px;color:var(--gold);letter-spacing:.08em;margin:14px 0 6px;display:flex;justify-content:space-between}
+.svc{display:grid;grid-template-columns:28px 2fr 1fr 1fr 2fr 60px auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,179,106,.1)}
+.svc input{padding:8px 10px}
+.hrs{display:grid;gap:8px}
+.hr{display:grid;grid-template-columns:70px 1fr 1fr 70px;gap:8px;align-items:center}
+.hr input[type=time]{direction:ltr}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.gal figure{position:relative;aspect-ratio:1;overflow:hidden;border-radius:10px;background:#0c1219}
+.gal img{width:100%;height:100%;object-fit:cover}
+.gal .del{position:absolute;top:6px;inset-inline-end:6px;background:rgba(10,15,22,.8);color:var(--bad);width:28px;height:28px;border-radius:50%;display:grid;place-items:center}
+.gal input{position:absolute;bottom:0;inset-inline:0;border:0;border-radius:0;background:rgba(10,15,22,.75);font-size:12px;padding:6px 8px}
+.drop{border:1px dashed var(--line);border-radius:10px;padding:26px;text-align:center;color:var(--mist);cursor:pointer;transition:.2s}
+.drop:hover{border-color:var(--gold);color:var(--gold2)}
+.drop input{display:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1b2431;border:1px solid var(--line);padding:10px 18px;border-radius:10px;font-size:14px;opacity:0;transition:.3s;z-index:9;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.muted{color:var(--mist);font-size:13px}
+.empty{text-align:center;color:var(--dim);padding:30px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:8;padding:16px}
+.modal.on{display:grid}
+.modal .card{width:min(460px,100%);max-height:90vh;overflow:auto}
+.tabs{display:none}
+@media(max-width:860px){
+  .app.on{grid-template-columns:1fr}
+  aside{display:none}
+  .tabs{display:flex;position:fixed;bottom:0;inset-inline:0;background:rgba(10,15,22,.95);backdrop-filter:blur(12px);border-top:1px solid rgba(212,179,106,.15);z-index:7;padding-bottom:env(safe-area-inset-bottom)}
+  .tabs a{flex:1;text-align:center;padding:10px 2px 8px;font-size:11px;color:var(--mist);display:grid;gap:3px;justify-items:center}
+  .tabs a.on{color:var(--gold2)}
+  .tabs svg{width:22px;height:22px}
+  .g3,.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}
+  .svc{grid-template-columns:1fr 1fr;padding:12px 0}.svc>*:first-child{display:none}.svc.head{display:none}
+  .bk{grid-template-columns:60px 1fr}.bk .a{grid-column:1/-1;justify-content:flex-start}
+  .hr{grid-template-columns:60px 1fr 1fr 50px}
+}
+</style>
+</head>
+<body>
+<div class="login" id="login"><form id="loginF">
+  <h1>Uriya <b>Biton</b></h1><p>אזור ניהול · הזינו קוד כניסה</p>
+  <input id="pin" type="password" inputmode="numeric" placeholder="••••" autocomplete="current-password">
+  <button class="b p" style="width:100%" type="submit">כניסה</button>
+  <div class="err" id="loginErr"></div>
+</form></div>
+
+<div class="app" id="app">
+<aside>
+  <div class="brand">Uriya <b>Biton</b><small>ניהול</small></div>
+  <a href="#dash" data-p="dash">לוח בקרה</a>
+  <a href="#book" data-p="book">תורים <span class="n" id="nNew" hidden></span></a>
+  <a href="#svc" data-p="svc">שירותים ומחירים</a>
+  <a href="#hrs" data-p="hrs">שעות וחסימות</a>
+  <a href="#gal" data-p="gal">גלריה ולוגו</a>
+  <a href="#rev" data-p="rev">ביקורות</a>
+  <a href="#set" data-p="set">הגדרות ותוכן</a>
+  <div class="foot"><a href="/" target="_blank">↗ לאתר</a><a href="#" id="logout">יציאה</a></div>
+</aside>
+<main>
+  <section class="page" id="pg-dash">
+    <div class="top"><h2>שלום, <b>אוריה</b></h2><button class="b p" onclick="openAdd()">+ תור ידני</button></div>
+    <div class="grid g4" id="stats"></div>
+    <div class="card" style="margin-top:14px"><h3>התורים של היום</h3><div class="list" id="todayList"></div></div>
+  </section>
+  <section class="page" id="pg-book">
+    <div class="top"><h2><b>תורים</b></h2><div class="row" style="flex:0 1 auto"><input type="date" id="bFrom" style="min-width:140px"><input type="date" id="bTo" style="min-width:140px"><input id="bQ" placeholder="חיפוש שם/טלפון" style="min-width:140px"><button class="b" onclick="loadBookings()">הצג</button><button class="b p" onclick="openAdd()">+ תור</button></div></div>
+    <div id="bList"></div>
+  </section>
+  <section class="page" id="pg-svc">
+    <div class="top"><h2><b>שירותים</b> ומחירים</h2><button class="b p" onclick="addSvc()">+ שירות</button></div>
+    <div class="card"><div class="svc head" style="color:var(--mist);font-size:12px"><span>#</span><span>שם</span><span>מחיר ₪</span><span>דקות</span><span>תיאור קצר</span><span>פעיל</span><span></span></div><div id="svcList"></div><div style="margin-top:14px;text-align:left"><button class="b p" onclick="saveSvc()">שמירת שירותים</button></div></div>
+  </section>
+  <section class="page" id="pg-hrs">
+    <div class="top"><h2><b>שעות</b> פעילות וחסימות</h2></div>
+    <div class="grid g2">
+      <div class="card"><h3>שעות פעילות</h3><div class="hrs" id="hrsList"></div><div class="row" style="margin-top:14px"><div><label>אורך משבצת (דק׳)</label><input id="sSlot" type="number" min="10" step="5"></div><div><label>התראה מינימלית (דק׳)</label><input id="sLead" type="number" min="0" step="15"></div><div><label>ימים קדימה</label><input id="sAhead" type="number" min="1" max="90"></div></div><div style="margin-top:14px;text-align:left"><button class="b p" onclick="saveHours()">שמירה</button></div></div>
+      <div class="card"><h3>חסימת יום / שעות (חופש, הפסקה)</h3><div class="row"><div><label>תאריך</label><input type="date" id="blDate"></div><div><label>מ-</label><input type="time" id="blFrom" value="00:00" dir="ltr"></div><div><label>עד</label><input type="time" id="blTo" value="23:59" dir="ltr"></div></div><div class="row" style="margin-top:8px"><div><label>סיבה (לא חובה)</label><input id="blReason"></div><button class="b p x" onclick="addBlock()">חסימה</button></div><div class="list" id="blList" style="margin-top:14px"></div></div>
+    </div>
+  </section>
+  <section class="page" id="pg-gal">
+    <div class="top"><h2><b>גלריה</b> ולוגו</h2></div>
+    <div class="grid g2">
+      <div class="card"><h3>לוגו (מופיע במקום הסמל באתר)</h3><div id="logoNow" class="muted" style="margin-bottom:10px"></div><label class="drop"><input type="file" accept="image/*" id="logoF">לחצו לבחירת קובץ לוגו (PNG שקוף מומלץ)</label><div style="margin-top:10px"><button class="b r s" onclick="rmLogo()">הסרת לוגו</button></div></div>
+      <div class="card"><h3>תמונות לגלריה</h3><label class="drop"><input type="file" accept="image/*" multiple id="galF">לחצו לבחירת תמונות (עד 12 בכל פעם)</label><p class="muted" style="margin-top:8px">מומלץ תמונות אופקיות ברוחב 1600px ומעלה. הראשונה מוצגת גדולה.</p></div>
+    </div>
+    <div class="card" style="margin-top:14px"><div class="gal" id="galList"></div></div>
+  </section>
+  <section class="page" id="pg-rev">
+    <div class="top"><h2><b>ביקורות</b> לקוחות</h2></div>
+    <div class="card"><div class="row"><div><label>שם</label><input id="rvName"></div><div style="flex:3"><label>טקסט</label><input id="rvText"></div><div class="x" style="min-width:90px"><label>כוכבים</label><select id="rvStars"><option>5</option><option>4</option><option>3</option></select></div><button class="b p x" onclick="addRev()">הוספה</button></div></div>
+    <div class="list" id="rvList" style="margin-top:14px"></div>
+  </section>
+  <section class="page" id="pg-set">
+    <div class="top"><h2><b>הגדרות</b> ותוכן</h2><button class="b p" onclick="saveSet()">שמירה</button></div>
+    <div class="grid g2">
+      <div class="card"><h3>פרטי העסק</h3><div class="grid">
+        <div class="row"><div><label>שם</label><input data-s="name"></div><div><label>תת-כותרת</label><input data-s="sub"></div></div>
+        <div class="row"><div><label>טלפון (לתצוגה)</label><input data-s="phone" dir="ltr"></div><div><label>וואטסאפ (בינלאומי, בלי +)</label><input data-s="whatsapp" dir="ltr" placeholder="972528142894"></div></div>
+        <div class="row"><div><label>כתובת</label><input data-s="address"></div><div><label>עיר</label><input data-s="city"></div></div>
+        <div><label>קישור ניווט (Waze/Google Maps)</label><input data-s="maps" dir="ltr"></div>
+        <div><label>אינסטגרם (קישור)</label><input data-s="instagram" dir="ltr"></div>
+      </div></div>
+      <div class="card"><h3>טקסטים באתר</h3><div class="grid">
+        <div><label>שורה קטנה מעל הכותרת</label><input data-s="tagline"></div>
+        <div><label>כותרת ראשית</label><input data-s="headline"></div>
+        <div><label>אודות</label><textarea data-s="about" rows="4"></textarea></div>
+        <div class="row"><div style="flex:4"><label>מבצע (מוצג מעל המחירון)</label><input data-s="promo"></div><div class="x" style="min-width:110px"><label>להציג</label><select data-s="promoOn"><option value="1">כן</option><option value="0">לא</option></select></div></div>
+        <div><label>תיאור לגוגל (SEO)</label><input data-s="seoDesc"></div>
+      </div></div>
+      <div class="card"><h3>קוד כניסה לניהול</h3><div class="row"><div><label>קוד חדש</label><input id="newPin" type="password"></div><button class="b x" onclick="savePin()">עדכון קוד</button></div></div>
+    </div>
+  </section>
+</main>
+<nav class="tabs">
+  <a href="#dash" data-p="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>בית</a>
+  <a href="#book" data-p="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>תורים</a>
+  <a href="#svc" data-p="svc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h10"/></svg>שירותים</a>
+  <a href="#hrs" data-p="hrs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>שעות</a>
+  <a href="#gal" data-p="gal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>גלריה</a>
+  <a href="#set" data-p="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3.9a7 7 0 0 0-1.7-1L14.5 3h-5l-.4 2.4a7 7 0 0 0-1.7 1L5 5.6 3 9l2 1.5a7 7 0 0 0 0 2L3 14l2 3.4 2.3-.9a7 7 0 0 0 1.7 1l.5 2.5h5l.4-2.4a7 7 0 0 0 1.7-1l2.3.9 2-3.4-2-1.5c.1-.4.1-.7.1-1z"/></svg>הגדרות</a>
+</nav>
+</div>
+
+<div class="modal" id="addM"><div class="card">
+  <h3>תור ידני</h3>
+  <div class="grid">
+    <div class="row"><div><label>תאריך</label><input type="date" id="aDate"></div><div><label>שעה</label><input type="time" id="aTime" dir="ltr"></div></div>
+    <div><label>שירות</label><select id="aSvc"></select></div>
+    <div class="row"><div><label>שם</label><input id="aName"></div><div><label>טלפון</label><input id="aPhone" dir="ltr"></div></div>
+    <div><label>הערה</label><input id="aNote"></div>
+    <div class="row"><button class="b p" onclick="saveAdd()">שמירה</button><button class="b" onclick="$('#addM').classList.remove('on')">ביטול</button></div>
+  </div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const DN=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200)};
+const api=async(u,o={})=>{const r=await fetch('/api/admin'+u,{headers:o.body&&!(o.body instanceof FormData)?{'Content-Type':'application/json'}:{},...o,body:o.body instanceof FormData?o.body:o.body?JSON.stringify(o.body):undefined});if(r.status===401){location.reload();throw 0}const j=await r.json().catch(()=>({}));if(!r.ok){toast(j.error||'שגיאה');throw j}return j};
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const fmtD=s=>{const d=new Date(s+'T12:00:00');return `יום ${DN[d.getDay()]} ${d.getDate()}.${d.getMonth()+1}`};
+let SET={},SVC=[];
+
+$('#loginF').onsubmit=async e=>{e.preventDefault();const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:$('#pin').value})});if(r.ok)start();else $('#loginErr').textContent='קוד שגוי'};
+$('#logout').onclick=async e=>{e.preventDefault();await fetch('/api/admin/logout',{method:'POST'});location.reload()};
+async function start(){$('#login').style.display='none';$('#app').classList.add('on');SET=await api('/settings');SVC=await api('/services');route()}
+function route(){const p=(location.hash||'#dash').slice(1);$$('.page').forEach(x=>x.classList.toggle('on',x.id==='pg-'+p));$$('[data-p]').forEach(a=>a.classList.toggle('on',a.dataset.p===p));({dash:loadDash,book:initBook,svc:loadSvc,hrs:loadHours,gal:loadGal,rev:loadRev,set:loadSet}[p]||loadDash)();scrollTo(0,0)}
+addEventListener('hashchange',route);
+
+// dashboard
+async function loadDash(){
+  const s=await api('/stats');$('#nNew').hidden=!s.pending;$('#nNew').textContent=s.pending;
+  $('#stats').innerHTML=[['היום',s.today,'תורים'],['השבוע',s.week,'תורים'],['ממתינים לאישור',s.pending,'חדשים'],['החודש',`₪${s.month}`,'הכנסות (בוצעו)']].map(([a,b,c])=>`<div class="card stat"><span>${a}</span><b>${b}</b><span>${c}</span></div>`).join('');
+  const d=ymd(new Date());const list=await api(`/bookings?from=${d}&to=${d}`);$('#todayList').innerHTML=list.length?list.map(bkRow).join(''):'<div class="empty">אין תורים להיום</div>';
+}
+function bkRow(b){const wa=(SET.whatsapp?'':'')+`https://wa.me/${String(b.phone).replace(/\D/g,'').replace(/^0/,'972')}?text=${encodeURIComponent(`היי ${b.name}, מאשר את התור ל${b.service} ב${fmtD(b.date)} בשעה ${b.time}. נתראה! ${SET.name||''}`)}`;
+  return `<div class="bk ${b.status}" data-id="${b.id}"><div class="t">${b.time}<small>${b.minutes} דק׳</small></div><div class="i"><b>${esc(b.name)}</b><span class="tag ${b.status}">${{new:'חדש',confirmed:'מאושר',done:'בוצע',cancelled:'בוטל'}[b.status]}</span><span>${esc(b.service)} · ₪${b.price}${b.note?' · '+esc(b.note):''}</span><span dir="ltr" style="text-align:right">${esc(b.phone)}</span></div><div class="a">
+  <a class="b s g" href="${wa}" target="_blank">וואטסאפ</a><a class="b s" href="tel:${esc(b.phone)}">חיוג</a>
+  ${b.status==='new'?`<button class="b s" onclick="setSt(${b.id},'confirmed')">אישור</button>`:''}
+  ${b.status!=='done'&&b.status!=='cancelled'?`<button class="b s g" onclick="setSt(${b.id},'done')">בוצע</button><button class="b s r" onclick="setSt(${b.id},'cancelled')">ביטול</button>`:''}
+  <button class="b s r" onclick="delBk(${b.id})">🗑</button></div></div>`}
+async function setSt(id,status){await api('/bookings/'+id,{method:'PATCH',body:{status}});toast('עודכן');route()}
+async function delBk(id){if(!confirm('למחוק את התור לצמיתות?'))return;await api('/bookings/'+id,{method:'DELETE'});route()}
+// bookings
+function initBook(){if(!$('#bFrom').value){const d=new Date();$('#bFrom').value=ymd(d);d.setDate(d.getDate()+14);$('#bTo').value=ymd(d)}loadBookings()}
+async function loadBookings(){const l=await api(`/bookings?from=${$('#bFrom').value}&to=${$('#bTo').value}&q=${encodeURIComponent($('#bQ').value)}`);if(!l.length){$('#bList').innerHTML='<div class="empty">אין תורים בטווח</div>';return}
+  let out='',cur='';for(const b of l){if(b.date!==cur){cur=b.date;out+=`<div class="dayhead"><span>${fmtD(b.date)}</span><span>${l.filter(x=>x.date===b.date&&x.status!=='cancelled').length} תורים</span></div>`}out+=bkRow(b)}$('#bList').innerHTML=`<div class="list">${out}</div>`}
+function openAdd(){$('#aSvc').innerHTML=SVC.map(s=>`<option value="${s.id}">${esc(s.name)} · ₪${s.price}</option>`).join('');$('#aDate').value=ymd(new Date());$('#addM').classList.add('on')}
+async function saveAdd(){await api('/bookings',{method:'POST',body:{date:$('#aDate').value,time:$('#aTime').value,service:$('#aSvc').value,name:$('#aName').value,phone:$('#aPhone').value,note:$('#aNote').value}});$('#addM').classList.remove('on');toast('התור נוסף');route()}
+// services
+async function loadSvc(){SVC=await api('/services');$('#svcList').innerHTML=SVC.map(s=>`<div class="svc" data-id="${s.id}"><span class="muted">${s.id}</span><input value="${esc(s.name)}" data-f="name" placeholder="שם"><input type="number" value="${s.price}" data-f="price" placeholder="מחיר"><input type="number" value="${s.minutes}" data-f="minutes" placeholder="דקות"><input value="${esc(s.note)}" data-f="note" placeholder="תיאור"><input type="checkbox" ${s.active?'checked':''} data-f="active"><button class="b s r" onclick="delSvc(${s.id})">מחיקה</button></div>`).join('')}
+async function addSvc(){await api('/services',{method:'POST',body:{name:'שירות חדש',price:0,minutes:30,pos:SVC.length+1}});loadSvc()}
+async function saveSvc(){const rows=$$('#svcList .svc');for(const [i,r] of rows.entries()){const g=f=>r.querySelector(`[data-f=${f}]`);await api('/services/'+r.dataset.id,{method:'PUT',body:{name:g('name').value,price:+g('price').value,minutes:+g('minutes').value,note:g('note').value,active:g('active').checked,pos:i+1}})}toast('נשמר');loadSvc()}
+async function delSvc(id){if(!confirm('למחוק שירות?'))return;await api('/services/'+id,{method:'DELETE'});loadSvc()}
+// hours
+async function loadHours(){const h=await api('/hours');$('#hrsList').innerHTML=h.map(x=>`<div class="hr" data-dow="${x.dow}"><span>${DN[x.dow]}</span><input type="time" value="${x.open}" data-f="open"><input type="time" value="${x.close}" data-f="close"><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" ${x.closed?'checked':''} data-f="closed" style="width:18px">סגור</label></div>`).join('');
+  $('#sSlot').value=SET.slot;$('#sLead').value=SET.lead;$('#sAhead').value=SET.ahead;loadBlocks()}
+async function saveHours(){const a=$$('#hrsList .hr').map(r=>({dow:+r.dataset.dow,open:r.querySelector('[data-f=open]').value,close:r.querySelector('[data-f=close]').value,closed:r.querySelector('[data-f=closed]').checked}));await api('/hours',{method:'PUT',body:a});SET=await api('/settings',{method:'PUT',body:{slot:$('#sSlot').value,lead:$('#sLead').value,ahead:$('#sAhead').value}});toast('נשמר')}
+async function loadBlocks(){const l=await api('/blocks');$('#blList').innerHTML=l.length?l.map(b=>`<div class="bk"><div class="t" style="font-size:14px">${b.from_t}<small>${b.to_t}</small></div><div class="i"><b>${fmtD(b.date)}</b><span>${esc(b.reason)||'חסימה'}</span></div><div class="a"><button class="b s r" onclick="delBlock(${b.id})">הסרה</button></div></div>`).join(''):'<div class="muted">אין חסימות</div>'}
+async function addBlock(){if(!$('#blDate').value)return toast('בחרו תאריך');await api('/blocks',{method:'POST',body:{date:$('#blDate').value,from_t:$('#blFrom').value,to_t:$('#blTo').value,reason:$('#blReason').value}});$('#blReason').value='';loadBlocks();toast('נחסם')}
+async function delBlock(id){await api('/blocks/'+id,{method:'DELETE'});loadBlocks()}
+// gallery/logo
+async function loadGal(){SET=await api('/settings');$('#logoNow').innerHTML=SET.logo?`<img src="/u/${SET.logo}" style="max-height:80px;background:#0c1219;padding:8px;border-radius:8px">`:'אין לוגו. מוצג סמל ברירת מחדל.';
+  const site=await fetch('/api/site').then(r=>r.json());$('#galList').innerHTML=site.gallery.length?site.gallery.map(g=>`<figure><img src="/u/${g.file}"><button class="del" onclick="delGal(${g.id})">✕</button><input value="${esc(g.caption)}" placeholder="כיתוב" onchange="capGal(${g.id},this.value)"></figure>`).join(''):'<div class="empty" style="grid-column:1/-1">אין תמונות עדיין</div>'}
+$('#galF').onchange=async e=>{const fd=new FormData();[...e.target.files].forEach(f=>fd.append('img',f));toast('מעלה…');await api('/gallery',{method:'POST',body:fd});e.target.value='';loadGal();toast('הועלה')};
+$('#logoF').onchange=async e=>{const fd=new FormData();fd.append('img',e.target.files[0]);await api('/logo',{method:'POST',body:fd});e.target.value='';loadGal();toast('הלוגו עודכן')};
+async function rmLogo(){await api('/logo/rm',{method:'POST'});loadGal()}
+async function delGal(id){await api('/gallery/'+id,{method:'DELETE'});loadGal()}
+async function capGal(id,caption){await api('/gallery/'+id,{method:'PUT',body:{caption}});toast('נשמר')}
+// reviews
+async function loadRev(){const l=await api('/reviews');$('#rvList').innerHTML=l.map(r=>`<div class="bk"><div class="t" style="font-size:14px;color:var(--gold)">${'★'.repeat(r.stars)}</div><div class="i"><b>${esc(r.name)}</b><span>${esc(r.text)}</span></div><div class="a"><button class="b s r" onclick="delRev(${r.id})">מחיקה</button></div></div>`).join('')||'<div class="empty">אין ביקורות</div>'}
+async function addRev(){await api('/reviews',{method:'POST',body:{name:$('#rvName').value,text:$('#rvText').value,stars:$('#rvStars').value}});$('#rvName').value=$('#rvText').value='';loadRev()}
+async function delRev(id){await api('/reviews/'+id,{method:'DELETE'});loadRev()}
+// settings
+async function loadSet(){SET=await api('/settings');$$('[data-s]').forEach(i=>i.value=SET[i.dataset.s]??'')}
+async function saveSet(){const o={};$$('[data-s]').forEach(i=>o[i.dataset.s]=i.value);SET=await api('/settings',{method:'PUT',body:o});toast('נשמר')}
+async function savePin(){const p=$('#newPin').value;if(p.length<4)return toast('לפחות 4 תווים');await api('/pin',{method:'POST',body:{pin:p}});$('#newPin').value='';toast('הקוד עודכן')}
+
+fetch('/api/admin/me').then(r=>r.json()).then(j=>{if(j.ok)start()});
+</script>
+</body>
+</html>
