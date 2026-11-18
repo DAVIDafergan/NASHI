@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
-  <defs><mask id="ttmH"><rect width="120" height="120" fill="#fff"/><path d="M60 92 C42 78 24 66 24 48 a17 17 0 0 1 36-8 a17 17 0 0 1 36 8 c0 18-18 30-36 44z" fill="#000"/></mask></defs>
-  <circle cx="60" cy="60" r="46" fill="#c8f23f" mask="url(#ttmH)"/>
-  <g fill="#141414"><rect x="52" y="8" width="16" height="14" rx="4"/><rect x="52" y="98" width="16" height="14" rx="4"/><rect x="8" y="52" width="14" height="16" rx="4"/><rect x="98" y="52" width="14" height="16" rx="4"/></g>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset=".55" stop-color="#22d3ee"/><stop offset="1" stop-color="#a3ff6f"/></linearGradient></defs>
+  <path d="M60 106C30 86 10 68 10 44c0-14 11-24 24-24 11 0 20 6 26 15 6-9 15-15 26-15 13 0 24 10 24 24 0 24-20 42-50 62z" fill="url(#g)"/>
+  <path d="M24 60h18l7-15 10 32 9-24 5 7h23" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
