@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tatzil · ניהול</title><meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--p:#2563eb;--p2:#1d4ed8;--ink:#0f172a;--mut:#64748b;--line:#e5e7eb;--bg:#f5f7fb;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--f:"Heebo",system-ui,sans-serif;--r:14px;--sh:0 1px 2px rgba(15,23,42,.04),0 8px 24px -16px rgba(15,23,42,.18)}
+*{box-sizing:border-box;margin:0;padding:0}[hidden]{display:none!important}
+body{font:400 15px/1.55 var(--f);color:var(--ink);background:var(--bg);min-height:100vh}
+a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
+button,input,select,textarea{font:inherit;color:inherit}button{background:none;border:0;cursor:pointer}
+input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;outline:0;transition:.15s;-webkit-appearance:none;font-size:15px}
+input:focus,select:focus,textarea:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--p);-webkit-appearance:checkbox;padding:0}
+input[type=color]{padding:2px;height:42px;width:60px}
+select{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2364748b' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat 12px center;padding-inline-start:30px}
+textarea{min-height:110px;resize:vertical}
+label{display:grid;gap:5px;font-size:13px;color:var(--mut);font-weight:500}
+label>b{color:var(--ink);font-weight:500}
+.hint{font-size:12px;color:var(--mut)}
+.b{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 16px;border-radius:10px;border:1.5px solid var(--line);font-weight:700;font-size:14px;background:#fff;transition:.15s;white-space:nowrap;cursor:pointer}
+.b:hover{border-color:#cbd5e1;background:#f8fafc}
+.b.p{background:var(--p);color:#fff;border-color:var(--p);box-shadow:0 6px 16px -8px var(--p)}.b.p:hover{background:var(--p2)}
+.b.g{background:var(--ok);color:#fff;border-color:var(--ok)}
+.b.r{color:var(--bad)}.b.r:hover{background:#fef2f2;border-color:#fecaca}
+.b.s{padding:6px 10px;font-size:13px;border-radius:8px}
+.b.ghost{border-color:transparent;background:transparent}.b.ghost:hover{background:#f1f5f9}
+.b:disabled{opacity:.5;pointer-events:none}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+.card h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.grid{display:grid;gap:14px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.row>*{flex:1;min-width:140px}.row>.x{flex:0;min-width:0}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:#f1f5f9;color:var(--mut)}
+.tag.live{background:#dcfce7;color:#15803d}.tag.test{background:#fef3c7;color:#b45309}.tag.draft{background:#f1f5f9;color:#64748b}.tag.ended{background:#fee2e2;color:#b91c1c}.tag.paid{background:#dcfce7;color:#15803d}.tag.pending{background:#fef3c7;color:#b45309}.tag.failed{background:#fee2e2;color:#b91c1c}.tag.ok{background:#dcfce7;color:#15803d}
+.tag i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.tag.live i{animation:blink 1.4s infinite}@keyframes blink{50%{opacity:.3}}
+.muted{color:var(--mut)}.small{font-size:13px}.right{text-align:end}.center{text-align:center}
+.empty{text-align:center;color:var(--mut);padding:36px 16px}
+.empty b{display:block;font-size:17px;color:var(--ink);margin-bottom:4px}
+/* auth */
+.auth{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+.auth .art{background:linear-gradient(160deg,#0b1020,#1e3a8a 60%,#2563eb);color:#fff;padding:60px;display:flex;flex-direction:column;justify-content:space-between}
+.auth .art h1{font-size:44px;font-weight:900;line-height:1.1}
+.auth .art p{opacity:.85;font-size:18px;margin-top:14px;max-width:40ch}
+.auth .art .logo{font-size:28px;font-weight:900;letter-spacing:-.02em}
+.auth .art .logo small{display:block;font-size:13px;font-weight:400;opacity:.8;letter-spacing:.1em}
+.auth .art ul{list-style:none;display:grid;gap:10px;margin-top:30px;font-size:15px}
+.auth .art li::before{content:"✓";display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.18);margin-inline-end:10px;font-size:12px}
+.auth .frm{display:grid;place-items:center;padding:30px}
+.auth form{width:min(400px,100%);display:grid;gap:12px}
+.auth h2{font-size:26px;font-weight:900}
+.auth .sw{font-size:14px;color:var(--mut);text-align:center}.auth .sw a{color:var(--p);font-weight:700}
+.err{color:var(--bad);font-size:13px;min-height:18px}
+@media(max-width:860px){.auth{grid-template-columns:1fr}.auth .art{padding:30px 24px;min-height:0}.auth .art ul{display:none}.auth .art h1{font-size:30px}}
+/* shell */
+.shell{display:none;grid-template-columns:250px 1fr;min-height:100vh}
+.shell.on{display:grid}
+aside{background:#0f172a;color:#cbd5e1;padding:18px 12px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:2px;overflow:auto}
+aside .logo{color:#fff;font-size:22px;font-weight:900;padding:6px 10px 16px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+aside .logo small{font-size:11px;font-weight:400;color:#94a3b8;letter-spacing:.12em}
+aside .sec{font-size:11px;letter-spacing:.14em;color:#64748b;padding:14px 10px 6px;font-weight:700}
+aside a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:14px;font-weight:500;transition:.15s}
+aside a:hover{background:rgba(255,255,255,.06);color:#fff}
+aside a.on{background:var(--p);color:#fff}
+aside a svg{width:18px;height:18px;flex:none;opacity:.9}
+aside .camp{font-size:13px;color:#94a3b8;padding:8px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+aside .foot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
+aside .u{display:flex;align-items:center;gap:10px;padding:8px 10px;font-size:13px}
+aside .u .av{width:32px;height:32px;border-radius:50%;background:var(--p);color:#fff;display:grid;place-items:center;font-weight:700}
+aside .u b{display:block;color:#fff}
+main{min-width:0;padding:22px clamp(14px,3vw,36px) 100px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.top h1{font-size:24px;font-weight:900}
+.top h1 small{display:block;font-size:13px;color:var(--mut);font-weight:400}
+.top .acts{display:flex;gap:8px;flex-wrap:wrap}
+.page{display:none}.page.on{display:block;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+.burger{display:none}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
+.tabs a{padding:10px 14px;font-weight:700;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-size:14px}
+.tabs a.on{color:var(--p);border-color:var(--p)}
+/* stats */
+.stat{padding:18px 20px}
+.stat .l{font-size:12px;color:var(--mut);font-weight:500;letter-spacing:.02em}
+.stat .v{font-size:30px;font-weight:900;line-height:1.1;margin-top:6px;letter-spacing:-.01em}
+.stat .d{font-size:12px;color:var(--mut);margin-top:4px}
+.stat .d b{color:var(--ok)}
+.stat.hl{background:linear-gradient(135deg,var(--p),#1e40af);color:#fff;border-color:transparent}.stat.hl .l,.stat.hl .d{color:rgba(255,255,255,.8)}
+.bar{height:10px;background:#eef2f7;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:var(--p);border-radius:99px;transition:width 1s}
+canvas.chart{width:100%;height:180px;display:block}
+.feed{display:grid;gap:8px;max-height:420px;overflow:auto}
+.fd{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;animation:fade .5s}
+.fd .av{width:34px;height:34px;border-radius:50%;background:#eff6ff;color:var(--p);display:grid;place-items:center;font-weight:900;flex:none}
+.fd b{display:block;font-size:14px}.fd small{color:var(--mut);font-size:12px;display:block}
+.fd .a{margin-inline-start:auto;font-weight:900;color:var(--p);white-space:nowrap}
+/* campaigns list */
+.cl{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.cc{display:grid;gap:10px;padding:0;overflow:hidden;cursor:pointer;transition:.15s}
+.cc:hover{transform:translateY(-2px);box-shadow:0 14px 30px -18px rgba(15,23,42,.35)}
+.cc .cv{height:120px;background:#dbeafe center/cover no-repeat}
+.cc .bd{padding:0 16px 16px;display:grid;gap:8px}
+.cc h4{font-size:17px;font-weight:900;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.cc .n{display:flex;justify-content:space-between;font-size:13px;color:var(--mut)}.cc .n b{color:var(--ink)}
+/* table */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:start;font-size:12px;color:var(--mut);font-weight:700;padding:10px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.tbl tr:hover td{background:#f8fafc}
+.tbl .amt{font-weight:900;white-space:nowrap}
+.tbl .acts{display:flex;gap:4px;justify-content:flex-end}
+.tblwrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar input,.toolbar select{width:auto;min-width:150px}
+/* builder */
+.bld{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
+@media(max-width:1100px){.bld{grid-template-columns:1fr}}
+.prev{position:sticky;top:20px}
+.prev iframe{width:100%;height:600px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.lvl,.tmr,.mtr{display:grid;grid-template-columns:1fr 110px 1.4fr 80px auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9}
+.tmr{grid-template-columns:1.2fr 110px 120px 1fr auto}
+.mtr{grid-template-columns:1fr 1.4fr auto}
+.lvl input,.tmr input,.mtr input{padding:8px 10px}
+.drag{cursor:grab;color:#cbd5e1}
+.up{border:1.5px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--mut);cursor:pointer;font-size:13px;position:relative;background:#fff}
+.up:hover{border-color:var(--p);color:var(--p)}
+.up input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.up img{max-height:90px;margin:8px auto 0;border-radius:8px}
+.steps{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.steps a{flex:1;min-width:120px;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:700;color:var(--mut)}
+.steps a i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#f1f5f9;font-style:normal;font-size:12px}
+.steps a.on{border-color:var(--p);color:var(--p)}.steps a.on i{background:var(--p);color:#fff}
+.steps a.done i{background:#dcfce7;color:#15803d}
+.golive{background:linear-gradient(135deg,#fff7ed,#fffbeb);border:1px solid #fde68a}
+.golive.live{background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-color:#bbf7d0}
+.copy{display:flex;gap:6px;align-items:center;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 12px;font-size:13px;direction:ltr;overflow:hidden}
+.copy span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut)}
+.langchips{display:flex;gap:8px;flex-wrap:wrap}
+.langchips label{flex-direction:row;align-items:center;border:1.5px solid var(--line);border-radius:99px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+.langchips label:has(:checked){border-color:var(--p);background:#eff6ff;color:var(--p)}
+/* modal */
+.mod{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:40;display:none;place-items:center;padding:16px}
+.mod.on{display:grid}
+.mod .card{width:min(520px,100%);max-height:92vh;overflow:auto}
+/* toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:.3s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+/* guide */
+.gbtn{position:fixed;bottom:22px;inset-inline-start:22px;z-index:30;width:56px;height:56px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 14px 30px -10px rgba(15,23,42,.6);font-size:24px}
+.guide{position:fixed;bottom:0;inset-inline-start:0;top:0;width:min(400px,100%);background:#fff;border-inline-end:1px solid var(--line);z-index:35;display:flex;flex-direction:column;transform:translateX(-100%);transition:.35s cubic-bezier(.22,1,.36,1);box-shadow:0 0 60px -20px rgba(15,23,42,.4)}
+html[dir=rtl] .guide{transform:translateX(100%)}
+.guide.on{transform:none}
+.guide .hd{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.guide .hd b{font-size:15px}.guide .hd small{display:block;color:var(--mut);font-size:12px}
+.guide .hd .ic{width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center}
+.guide .msgs{flex:1;overflow:auto;padding:16px;display:grid;gap:10px;align-content:start}
+.msg{max-width:88%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.msg.u{background:var(--p);color:#fff;justify-self:end;border-end-end-radius:4px}
+.msg.a{background:#f1f5f9;justify-self:start;border-end-start-radius:4px}
+.msg.a .cp{display:block;margin-top:6px;font-size:12px;color:var(--p);font-weight:700;cursor:pointer}
+.guide .sug{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px}
+.guide .sug button{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:5px 10px;color:var(--mut)}
+.guide .sug button:hover{border-color:var(--p);color:var(--p)}
+.guide .in{display:flex;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.guide .in input{flex:1}
+.guide .x{margin-inline-start:auto;font-size:18px;color:var(--mut)}
+.typing{color:var(--mut);font-size:13px;padding:0 16px 8px}
+@media(max-width:900px){
+  .shell.on{grid-template-columns:1fr}
+  aside{position:fixed;inset:0 auto 0 0;width:260px;z-index:45;transform:translateX(100%);transition:.3s}
+  html[dir=rtl] aside{right:0;left:auto}
+  aside.open{transform:none}
+  .burger{display:inline-flex}
+  .g2,.g3,.g4{grid-template-columns:1fr 1fr}
+  .lvl,.tmr{grid-template-columns:1fr 1fr}.mtr{grid-template-columns:1fr}
+  main{padding:14px 14px 100px}
+  .prev{display:none}
+}
+@media(max-width:560px){.g2,.g3,.g4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="auth" id="auth">
+  <div class="art"><div><div class="logo">Tatzil<small>צדקה תציל ממות</small></div><h1 style="margin-top:50px">קמפיין גיוס שעובד,<br>תוך חצי שעה.</h1><p>פלטפורמת מאצ'ינג לעמותות: דף קמפיין חי, שגרירים, סליקה שלכם, מסך אירוע ומדריך חכם שמלווה אתכם.</p>
+    <ul><li>הסליקה שלכם, בלי עמלת פלטפורמה</li><li>מצב בדיקה מלא לפני העלייה לאוויר</li><li>עברית, אנגלית, צרפתית, ספרדית</li><li>אימות עמותה מול רשם העמותות</li></ul></div><div class="small" style="opacity:.6">© Tatzil</div></div>
+  <div class="frm">
+    <form id="loginF"><h2>כניסה לחשבון</h2><label>אימייל<input type="email" id="lEmail" autocomplete="email" dir="ltr" required></label><label>סיסמה<input type="password" id="lPass" autocomplete="current-password" required></label><div class="err" id="lErr"></div><button class="b p" type="submit">כניסה</button><div class="sw">אין לכם חשבון? <a href="#" onclick="swap('reg');return false">הרשמה חינם</a></div></form>
+    <form id="regF" hidden><h2>פתיחת חשבון</h2><label>שם מלא<input id="rName" autocomplete="name" required></label><label>שם העמותה<input id="rOrg"></label><div class="row"><label>אימייל<input type="email" id="rEmail" autocomplete="email" dir="ltr" required></label><label>טלפון<input type="tel" id="rPhone" dir="ltr"></label></div><label>סיסמה (6+ תווים)<input type="password" id="rPass" autocomplete="new-password" required></label><div class="err" id="rErr"></div><button class="b p" type="submit">יצירת חשבון</button><div class="sw">כבר רשומים? <a href="#" onclick="swap('login');return false">כניסה</a></div></form>
+  </div>
+</div>
+
+<div class="shell" id="shell">
+<aside id="side">
+  <div class="logo">Tatzil <small>ניהול</small></div>
+  <a href="#/" data-p="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg>הקמפיינים שלי</a>
+  <div id="campNav" hidden>
+    <div class="sec">קמפיין</div><div class="camp" id="campName"></div>
+    <a data-p="c/overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 15l5-5 4 4 7-7"/></svg>סקירה חיה</a>
+    <a data-p="c/edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2 2 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>עריכת קמפיין</a>
+    <a data-p="c/donations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>תרומות</a>
+    <a data-p="c/teams"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4.5-6.2"/></svg>שגרירים</a>
+    <a data-p="c/payment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 11h20M6 15h4"/></svg>סליקה ועלייה לאוויר</a>
+    <a data-p="c/share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>שיתוף ומסך אירוע</a>
+  </div>
+  <div class="sec">חשבון</div>
+  <a href="#/account" data-p="account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>העמותה והחשבון</a>
+  <a href="#/admin" data-p="admin" id="adminNav" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>ניהול-על</a>
+  <div class="foot"><div class="u"><div class="av" id="uAv"></div><div><b id="uName"></b><span id="uOrg" class="small"></span></div></div><a href="#" id="logout">יציאה</a></div>
+</aside>
+<main>
+  <div class="top" id="topbar"><div style="display:flex;gap:10px;align-items:center"><button class="b s burger" onclick="document.getElementById('side').classList.toggle('open')">☰</button><h1 id="pgTitle"></h1></div><div class="acts" id="pgActs"></div></div>
+  <div id="content"></div>
+</main>
+</div>
+
+<button class="gbtn" id="gbtn" title="המדריך" hidden>✦</button>
+<div class="guide" id="guide">
+  <div class="hd"><div class="ic">✦</div><div><b>המדריך של Tatzil</b><small>שואלים, מקבלים טקסטים מוכנים וטיפים</small></div><button class="x" onclick="toggleGuide(false)">✕</button></div>
+  <div class="msgs" id="gMsgs"></div>
+  <div class="typing" id="gTyping" hidden>המדריך כותב…</div>
+  <div class="sug" id="gSug"></div>
+  <div class="in"><input id="gIn" placeholder="שאלו כל דבר… למשל: כתוב לי הודעת וואטסאפ לשגרירים"><button class="b p" id="gSend">שליחה</button></div>
+</div>
+<div class="mod" id="mod"><div class="card" id="modC"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>Math.round(+n||0).toLocaleString('he-IL');const SYM={ILS:'₪',USD:'$'};
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2600)};
+const api=async(u,o={})=>{const r=await fetch('/api'+u,{headers:o.body&&!(o.body instanceof FormData)?{'Content-Type':'application/json'}:{},method:o.method||'GET',body:o.body instanceof FormData?o.body:o.body?JSON.stringify(o.body):undefined});const j=await r.json().catch(()=>({}));if(r.status===401){location.reload();throw 0}if(!r.ok){toast(j.error||'שגיאה');throw new Error(j.error||'err')}return j};
+const modal=(html)=>{$('#modC').innerHTML=html;$('#mod').classList.add('on')};const closeModal=()=>$('#mod').classList.remove('on');$('#mod').onclick=e=>{if(e.target.id==='mod')closeModal()};
+const dt=s=>{if(!s)return '';const d=new Date(s.includes('T')?s:s.replace(' ','T')+'Z');return d.toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})};
+const toLocal=s=>{if(!s)return '';const d=new Date(s);if(isNaN(d))return s.slice(0,16);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`};
+let U=null,C=null,PROVS=[],es=null;
+
+// ---- auth ----
+function swap(w){$('#loginF').hidden=w==='reg';$('#regF').hidden=w!=='reg'}
+$('#loginF').onsubmit=async e=>{e.preventDefault();try{await api('/login',{method:'POST',body:{email:$('#lEmail').value,password:$('#lPass').value}});boot()}catch(e){$('#lErr').textContent='אימייל או סיסמה שגויים'}};
+$('#regF').onsubmit=async e=>{e.preventDefault();try{await api('/register',{method:'POST',body:{name:$('#rName').value,org:$('#rOrg').value,email:$('#rEmail').value,phone:$('#rPhone').value,password:$('#rPass').value}});location.hash='#/account';boot()}catch(e){$('#rErr').textContent=e.message}};
+$('#logout').onclick=async e=>{e.preventDefault();await api('/logout',{method:'POST'});location.reload()};
+async function boot(){const {user}=await api('/me');if(!user){$('#auth').style.display='';$('#shell').classList.remove('on');return}U=user;$('#auth').style.display='none';$('#shell').classList.add('on');$('#gbtn').hidden=false;
+  $('#uAv').textContent=(U.name||U.email)[0].toUpperCase();$('#uName').textContent=U.name||U.email;$('#uOrg').textContent=U.org_name||U.org||'';$('#adminNav').hidden=U.role!=='admin';PROVS=await api('/providers');route()}
+addEventListener('hashchange',route);
+async function route(){const h=(location.hash||'#/').slice(2);const [a,b,c]=h.split('/');$('#side').classList.remove('open');$$('aside a[data-p]').forEach(x=>x.classList.remove('on'));
+  if(a==='c'&&b){if(!C||C.id!=+b)C=await api('/campaigns/'+b);$('#campNav').hidden=false;$('#campName').textContent=C.title;$$('#campNav a').forEach(x=>{x.href=`#/c/${C.id}/${x.dataset.p.split('/')[1]}`;x.classList.toggle('on',x.dataset.p==='c/'+(c||'overview'))});return pages['c_'+(c||'overview')]()}
+  $('#campNav').hidden=true;C=null;const p=a||'home';$$(`aside a[data-p="${p}"]`).forEach(x=>x.classList.add('on'));(pages[p]||pages.home)()}
+const setTop=(t,sub='',acts='')=>{$('#pgTitle').innerHTML=esc(t)+(sub?`<small>${sub}</small>`:'');$('#pgActs').innerHTML=acts};
+const pages={};
+
+// ---- home ----
+pages.home=async()=>{setTop('הקמפיינים שלי','',`<button class="b p" onclick="newCamp()">+ קמפיין חדש</button>`);const l=await api('/campaigns');
+  const v=U.org_verified===1?'':`<div class="card golive" style="margin-bottom:16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap"><div style="flex:1"><b>כדי לפתוח קמפיין צריך לאמת את העמותה</b><div class="small muted">האימות נעשה אוטומטית מול רשם העמותות לפי מספר העמותה (58xxxxxxx).</div></div><a class="b p" href="#/account">אימות עכשיו</a></div>`;
+  $('#content').innerHTML=v+(l.length?`<div class="cl">${l.map(c=>`<div class="card cc" onclick="location.hash='#/c/${c.id}/overview'"><div class="cv" style="${c.cover?`background-image:url('${esc(c.cover)}')`:''}"></div><div class="bd"><h4><span>${esc(c.title)}</span>${st(c.status)}</h4><div class="bar"><i style="width:${Math.min(100,c.stats.pct)}%"></i></div><div class="n"><span><b>₪${fmt(c.stats.total)}</b> מתוך ₪${fmt(c.goal)}</span><span>${c.stats.count} תורמים · ${c.stats.pct}%</span></div></div></div>`).join('')}</div>`:`<div class="card empty"><b>עדיין אין קמפיינים</b>בלחיצה אחת פותחים קמפיין, והאשף מלווה אתכם עד העלייה לאוויר.<br><br><button class="b p" onclick="newCamp()">+ הקמפיין הראשון שלי</button></div>`)};
+const st=s=>`<span class="tag ${s}"><i></i>${{draft:'טיוטה',test:'בדיקה',live:'באוויר',ended:'הסתיים'}[s]||s}</span>`;
+function newCamp(){if(U.org_verified!==1&&U.role!=='admin'){toast('קודם מאמתים את העמותה');location.hash='#/account';return}
+  modal(`<h3>קמפיין חדש</h3><div class="grid"><label>שם הקמפיין<input id="nTitle" placeholder="למשל: בונים את בית המדרש"></label><div class="row"><label>יעד (₪)<input id="nGoal" type="number" value="100000"></label><label>מכפיל<select id="nMult"><option value="1">ללא מאצ'ינג</option><option value="2">×2</option><option value="3" selected>×3</option><option value="4">×4</option><option value="5">×5</option></select></label></div><div class="row"><label>התחלה<input id="nStart" type="datetime-local" value="${toLocal(new Date())}"></label><label>סיום<input id="nEnd" type="datetime-local" value="${toLocal(new Date(Date.now()+2*864e5))}"></label></div><div class="row"><button class="b p" id="nGo">יצירה והמשך לאשף</button><button class="b" onclick="closeModal()">ביטול</button></div></div>`);
+  $('#nGo').onclick=async()=>{const c=await api('/campaigns',{method:'POST',body:{title:$('#nTitle').value,goal:$('#nGoal').value,multiplier:$('#nMult').value,start_at:$('#nStart').value,end_at:$('#nEnd').value}});closeModal();C=null;location.hash=`#/c/${c.id}/edit`}}
+
+// ---- account ----
+pages.account=async()=>{setTop('העמותה והחשבון');const {user}=await api('/me');U=user;const v=U.org_verified;
+  $('#content').innerHTML=`<div class="grid g2"><div class="card"><h3>אימות עמותה ${v===1?'<span class="tag ok">✓ מאומתת</span>':v===2?'<span class="tag pending">ממתין</span>':''}</h3>
+    <p class="small muted" style="margin-bottom:12px">הזינו את מספר העמותה (ע"ר, 9 ספרות). המערכת בודקת אותו מול מאגר רשם העמותות של ממשלת ישראל ומאשרת אוטומטית עמותה פעילה.</p>
+    <div class="row"><label>מספר עמותה<input id="orgNum" value="${esc(U.org_number||'')}" dir="ltr" placeholder="580000000" inputmode="numeric"></label><button class="b p x" id="orgGo">בדיקה ואימות</button></div>
+    <div id="orgRes" style="margin-top:12px">${U.org_name?`<div><b>${esc(U.org_name)}</b> <span class="small muted">${esc(U.org_status||'')}</span></div>`:''}</div></div>
+  <div class="card"><h3>פרטי החשבון</h3><div class="grid"><label>שם<input id="aName" value="${esc(U.name||'')}"></label><label>שם העמותה (לתצוגה)<input id="aOrg" value="${esc(U.org||'')}"></label><label>טלפון<input id="aPhone" value="${esc(U.phone||'')}" dir="ltr"></label><label>סיסמה חדשה (לא חובה)<input id="aPass" type="password"></label><button class="b p" id="aSave">שמירה</button></div></div></div>`;
+  $('#orgGo').onclick=async()=>{const b=$('#orgGo');b.disabled=true;$('#orgRes').innerHTML='<span class="muted small">בודקים מול רשם העמותות…</span>';try{const r=await api('/verify-org',{method:'POST',body:{number:$('#orgNum').value}});
+    $('#orgRes').innerHTML=!r.found?'<div class="err">המספר לא נמצא במאגר רשם העמותות. בדקו את המספר, או פנו אלינו לאימות ידני.</div>':`<div><b>${esc(r.org.name)}</b> <span class="small muted">${esc(r.org.status)}${r.org.city?' · '+esc(r.org.city):''}</span></div>${r.verified?'<div class="tag ok" style="margin-top:8px">✓ העמותה אומתה, אפשר לפתוח קמפיין</div>':'<div class="tag pending" style="margin-top:8px">העמותה אינה בסטטוס פעיל, הועבר לאימות ידני</div>'}`;boot()}catch(e){$('#orgRes').innerHTML=`<div class="err">${esc(e.message)}</div>`}finally{b.disabled=false}};
+  $('#aSave').onclick=async()=>{await api('/me',{method:'PUT',body:{name:$('#aName').value,org:$('#aOrg').value,phone:$('#aPhone').value,password:$('#aPass').value}});toast('נשמר');boot()}};
+
+// ---- campaign: overview ----
+let chartData=[];
+pages.c_overview=async()=>{C=await api('/campaigns/'+C.id);const s=C.stats,cur=SYM[C.currency];setTop(C.title,`${st(C.status)} · /c/${C.slug}`,`<a class="b" href="/c/${C.slug}" target="_blank">צפייה בדף ↗</a>${C.status!=='live'?`<a class="b p" href="#/c/${C.id}/payment">עלייה לאוויר</a>`:''}`);
+  const dons=await api(`/campaigns/${C.id}/donations?status=paid&test=${C.status==='live'||C.status==='ended'?0:1}`);
+  const byDay={};dons.forEach(d=>{const k=(d.paid_at||d.created).slice(0,10);byDay[k]=(byDay[k]||0)+d.amount});const days=[];for(let i=13;i>=0;i--){const k=new Date(Date.now()-i*864e5).toISOString().slice(0,10);days.push([k.slice(5),byDay[k]||0])}
+  const lastH=dons.filter(d=>Date.now()-new Date((d.paid_at||d.created).replace(' ','T')+'Z')<36e5).length;const avg=s.count?Math.round(s.raised/s.count):0;
+  const left=Math.max(0,new Date(C.end_at)-Date.now());const hrs=Math.round(left/36e5);
+  $('#content').innerHTML=`${C.status!=='live'?`<div class="card golive" style="margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1"><b>${C.status==='ended'?'הקמפיין הסתיים':'הקמפיין במצב בדיקה'}</b><div class="small muted">${C.status==='ended'?'אפשר להפעיל מחדש מעמוד הסליקה.':'תרומות כאן מדומות. תרגלו הכל, ואז עלו לאוויר מעמוד "סליקה ועלייה לאוויר".'}</div></div><a class="b" href="/c/${C.slug}" target="_blank">תרומת בדיקה</a></div>`:''}
+  <div class="grid g4"><div class="card stat hl"><div class="l">גויסו (כולל מאצ'ינג)</div><div class="v">${cur}${fmt(s.total)}</div><div class="d">${s.pct}% מיעד של ${cur}${fmt(s.goal)}${C.multiplier>1?` · בפועל ${cur}${fmt(s.raised)}`:''}</div></div>
+  <div class="card stat"><div class="l">תורמים</div><div class="v">${fmt(s.count)}</div><div class="d">ממוצע ${cur}${fmt(avg)} לתורם</div></div>
+  <div class="card stat"><div class="l">בשעה האחרונה</div><div class="v">${lastH}</div><div class="d">תרומות</div></div>
+  <div class="card stat"><div class="l">${left>0?'נותרו':'הסתיים'}</div><div class="v">${left>0?(hrs>48?Math.round(hrs/24)+' ימים':hrs+' שעות'):'—'}</div><div class="d">עד ${dt(C.end_at)}</div></div></div>
+  <div class="grid g2" style="margin-top:14px;grid-template-columns:1.4fr 1fr"><div class="card"><h3>תרומות ב-14 הימים האחרונים</h3><canvas class="chart" id="chart"></canvas></div>
+  <div class="card"><h3>פיד חי <span class="tag live"><i></i>LIVE</span></h3><div class="feed" id="feed">${dons.slice(0,30).map(fd).join('')||'<div class="empty">עדיין אין תרומות</div>'}</div></div></div>
+  ${C.teamStats.length?`<div class="card" style="margin-top:14px"><h3>שגרירים מובילים</h3><div class="tblwrap"><table class="tbl"><tr><th>#</th><th>שגריר</th><th>תרומות</th><th>סכום</th><th>יעד</th><th></th></tr>${C.teamStats.slice(0,10).map((t,i)=>`<tr><td>${i+1}</td><td><b>${esc(t.name)}</b></td><td>${t.n}</td><td class="amt">${cur}${fmt(t.total)}</td><td style="min-width:120px">${t.goal?`<div class="bar"><i style="width:${Math.min(100,t.total/t.goal*100)}%"></i></div><span class="small muted">${Math.round(t.total/t.goal*100)}%</span>`:'—'}</td><td><a class="b s" href="/c/${C.slug}/${t.slug}" target="_blank">דף ↗</a></td></tr>`).join('')}</table></div></div>`:''}`;
+  drawChart($('#chart'),days);live(d=>{$('#feed').querySelector('.empty')?.remove();$('#feed').insertAdjacentHTML('afterbegin',fd(d));pages.c_overview.t=setTimeout(()=>location.hash.endsWith('overview')&&pages.c_overview(),4000)})};
+const fd=d=>`<div class="fd"><div class="av">${esc((d.anonymous?'א':(d.name||'?'))[0])}</div><div><b>${d.anonymous?'אנונימי':esc(d.name)}${d.team?` <span class="small muted">· ${esc(d.team)}</span>`:''}</b><small>${esc(d.dedication||'')} ${dt(d.paid_at||d.created)}</small></div><div class="a">${SYM[C.currency]}${fmt(d.amount)}</div></div>`;
+function drawChart(cv,data){if(!cv)return;const W=cv.clientWidth,H=180;cv.width=W*2;cv.height=H*2;const x=cv.getContext('2d');x.scale(2,2);const max=Math.max(1,...data.map(d=>d[1]));const n=data.length,gw=W/n;x.font='11px Heebo';
+  data.forEach(([k,v],i)=>{const h=v/max*(H-40);const g=x.createLinearGradient(0,H-20-h,0,H-20);g.addColorStop(0,'#2563eb');g.addColorStop(1,'#93c5fd');x.fillStyle=g;const bx=W-(i+1)*gw+6;rr(x,bx,H-20-h,gw-12,h,6);x.fill();x.fillStyle='#94a3b8';x.textAlign='center';x.fillText(k,bx+(gw-12)/2,H-5);if(v){x.fillStyle='#0f172a';x.fillText(fmt(v),bx+(gw-12)/2,H-26-h)}})}
+function rr(x,a,b,w,h,r){r=Math.min(r,h/2,w/2);x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,0);x.arcTo(a,b+h,a,b,0);x.arcTo(a,b,a+w,b,r);x.closePath()}
+function live(onDon){if(es)es.close();es=new EventSource(`/api/c/${C.slug}/stream`);es.addEventListener('donation',e=>{const {donation}=JSON.parse(e.data);toast(`🎉 תרומה חדשה: ${donation.anonymous?'אנונימי':donation.name} · ${SYM[C.currency]}${fmt(donation.amount)}`);onDon&&onDon({...donation,name:donation.name||'אנונימי'})})}
+
+// ---- campaign: edit (wizard) ----
+pages.c_edit=async()=>{C=await api('/campaigns/'+C.id);const s=C.settings;setTop('עריכת קמפיין',C.title,`<a class="b" href="/c/${C.slug}" target="_blank">תצוגה מקדימה ↗</a><button class="b p" onclick="saveCamp()">שמירה</button>`);
+  const step=(location.hash.split('?')[1]||'basic');
+  $('#content').innerHTML=`<div class="steps">${[['basic','1','פרטים'],['design','2','עיצוב וסיפור'],['levels','3','רמות תרומה'],['matchers','4','שותפים מכפילים'],['settings','5','הגדרות ושפות']].map(([k,n,l])=>`<a href="#/c/${C.id}/edit?${k}" class="${k===step?'on':''}"><i>${n}</i>${l}</a>`).join('')}</div>
+  <div class="bld"><div class="grid" id="bform"></div><div class="prev"><div class="card" style="padding:10px"><div class="small muted" style="padding:4px 8px 8px">תצוגה מקדימה (מתעדכנת אחרי שמירה)</div><iframe id="pv" src="/c/${C.slug}?lang=${C.lang}"></iframe></div></div></div>`;
+  const F=$('#bform');
+  if(step==='basic')F.innerHTML=`<div class="card"><h3>פרטי הקמפיין</h3><div class="grid"><label>שם הקמפיין<input data-f="title" value="${esc(C.title)}"></label><label>כותרת משנה (משפט אחד שמסביר למה)<input data-f="subtitle" value="${esc(C.subtitle)}"></label>
+    <div class="row"><label>כתובת הדף<div class="copy"><span>${location.origin}/c/</span><input data-f="slug" value="${esc(C.slug)}" style="width:160px;padding:6px 8px" dir="ltr"></div></label></div>
+    <div class="row"><label>יעד<input data-f="goal" type="number" value="${C.goal}"></label><label>יעד בונוס (אחרי שהיעד הושג)<input data-f="bonus_goal" type="number" value="${C.bonus_goal||''}" placeholder="לא חובה"></label><label>מטבע<select data-f="currency"><option value="ILS" ${C.currency==='ILS'?'selected':''}>₪ שקל</option><option value="USD" ${C.currency==='USD'?'selected':''}>$ דולר</option></select></label></div>
+    <div class="row"><label>מכפיל מאצ'ינג<select data-f="multiplier">${[1,2,3,4,5,6].map(m=>`<option value="${m}" ${C.multiplier==m?'selected':''}>${m===1?'ללא':'×'+m}</option>`).join('')}</select><span class="hint">כל שקל שנתרם מוצג כפול המכפיל. השותפים המכפילים משלימים את ההפרש.</span></label><label>התחלה<input data-f="start_at" type="datetime-local" value="${toLocal(C.start_at)}"></label><label>סיום<input data-f="end_at" type="datetime-local" value="${toLocal(C.end_at)}"></label></div></div></div>`;
+  if(step==='design')F.innerHTML=`<div class="card"><h3>עיצוב</h3><div class="grid"><div class="row"><label>תמונת כותרת (רוחב 1600+)<div class="up"><input type="file" accept="image/*" data-up="cover">${C.cover?`<img src="${esc(C.cover)}">`:'לחצו להעלאת תמונה'}</div></label><label>לוגו<div class="up"><input type="file" accept="image/*" data-up="logo">${C.logo?`<img src="${esc(C.logo)}">`:'לחצו להעלאת לוגו'}</div></label></div>
+    <div class="row"><label>צבע הקמפיין<input data-f="color" type="color" value="${C.color}"></label><label>סרטון YouTube (קישור)<input data-f="video" value="${esc(C.video)}" dir="ltr" placeholder="https://youtu.be/…"></label></div></div></div>
+    <div class="card"><h3>הסיפור <button class="b s" onclick="askGuide('כתוב לי סיפור קמפיין מרגש של 3 פסקאות לקמפיין: '+C.title+'. '+C.subtitle)">✦ שהמדריך יכתוב</button></h3><label>למה אנחנו מגייסים, מה יקרה עם הכסף, ולמה דווקא עכשיו<textarea data-f="story" style="min-height:260px">${esc(C.story)}</textarea></label></div>`;
+  if(step==='levels')F.innerHTML=`<div class="card"><h3>רמות תרומה <button class="b s" onclick="addLevel()">+ רמה</button></h3><div class="hint" style="margin-bottom:8px">רמות עם מלאי (למשל "כיסא בבית הכנסת – 20 יח'") נסגרות אוטומטית כשנגמרות. השאירו 0 למלאי בלתי מוגבל.</div><div class="lvl small muted"><span>שם</span><span>סכום</span><span>תיאור</span><span>מלאי</span><span></span></div><div id="levels">${C.levels.map(lvlRow).join('')}</div></div>
+    <div class="card"><h3>סכומים מהירים בדף</h3><label>מופרדים בפסיק<input id="presets" value="${(s.presets||[]).join(', ')}"></label></div>`;
+  if(step==='matchers')F.innerHTML=`<div class="card"><h3>השותפים המכפילים <button class="b s" onclick="addMatcher()">+ שותף</button></h3><div class="hint" style="margin-bottom:8px">התורמים הגדולים שמממנים את המאצ'ינג. מוצגים בדף הקמפיין עם לוגו.</div><div id="matchers">${C.matchers.map(mtrRow).join('')}</div></div>`;
+  if(step==='settings')F.innerHTML=`<div class="card"><h3>שפות</h3><div class="hint" style="margin-bottom:10px">ממשק דף הקמפיין מתורגם אוטומטית. את הסיפור והכותרות כותבים בשפה הראשית (אפשר לשלב).</div><label>שפה ראשית<select data-f="lang"><option value="he" ${C.lang==='he'?'selected':''}>עברית</option><option value="en" ${C.lang==='en'?'selected':''}>English</option></select></label><div style="margin-top:10px"><div class="small muted" style="margin-bottom:6px">שפות נוספות למתג בדף</div><div class="langchips">${[['he','עברית'],['en','English'],['fr','Français'],['es','Español']].map(([k,l])=>`<label><input type="checkbox" data-lang="${k}" ${(s.langs||[C.lang]).includes(k)?'checked':''}>${l}</label>`).join('')}</div></div></div>
+    <div class="card"><h3>אפשרויות תרומה</h3><div class="grid"><div class="row"><label>סכום מינימלי<input data-s="minAmount" type="number" value="${s.minAmount||10}"></label><label>מקסימום תשלומים<input data-s="installments" type="number" value="${s.installments||1}" min="1" max="36"></label></div>
+    <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="allowMonthly" ${s.allowMonthly!==false?'checked':''}>לאפשר תרומה חודשית (הוראת קבע)</label><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="allowAnon" ${s.allowAnon!==false?'checked':''}>לאפשר תרומה אנונימית</label><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="showDonors" ${s.showDonors!==false?'checked':''}>להציג רשימת תורמים</label>
+    <label>הודעת תודה אחרי תרומה<input data-s="thanks" value="${esc(s.thanks||'')}"></label></div></div>
+    <div class="card"><h3>פעולות</h3><div class="row"><button class="b" onclick="dupCamp()">שכפול הקמפיין</button><button class="b r" onclick="delCamp()">מחיקת הקמפיין</button></div></div>`;
+  $$('[data-up]').forEach(i=>i.onchange=async e=>{const fd=new FormData();fd.append('file',e.target.files[0]);toast('מעלה…');const r=await api('/upload',{method:'POST',body:fd});await api('/campaigns/'+C.id,{method:'PUT',body:{[i.dataset.up]:r.url}});toast('הועלה');pages.c_edit()})};
+const lvlRow=l=>`<div class="lvl"><input data-l="name" value="${esc(l.name)}" placeholder="שם הרמה"><input data-l="amount" type="number" value="${l.amount}"><input data-l="descr" value="${esc(l.descr||'')}" placeholder="תיאור קצר"><input data-l="stock" type="number" value="${l.stock||0}" title="מלאי"><button class="b s r" onclick="this.parentElement.remove()">✕</button></div>`;
+const mtrRow=m=>`<div class="mtr"><input data-m="name" value="${esc(m.name)}" placeholder="שם השותף"><input data-m="logo" value="${esc(m.logo||'')}" placeholder="קישור ללוגו (אפשר להעלות בעיצוב ולהדביק)" dir="ltr"><button class="b s r" onclick="this.parentElement.remove()">✕</button></div>`;
+function addLevel(){$('#levels').insertAdjacentHTML('beforeend',lvlRow({name:'',amount:'',descr:''}))}
+function addMatcher(){$('#matchers').insertAdjacentHTML('beforeend',mtrRow({name:'',logo:''}))}
+async function saveCamp(){const b={};$$('[data-f]').forEach(i=>b[i.dataset.f]=i.value);const settings={};$$('[data-s]').forEach(i=>settings[i.dataset.s]=i.type==='checkbox'?i.checked:(i.type==='number'?+i.value:i.value));
+  const langs=$$('[data-lang]:checked').map(i=>i.dataset.lang);if(langs.length)settings.langs=langs;
+  if($('#presets'))settings.presets=$('#presets').value.split(',').map(x=>+x.trim()).filter(x=>x>0).slice(0,6);
+  if(Object.keys(settings).length)b.settings=settings;
+  if($('#levels'))b.levels=$$('#levels .lvl').map(r=>({name:r.querySelector('[data-l=name]').value,amount:r.querySelector('[data-l=amount]').value,descr:r.querySelector('[data-l=descr]').value,stock:r.querySelector('[data-l=stock]').value})).filter(l=>l.name&&+l.amount>0);
+  if($('#matchers'))b.matchers=$$('#matchers .mtr').map(r=>({name:r.querySelector('[data-m=name]').value,logo:r.querySelector('[data-m=logo]').value})).filter(m=>m.name);
+  C=await api('/campaigns/'+C.id,{method:'PUT',body:b});toast('נשמר ✓');$('#campName').textContent=C.title;const pv=$('#pv');if(pv)pv.src=`/c/${C.slug}?lang=${C.lang}&t=${Date.now()}`}
+async function dupCamp(){const r=await api(`/campaigns/${C.id}/duplicate`,{method:'POST'});C=null;location.hash=`#/c/${r.id}/edit`}
+async function delCamp(){if(!confirm('למחוק את הקמפיין וכל התרומות שלו? אי אפשר לשחזר.'))return;await api('/campaigns/'+C.id,{method:'DELETE'});C=null;location.hash='#/'}
+
+// ---- campaign: donations ----
+pages.c_donations=async()=>{setTop('תרומות',C.title,`<a class="b" href="/api/campaigns/${C.id}/donations.csv">⬇ ייצוא CSV</a><button class="b p" onclick="addDon()">+ תרומה ידנית</button>`);
+  const test=C.status==='live'||C.status==='ended'?0:1;
+  $('#content').innerHTML=`<div class="toolbar"><input id="dq" placeholder="חיפוש שם / טלפון / אימייל / הקדשה"><select id="ds"><option value="">כל הסטטוסים</option><option value="paid">שולם</option><option value="pending">ממתין</option><option value="failed">נכשל</option></select><select id="dtst"><option value="${test}">${test?'תרומות בדיקה':'תרומות אמיתיות'}</option><option value="${1-test}">${test?'תרומות אמיתיות':'תרומות בדיקה'}</option></select>${test?`<button class="b r s" onclick="clearTest()">מחיקת כל תרומות הבדיקה</button>`:''}<span class="muted small" id="dsum"></span></div><div class="tblwrap"><table class="tbl" id="dtbl"></table></div>`;
+  const load=async()=>{const l=await api(`/campaigns/${C.id}/donations?q=${encodeURIComponent($('#dq').value)}&status=${$('#ds').value}&test=${$('#dtst').value}`);const cur=SYM[C.currency];
+    $('#dsum').textContent=`${l.length} רשומות · ${cur}${fmt(l.filter(d=>d.status==='paid').reduce((a,d)=>a+d.amount,0))} שולם`;
+    $('#dtbl').innerHTML=`<tr><th>#</th><th>תאריך</th><th>תורם</th><th>סכום</th><th>הקדשה</th><th>שגריר</th><th>סטטוס</th><th>ספק / אסמכתא</th><th></th></tr>`+(l.map(d=>`<tr><td class="muted">${d.id}</td><td class="small" style="white-space:nowrap">${dt(d.paid_at||d.created)}</td><td><b>${esc(d.name)}</b>${d.anonymous?' <span class="tag">אנונימי</span>':''}<div class="small muted" dir="ltr" style="text-align:right">${esc(d.phone)} ${esc(d.email)}</div></td><td class="amt">${cur}${fmt(d.amount)}${d.installments>1?`<div class="small muted">${d.installments} תשלומים</div>`:''}${d.monthly?'<div class="small muted">חודשי</div>':''}</td><td class="small">${esc(d.dedication)}</td><td class="small">${esc(d.team||'')}</td><td><span class="tag ${d.status}">${{paid:'שולם',pending:'ממתין',failed:'נכשל',refunded:'הוחזר'}[d.status]||d.status}</span></td><td class="small muted" dir="ltr" style="text-align:right">${esc(d.provider)} ${esc(d.ref)}</td><td><div class="acts">${d.status!=='paid'?`<button class="b s g" onclick="donSt(${d.id},'paid')">אישור</button>`:''}<button class="b s" onclick="editDon(${d.id})">✎</button><button class="b s r" onclick="delDon(${d.id})">✕</button></div></td></tr>`).join('')||'<tr><td colspan="9"><div class="empty">אין תרומות להצגה</div></td></tr>')};
+  $('#dq').oninput=()=>{clearTimeout(load.t);load.t=setTimeout(load,300)};$('#ds').onchange=$('#dtst').onchange=load;load();pages.c_donations.reload=load;live(()=>load())};
+async function donSt(id,status){await api(`/campaigns/${C.id}/donations/${id}`,{method:'PATCH',body:{status}});toast('עודכן');pages.c_donations.reload()}
+async function delDon(id){if(!confirm('למחוק את התרומה?'))return;await api(`/campaigns/${C.id}/donations/${id}`,{method:'DELETE'});pages.c_donations.reload()}
+async function clearTest(){if(!confirm('למחוק את כל תרומות הבדיקה?'))return;await api(`/campaigns/${C.id}/clear-test`,{method:'POST'});pages.c_donations.reload()}
+function donForm(d={}){return `<div class="grid"><div class="row"><label>שם<input id="xName" value="${esc(d.name||'')}"></label><label>סכום<input id="xAmt" type="number" value="${d.amount||''}"></label></div><div class="row"><label>טלפון<input id="xPhone" value="${esc(d.phone||'')}" dir="ltr"></label><label>אימייל<input id="xEmail" value="${esc(d.email||'')}" dir="ltr"></label></div><label>הקדשה<input id="xDed" value="${esc(d.dedication||'')}"></label><div class="row"><label>שגריר<select id="xTeam"><option value="">ללא</option>${C.teams.map(t=>`<option value="${t.id}" ${d.team_id==t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label><label>אסמכתא<input id="xRef" value="${esc(d.ref||'')}" dir="ltr"></label></div><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="xAnon" ${d.anonymous?'checked':''}>אנונימי</label></div>`}
+function addDon(){modal(`<h3>תרומה ידנית (מזומן / העברה / צ'ק)</h3>${donForm()}<div class="row" style="margin-top:12px"><button class="b p" id="xGo">הוספה</button><button class="b" onclick="closeModal()">ביטול</button></div>`);$('#xGo').onclick=async()=>{await api(`/campaigns/${C.id}/donations`,{method:'POST',body:{name:$('#xName').value,amount:$('#xAmt').value,phone:$('#xPhone').value,email:$('#xEmail').value,dedication:$('#xDed').value,team_id:$('#xTeam').value,ref:$('#xRef').value,anonymous:$('#xAnon').checked}});closeModal();toast('נוספה');pages.c_donations.reload&&pages.c_donations.reload()}}
+async function editDon(id){const l=await api(`/campaigns/${C.id}/donations?q=`);const d=l.find(x=>x.id===id);modal(`<h3>עריכת תרומה #${id}</h3>${donForm(d)}<div class="row" style="margin-top:12px"><button class="b p" id="xGo">שמירה</button><button class="b" onclick="closeModal()">ביטול</button></div>`);$('#xGo').onclick=async()=>{await api(`/campaigns/${C.id}/donations/${id}`,{method:'PATCH',body:{name:$('#xName').value,amount:$('#xAmt').value,phone:$('#xPhone').value,email:$('#xEmail').value,dedication:$('#xDed').value,team_id:$('#xTeam').value,anonymous:$('#xAnon').checked}});closeModal();pages.c_donations.reload()}}
+
+// ---- campaign: teams ----
+pages.c_teams=async()=>{C=await api('/campaigns/'+C.id);setTop('שגרירים',C.title,`<button class="b p" onclick="teamForm()">+ שגריר</button>`);const cur=SYM[C.currency];
+  $('#content').innerHTML=`<div class="card" style="margin-bottom:14px"><b>איך זה עובד</b><div class="small muted">לכל שגריר יש דף משלו עם קישור אישי, יעד ודירוג. תרומות דרך הקישור נזקפות לזכותו. שלחו לכל שגריר את הקישור שלו בוואטסאפ מהכפתור ליד שמו.</div></div>
+  ${C.teamStats.length?`<div class="tblwrap"><table class="tbl"><tr><th>#</th><th>שגריר</th><th>קישור אישי</th><th>תרומות</th><th>סכום</th><th>יעד</th><th></th></tr>${C.teamStats.map((t,i)=>{const url=`${location.origin}/c/${C.slug}/${t.slug}`;const tm=C.teams.find(x=>x.id===t.id);return `<tr><td>${i+1}</td><td><b>${esc(t.name)}</b><div class="small muted">${esc(tm.phone||'')}</div></td><td><div class="copy" style="max-width:260px"><span>${url}</span><button class="b s" onclick="navigator.clipboard.writeText('${url}');toast('הועתק')">העתק</button></div></td><td>${t.n}</td><td class="amt">${cur}${fmt(t.total)}</td><td>${t.goal?cur+fmt(t.goal)+' · '+Math.round(t.total/t.goal*100)+'%':'—'}</td><td><div class="acts">${tm.phone?`<a class="b s g" target="_blank" href="https://wa.me/${tm.phone.replace(/\\D/g,'').replace(/^0/,'972')}?text=${encodeURIComponent('היי '+t.name+', זה הקישור האישי שלך לקמפיין "'+C.title+'":\\n'+url+'\\nכל תרומה דרכו נזקפת לזכותך. בהצלחה!')}">וואטסאפ</a>`:''}<button class="b s" onclick='teamForm(${JSON.stringify(tm).replace(/'/g,"&#39;")})'>✎</button><button class="b s r" onclick="delTeam(${t.id})">✕</button></div></td></tr>`}).join('')}</table></div>`:'<div class="card empty"><b>אין שגרירים עדיין</b>הוסיפו שגרירים כדי שכל אחד יגייס מהחברים שלו עם דף אישי.</div>'}`};
+function teamForm(t={}){modal(`<h3>${t.id?'עריכת שגריר':'שגריר חדש'}</h3><div class="grid"><label>שם<input id="tName" value="${esc(t.name||'')}"></label><div class="row"><label>יעד אישי (₪)<input id="tGoal" type="number" value="${t.goal||''}"></label><label>טלפון (לשליחת הקישור)<input id="tPhone" value="${esc(t.phone||'')}" dir="ltr"></label></div><label>משפט אישי<input id="tDescr" value="${esc(t.descr||'')}" placeholder="למשל: עזרו לי להגיע ליעד לכבוד…"></label><label>תמונה<div class="up"><input type="file" accept="image/*" id="tPhotoF">${t.photo?`<img src="${esc(t.photo)}">`:'לחצו להעלאת תמונה'}</div><input type="hidden" id="tPhoto" value="${esc(t.photo||'')}"></label><div class="row"><button class="b p" id="tGo">שמירה</button><button class="b" onclick="closeModal()">ביטול</button></div></div>`);
+  $('#tPhotoF').onchange=async e=>{const fd=new FormData();fd.append('file',e.target.files[0]);const r=await api('/upload',{method:'POST',body:fd});$('#tPhoto').value=r.url;toast('הועלה')};
+  $('#tGo').onclick=async()=>{const b={name:$('#tName').value,goal:$('#tGoal').value,phone:$('#tPhone').value,descr:$('#tDescr').value,photo:$('#tPhoto').value};if(t.id)await api(`/campaigns/${C.id}/teams/${t.id}`,{method:'PUT',body:b});else await api(`/campaigns/${C.id}/teams`,{method:'POST',body:b});closeModal();pages.c_teams()}}
+async function delTeam(id){if(!confirm('למחוק שגריר? התרומות שלו יישארו בקמפיין.'))return;await api(`/campaigns/${C.id}/teams/${id}`,{method:'DELETE'});pages.c_teams()}
+
+// ---- campaign: payment & go live ----
+pages.c_payment=async()=>{C=await api('/campaigns/'+C.id);setTop('סליקה ועלייה לאוויר',C.title);const p=C.provider||{type:'test'};
+  const stepsOk=[[!!C.title&&C.goal>0,'פרטי קמפיין'],[!!C.story||!!C.cover,'סיפור או תמונה'],[C.levels.length>0,'רמות תרומה'],[p.type&&p.type!=='test','ספק סליקה מחובר'],[C.status!=='draft','בוצעה תרומת בדיקה']];
+  $('#content').innerHTML=`<div class="grid g2"><div class="card"><h3>ספק הסליקה</h3><div class="hint" style="margin-bottom:10px">הכסף נכנס ישירות לחשבון העמותה אצל הספק. Tatzil לא נוגעת בכסף.</div><label>ספק<select id="pType">${PROVS.map(x=>`<option value="${x.type}" ${p.type===x.type?'selected':''}>${esc(x.label)}</option>`).join('')}</select></label><div class="grid" id="pFields" style="margin-top:10px"></div><div class="hint" id="pHelp" style="margin-top:8px"></div><button class="b p" style="margin-top:12px" onclick="saveProv()">שמירת הגדרות סליקה</button></div>
+  <div class="card golive ${C.status==='live'?'live':''}"><h3>${C.status==='live'?'הקמפיין באוויר ✓':'רשימת בדיקה לפני עלייה לאוויר'}</h3>
+    <div class="grid" style="gap:8px">${stepsOk.map(([ok,l])=>`<div style="display:flex;gap:8px;align-items:center"><span class="tag ${ok?'ok':''}">${ok?'✓':'•'}</span>${l}</div>`).join('')}</div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">${C.status==='live'?`<button class="b" onclick="setStatus('ended')">סיום הקמפיין</button><button class="b" onclick="setStatus('test')">חזרה למצב בדיקה</button>`:`<button class="b p" onclick="goLive()" ${stepsOk[3][0]?'':'disabled'}>🚀 עלייה לאוויר</button>${C.status==='draft'?`<button class="b" onclick="setStatus('test')">הפעלת מצב בדיקה</button>`:''}<a class="b" href="/c/${C.slug}" target="_blank">תרומת בדיקה בדף</a>`}</div>
+    <div class="hint" style="margin-top:10px">בעלייה לאוויר תרומות הבדיקה נמחקות, הספק האמיתי מופעל, והדף מפסיק להציג את פס "מצב בדיקה".</div></div></div>`;
+  const render=()=>{const t=$('#pType').value;const P=PROVS.find(x=>x.type===t);$('#pFields').innerHTML=P.fields.map(f=>`<label>${esc(f.l)}<input data-pf="${f.k}" value="${esc(p[f.k]||'')}" dir="ltr" autocomplete="off"></label>`).join('')||'<div class="muted small">מצב בדיקה: תרומות מדומות בלבד. בחרו ספק אמיתי כדי לעלות לאוויר.</div>';
+    $('#pHelp').innerHTML={nedarim:'הזינו את מספר המוסד ו-ApiValid מהממשק של נדרים פלוס. כתובת ה-Callback שצריך לאשר אצלם: <code dir="ltr">'+location.origin+'/pay/nedarim/callback</code>',meshulam:'ב-Grow/משולם צרו דף תשלום מסוג API, והעתיקו Page code ו-User ID. כתובת ה-Webhook: <code dir="ltr">'+location.origin+'/pay/meshulam/webhook</code>',paypal:'ב-PayPal Developer צרו App וקבלו Client ID ו-Secret. לבדיקה השתמשו ב-Sandbox=true.',link:'כל דף תשלום מאובטח שיש לכם (קארדקום, טרנזילה, פייבוקס). התרומה תירשם כ"ממתינה" ותאושר ידנית או לפי דוח הספק.',test:''}[t]||''};
+  $('#pType').onchange=render;render()};
+async function saveProv(){const prov={type:$('#pType').value};$$('[data-pf]').forEach(i=>prov[i.dataset.pf]=i.value.trim());C=await api('/campaigns/'+C.id,{method:'PUT',body:{provider:prov}});toast('נשמר ✓');pages.c_payment()}
+async function setStatus(status){await api(`/campaigns/${C.id}/status`,{method:'POST',body:{status}});toast('עודכן');pages.c_payment()}
+async function goLive(){if(!confirm('לעלות לאוויר? תרומות הבדיקה יימחקו והסליקה האמיתית תופעל.'))return;try{await api(`/campaigns/${C.id}/status`,{method:'POST',body:{status:'live',clearTest:true}});toast('🚀 הקמפיין באוויר!');location.hash=`#/c/${C.id}/overview`}catch{}}
+
+// ---- campaign: share ----
+pages.c_share=async()=>{setTop('שיתוף ומסך אירוע',C.title);const url=`${location.origin}/c/${C.slug}`;
+  $('#content').innerHTML=`<div class="grid g2"><div class="card"><h3>קישורים</h3><div class="grid"><label>דף הקמפיין<div class="copy"><span>${url}</span><button class="b s" onclick="navigator.clipboard.writeText('${url}');toast('הועתק')">העתק</button></div></label>${['en','fr','es'].filter(l=>(C.settings.langs||[]).includes(l)).map(l=>`<label>${{en:'English',fr:'Français',es:'Español'}[l]}<div class="copy"><span>${url}?lang=${l}</span><button class="b s" onclick="navigator.clipboard.writeText('${url}?lang=${l}');toast('הועתק')">העתק</button></div></label>`).join('')}
+    <label>קוד להטמעה באתר שלכם<textarea dir="ltr" style="min-height:70px;font-size:12px" readonly>&lt;iframe src="${url}" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</textarea></label></div>
+    <div class="row" style="margin-top:12px"><a class="b g" target="_blank" href="https://wa.me/?text=${encodeURIComponent(C.title+'\n'+url)}">שיתוף בוואטסאפ</a><a class="b" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(url)}">QR להדפסה</a></div></div>
+  <div class="card"><h3>מסך אירוע חי 📺</h3><p class="small muted">פתחו את הכתובת בטלוויזיה / מקרן באירוע. המסך מציג את הסכום, היעד והתורמים בזמן אמת, ומתעדכן לבד.</p><div class="copy" style="margin:10px 0"><span>${url}/screen</span><button class="b s" onclick="navigator.clipboard.writeText('${url}/screen');toast('הועתק')">העתק</button></div><a class="b p" href="${url}/screen" target="_blank">פתיחת המסך ↗</a></div></div>`};
+
+// ---- superadmin ----
+pages.admin=async()=>{if(U.role!=='admin'){location.hash='#/';return}setTop('ניהול-על','כל הפלטפורמה');const o=await api('/admin/overview');
+  $('#content').innerHTML=`<div class="grid g4"><div class="card stat hl"><div class="l">סה"כ גויס בפלטפורמה</div><div class="v">₪${fmt(o.totals.raised)}</div><div class="d">${fmt(o.totals.donations)} תרומות</div></div><div class="card stat"><div class="l">היום</div><div class="v">₪${fmt(o.today.s)}</div><div class="d">${o.today.n} תרומות</div></div><div class="card stat"><div class="l">קמפיינים באוויר</div><div class="v">${o.live}</div><div class="d">מתוך ${o.campaigns.length}</div></div><div class="card stat"><div class="l">עמותות / משתמשים</div><div class="v">${o.users.length}</div><div class="d">${o.users.filter(u=>u.org_verified===1).length} מאומתות · ${o.users.filter(u=>u.org_verified===2).length} ממתינות</div></div></div>
+  <div class="card" style="margin-top:14px"><h3>תרומות ב-30 הימים האחרונים</h3><canvas class="chart" id="achart"></canvas></div>
+  <div class="card" style="margin-top:14px"><h3>כל הקמפיינים</h3><div class="tblwrap"><table class="tbl"><tr><th>#</th><th>קמפיין</th><th>עמותה</th><th>סטטוס</th><th>יעד</th><th>גויס</th><th>תרומות</th><th>סיום</th><th></th></tr>${o.campaigns.map(c=>`<tr><td class="muted">${c.id}</td><td><b>${esc(c.title)}</b><div class="small muted">/c/${esc(c.slug)}</div></td><td class="small">${esc(c.org_name||c.owner)}</td><td>${st(c.status)}</td><td>₪${fmt(c.goal)}</td><td class="amt">₪${fmt(c.raised*c.multiplier)}</td><td>${c.n}</td><td class="small">${dt(c.end_at)}</td><td><div class="acts"><a class="b s" href="/c/${c.slug}" target="_blank">↗</a><a class="b s" href="#/c/${c.id}/overview">ניהול</a>${c.status==='live'?`<button class="b s r" onclick="admSt(${c.id},'ended')">השהיה</button>`:''}</div></td></tr>`).join('')}</table></div></div>
+  <div class="card" style="margin-top:14px"><h3>עמותות ומשתמשים</h3><div class="tblwrap"><table class="tbl"><tr><th>#</th><th>משתמש</th><th>עמותה</th><th>מס' עמותה</th><th>אימות</th><th>קמפיינים</th><th>הרשמה</th><th></th></tr>${o.users.map(u=>`<tr><td class="muted">${u.id}</td><td><b>${esc(u.name)}</b><div class="small muted" dir="ltr" style="text-align:right">${esc(u.email)} ${esc(u.phone)}</div></td><td class="small">${esc(u.org_name||u.org)}</td><td dir="ltr">${esc(u.org_number)}</td><td><span class="tag ${u.org_verified===1?'ok':u.org_verified===2?'pending':''}">${u.org_verified===1?'מאומתת':u.org_verified===2?'ממתינה':'לא אומתה'}</span><div class="small muted">${esc(u.org_status||'')}</div></td><td>${u.campaigns}</td><td class="small">${dt(u.created)}</td><td><div class="acts">${u.org_verified!==1?`<button class="b s g" onclick="admVerify(${u.id},1)">אישור ידני</button>`:`<button class="b s" onclick="admVerify(${u.id},0)">ביטול אימות</button>`}${u.role!=='admin'?`<button class="b s" onclick="admRole(${u.id},'admin')">הפוך למנהל</button>`:'<span class="tag">מנהל</span>'}</div></td></tr>`).join('')}</table></div></div>`;
+  const m={};o.daily.forEach(d=>m[d.d]=d.s);const days=[];for(let i=29;i>=0;i--){const k=new Date(Date.now()-i*864e5).toISOString().slice(0,10);days.push([k.slice(8),m[k]||0])}drawChart($('#achart'),days)};
+async function admVerify(id,v){await api('/admin/users/'+id,{method:'PATCH',body:{org_verified:v}});pages.admin()}
+async function admRole(id,role){if(!confirm('להפוך למנהל-על?'))return;await api('/admin/users/'+id,{method:'PATCH',body:{role}});pages.admin()}
+async function admSt(id,status){await api(`/admin/campaigns/${id}/status`,{method:'POST',body:{status}});pages.admin()}
+
+// ---- guide ----
+let gHist=[];
+function toggleGuide(on){$('#guide').classList.toggle('on',on);if(on){if(!gHist.length)gMsg('a','שלום! אני המדריך של Tatzil. אני מכיר את הקמפיין שאתם עובדים עליו ויכול לכתוב טקסטים, להסביר על סליקה ושגרירים, ולתת טיפים לגיוס. מה נעשה?');$('#gIn').focus();renderSug()}}
+$('#gbtn').onclick=()=>toggleGuide(!$('#guide').classList.contains('on'));
+function gMsg(r,t){const el=document.createElement('div');el.className='msg '+r;el.textContent=t;if(r==='a'&&t.length>60){const c=document.createElement('span');c.className='cp';c.textContent='העתקה';c.onclick=()=>{navigator.clipboard.writeText(t);toast('הועתק')};el.appendChild(c)}$('#gMsgs').appendChild(el);$('#gMsgs').scrollTop=1e9}
+function renderSug(){const s=C?['כתוב הודעת וואטסאפ לשגרירים','כתוב 3 פוסטים לרשתות','איך מחברים נדרים פלוס?','טיפים ליום האחרון של הקמפיין','הצע רמות תרומה']:['איך פותחים קמפיין?','מה זה מאצ\'ינג?','איך עובד מצב הבדיקה?','אילו ספקי סליקה נתמכים?'];$('#gSug').innerHTML=s.map(x=>`<button>${esc(x)}</button>`).join('');$$('#gSug button').forEach(b=>b.onclick=()=>askGuide(b.textContent))}
+async function askGuide(q){toggleGuide(true);if(!q)return;$('#gIn').value='';gMsg('u',q);gHist.push({role:'user',content:q});$('#gTyping').hidden=false;try{const r=await api('/assist',{method:'POST',body:{messages:gHist,campaignId:C?C.id:null}});gHist.push({role:'assistant',content:r.reply});gMsg('a',r.reply)}catch{gMsg('a','לא הצלחתי לענות כרגע.')}finally{$('#gTyping').hidden=true}}
+$('#gSend').onclick=()=>askGuide($('#gIn').value.trim());$('#gIn').onkeydown=e=>{if(e.key==='Enter')askGuide($('#gIn').value.trim())};
+boot();
+</script>
+</body>
+</html>
