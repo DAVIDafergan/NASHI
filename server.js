@@ -262,6 +262,10 @@ app.post('/api/c/:slug/join', limit(5, 600000), (req, res) => {
   emit(c.id, 'refresh', { stats: stats(c, isTest(c)), teams: teamStats(c, isTest(c)) });
   res.json({ ok: true, slug });
 });
+app.get('/api/public/campaigns', (_, res) => {
+  const rows = db.prepare("SELECT * FROM campaigns WHERE status='live' OR (status='test' AND settings LIKE '%\"demo\":true%') ORDER BY status='live' DESC, id DESC LIMIT 9").all();
+  res.json(rows.map(c => { const st = stats(c, isTest(c)); const s = J(c.settings); return { slug: c.slug, title: c.title, subtitle: c.subtitle, cover: c.cover || (s.media?.default?.desktop || [])[0] || '', currency: c.currency, goal: c.goal, total: st.total, pct: st.pct, count: st.count, end_at: c.end_at, demo: !!s.demo, live: c.status === 'live' }; }));
+});
 app.get('/api/d/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slug, c.title, c.settings FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return bad(res, 'not found', 404); res.json({ id: d.id, status: d.status, amount: d.amount, currency: d.currency, name: d.name, slug: d.slug, title: d.title, thanks: J(d.settings).thanks, test: !!d.test, provider: d.provider }); });
 
 // ---------- payment pages & callbacks ----------
