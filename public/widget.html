@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TTM widget</title>
+<title>GiveIL widget</title>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -20,7 +20,7 @@ a.btn{display:flex;justify-content:center;align-items:center;margin-top:10px;hei
 </style>
 </head>
 <body>
-<div class="w"><div class="im" id="im"></div><div class="b"><h3 id="t"></h3><div class="big"><span id="r"></span> <small id="g"></small></div><div class="bar"><i id="bar"></i></div><div class="m"><span id="n"></span><span id="p"></span></div><a class="btn" id="go" target="_top">תרומה</a><div class="ttm">POWERED BY TTM</div></div></div>
+<div class="w"><div class="im" id="im"></div><div class="b"><h3 id="t"></h3><div class="big"><span id="r"></span> <small id="g"></small></div><div class="bar"><i id="bar"></i></div><div class="m"><span id="n"></span><span id="p"></span></div><a class="btn" id="go" target="_top">תרומה</a><div class="ttm">POWERED BY GiveIL</div></div></div>
 <script>
 const slug=location.pathname.split('/')[2];const f=n=>Math.round(+n||0).toLocaleString('he-IL');
 async function load(){const d=await fetch('/api/c/'+slug).then(r=>r.json());const c=d.campaign,s=d.stats;const cur=c.currency==='USD'?'$':'₪';

@@ -150,7 +150,7 @@ app.post('/api/forgot', limit(5, 600000), async (req, res) => {
   if (u && mail.enabled()) {
     const token = crypto.randomBytes(24).toString('hex'); db.prepare('INSERT INTO resets(token,user_id,exp) VALUES(?,?,?)').run(token, u.id, Date.now() + 3600e3);
     const url = `${base(req)}/app#reset=${token}`;
-    await mail.send({ to: u.email, subject: 'איפוס סיסמה ל-TTM', html: mail.layout('איפוס סיסמה', `<p>שלום ${mail.esc(u.name || '')}, לחצו על הקישור כדי לבחור סיסמה חדשה (תקף לשעה):</p><p><a href="${url}" style="background:#1c1917;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block;font-weight:600">בחירת סיסמה חדשה</a></p><p style="color:#6b6762;font-size:13px">אם לא ביקשתם איפוס – התעלמו מהמייל.</p>`) }).catch(() => { });
+    await mail.send({ to: u.email, subject: 'איפוס סיסמה ל-GiveIL', html: mail.layout('איפוס סיסמה', `<p>שלום ${mail.esc(u.name || '')}, לחצו על הקישור כדי לבחור סיסמה חדשה (תקף לשעה):</p><p><a href="${url}" style="background:#1c1917;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block;font-weight:600">בחירת סיסמה חדשה</a></p><p style="color:#6b6762;font-size:13px">אם לא ביקשתם איפוס – התעלמו מהמייל.</p>`) }).catch(() => { });
   }
   res.json({ ok: true, mail: mail.enabled() });
 });
@@ -449,7 +449,7 @@ const mask = o => ({ ...o, token: o.token ? '••••' : '', secret: o.secre
 app.get('/api/admin/msg', auth, adm, (_, res) => { const m = getKV('msg'); res.json({ sms: mask(m.sms || {}), wa: mask(m.wa || {}) }); });
 app.put('/api/admin/msg', auth, adm, (req, res) => { const cur = getKV('msg'); const b = req.body || {}; const merge = (o = {}, n = {}) => { const x = { ...o, ...n }; if (n.token === '••••') x.token = o.token; if (n.secret === '••••') x.secret = o.secret; return x; }; setKV('msg', { sms: merge(cur.sms, b.sms), wa: merge(cur.wa, b.wa) }); res.json({ ok: true }); });
 // platform support contact (shown as a help button everywhere)
-app.get('/api/support', (_, res) => { const s = getKV('support'); const adm = s.phone ? null : db.prepare("SELECT phone FROM users WHERE role='admin' AND phone!='' ORDER BY id LIMIT 1").get(); res.json({ phone: s.phone || adm?.phone || '', email: s.email || process.env.ADMIN_EMAIL || '', text: s.text || 'שלום, אני צריך עזרה עם TTM' }); });
+app.get('/api/support', (_, res) => { const s = getKV('support'); const adm = s.phone ? null : db.prepare("SELECT phone FROM users WHERE role='admin' AND phone!='' ORDER BY id LIMIT 1").get(); res.json({ phone: s.phone || adm?.phone || '', email: s.email || process.env.ADMIN_EMAIL || '', text: s.text || 'שלום, אני צריך עזרה עם GiveIL' }); });
 app.put('/api/admin/support', auth, adm, (req, res) => { const b = req.body || {}; setKV('support', { phone: String(b.phone || '').replace(/[^\d+]/g, '').slice(0, 20), email: String(b.email || '').slice(0, 120), text: String(b.text || '').slice(0, 200) }); res.json({ ok: true }); });
 app.get('/api/msg-channels', auth, (_, res) => { const m = getKV('msg'); res.json({ sms: !!(m.sms && m.sms.type), wa: !!(m.wa && m.wa.type) }); });
 app.get('/api/me/sms', auth, (req, res) => { const u = db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id); const c = J(u.sms); res.json({ ...c, token: c.token ? '••••' : '' }); });
@@ -476,7 +476,7 @@ function ctxFor(uid, cid) {
   const lastHour = db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND paid_at>=datetime('now','-1 hour')").get(c.id).n;
   return `\nקמפיין נוכחי: "${c.title}" (${c.status}), יעד ${c.goal} ${c.currency}, מסתיים ${c.end_at}. גויסו ${st.total} (${st.pct}%) מ-${st.count} תורמים. תרומות בשעה האחרונה: ${lastHour}. ספק סליקה: ${J(c.provider).type}. שגרירים: ${db.prepare('SELECT COUNT(*) n FROM teams WHERE campaign_id=?').get(c.id).n}. רמות: ${db.prepare('SELECT name,amount FROM levels WHERE campaign_id=?').all(c.id).map(l => l.name + ' ' + l.amount).join(', ')}. סיפור: ${(c.story || '').slice(0, 600)}. תרומות אחרונות: ${last.map(d => d.name + ' ' + d.amount).join(', ')}`;
 }
-const SYS = `אתה "המדריך" של TTM (ראשי תיבות: צדקה תציל ממות), פלטפורמת גיוס תרומות ישראלית לעמותות. אתה עוזר למנהלי קמפיינים: כתיבת סיפור קמפיין, כותרות, רמות תרומה, הודעות וואטסאפ לשגרירים ולתורמים, טיפים לקמפיין גיוס, הסבר על המערכת (אשף קמפיין, מצב בדיקה, חיבור סליקה: נדרים פלוס, משולם/Grow, PayPal, דף תשלום חיצוני; שגרירים עם קישור אישי; מסך אירוע חי; ייצוא CSV; רב-לשוניות). ענה בשפה של המשתמש, קצר, מעשי, עם דוגמאות מוכנות להעתקה. כשמבקשים טקסט, תן את הטקסט עצמו. אל תמציא נתונים שאינם בהקשר.`;
+const SYS = `אתה "המדריך" של GiveIL (ראשי תיבות: צדקה תציל ממות), פלטפורמת גיוס תרומות ישראלית לעמותות. אתה עוזר למנהלי קמפיינים: כתיבת סיפור קמפיין, כותרות, רמות תרומה, הודעות וואטסאפ לשגרירים ולתורמים, טיפים לקמפיין גיוס, הסבר על המערכת (אשף קמפיין, מצב בדיקה, חיבור סליקה: נדרים פלוס, משולם/Grow, PayPal, דף תשלום חיצוני; שגרירים עם קישור אישי; מסך אירוע חי; ייצוא CSV; רב-לשוניות). ענה בשפה של המשתמש, קצר, מעשי, עם דוגמאות מוכנות להעתקה. כשמבקשים טקסט, תן את הטקסט עצמו. אל תמציא נתונים שאינם בהקשר.`;
 async function llm(messages, context) {
   const sys = SYS + (context || '');
   if (process.env.ANTHROPIC_API_KEY) {

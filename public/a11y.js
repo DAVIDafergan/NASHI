@@ -1,4 +1,4 @@
-/* TTM accessibility widget – per Israeli accessibility regulations (IS 5568 / WCAG 2.0 AA) */
+/* GiveIL accessibility widget – per Israeli accessibility regulations (IS 5568 / WCAG 2.0 AA) */
 (function () {
   const K = 'ttm_a11y';
   let st = {}; try { st = JSON.parse(localStorage.getItem(K) || '{}'); } catch { }
