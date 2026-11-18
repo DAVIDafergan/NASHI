@@ -58,6 +58,9 @@ function teamStats(c, test) {
 }
 const isTest = c => c.status !== 'live' && c.status !== 'ended';
 
+const hits = new Map();
+const limit = (n, win) => (req, res, next) => { const k = req.ip + req.path; const now = Date.now(); const a = (hits.get(k) || []).filter(t => now - t < win); a.push(now); hits.set(k, a); if (a.length > n) return bad(res, 'יותר מדי ניסיונות, נסו שוב בעוד דקה', 429); next(); };
+setInterval(() => { const now = Date.now(); for (const [k, a] of hits) if (!a.some(t => now - t < 60000)) hits.delete(k); }, 60000).unref();
 // ---------- auth ----------
 app.post('/api/register', limit(5, 600000), (req, res) => {
   const { email, password, name, phone, org } = req.body || {};
@@ -226,9 +229,6 @@ app.get('/api/c/:slug/stream', (req, res) => {
   const ping = setInterval(() => { try { res.write(':p\n\n'); } catch { } }, 25000);
   req.on('close', () => { clearInterval(ping); subs.get(c.id)?.delete(res); });
 });
-const hits = new Map();
-const limit = (n, win) => (req, res, next) => { const k = req.ip + req.path; const now = Date.now(); const a = (hits.get(k) || []).filter(t => now - t < win); a.push(now); hits.set(k, a); if (a.length > n) return bad(res, 'יותר מדי ניסיונות, נסו שוב בעוד דקה', 429); next(); };
-setInterval(() => { const now = Date.now(); for (const [k, a] of hits) if (!a.some(t => now - t < 60000)) hits.delete(k); }, 60000).unref();
 app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404);
   if (c.status === 'ended') return bad(res, 'הקמפיין הסתיים');
