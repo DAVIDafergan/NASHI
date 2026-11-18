@@ -46,7 +46,7 @@ html[data-theme=dark] .ic.t,html[data-theme=dark] .ic.p{background:var(--soft)}
 /* header */
 header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,#fff 88%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
 header .wrap{display:flex;align-items:center;justify-content:space-between;height:66px;gap:12px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;min-width:0}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;min-width:0;letter-spacing:-.02em}.brand .wm{color:var(--ink)}
 .brand img{height:36px;width:auto;border-radius:10px}
 .brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
 .nav{display:flex;gap:2px;font-weight:500;font-size:15px;color:var(--mut)}
@@ -324,9 +324,9 @@ html[dir=rtl] .ncard{transform:translateX(-120%)}
 <div class="aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
 <div class="testbar" id="testbar" hidden></div>
 <header><div class="wrap">
-  <a class="brand" href="#top"><img id="hLogo" alt="" hidden><span id="hTitle"></span></a>
+  <a class="brand" href="/" title="GiveIL"><img src="/logo.svg" alt="GiveIL" style="width:34px;height:34px"><span class="wm">GiveIL</span><img id="hLogo" alt="" hidden style="display:none"><span id="hTitle" hidden></span></a>
   <nav class="nav"><a href="#about" data-i="navAbout">אודות</a><a href="#donors" data-i="donors">תורמים</a><a href="#teams" id="navTeams" hidden data-i="ambassadors">שגרירים</a></nav>
-  <div class="hacts"><a class="ttm" href="/" title="GiveIL"><img src="/logo.svg" alt="GiveIL"><span>GiveIL</span></a><div class="langs" id="langs"></div><button class="ib" id="theme" title="מצב כהה">☾</button><a class="ib share-b" id="shWaTop" target="_blank" rel="noopener" title="שיתוף">⤴</a><a class="btn" href="#donate" onclick="openDonate();return false" data-i="donate">תרומה</a></div>
+  <div class="hacts"><div class="langs" id="langs"></div><button class="ib" id="theme" title="מצב כהה">☾</button><a class="ib share-b" id="shWaTop" target="_blank" rel="noopener" title="שיתוף">⤴</a><a class="btn" href="#donate" onclick="openDonate();return false" data-i="donate">תרומה</a></div>
 </div></header>
 
 <div id="top"></div>
@@ -445,7 +445,7 @@ async function load(){
   let want=new URLSearchParams(location.search).get('lang');try{want=want||localStorage.getItem('gx_lang')}catch{}const auto=document.documentElement.dataset.autoLang;setLang(langs.includes(want)?want:(langs.includes(auto)?auto:(c.lang||'he')));
   document.documentElement.style.setProperty('--c',c.color);document.documentElement.style.setProperty('--c2',shade(c.color,-18));
   document.title=c.title;$('#hTitle').textContent=c.title;$('#title').textContent=c.title;$('#subtitle').textContent=c.subtitle;
-  if(c.logo){$('#hLogo').src=c.logo;$('#hLogo').hidden=false}
+  if(c.logo){$('#hLogo').src=c.logo}
   initBanner(c);
   $('#testbar').hidden=!c.test;if(c.settings&&c.settings.demo){$('#testbar').dataset.demo='1'}$('#cur').textContent=cur;$('#curSym').textContent=cur;
   $('#lbl').innerHTML=c.multiplier>1?T('multLbl',{m:c.multiplier}):(c.status==='ended'?T('ended'):T('active'));
