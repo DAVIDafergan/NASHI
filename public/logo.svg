@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs><mask id="ttmH"><rect width="120" height="120" fill="#fff"/><path d="M60 92 C42 78 24 66 24 48 a17 17 0 0 1 36-8 a17 17 0 0 1 36 8 c0 18-18 30-36 44z" fill="#000"/></mask></defs>
+  <circle cx="60" cy="60" r="46" fill="#c8f23f" mask="url(#ttmH)"/>
+  <g fill="#141414"><rect x="52" y="8" width="16" height="14" rx="4"/><rect x="52" y="98" width="16" height="14" rx="4"/><rect x="8" y="52" width="14" height="16" rx="4"/><rect x="98" y="52" width="14" height="16" rx="4"/></g>
+</svg>
