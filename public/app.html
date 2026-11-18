@@ -82,6 +82,12 @@ main{min-width:0;padding:22px clamp(14px,3vw,36px) 100px}
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
 .tabs a{padding:10px 14px;font-weight:700;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-size:14px}
 .tabs a.on{color:var(--p);border-color:var(--p)}
+.ov{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:14px}
+.ov2{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:1100px){.ov{grid-template-columns:1fr 1fr}}@media(max-width:900px){.ov2{grid-template-columns:1fr}}@media(max-width:560px){.ov{grid-template-columns:1fr}}
+.stat.big{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px}.stat.big .ring{grid-row:1/4;position:relative;width:96px;height:96px}.stat.big .ring svg{width:96px;height:96px}.stat.big .ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;font-weight:900}
+.chk{display:grid;gap:6px}.chk a{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;font-size:14px}.chk a:hover{background:var(--bg)}
+.qa{display:flex;gap:8px;flex-wrap:wrap}.qa .b{font-size:13px;padding:8px 12px}
 /* stats */
 .stat{padding:18px 20px}
 .stat .l{font-size:12px;color:var(--mut);font-weight:500;letter-spacing:.02em}
@@ -140,6 +146,17 @@ canvas.chart{width:100%;height:180px;display:block}
 .langchips{display:flex;gap:8px;flex-wrap:wrap}
 .langchips label{flex-direction:row;align-items:center;border:1.5px solid var(--line);border-radius:99px;padding:6px 12px;cursor:pointer;color:var(--ink)}
 .langchips label:has(:checked){border-color:var(--p);background:#eff6ff;color:var(--p)}
+.vcard{padding:0;overflow:hidden}
+.vhead{display:flex;align-items:center;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line);background:linear-gradient(120deg,#f4f1ff,#e9fbff)}
+.vcard.ok .vhead{background:linear-gradient(120deg,#e9fff0,#f0fff8)}
+.vic{width:46px;height:46px;border-radius:14px;background:var(--grad);display:grid;place-items:center;font-size:20px;color:#0e0f14;flex:none}
+.vbody{padding:20px;display:grid;gap:16px}
+.vin{display:flex;gap:10px;align-items:stretch}.vin input{flex:1;min-width:0}.vin .b{white-space:nowrap}
+@media(max-width:560px){.vin{flex-direction:column}}
+.vres:empty{display:none}
+.vorg{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fafaff}.vorg.ok{background:#f0fff6;border-color:#bbf7d0}.vorg b{display:block;font-size:16px}.vorg span{color:var(--mut);font-size:13px}
+.vwait{animation:blink 1.2s infinite}
+.vsteps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.vsteps div{font-size:13px;color:var(--mut);display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:12px;padding:10px}.vsteps b{width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px;flex:none}
 /* modal */
 .mod{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:40;display:none;place-items:center;padding:16px}
 .mod.on{display:grid}
@@ -262,31 +279,53 @@ function newCamp(){if(U.org_verified!==1&&U.role!=='admin'){toast('קודם מא
 
 // ---- account ----
 pages.account=async()=>{setTop('העמותה והחשבון');const {user}=await api('/me');U=user;const v=U.org_verified;
-  $('#content').innerHTML=`<div class="grid g2"><div class="card"><h3>אימות עמותה ${v===1?'<span class="tag ok">✓ מאומתת</span>':v===2?'<span class="tag pending">ממתין</span>':''}</h3>
-    <p class="small muted" style="margin-bottom:12px">הזינו את מספר העמותה (ע"ר, 9 ספרות). המערכת בודקת אותו מול מאגר רשם העמותות של ממשלת ישראל ומאשרת אוטומטית עמותה פעילה.</p>
-    <div class="row"><label>מספר עמותה<input id="orgNum" value="${esc(U.org_number||'')}" dir="ltr" placeholder="580000000" inputmode="numeric"></label><button class="b p x" id="orgGo">בדיקה ואימות</button></div>
-    <div id="orgRes" style="margin-top:12px">${U.org_name?`<div><b>${esc(U.org_name)}</b> <span class="small muted">${esc(U.org_status||'')}</span></div>`:''}</div></div>
+  const state=v===1?['ok','✓ העמותה מאומתת',`${esc(U.org_name)} · ${esc(U.org_status||'')}`]:v===2?['pending','ממתין לאימות ידני',esc(U.org_status||'')]:['','עוד לא אומתה','הזינו מספר עמותה כדי לאמת אוטומטית'];
+  $('#content').innerHTML=`<div class="grid g2" style="grid-template-columns:1.2fr .8fr">
+  <div class="card vcard ${state[0]}"><div class="vhead"><div class="vic">${v===1?'✓':'🏛'}</div><div><h3 style="margin:0;font-size:18px">אימות עמותה</h3><div class="muted small">מול המאגר הפתוח של רשם העמותות (data.gov.il)</div></div><span class="tag ${state[0]}" style="margin-inline-start:auto">${state[1]}</span></div>
+    <div class="vbody">
+      <label>מספר עמותה (ע״ר, 9 ספרות)<div class="vin"><input id="orgNum" value="${esc(U.org_number||'')}" dir="ltr" placeholder="580000000" inputmode="numeric" maxlength="9" style="font-size:22px;font-weight:800;letter-spacing:.08em"><button class="b p" id="orgGo">בדיקה ואימות</button></div></label>
+      <div id="orgRes" class="vres">${U.org_name?`<div class="vorg"><b>${esc(U.org_name)}</b><span>${esc(U.org_status||'')}</span></div>`:''}</div>
+      <div class="vsteps"><div><b>1</b>מזינים מספר</div><div><b>2</b>בודקים ברשם</div><div><b>3</b>פותחים קמפיין</div></div>
+    </div></div>
   <div class="card"><h3>פרטי החשבון</h3><div class="grid"><label>שם<input id="aName" value="${esc(U.name||'')}"></label><label>שם העמותה (לתצוגה)<input id="aOrg" value="${esc(U.org||'')}"></label><label>טלפון<input id="aPhone" value="${esc(U.phone||'')}" dir="ltr"></label><label>סיסמה חדשה (לא חובה)<input id="aPass" type="password"></label><button class="b p" id="aSave">שמירה</button></div></div></div>`;
-  $('#orgGo').onclick=async()=>{const b=$('#orgGo');b.disabled=true;$('#orgRes').innerHTML='<span class="muted small">בודקים מול רשם העמותות…</span>';try{const r=await api('/verify-org',{method:'POST',body:{number:$('#orgNum').value}});
-    $('#orgRes').innerHTML=!r.found?'<div class="err">המספר לא נמצא במאגר רשם העמותות. בדקו את המספר, או פנו אלינו לאימות ידני.</div>':`<div><b>${esc(r.org.name)}</b> <span class="small muted">${esc(r.org.status)}${r.org.city?' · '+esc(r.org.city):''}</span></div>${r.verified?'<div class="tag ok" style="margin-top:8px">✓ העמותה אומתה, אפשר לפתוח קמפיין</div>':'<div class="tag pending" style="margin-top:8px">העמותה אינה בסטטוס פעיל, הועבר לאימות ידני</div>'}`;boot()}catch(e){$('#orgRes').innerHTML=`<div class="err">${esc(e.message)}</div>`}finally{b.disabled=false}};
+  const go=async()=>{const n=$('#orgNum').value.replace(/\D/g,'');if(n.length!==9||n[0]!=='5'){$('#orgRes').innerHTML='<div class="err">מספר עמותה הוא 9 ספרות ומתחיל ב-5 (למשל 580123456)</div>';return}
+    const b=$('#orgGo');b.disabled=true;b.textContent='בודקים…';$('#orgRes').innerHTML='<div class="muted small vwait">מתחברים לרשם העמותות…</div>';
+    try{const r=await api('/verify-org',{method:'POST',body:{number:n}});
+      $('#orgRes').innerHTML=!r.found?'<div class="err">המספר לא נמצא במאגר רשם העמותות. בדקו אותו שוב, או שלחו לנו אישור רישום לאימות ידני.</div>':`<div class="vorg ${r.verified?'ok':'pend'}"><b>${esc(r.org.name)}</b><span>${esc(r.org.status)}${r.org.city?' · '+esc(r.org.city):''}${r.org.field?' · '+esc(r.org.field):''}</span>${r.verified?'<div class="tag ok" style="margin-top:8px">✓ העמותה אומתה. אפשר לפתוח קמפיין!</div><a class="b p" style="margin-top:12px" href="#/">לפתיחת קמפיין ←</a>':'<div class="tag pending" style="margin-top:8px">העמותה אינה בסטטוס פעיל. הועבר לאימות ידני.</div>'}</div>`;
+      const {user}=await api('/me');U=user;$('#uOrg').textContent=U.org_name||U.org||'';if(r.verified)setTimeout(pages.account,2500)}
+    catch(e){$('#orgRes').innerHTML=`<div class="err">${esc(e.message)}</div>`}finally{b.disabled=false;b.textContent='בדיקה ואימות'}};
+  $('#orgGo').onclick=go;$('#orgNum').onkeydown=e=>{if(e.key==='Enter')go()};
   $('#aSave').onclick=async()=>{await api('/me',{method:'PUT',body:{name:$('#aName').value,org:$('#aOrg').value,phone:$('#aPhone').value,password:$('#aPass').value}});toast('נשמר');boot()}};
 
 // ---- campaign: overview ----
 let chartData=[];
-pages.c_overview=async()=>{C=await api('/campaigns/'+C.id);const s=C.stats,cur=SYM[C.currency];setTop(C.title,`${st(C.status)} · /c/${C.slug}`,`<a class="b" href="/c/${C.slug}" target="_blank">צפייה בדף ↗</a>${C.status!=='live'?`<a class="b p" href="#/c/${C.id}/payment">עלייה לאוויר</a>`:''}`);
+pages.c_overview=async()=>{C=await api('/campaigns/'+C.id);const s=C.stats,cur=SYM[C.currency];const url=`${location.origin}/c/${C.slug}`;setTop(C.title,`${st(C.status)} · <a href="${url}" target="_blank" style="color:var(--p)">${url.replace(/^https?:\/\//,'')}</a>`,`<a class="b" href="${url}" target="_blank">צפייה בדף ↗</a><button class="b" onclick="navigator.clipboard.writeText('${url}');toast('הקישור הועתק')">🔗 העתקת קישור</button>${C.status!=='live'?`<a class="b p" href="#/c/${C.id}/payment">🚀 עלייה לאוויר</a>`:`<button class="b p" onclick="openAdd()">+ תרומה</button>`}`);
   const dons=await api(`/campaigns/${C.id}/donations?status=paid&test=${C.status==='live'||C.status==='ended'?0:1}`);
-  const byDay={};dons.forEach(d=>{const k=(d.paid_at||d.created).slice(0,10);byDay[k]=(byDay[k]||0)+d.amount});const days=[];for(let i=13;i>=0;i--){const k=new Date(Date.now()-i*864e5).toISOString().slice(0,10);days.push([k.slice(5),byDay[k]||0])}
-  const lastH=dons.filter(d=>Date.now()-new Date((d.paid_at||d.created).replace(' ','T')+'Z')<36e5).length;const avg=s.count?Math.round(s.raised/s.count):0;
-  const left=Math.max(0,new Date(C.end_at)-Date.now());const hrs=Math.round(left/36e5);
-  $('#content').innerHTML=`${C.status!=='live'?`<div class="card golive" style="margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1"><b>${C.status==='ended'?'הקמפיין הסתיים':'הקמפיין במצב בדיקה'}</b><div class="small muted">${C.status==='ended'?'אפשר להפעיל מחדש מעמוד הסליקה.':'תרומות כאן מדומות. תרגלו הכל, ואז עלו לאוויר מעמוד "סליקה ועלייה לאוויר".'}</div></div><a class="b" href="/c/${C.slug}" target="_blank">תרומת בדיקה</a></div>`:''}
-  <div class="grid g4"><div class="card stat hl"><div class="l">גויסו (כולל מאצ'ינג)</div><div class="v">${cur}${fmt(s.total)}</div><div class="d">${s.pct}% מיעד של ${cur}${fmt(s.goal)}${C.multiplier>1?` · בפועל ${cur}${fmt(s.raised)}`:''}</div></div>
-  <div class="card stat"><div class="l">תורמים</div><div class="v">${fmt(s.count)}</div><div class="d">ממוצע ${cur}${fmt(avg)} לתורם</div></div>
-  <div class="card stat"><div class="l">בשעה האחרונה</div><div class="v">${lastH}</div><div class="d">תרומות</div></div>
-  <div class="card stat"><div class="l">${left>0?'נותרו':'הסתיים'}</div><div class="v">${left>0?(hrs>48?Math.round(hrs/24)+' ימים':hrs+' שעות'):'—'}</div><div class="d">עד ${dt(C.end_at)}</div></div></div>
-  <div class="grid g2" style="margin-top:14px;grid-template-columns:1.4fr 1fr"><div class="card"><h3>תרומות ב-14 הימים האחרונים</h3><canvas class="chart" id="chart"></canvas></div>
-  <div class="card"><h3>פיד חי <span class="tag live"><i></i>LIVE</span></h3><div class="feed" id="feed">${dons.slice(0,30).map(fd).join('')||'<div class="empty">עדיין אין תרומות</div>'}</div></div></div>
-  ${C.teamStats.length?`<div class="card" style="margin-top:14px"><h3>שגרירים מובילים</h3><div class="tblwrap"><table class="tbl"><tr><th>#</th><th>שגריר</th><th>תרומות</th><th>סכום</th><th>יעד</th><th></th></tr>${C.teamStats.slice(0,10).map((t,i)=>`<tr><td>${i+1}</td><td><b>${esc(t.name)}</b></td><td>${t.n}</td><td class="amt">${cur}${fmt(t.total)}</td><td style="min-width:120px">${t.goal?`<div class="bar"><i style="width:${Math.min(100,t.total/t.goal*100)}%"></i></div><span class="small muted">${Math.round(t.total/t.goal*100)}%</span>`:'—'}</td><td><a class="b s" href="/c/${C.slug}/${t.slug}" target="_blank">דף ↗</a></td></tr>`).join('')}</table></div></div>`:''}`;
-  drawChart($('#chart'),days);live(d=>{$('#feed').querySelector('.empty')?.remove();$('#feed').insertAdjacentHTML('afterbegin',fd(d));pages.c_overview.t=setTimeout(()=>location.hash.endsWith('overview')&&pages.c_overview(),4000)})};
+  const ts=x=>new Date((x.paid_at||x.created).replace(' ','T')+'Z');
+  const byDay={};dons.forEach(d=>{const k=ts(d).toISOString().slice(0,10);byDay[k]=(byDay[k]||0)+d.amount});const days=[];for(let i=13;i>=0;i--){const k=new Date(Date.now()-i*864e5).toISOString().slice(0,10);days.push([k.slice(5).replace('-','/'),byDay[k]||0])}
+  const byHour=Array(24).fill(0);dons.forEach(d=>{if(Date.now()-ts(d)<864e5)byHour[ts(d).getHours()]+=d.amount});
+  const lastH=dons.filter(d=>Date.now()-ts(d)<36e5).length,last24=dons.filter(d=>Date.now()-ts(d)<864e5);const avg=s.count?Math.round(s.raised/s.count):0;const max=dons.reduce((a,d)=>Math.max(a,d.amount),0);
+  const left=Math.max(0,new Date(C.end_at)-Date.now());const hrs=Math.round(left/36e5);const totalMs=new Date(C.end_at)-new Date(C.start_at);const elapsed=Math.min(1,Math.max(0,1-left/totalMs));
+  const need=Math.max(0,s.goal-s.total);const perHour=hrs>0?Math.round(need/hrs):0;
+  const checklist=[[!!C.cover,'תמונת קאבר','edit?design'],[!!C.story,'סיפור הקמפיין','edit?design'],[C.levels.length>0,'רמות תרומה','edit?levels'],[C.teams.length>0,'שגרירים','teams'],[(C.provider||{}).type&&C.provider.type!=='test','ספק סליקה','payment'],[C.status==='live','באוויר','payment']];
+  const done=checklist.filter(x=>x[0]).length;
+  $('#content').innerHTML=`${C.status!=='live'?`<div class="card golive" style="margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1"><b>${C.status==='ended'?'הקמפיין הסתיים':'הקמפיין במצב בדיקה'}</b><div class="small muted">${C.status==='ended'?'אפשר להפעיל מחדש מעמוד הסליקה.':'התרומות כאן מדומות. השלימו את רשימת ההכנה ועלו לאוויר.'}</div></div><a class="b" href="${url}" target="_blank">תרומת בדיקה</a></div>`:''}
+  <div class="ov">
+    <div class="card stat hl big"><div class="l">גויסו ${C.multiplier>1?'(כולל מאצ׳ינג ×'+C.multiplier+')':''}</div><div class="v">${cur}${fmt(s.total)}</div><div class="d">מתוך ${cur}${fmt(s.goal)}${C.multiplier>1?` · בפועל ${cur}${fmt(s.raised)}`:''}</div><div class="ring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="3"/><circle cx="18" cy="18" r="15.5" fill="none" stroke="#a3ff6f" stroke-width="3" stroke-linecap="round" stroke-dasharray="${Math.min(100,s.pct)} 100" transform="rotate(-90 18 18)"/></svg><b>${Math.min(999,s.pct)}%</b></div></div>
+    <div class="card stat"><div class="l">תורמים</div><div class="v">${fmt(s.count)}</div><div class="d">ממוצע ${cur}${fmt(avg)} · הגבוהה ${cur}${fmt(max)}</div></div>
+    <div class="card stat"><div class="l">24 שעות אחרונות</div><div class="v">${cur}${fmt(last24.reduce((a,d)=>a+d.amount,0)*C.multiplier)}</div><div class="d">${last24.length} תרומות · ${lastH} בשעה האחרונה</div></div>
+    <div class="card stat"><div class="l">${left>0?'זמן שנותר':'הסתיים'}</div><div class="v">${left>0?(hrs>48?Math.round(hrs/24)+' ימים':hrs+' שעות'):'—'}</div><div class="d">${left>0&&need>0?`צריך ${cur}${fmt(perHour)} לשעה כדי להגיע ליעד`:need<=0?'🎯 היעד הושג!':'עד '+dt(C.end_at)}</div><div class="bar" style="margin-top:8px"><i style="width:${elapsed*100}%"></i></div></div>
+  </div>
+  <div class="ov2">
+    <div class="card"><h3>תרומות ב-14 הימים האחרונים</h3><canvas class="chart" id="chart"></canvas></div>
+    <div class="card"><h3>לפי שעה (24 שעות)</h3><canvas class="chart" id="hchart"></canvas></div>
+    <div class="card"><h3>פיד חי <span class="tag live"><i></i>LIVE</span></h3><div class="feed" id="feed">${dons.slice(0,30).map(fd).join('')||'<div class="empty">עדיין אין תרומות</div>'}</div></div>
+    <div class="card"><h3>רשימת הכנה <span class="muted small">${done}/${checklist.length}</span></h3><div class="bar" style="margin-bottom:12px"><i style="width:${done/checklist.length*100}%"></i></div><div class="chk">${checklist.map(([ok,l,h])=>`<a href="#/c/${C.id}/${h}"><span class="tag ${ok?'ok':''}">${ok?'✓':'•'}</span>${l}</a>`).join('')}</div>
+      <h3 style="margin-top:18px">פעולות מהירות</h3><div class="qa"><a class="b" href="#/c/${C.id}/share">📺 מסך אירוע</a><a class="b" target="_blank" href="https://wa.me/?text=${encodeURIComponent(C.title+'\n'+url)}">💬 שיתוף</a><button class="b" onclick="openAdd()">+ תרומה ידנית</button><a class="b" href="/api/campaigns/${C.id}/donations.csv">⬇ CSV</a><button class="b" onclick="askGuide('תן לי 3 הודעות וואטסאפ קצרות לדחיפת הקמפיין עכשיו')">✦ הודעות מהמדריך</button></div></div>
+  </div>
+  ${C.teamStats.length?`<div class="card" style="margin-top:14px"><h3>שגרירים מובילים <a class="b s" href="#/c/${C.id}/teams">ניהול</a></h3><div class="tblwrap"><table class="tbl"><tr><th>#</th><th>שגריר</th><th>תרומות</th><th>סכום</th><th>יעד</th><th></th></tr>${C.teamStats.slice(0,10).map((t,i)=>`<tr><td>${i+1}</td><td><b>${esc(t.name)}</b></td><td>${t.n}</td><td class="amt">${cur}${fmt(t.total)}</td><td style="min-width:120px">${t.goal?`<div class="bar"><i style="width:${Math.min(100,t.total/t.goal*100)}%"></i></div><span class="small muted">${Math.round(t.total/t.goal*100)}%</span>`:'—'}</td><td><a class="b s" href="/c/${C.slug}/${t.slug}" target="_blank">דף ↗</a></td></tr>`).join('')}</table></div></div>`:''}`;
+  drawChart($('#chart'),days);drawChart($('#hchart'),byHour.map((v,h)=>[String(h).padStart(2,'0'),v]).filter((_,h)=>h%2===0||byHour[h]));
+  live(d=>{$('#feed').querySelector('.empty')?.remove();$('#feed').insertAdjacentHTML('afterbegin',fd(d));clearTimeout(pages.c_overview.t);pages.c_overview.t=setTimeout(()=>location.hash.endsWith('overview')&&pages.c_overview(),4000)})};
 const fd=d=>`<div class="fd"><div class="av">${esc((d.anonymous?'א':(d.name||'?'))[0])}</div><div><b>${d.anonymous?'אנונימי':esc(d.name)}${d.team?` <span class="small muted">· ${esc(d.team)}</span>`:''}</b><small>${esc(d.dedication||'')} ${dt(d.paid_at||d.created)}</small></div><div class="a">${SYM[C.currency]}${fmt(d.amount)}</div></div>`;
 function drawChart(cv,data){if(!cv)return;const W=cv.clientWidth,H=180;cv.width=W*2;cv.height=H*2;const x=cv.getContext('2d');x.scale(2,2);const max=Math.max(1,...data.map(d=>d[1]));const n=data.length,gw=W/n;x.font='11px Heebo';
   data.forEach(([k,v],i)=>{const h=v/max*(H-40);const g=x.createLinearGradient(0,H-20-h,0,H-20);g.addColorStop(0,'#7c5cff');g.addColorStop(1,'#22d3ee');x.fillStyle=g;const bx=W-(i+1)*gw+6;rr(x,bx,H-20-h,gw-12,h,6);x.fill();x.fillStyle='#94a3b8';x.textAlign='center';x.fillText(k,bx+(gw-12)/2,H-5);if(v){x.fillStyle='#0f172a';x.fillText(fmt(v),bx+(gw-12)/2,H-26-h)}})}
@@ -311,7 +350,7 @@ pages.c_edit=async()=>{C=await api('/campaigns/'+C.id);const s=C.settings;setTop
   if(step==='matchers')F.innerHTML=`<div class="card"><h3>השותפים המכפילים <button class="b s" onclick="addMatcher()">+ שותף</button></h3><div class="hint" style="margin-bottom:8px">התורמים הגדולים שמממנים את המאצ'ינג. מוצגים בדף הקמפיין עם לוגו.</div><div id="matchers">${C.matchers.map(mtrRow).join('')}</div></div>`;
   if(step==='settings')F.innerHTML=`<div class="card"><h3>שפות</h3><div class="hint" style="margin-bottom:10px">ממשק דף הקמפיין מתורגם אוטומטית. את הסיפור והכותרות כותבים בשפה הראשית (אפשר לשלב).</div><label>שפה ראשית<select data-f="lang"><option value="he" ${C.lang==='he'?'selected':''}>עברית</option><option value="en" ${C.lang==='en'?'selected':''}>English</option></select></label><div style="margin-top:10px"><div class="small muted" style="margin-bottom:6px">שפות נוספות למתג בדף</div><div class="langchips">${[['he','עברית'],['en','English'],['fr','Français'],['es','Español']].map(([k,l])=>`<label><input type="checkbox" data-lang="${k}" ${(s.langs||[C.lang]).includes(k)?'checked':''}>${l}</label>`).join('')}</div></div></div>
     <div class="card"><h3>אפשרויות תרומה</h3><div class="grid"><div class="row"><label>סכום מינימלי<input data-s="minAmount" type="number" value="${s.minAmount||10}"></label><label>מקסימום תשלומים<input data-s="installments" type="number" value="${s.installments||1}" min="1" max="36"></label></div>
-    <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="allowMonthly" ${s.allowMonthly!==false?'checked':''}>לאפשר תרומה חודשית (הוראת קבע)</label><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="allowAnon" ${s.allowAnon!==false?'checked':''}>לאפשר תרומה אנונימית</label><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="showDonors" ${s.showDonors!==false?'checked':''}>להציג רשימת תורמים</label>
+    <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="allowMonthly" ${s.allowMonthly!==false?'checked':''}>לאפשר תרומה חודשית (הוראת קבע)</label><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="allowAnon" ${s.allowAnon!==false?'checked':''}>לאפשר תרומה אנונימית</label><label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="showDonors" ${s.showDonors!==false?'checked':''}>להציג רשימת תורמים</label>${U.role==='admin'?`<label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-s="demo" ${s.demo?'checked':''}>קמפיין לדוגמה (פס "לדוגמה" במקום "בדיקה")</label>`:''}
     <label>הודעת תודה אחרי תרומה<input data-s="thanks" value="${esc(s.thanks||'')}"></label></div></div>
     <div class="card"><h3>פעולות</h3><div class="row"><button class="b" onclick="dupCamp()">שכפול הקמפיין</button><button class="b r" onclick="delCamp()">מחיקת הקמפיין</button></div></div>`;
   $$('[data-up]').forEach(i=>i.onchange=async e=>{const fd=new FormData();fd.append('file',e.target.files[0]);toast('מעלה…');const r=await api('/upload',{method:'POST',body:fd});await api('/campaigns/'+C.id,{method:'PUT',body:{[i.dataset.up]:r.url}});toast('הועלה');pages.c_edit()})};
