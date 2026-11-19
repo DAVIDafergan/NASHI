@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>האזור האישי · רבינו שלי</title><meta name="robots" content="noindex"><meta name="theme-color" content="#060a1c">
-<link rel="icon" href="/mark.svg">
+<link rel="icon" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/base.css?v=5">
@@ -59,7 +59,7 @@ h2{font-family:var(--fs);font-weight:900;font-size:24px;display:flex;align-items
 <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".5" stop-color="#d9ae5b"/><stop offset="1" stop-color="#a8772b"/></linearGradient></defs></svg>
 
 <div class="login" id="login" hidden><form class="card" id="lf" novalidate>
-  <img src="/mark.svg" alt="" style="width:76px;margin:0 auto">
+  <img src="/logo-420.png" alt="רבינו שלי" style="width:200px;margin:0 auto">
   <h1>הקופה שלי</h1><p>כניסה עם הטלפון והקוד האישי</p>
   <div style="display:grid;gap:14px;margin-top:22px;text-align:start"><label>טלפון נייד<input id="lPhone" type="tel" dir="ltr" autocomplete="tel" placeholder="05x-xxxxxxx"></label>
   <div><div style="font-size:14px;font-weight:600;color:var(--mut);margin-bottom:6px;text-align:center">קוד אישי</div><div class="pin" id="lPin"><input inputmode="numeric" maxlength="1" aria-label="ספרה 1"><input inputmode="numeric" maxlength="1" aria-label="ספרה 2"><input inputmode="numeric" maxlength="1" aria-label="ספרה 3"><input inputmode="numeric" maxlength="1" aria-label="ספרה 4"></div></div>
@@ -69,7 +69,7 @@ h2{font-family:var(--fs);font-weight:900;font-size:24px;display:flex;align-items
 </form></div>
 
 <div id="app" hidden><div class="wrap">
-  <div class="top"><a class="logo" href="/" style="font-size:20px"><img src="/mark.svg" alt="" style="width:34px;height:34px">רבינו שלי</a><span class="sp"></span><a class="o" href="#" id="out">יציאה</a></div>
+  <div class="top"><a class="logo" href="/" style="font-size:20px"><img class="lgo" src="/logo-420.png" alt="רבינו שלי"></a><span class="sp"></span><a class="o" href="#" id="out">יציאה</a></div>
   <div class="hi" id="hi"></div><p id="hiP"></p>
 
   <div class="hero">
@@ -164,7 +164,7 @@ $('#oPick').onclick=()=>{openM(`<div class="ic">${svg('truck')}</div><h3>בוא�
   $$('#pv .chip').forEach(c=>c.onclick=()=>{$$('#pv .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on')});
   $('#pGo').onclick=async()=>{try{await api('/me/pickup',{method:'POST',body:{preferred:$('#pv .on').textContent,note:$('#pN').value}});openM(`<div class="ic">${svg('check')}</div><h3>השליח בדרך</h3><p style="text-align:center;color:var(--mut)">נתאם איתך בטלפון. תודה שאתה חלק מהאור!</p><button class="btn" onclick="closeM()">סגירה</button>`);load()}catch(e){$('#pE').textContent=e.message}}};
 $('#refS').onclick=async()=>{const m=D.member,c=$('#share'),x=c.getContext('2d');await document.fonts.ready;const W=1080,H=1350;const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#141d52');g.addColorStop(1,'#050817');x.fillStyle=g;x.fillRect(0,0,W,H);const r=x.createRadialGradient(W/2,560,0,W/2,560,520);r.addColorStop(0,'rgba(217,174,91,.12)');r.addColorStop(1,'rgba(243,213,138,0)');x.fillStyle=r;x.fillRect(0,0,W,H);x.strokeStyle='rgba(217,174,91,.6)';x.lineWidth=3;x.strokeRect(50,50,W-100,H-100);
-  const img=new Image();img.src='/mark.svg';await new Promise(ok=>{img.onload=ok;img.onerror=ok});x.drawImage(img,W/2-170,330,340,340);x.textAlign='center';x.fillStyle='#b9b2a3';x.font='600 40px Fredoka';x.fillText(D.box.streak>1?`${D.box.streak} ימים ברצף 🔥`:'לקחתי על עצמי',W/2,250);const gg=x.createLinearGradient(0,760,0,980);gg.addColorStop(0,'#fff1c4');gg.addColorStop(1,'#c08a37');x.fillStyle=gg;x.font='900 120px Fredoka';x.fillText('שקל ביום',W/2,830);x.fillText('לרבינו',W/2,960);x.fillStyle='#f6efe0';x.font='700 48px Fredoka';x.fillText('קופה מס׳ '+String(m.box_no).padStart(4,'0'),W/2,1080);x.fillStyle='#d9ae5b';x.font='700 30px Fredoka';x.fillText('נ נח נחמ נחמן מאומן',W/2,1170);x.fillStyle='#8b8578';x.font='600 30px Fredoka';x.fillText(location.host+'/r/'+m.ref_code,W/2,1230);
+  const img=new Image();img.src='/logo-900.png';await new Promise(ok=>{img.onload=ok;img.onerror=ok});x.drawImage(img,W/2-260,290,520,520*img.height/(img.width||1));x.textAlign='center';x.fillStyle='#b9b2a3';x.font='600 40px Fredoka';x.fillText(D.box.streak>1?`${D.box.streak} ימים ברצף 🔥`:'לקחתי על עצמי',W/2,250);const gg=x.createLinearGradient(0,760,0,980);gg.addColorStop(0,'#fff1c4');gg.addColorStop(1,'#c08a37');x.fillStyle=gg;x.font='900 120px Fredoka';x.fillText('שקל ביום',W/2,830);x.fillText('לרבינו',W/2,960);x.fillStyle='#f6efe0';x.font='700 48px Fredoka';x.fillText('קופה מס׳ '+String(m.box_no).padStart(4,'0'),W/2,1080);x.fillStyle='#d9ae5b';x.font='700 30px Fredoka';x.fillText('נ נח נחמ נחמן מאומן',W/2,1170);x.fillStyle='#8b8578';x.font='600 30px Fredoka';x.fillText(location.host+'/r/'+m.ref_code,W/2,1230);
   c.toBlob(async blob=>{const f=new File([blob],'rabeinu.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],text:$('#refL').textContent});return}catch{}}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rabeinu-sheli.png';a.click()},'image/png')};
 fetch('/api/stats').then(r=>r.json()).then(s=>{if(s.whatsapp)$('#forgot').innerHTML=`שכחת את הקוד? <a style="color:var(--gold2)" href="https://wa.me/${s.whatsapp.replace(/\D/g,'').replace(/^0/,'972')}" target="_blank">כתבו לנו בוואטסאפ</a>`}).catch(()=>{});
 load();
