@@ -31,3 +31,4 @@
  77%,100%{transform:translateY(calc(40*var(--u))) rotateY(720deg);opacity:0}}
 .jig{transform-style:preserve-3d;animation:jig 4.6s infinite}
 @keyframes jig{0%,74%,100%{transform:none}77%{transform:translateY(calc(3*var(--u,1px))) scale(1.012,.985)}81%{transform:translateY(calc(-1*var(--u,1px)))}85%{transform:none}}
+.kb .cn3 b.cf{background:url(/shekel-front.png) center/cover;box-shadow:none}.kb .cn3 b.cb{background:url(/shekel-back.png) center/cover;box-shadow:none}.kb .cn3 b *{display:none}
