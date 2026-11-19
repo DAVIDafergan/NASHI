@@ -54,6 +54,20 @@ label>b{color:var(--ink);font-weight:500}
 .auth h2{font-size:26px;font-weight:900}
 .auth .sw{font-size:14px;color:var(--mut);text-align:center}.auth .sw a{color:#3b3bff;font-weight:700}
 .err{color:var(--bad);font-size:13px;min-height:18px}
+.rlogo{display:none;align-items:center;justify-content:center;gap:8px;font-weight:900;font-size:20px;margin-bottom:8px}.rlogo img{width:28px}
+@media(max-width:860px){.auth.reg .art{display:none}.auth.reg .rlogo{display:flex}.auth.reg .frm{place-items:start center;padding-top:28px}}
+.rprog{display:flex;gap:6px}.rprog i{flex:1;height:4px;border-radius:99px;background:var(--line);transition:background .5s}.rprog i.on{background:var(--ink)}
+.rhead{text-align:center;margin:10px 0 6px}.rhead h2{font-size:24px}.rhead p{color:var(--mut);font-size:14px;margin-top:2px}
+.ric{width:64px;height:64px;margin:4px auto 12px;border-radius:20px;background:var(--bg);color:var(--p);display:grid;place-items:center;padding:14px;transition:background .4s,color .4s}.ric.ok{width:88px;height:88px;border-radius:50%;background:#ecfdf5;color:#16a34a;padding:16px}
+.ric.pop{animation:rpop .5s cubic-bezier(.34,1.56,.64,1)}@keyframes rpop{from{transform:scale(.6);opacity:0}}
+.li{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;overflow:visible}.li *{stroke-dasharray:1;stroke-dashoffset:1}.li.go *{animation:draw 1.1s cubic-bezier(.65,0,.35,1) .1s forwards}.li.go *:nth-child(2){animation-delay:.35s}.li.go *:nth-child(3){animation-delay:.55s}@keyframes draw{to{stroke-dashoffset:0}}
+.rsteps-w{display:grid}.rstep{grid-area:1/1;display:none;gap:12px}.rstep.on{display:grid}
+.rstep.in-f{animation:rinF .45s cubic-bezier(.22,1,.36,1)}.rstep.in-b{animation:rinB .45s cubic-bezier(.22,1,.36,1)}
+@keyframes rinF{from{opacity:0;transform:translateX(-28px)}}@keyframes rinB{from{opacity:0;transform:translateX(28px)}}
+.rstep.shake{animation:rsh .35s}@keyframes rsh{25%{transform:translateX(6px)}75%{transform:translateX(-6px)}}
+.rdone{text-align:center}.rdone p{color:var(--mut);font-size:15px;margin-bottom:6px}.b.big{min-height:52px;font-size:16px;width:100%}
+.rnav{display:flex;gap:8px}.rnav #rNext{flex:1;min-height:48px;font-size:16px}
+@media (prefers-reduced-motion:reduce){.li *{stroke-dashoffset:0!important;animation:none!important}.rstep{animation:none!important}}
 .rsteps{display:flex;gap:6px;margin:-4px 0 4px}.rsteps span{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--mut);background:var(--bg);border-radius:999px;padding:6px}.rsteps span.on{background:var(--ink);color:#fff}
 .auth form label:not(.ck){display:block}.auth form label:not(.ck)>input,.auth form label:not(.ck)>select,.auth form label:not(.ck)>.vin{margin-top:5px}.auth label i{font-style:normal;color:var(--bad)}
 .auth .ck{display:flex;flex-direction:row;align-items:flex-start;gap:10px;font-size:13px;color:var(--ink);line-height:1.45}.auth .ck input{width:18px;height:18px;flex:none;margin-top:2px}.auth .ck a{color:var(--p);font-weight:600;text-decoration:underline}
@@ -289,26 +303,36 @@ input[type=datetime-local],input[type=date],input[type=time]{width:100%;min-widt
   <div class="frm">
     <form id="loginF"><h2>כניסה לחשבון</h2><label>אימייל<input type="email" id="lEmail" autocomplete="email" dir="ltr" required></label><label>סיסמה<input type="password" id="lPass" autocomplete="current-password" required></label><div class="err" id="lErr"></div><button class="b p" type="submit">כניסה</button><div class="sw">אין לכם חשבון? <a href="#" onclick="swap('reg');return false">הרשמה חינם</a> · <a href="#" onclick="forgot();return false">שכחתי סיסמה</a></div></form>
     <form id="resetF" hidden><h2>בחירת סיסמה חדשה</h2><label>סיסמה חדשה (6+ תווים)<input type="password" id="nPass" autocomplete="new-password" required minlength="6"></label><div class="err" id="nErr"></div><button class="b p" type="submit">שמירה וכניסה</button></form>
-    <form id="regF" hidden autocomplete="on"><h2>פתיחת חשבון לעמותה</h2><div class="rsteps"><span class="on" id="rs1">1 · איש קשר</span><span id="rs2">2 · העמותה</span></div>
-      <div id="rStep1">
-        <label>שם מלא <i>*</i><input id="rName" autocomplete="name" required></label>
-        <label>תפקיד בעמותה <i>*</i><select id="rRole" required><option value="">בחרו…</option><option>מנכ"ל/ית</option><option>יו"ר</option><option>גזבר/ית</option><option>מנהל/ת גיוס משאבים</option><option>חבר/ת ועד</option><option>רכז/ת קמפיין</option><option>אחר</option></select></label>
-        <div class="row"><label>טלפון נייד <i>*</i><input type="tel" id="rPhone" dir="ltr" autocomplete="tel" required placeholder="05x-xxxxxxx"></label><label>אימייל <i>*</i><input type="email" id="rEmail" dir="ltr" autocomplete="email" required></label></div>
-        <label>סיסמה (6+ תווים) <i>*</i><input type="password" id="rPass" autocomplete="new-password" required minlength="6"></label>
-        <div class="err" id="rErr1"></div><button class="b p" type="button" id="rNext">המשך לפרטי העמותה ←</button>
+    <form id="regF" hidden autocomplete="on" novalidate>
+      <div class="rlogo" dir="ltr"><img src="/logo.svg" alt="">Give<b style="color:#0038b8">IL</b></div>
+      <div class="rprog"><i class="on"></i><i></i><i></i><i></i></div>
+      <div class="rhead"><div class="ric" id="rIcon"></div><h2 id="rTitle">נעים להכיר</h2><p id="rSub">כמה פרטים קטנים ומתחילים</p></div>
+      <div class="rsteps-w">
+      <div class="rstep on" data-i="1">
+        <label>איך קוראים לך? <i>*</i><input id="rName" autocomplete="name" placeholder="שם מלא"></label>
+        <label>מה התפקיד שלך בארגון? <i>*</i><select id="rRole"><option value="">בחרו…</option><option>מנכ"ל/ית</option><option>יו"ר</option><option>גזבר/ית</option><option>מנהל/ת גיוס משאבים</option><option>חבר/ת ועד</option><option>רכז/ת קמפיין</option><option>אחר</option></select></label>
       </div>
-      <div id="rStep2" hidden>
-        <label>מספר עמותה / תאגיד <i>*</i><div class="vin"><input id="rOrgNum" dir="ltr" inputmode="numeric" placeholder="58xxxxxxx" required><button class="b" type="button" id="rLookup">בדיקה ברשם</button></div></label>
+      <div class="rstep" data-i="2">
+        <label>טלפון נייד <i>*</i><input type="tel" id="rPhone" dir="ltr" autocomplete="tel" placeholder="05x-xxxxxxx"></label>
+        <label>אימייל <i>*</i><input type="email" id="rEmail" dir="ltr" autocomplete="email" placeholder="name@example.org"></label>
+        <div class="small muted">נשלח אליכם קישור לאימות המייל. בטלפון נשתמש רק לתמיכה.</div>
+      </div>
+      <div class="rstep" data-i="3">
+        <label>מספר עמותה / תאגיד <i>*</i><div class="vin"><input id="rOrgNum" dir="ltr" inputmode="numeric" placeholder="58xxxxxxx"><button class="b" type="button" id="rLookup">בדיקה ברשם</button></div></label>
         <div class="vorg" id="rOrgRes" hidden></div>
-        <label>שם העמותה <i>*</i><input id="rOrg" required></label>
-        <div class="row"><label>כתובת (רחוב ומספר)<input id="rAddr" autocomplete="street-address"></label><label>עיר<input id="rCity" autocomplete="address-level2"></label></div>
-        <label>אתר / דף פייסבוק<input id="rWeb" dir="ltr" placeholder="https://"></label>
-        <label>אישור סעיף 46 (זיכוי מס לתורמים)<select id="rS46"><option value="">לא יודע/ת</option><option value="yes">יש אישור</option><option value="no">אין אישור</option></select></label>
-        <label class="ck"><input type="checkbox" id="rConsent" required><span>קראתי ואני מאשר/ת את <a href="/terms" target="_blank">התקנון</a> ואת <a href="/privacy" target="_blank">מדיניות הפרטיות</a>, ומצהיר/ה שאני מוסמך/ת לפעול בשם העמותה <i>*</i></span></label>
-        <label class="ck"><input type="checkbox" id="rMarketing"><span>אשמח לקבל עדכונים וטיפים לגיוס במייל (אפשר להסיר בכל עת)</span></label>
-        <div class="err" id="rErr"></div>
-        <div class="row"><button class="b" type="button" id="rBack">→ חזרה</button><button class="b p" type="submit">יצירת החשבון</button></div>
+        <label>שם העמותה <i>*</i><input id="rOrg"></label>
+        <div class="row"><label>כתובת<input id="rAddr" autocomplete="street-address"></label><label>עיר<input id="rCity" autocomplete="address-level2"></label></div>
       </div>
+      <div class="rstep" data-i="4">
+        <label>בחרו סיסמה (6+ תווים) <i>*</i><input type="password" id="rPass" autocomplete="new-password" minlength="6"></label>
+        <div class="row"><label>אתר / פייסבוק<input id="rWeb" dir="ltr" placeholder="https://"></label><label>אישור סעיף 46<select id="rS46"><option value="">לא יודע/ת</option><option value="yes">יש</option><option value="no">אין</option></select></label></div>
+        <label class="ck"><input type="checkbox" id="rConsent"><span>קראתי ואני מאשר/ת את <a href="/terms" target="_blank">התקנון</a> ואת <a href="/privacy" target="_blank">מדיניות הפרטיות</a>, ומצהיר/ה שאני מוסמך/ת לפעול בשם הארגון <i>*</i></span></label>
+        <label class="ck"><input type="checkbox" id="rMarketing"><span>אשמח לקבל טיפים לגיוס במייל</span></label>
+      </div>
+      <div class="rstep rdone" data-i="5"><p>החשבון נפתח. עכשיו נאמת את העמותה ונתחיל לבנות את הקמפיין הראשון שלכם.</p><button class="b p big" type="button" id="rEnter">בואו נתחיל ←</button></div>
+      </div>
+      <div class="err" id="rErr"></div>
+      <div class="rnav"><button class="b" type="button" id="rBack" hidden>→ חזרה</button><button class="b p" type="submit" id="rNext">המשך ←</button></div>
       <div class="sw">כבר רשומים? <a href="#" onclick="swap('login');return false">כניסה</a></div></form>
   </div>
 </div>
@@ -368,16 +392,32 @@ const toLocal=s=>{if(!s)return '';const d=new Date(s);if(isNaN(d))return s.slice
 let U=null,C=null,PROVS=[],es=null;
 
 // ---- auth ----
-function swap(w){$('#loginF').hidden=w!=='login';$('#regF').hidden=w!=='reg';$('#resetF').hidden=w!=='reset'}
+function swap(w){$('#loginF').hidden=w!=='login';$('#regF').hidden=w!=='reg';$('#resetF').hidden=w!=='reset';$('#auth').classList.toggle('reg',w==='reg');if(w==='reg'){rCur=1;$$('.rstep').forEach(x=>x.classList.remove('on'));rGo(1)}}
 async function forgot(){const em=prompt('הזינו את האימייל של החשבון ונשלח קישור לאיפוס:',$('#lEmail').value);if(!em)return;const r=await api('/forgot',{method:'POST',body:{email:em}});toast(r.mail?'אם האימייל קיים – נשלח קישור לאיפוס':'שליחת מייל לא מופעלת עדיין – פנו אלינו בוואטסאפ ונאפס לכם')}
 $('#resetF').onsubmit=async e=>{e.preventDefault();const t=(location.hash.match(/reset=([a-f0-9]+)/)||[])[1];try{await api('/reset',{method:'POST',body:{token:t,password:$('#nPass').value}});location.hash='#/';boot()}catch(e){$('#nErr').textContent=e.message}};
 $('#loginF').onsubmit=async e=>{e.preventDefault();try{await api('/login',{method:'POST',body:{email:$('#lEmail').value,password:$('#lPass').value}});boot()}catch(e){$('#lErr').textContent='אימייל או סיסמה שגויים'}};
-const rGo=(n)=>{$('#rStep1').hidden=n!==1;$('#rStep2').hidden=n!==2;$('#rs1').classList.toggle('on',n===1);$('#rs2').classList.toggle('on',n===2)};
-$('#rNext').onclick=()=>{const e=$('#rErr1');e.textContent='';if($('#rName').value.trim().length<2)return e.textContent='נא להזין שם מלא';if(!$('#rRole').value)return e.textContent='נא לבחור תפקיד';if($('#rPhone').value.replace(/\D/g,'').length<9)return e.textContent='נא להזין טלפון נייד תקין';if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($('#rEmail').value))return e.textContent='אימייל לא תקין';if($('#rPass').value.length<6)return e.textContent='סיסמה: לפחות 6 תווים';rGo(2);$('#rOrgNum').focus()};
-$('#rBack').onclick=()=>rGo(1);
+const RI={"user": "<svg class=\"li\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle pathLength=\"1\" cx=\"12\" cy=\"8\" r=\"4\"/><path pathLength=\"1\" d=\"M4 21a8 8 0 0 1 16 0\"/></svg>", "mail": "<svg class=\"li\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect pathLength=\"1\" x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\"/><path pathLength=\"1\" d=\"m22 6-10 7L2 6\"/></svg>", "building": "<svg class=\"li\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path pathLength=\"1\" d=\"M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5M9 9.5h2M13 9.5h2M9 13h2M13 13h2\"/></svg>", "lock": "<svg class=\"li\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect pathLength=\"1\" x=\"4\" y=\"11\" width=\"16\" height=\"10\" rx=\"2\"/><path pathLength=\"1\" d=\"M8 11V7a4 4 0 0 1 8 0v4M12 15v2\"/></svg>", "check": "<svg class=\"li\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle pathLength=\"1\" cx=\"12\" cy=\"12\" r=\"10\"/><path pathLength=\"1\" d=\"m7.5 12.5 3 3 6-7\"/></svg>"};
+const RS=[null,['user','נעים להכיר','כמה פרטים קטנים ומתחילים'],['mail','איך נשיג אתכם?','כדי שנוכל לעדכן ולעזור'],['building','ספרו לנו על הארגון','נבדוק אוטומטית מול רשם העמותות'],['lock','כמעט סיימנו','רק סיסמה ואישור קצר'],['check','ברוכים הבאים ל-GiveIL!','']];
+let rCur=1;
+function rGo(n){const old=$('.rstep.on'),nw=$(`.rstep[data-i="${n}"]`);const fwd=n>rCur;rCur=n;$('#rErr').textContent='';
+  if(old&&old!==nw){old.classList.remove('on');old.classList.add(fwd?'out-f':'out-b');setTimeout(()=>old.classList.remove('out-f','out-b'),400)}
+  nw.classList.remove('in-f','in-b');void nw.offsetWidth;nw.classList.add('on',fwd?'in-f':'in-b');
+  const [ic,t,sub]=RS[n];const box=$('#rIcon');box.classList.remove('pop');void box.offsetWidth;box.innerHTML=RI[ic];box.classList.add('pop');box.querySelector('svg').classList.add('go');box.classList.toggle('ok',n===5);
+  $('#rTitle').textContent=t;$('#rSub').textContent=sub;$('#rSub').hidden=!sub;
+  $$('.rprog i').forEach((x,i)=>{x.classList.toggle('on',i<n);x.classList.toggle('cur',i===n-1)});$('.rprog').hidden=n===5;
+  $('#rBack').hidden=n===1||n===5;$('.rnav').hidden=n===5;$('#regF .sw').hidden=n===5;$('#rNext').textContent=n===4?'פתיחת החשבון ✓':'המשך ←';
+  setTimeout(()=>{const f=nw.querySelector('input:not([type=checkbox]),select');if(f&&innerWidth>700)f.focus()},350)}
+function rCheck(n){const e=m=>{$('#rErr').textContent=m;const st=$('.rstep.on');st.classList.remove('shake');void st.offsetWidth;st.classList.add('shake');return false};
+  if(n===1){if($('#rName').value.trim().length<2)return e('נא להזין שם מלא');if(!$('#rRole').value)return e('נא לבחור תפקיד')}
+  if(n===2){if($('#rPhone').value.replace(/\D/g,'').length<9)return e('נא להזין טלפון נייד תקין');if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($('#rEmail').value.trim()))return e('אימייל לא תקין')}
+  if(n===3){if($('#rOrgNum').value.replace(/\D/g,'').length<8)return e('נא להזין מספר עמותה / תאגיד');if($('#rOrg').value.trim().length<2)return e('נא להזין את שם הארגון')}
+  if(n===4){if($('#rPass').value.length<6)return e('סיסמה: לפחות 6 תווים');if(!$('#rConsent').checked)return e('יש לאשר את התקנון ומדיניות הפרטיות')}
+  return true}
+$('#rBack').onclick=()=>rGo(rCur-1);
+$('#rEnter').onclick=()=>{location.hash='#/account';boot()};
 $('#rLookup').onclick=async()=>{const n=$('#rOrgNum').value.replace(/\D/g,'');const r=$('#rOrgRes');r.hidden=false;r.className='vorg';r.innerHTML='<span class="vwait">בודקים מול רשם העמותות…</span>';try{const j=await api('/org-lookup?number='+n);if(!j.found){r.innerHTML='<b>לא נמצאה עמותה עם המספר הזה</b><span>בדקו את המספר (9 ספרות, מתחיל ב-58). אפשר להמשיך – נאמת ידנית.</span>';return}r.className='vorg '+(j.active?'ok':'');r.innerHTML=`<b>${esc(j.name)}</b><span>${esc(j.status)}${j.city?' · '+esc(j.city):''}${j.field?' · '+esc(j.field):''}</span>`;if(!$('#rOrg').value)$('#rOrg').value=j.name;if(!$('#rCity').value&&j.city)$('#rCity').value=j.city}catch(e){r.innerHTML='<b>לא הצלחנו לבדוק כרגע</b><span>'+esc(e.message)+'</span>'}};
 $('#rOrgNum').addEventListener('change',()=>{if($('#rOrgNum').value.replace(/\D/g,'').length===9)$('#rLookup').click()});
-$('#regF').onsubmit=async e=>{e.preventDefault();$('#rErr').textContent='';if(!$('#rConsent').checked){$('#rErr').textContent='יש לאשר את התקנון ומדיניות הפרטיות';return}try{await api('/register',{method:'POST',body:{name:$('#rName').value,role_title:$('#rRole').value,org:$('#rOrg').value,org_number:$('#rOrgNum').value,address:$('#rAddr').value,city:$('#rCity').value,website:$('#rWeb').value,s46:$('#rS46').value,email:$('#rEmail').value,phone:$('#rPhone').value,password:$('#rPass').value,consent:true,marketing:$('#rMarketing').checked}});location.hash='#/account';boot()}catch(e){$('#rErr').textContent=e.message}};
+$('#regF').onsubmit=async e=>{e.preventDefault();if(!rCheck(rCur))return;if(rCur<4)return rGo(rCur+1);const btn=$('#rNext');btn.disabled=true;btn.textContent='פותחים…';try{await api('/register',{method:'POST',body:{name:$('#rName').value,role_title:$('#rRole').value,org:$('#rOrg').value,org_number:$('#rOrgNum').value,address:$('#rAddr').value,city:$('#rCity').value,website:$('#rWeb').value,s46:$('#rS46').value,email:$('#rEmail').value.trim(),phone:$('#rPhone').value,password:$('#rPass').value,consent:true,marketing:$('#rMarketing').checked}});rGo(5);RS[5][2]='';$('#rTitle').textContent='ברוכים הבאים, '+$('#rName').value.trim().split(' ')[0]+'!'}catch(err){$('#rErr').textContent=err.message;if(/אימייל|רשום/.test(err.message))rGo(2),$('#rErr').textContent=err.message}finally{btn.disabled=false;if(rCur===4)btn.textContent='פתיחת החשבון ✓'}};
 $('#logout').onclick=async e=>{e.preventDefault();await api('/logout',{method:'POST'});location.reload()};
 let SUP={};
 async function loadSupport(){try{SUP=await api('/support')}catch{SUP={}}const h=$('#hbtn');const ctx=()=>{const where=C?` (קמפיין: ${C.title})`:'';return (SUP.text||'שלום, אני צריך עזרה עם GiveIL')+where};if(SUP.phone){h.href='https://wa.me/'+SUP.phone.replace(/\D/g,'').replace(/^0/,'972')+'?text='+encodeURIComponent(ctx());h.hidden=false}else h.hidden=true;h.onclick=()=>{if(SUP.phone)h.href='https://wa.me/'+SUP.phone.replace(/\D/g,'').replace(/^0/,'972')+'?text='+encodeURIComponent(ctx())}}
