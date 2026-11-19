@@ -264,10 +264,9 @@ app.get('/q', (req, res) => res.redirect(member(req) ? '/me' : '/?utm_source=box
 app.get('/api/qr', async (req, res) => { const d = String(req.query.d || '').slice(0, 300); if (!d) return bad(res, 'd'); const c = /^#?[0-9a-f]{6}$/i.test(req.query.c || '') ? '#' + String(req.query.c).replace('#', '') : '#d4b06a';
   try { const svg = await QR.toString(d, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: c, light: '#0000' } }); res.setHeader('Cache-Control', 'public, max-age=86400'); res.type('image/svg+xml').send(svg); } catch { bad(res, 'qr'); } });
 app.get('/r/:code', (req, res) => {
-  const code = String(req.params.code).replace(/[^\w]/g, '').slice(0, 20); const m = db.prepare('SELECT first, city FROM members WHERE ref_code=?').get(code);
+  const code = String(req.params.code).replace(/[^\w]/g, '').slice(0, 20);
   const e = v => String(v || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let html = fs.readFileSync(pub('index.html'), 'utf8');
-  if (m) { const t = `${m.first}${m.city ? ' מ' + m.city : ''} לקח על עצמו שקל ביום לרבינו – וגם אתה מוזמן`; html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${e(t)}">`).replace(/<meta property="og:description" content="[^"]*">/, '<meta property="og:description" content="קופה מעוצבת ליד התפילין. שקל כל בוקר. ובראש השנה – עוד יהודי אצל רבינו באומן. לחצו לקבלת קופה עד הבית.">'); }
   html = absOg(req, html.replace('<head>', `<head><meta name="rb-ref" content="${e(code)}">`));
   res.setHeader('Cache-Control', 'no-cache'); res.send(html);
 });

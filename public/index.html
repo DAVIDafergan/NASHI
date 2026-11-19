@@ -360,7 +360,7 @@ fetch('/api/me').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;ME=d;const m=
   $('#navAct').innerHTML=`<a class="me-chip" href="/me">הקופה שלי <b>${no}</b></a>`;
   $('#lead').innerHTML=`${esc(m.first)}, בקופה שלך כבר <b style="color:var(--gold2)">₪${fmt(b.balance)}</b>${b.streak>1?` · ${b.streak} ימים ברצף`:''}. ${b.checkedToday?'השקל של היום כבר בפנים – אשריך!':'שמת כבר את השקל של היום?'}`;
   const link=location.origin+'/r/'+m.ref_code,wa='https://wa.me/?text='+encodeURIComponent(`לקחתי על עצמי שקל ביום לרבינו 🔥 כל השקלים הופכים בראש השנה לכרטיסי טיסה לאומן ליהודים שעוד לא זכו. רוצה קופה משלך? ${link}`);
-  $('#heroCta').innerHTML=(b.checkedToday?'':`<button class="btn" id="hChk">שמתי את השקל של היום ✓</button>`)+`<a class="btn ${b.checkedToday?'':'ghost'}" href="/me">לקופה שלי ←</a>`;
+  $('#heroCta').innerHTML=(b.checkedToday?'':`<button class="btn" id="hChk">שמתי את השקל של היום ✓</button>`)+`<a class="btn ${b.checkedToday?'':'ghost'}" href="/me">לקופה שלי ←</a><button class="btn ghost" data-sh>להזמין חבר 🤝</button>`;
   $('#proof').innerHTML=`<span>הזמנת עד עכשיו <b style="color:var(--gold2)">${fmt(m.refs)}</b> יהודים · <a href="#" data-sh style="color:var(--gold2);text-decoration:underline">להזמין עוד אחד</a></span>`;
   const chk=$('#hChk');if(chk)chk.onclick=async()=>{chk.disabled=true;const r=await fetch('/api/me/checkin',{method:'POST'});if(r.ok){chk.outerHTML='<span class="btn ghost" style="pointer-events:none">✓ השקל של היום בקופה</span>';toast('אשריך! עוד יום ברצף')}};
   $('#mapCta').innerHTML=`<button class="btn" data-sh>להזמין חבר ולהדליק עוד נקודה ←</button>`;
