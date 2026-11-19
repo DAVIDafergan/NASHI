@@ -6,7 +6,7 @@
 <link rel="icon" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bona+Nova:wght@700&family=Heebo:wght@200;800&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=5">
+<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=5"><script src="/i18n.js?v=1"></script>
 <style>
 body{min-height:100svh;--a11y-b:92px}
 .app{width:min(520px,100%);margin:0 auto;min-height:100svh;padding:0 18px calc(96px + env(safe-area-inset-bottom));position:relative}
@@ -38,7 +38,7 @@ body{min-height:100svh;--a11y-b:92px}
 .cal{display:grid;grid-template-columns:repeat(14,1fr);gap:5px}.cal i{aspect-ratio:1;border-radius:7px;background:rgba(255,255,255,.06);font-style:normal;font-size:9px;display:grid;place-items:center;color:var(--gold)}.cal i.on{background:var(--g)}.cal i.o{background:none;border:1px dashed rgba(217,174,91,.3)}.cal i.t{outline:1.5px solid var(--gold);outline-offset:1px}
 .list{margin-top:14px;border-radius:22px;border:1px solid var(--line2);background:rgba(9,13,32,.4);overflow:hidden}
 .row{display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid var(--line2);width:100%;text-align:start;color:var(--ink)}.row:last-child{border:0}.row .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(217,174,91,.1);color:var(--gold2);flex:none}.row .ic svg{width:20px;height:20px}
-.row b{display:block;font-weight:600}.row span span{font-size:13px;color:var(--mut)}.row .ch{margin-inline-start:auto;color:var(--mut2);font-size:20px}
+.row b{display:block;font-weight:600}.row span span{font-size:13px;color:var(--mut)}.row .ch{margin-inline-start:auto;color:var(--mut2);font-size:20px}[dir=ltr] .row .ch{transform:scaleX(-1)}
 .h2{font-family:var(--fs);font-weight:700;font-size:26px;margin:18px 0 4px}.h2+p{color:var(--mut);font-size:15px}
 .big2{display:grid;gap:12px;margin-top:16px}.opt{display:flex;gap:16px;align-items:center;padding:20px 18px;border-radius:24px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(217,174,91,.12),rgba(9,13,32,.4));text-align:start;width:100%;color:var(--ink)}.opt .ic{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:rgba(217,174,91,.14);color:var(--gold2);flex:none}.opt .ic svg{width:28px;height:28px}.opt b{font-size:19px;font-weight:600;display:block}.opt span span{font-size:14px;color:var(--mut)}
 .hist>div{display:flex;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line2);font-size:14px;color:var(--mut)}.hist>div:last-child{border:0}.hist b{color:var(--ink)}
@@ -54,7 +54,14 @@ body{min-height:100svh;--a11y-b:92px}
 .copy{display:flex;gap:8px;align-items:center;border:1px dashed var(--line);border-radius:14px;padding:8px 8px 8px 12px}.copy code{flex:1;direction:ltr;text-align:left;font-size:13px;color:var(--gold2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .r3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
 .ck{display:flex!important;align-items:center;gap:10px;font-weight:500;color:var(--mut);font-size:14px}.ck input{width:20px;height:20px;accent-color:var(--gold)}
-svg.li{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+svg.li{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+svg.li *{animation:none!important;stroke-dasharray:none!important;stroke-dashoffset:0!important;fill:currentColor;fill-opacity:.2}
+.act,.row b,.opt b,.nav button,.pills span,.trkL,.mini h4,.hist,.bals,.h2+p{font-weight:700!important}
+.act{font-size:15px;color:#fff6e2}.act .ic,.row .ic,.opt .ic{background:linear-gradient(160deg,rgba(241,214,151,.28),rgba(169,127,57,.12));box-shadow:inset 0 0 0 1px rgba(233,207,152,.25)}
+.act.pri .ic{background:var(--g);color:#1a1405}.act.pri .ic svg *{fill:#1a1405;fill-opacity:.18}
+.pills span,.bals,.h2+p,.row span span,.opt span span{color:#d9cfbb}.nav button{font-size:13px;color:#a9a18f}.nav button.on{color:var(--gold2)}.nav button.on svg *{fill-opacity:.45}
+.act .lk{font-size:11px;font-weight:700;color:var(--gold2);border:1px solid var(--line);border-radius:99px;padding:1px 8px;margin-top:-2px}
+.prog{height:8px;border-radius:9px;background:rgba(246,239,224,.1);overflow:hidden}.prog i{display:block;height:100%;background:var(--g);border-radius:9px}
 </style>
 </head>
 <body>
@@ -69,7 +76,7 @@ svg.li{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;strok
 </form></div>
 
 <div class="app" id="app" hidden>
-  <div class="top"><a href="/"><img src="/logo-420.png" alt="רבינו שלי"></a><span class="sp"></span><span class="no" id="boxNo"></span></div>
+  <div class="top"><a href="/"><img src="/logo-420.png" alt="רבינו שלי"></a><span class="sp"></span><span class="no" id="boxNo"></span><span data-lang></span></div>
 
   <section class="scr on" data-s="home">
     <div class="hi" id="hi"></div>
@@ -135,7 +142,7 @@ svg.li{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;strok
 
 <div class="sh" id="sh" role="dialog" aria-modal="true"><div class="pn" id="pn"></div></div>
 <div class="toast" id="toast"></div><datalist id="cityList"></datalist>
-<script src="/cities.js?v=5"></script><script src="/share.js?v=5"></script>
+<script src="/cities.js?v=5"></script><script src="/share.js?v=6"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const fmt=n=>Math.round(+n||0).toLocaleString('he-IL');const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -163,6 +170,7 @@ function render(){const m=D.member,b=D.box,no=String(m.box_no).padStart(4,'0');c
   if(b.todayOff)$('#aBtn').innerHTML=`<div class="off">🕯 ${b.todayOff==='שבת'?'שבת שלום – היום לא סופרים':esc(b.todayOff)+' – חג שמח'}</div>`;
   else if(b.checkedToday)$('#aBtn').innerHTML=`<div class="done"><span style="width:22px;height:22px;display:block">${svg('check')}</span>השקל של היום בקופה</div>`;
   else{$('#aBtn').innerHTML='<button class="btn chk" id="chk">שמתי את השקל של היום ✓</button>';$('#chk').onclick=checkin}
+  $$('[data-open=donate],[data-open=pickup]').forEach(x=>{const k=x.querySelector('.lk');if(b.balance<60){if(!k&&x.classList.contains('act'))x.insertAdjacentHTML('beforeend','<span class="lk">מ-₪60</span>')}else if(k)k.remove()});
   const ST=['new','assigned','out','delivered'],si=Math.max(0,ST.indexOf(m.box_status));$$('#trk i').forEach((x,i)=>x.classList.toggle('on',i<=si));$('#trkT').textContent=['בהכנה','שובצה לשליח','בדרך אליך','אצלך ✓'][si];
   const set=new Set(b.recent||[]),offM=new Map((b.off||[]).map(o=>[o.day,o.name])),t=new Date();$('#cal').innerHTML=Array.from({length:14},(_,i)=>{const d=new Date(t);d.setDate(d.getDate()-(13-i));const k=d.toLocaleDateString('sv-SE');const o=offM.get(k);return o?`<i class="o${i===13?' t':''}" title="${esc(o)}">${o==='שבת'?'ש':'ח'}</i>`:`<i class="${set.has(k)?'on':''}${i===13?' t':''}" title="${k}"></i>`}).join('');
   $$('#rCh .chip').forEach(c=>c.classList.toggle('on',c.dataset.v===m.remind_channel));$('#rTime').value=m.remind_time||'07:30';$$('#rDays .chip').forEach(c=>c.classList.toggle('on',String(m.remind_days||'').includes(c.dataset.d)));$('#rEmail').value=m.email||'';rMore();
@@ -176,16 +184,18 @@ $('#rSave').onclick=async()=>{const ch=$('#rCh .on');if(!ch)return toast('בחר
 const sh=$('#sh');const openS=h=>{$('#pn').innerHTML='<div class="gr"></div>'+h;icons();sh.classList.add('on')};const closeS=()=>sh.classList.remove('on');sh.onclick=e=>{if(e.target===sh)closeS()};document.addEventListener('keydown',e=>{if(e.key==='Escape')closeS()});
 let y0=null;$('#pn').addEventListener('touchstart',e=>{if($('#pn').scrollTop<=0)y0=e.touches[0].clientY},{passive:true});$('#pn').addEventListener('touchend',e=>{if(y0!==null&&e.changedTouches[0].clientY-y0>90)closeS();y0=null});
 const chipsOne=id=>$$(`#${id} .chip`).forEach(c=>c.onclick=()=>{$$(`#${id} .chip`).forEach(x=>x.classList.remove('on'));c.classList.add('on')});
+const MIN=60;const locked=()=>D.box.balance<MIN;
+function lockS(kind){const b=D.box.balance,left=MIN-b,days=Math.ceil(left/(D.member.amount||1));openS(`<span class="ic0" data-ic="${kind==='pickup'?'truck':'spark'}"></span><h3>${kind==='pickup'?'הזמנת איסוף':'ריקון בתרומה מכוונת'}</h3><p class="c">ריקון ואיסוף אפשריים מ-₪${MIN} בקופה</p><div class="prog"><i style="width:${Math.min(100,b/MIN*100)}%"></i></div><p class="c">בקופה ₪${fmt(b)} · עוד ₪${fmt(left)} – בערך ${fmt(days)} בקרים</p><button class="btn" id="lkX">הבנתי</button>`);$('#lkX').onclick=closeS}
 const S={
- donate(){const b=D.box.balance||D.member.amount;openS(`<span class="ic0" data-ic="spark"></span><h3>ריקון בתרומה מכוונת</h3><p class="c">הכסף מצטרף לכרטיסים לאומן. עם איזו כוונה?</p>
+ donate(){if(locked())return lockS('donate');const b=D.box.balance||D.member.amount;openS(`<span class="ic0" data-ic="spark"></span><h3>ריקון בתרומה מכוונת</h3><p class="c">הכסף מצטרף לכרטיסים לאומן. עם איזו כוונה?</p>
   <div class="chips" id="kv" style="justify-content:center"><button class="chip on">לרפואה שלמה</button><button class="chip">לזיווג הגון</button><button class="chip">לפרנסה טובה</button><button class="chip">לעילוי נשמת</button><button class="chip">להצלחה</button><button class="chip">לשלום בית</button></div>
-  <label>על שם (לא חובה)<input id="kN" placeholder="לדוגמה: יוסף בן שרה"></label><label>סכום (₪)<input id="kA" type="number" inputmode="numeric" value="${b}" dir="ltr"></label><div class="err" id="kE"></div><button class="btn" id="kGo">להמשך לתשלום ←</button>`);chipsOne('kv');
+  <label>על שם (לא חובה)<input id="kN" placeholder="לדוגמה: יוסף בן שרה"></label><label>סכום (₪)<input id="kA" type="number" inputmode="numeric" min="60" value="${Math.max(60,b)}" dir="ltr"></label><div class="err" id="kE"></div><button class="btn" id="kGo">להמשך לתשלום ←</button>`);chipsOne('kv');
   $('#kGo').onclick=async()=>{const kav=$('#kv .on').textContent+($('#kN').value.trim()?' – '+$('#kN').value.trim():'');try{const r=await api('/me/donate',{method:'POST',body:{amount:+$('#kA').value,kavana:kav}});if(r.url){open(r.url,'_blank');openS(`<span class="ic0" data-ic="check"></span><h3>אחרי התשלום</h3><p class="c">סיימת לשלם? אשר כאן והקופה תתאפס.</p><button class="btn" id="kDone">שילמתי ✓</button><button class="btn ghost" id="kNo">עוד לא</button>`);$('#kNo').onclick=closeS;$('#kDone').onclick=async()=>{await api('/me/donate/'+r.id+'/done',{method:'POST'});closeS();toast('תזכה למצוות!');reload()}}else{openS(`<span class="ic0" data-ic="heart"></span><h3>הבקשה נרשמה</h3><p class="c">התשלום אונליין עוד לא פתוח – נחזור אליך עם קישור. תודה!</p><button class="btn" id="kX">סגירה</button>`);$('#kX').onclick=closeS;reload()}}catch(e){$('#kE').textContent=e.message}}},
- pickup(){const m=D.member;openS(`<span class="ic0" data-ic="truck"></span><h3>הזמנת איסוף</h3><p class="c">שליח יגיע אל ${esc((m.street||'')+' '+(m.house||'')+', '+(m.city||''))}<br>בקופה כרגע כ-₪${fmt(D.box.balance)}</p>
+ pickup(){if(locked())return lockS('pickup');const m=D.member;openS(`<span class="ic0" data-ic="truck"></span><h3>הזמנת איסוף</h3><p class="c">שליח יגיע אל ${esc((m.street||'')+' '+(m.house||'')+', '+(m.city||''))}<br>בקופה כרגע כ-₪${fmt(D.box.balance)}</p>
   <div class="chips" id="pv" style="justify-content:center"><button class="chip on">בוקר</button><button class="chip">צהריים</button><button class="chip">ערב</button><button class="chip">מוצאי שבת</button></div><label>הערה לשליח<input id="pN" placeholder="קומה, קוד כניסה…"></label><div class="err" id="pE"></div><button class="btn" id="pGo">שלחו שליח ←</button>`);chipsOne('pv');
   $('#pGo').onclick=async()=>{try{await api('/me/pickup',{method:'POST',body:{preferred:$('#pv .on').textContent,note:$('#pN').value}});openS(`<span class="ic0" data-ic="check"></span><h3>השליח בדרך</h3><p class="c">נתאם איתך בטלפון. תודה שאתה חלק מהאור!</p><button class="btn" id="pX">סגירה</button>`);$('#pX').onclick=closeS;reload()}catch(e){$('#pE').textContent=e.message}}},
- invite(){const link=location.origin+'/r/'+D.member.ref_code;openS(`<span class="ic0" data-ic="users"></span><h3>להזמין חבר</h3><p class="c">כל מי שמצטרף דרכך נספר לזכותך – ${D.member.refs?`כבר ${D.member.refs}!`:'הראשון מחכה'}</p><button class="btn" id="iSh">שיתוף ←</button><div class="copy"><code>${esc(link)}</code><button class="btn sm ghost" id="iCp">העתקה</button></div>`);$('#iSh').onclick=()=>rbShareLink(link);$('#iCp').onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('הקישור הועתק'))},
- story(){openS(`<span class="ic0" data-ic="camera"></span><h3>כרטיס לסטורי</h3><p class="c">תמונה מעוצבת עם הקופה ומספר הקופה שלך – מוכנה לאינסטגרם ולסטטוס.</p><button class="btn" id="stGo">יצירה ושיתוף 📸</button>`);$('#stGo').onclick=()=>rbShare({boxNo:D.member.box_no,ref:D.member.ref_code,streak:D.box.streak,first:D.member.first},RB_TEXT+'\n'+location.origin+'/r/'+D.member.ref_code)},
+ invite(){const link=location.origin+'/r/'+D.member.ref_code+(window.RB_LQ||'');openS(`<span class="ic0" data-ic="users"></span><h3>להזמין חבר</h3><p class="c">כל מי שמצטרף דרכך נספר לזכותך – ${D.member.refs?`כבר ${D.member.refs}!`:'הראשון מחכה'}</p><button class="btn" id="iSh">שיתוף ←</button><div class="copy"><code>${esc(link)}</code><button class="btn sm ghost" id="iCp">העתקה</button></div>`);$('#iSh').onclick=()=>rbShareLink(link);$('#iCp').onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('הקישור הועתק'))},
+ story(){openS(`<span class="ic0" data-ic="camera"></span><h3>כרטיס לסטורי</h3><p class="c">תמונה מעוצבת עם הקופה ומספר הקופה שלך – מוכנה לאינסטגרם ולסטטוס.</p><button class="btn" id="stGo">יצירה ושיתוף 📸</button>`);$('#stGo').onclick=()=>rbShare({boxNo:D.member.box_no,ref:D.member.ref_code,streak:D.box.streak,first:D.member.first},RB_TEXT+'\n'+location.origin+'/r/'+D.member.ref_code+(window.RB_LQ||''))},
  details(){const m=D.member;openS(`<span class="ic0" data-ic="home"></span><h3>כתובת ופרטים</h3><label>עיר<input id="dCity" list="cityList" value="${esc(m.city)}"></label><div class="r3"><label>רחוב<input id="dStreet" value="${esc(m.street)}"></label><label>מספר<input id="dHouse" value="${esc(m.house)}"></label><label>דירה<input id="dApt" value="${esc(m.apt)}"></label></div><label class="ck"><input type="checkbox" id="dPub" ${m.public?'checked':''}>להציג את השם הפרטי והעיר שלי באתר</label><button class="btn" id="dSave">שמירה</button>`);
   $('#dSave').onclick=async()=>{try{await api('/me',{method:'PUT',body:{city:$('#dCity').value,street:$('#dStreet').value,house:$('#dHouse').value,apt:$('#dApt').value,public:$('#dPub').checked}});closeS();toast('נשמר ✓');reload()}catch(e){toast(e.message)}}},
  amount(){const m=D.member;openS(`<span class="ic0" data-ic="coin"></span><h3>הקבלה שלי</h3><div><div style="font-size:14px;font-weight:600;color:var(--mut);margin-bottom:8px">כמה בכל בוקר</div><div class="chips" id="am">${[1,2,3,5,10,18,36].map(v=>`<button class="chip${v==m.amount?' on':''}" data-v="${v}">₪${v}</button>`).join('')}</div></div><div><div style="font-size:14px;font-weight:600;color:var(--mut);margin-bottom:8px">מתי</div><div class="chips" id="pr">${['ויברך דוד','לפני הנחת תפילין','אחרי התפילה','מתי שנוח לי'].map(v=>`<button class="chip${v===m.prayer?' on':''}">${v}</button>`).join('')}</div></div><button class="btn" id="aSave">שמירה</button>`);chipsOne('am');chipsOne('pr');

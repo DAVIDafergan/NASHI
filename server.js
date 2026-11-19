@@ -137,13 +137,15 @@ app.put('/api/me', mAuth, (req, res) => {
   db.prepare('UPDATE members SET remind_channel=?, remind_time=?, remind_days=?, email=?, amount=?, prayer=?, street=?, house=?, apt=?, city=?, region=?, lat=?, lng=?, public=? WHERE id=?').run(ch, time, days, email, b.amount ? Math.min(100, Math.max(1, Math.round(+b.amount))) : m.amount, b.prayer ? str(b.prayer, 40) : m.prayer, b.street !== undefined ? str(b.street, 80) : m.street, b.house !== undefined ? str(b.house, 10) : m.house, b.apt !== undefined ? str(b.apt, 10) : m.apt, c ? c.name : city, c ? c.region : m.region, c?.lat ?? m.lat, c?.lng ?? m.lng, b.public === undefined ? m.public : (b.public ? 1 : 0), m.id);
   statsCache.t = 0; res.json({ ok: true });
 });
+const MIN_EMPTY = 60;
 app.post('/api/me/pickup', mAuth, (req, res) => {
   if (db.prepare("SELECT 1 FROM collections WHERE member_id=? AND kind='pickup' AND status IN ('requested','scheduled')").get(req.m.id)) return bad(res, 'כבר יש בקשת איסוף פתוחה – השליח בדרך');
-  const st = boxState(req.m); db.prepare("INSERT INTO collections(member_id,kind,amount_est,preferred,note) VALUES(?,?,?,?,?)").run(req.m.id, 'pickup', st.balance, String(req.body?.preferred || '').slice(0, 80), String(req.body?.note || '').slice(0, 200));
+  const st = boxState(req.m); if (st.balance < MIN_EMPTY) return bad(res, `איסוף אפשרי מ-₪${MIN_EMPTY} בקופה`); db.prepare("INSERT INTO collections(member_id,kind,amount_est,preferred,note) VALUES(?,?,?,?,?)").run(req.m.id, 'pickup', st.balance, String(req.body?.preferred || '').slice(0, 80), String(req.body?.note || '').slice(0, 200));
   res.json({ ok: true }); notifyAdmin(`בקשת איסוף – קופה #${req.m.box_no}`, `${req.m.first} ${req.m.last}, ${req.m.street} ${req.m.house} ${req.m.city} · כ-₪${st.balance}`);
 });
 app.post('/api/me/donate', mAuth, (req, res) => {
   const st = boxState(req.m); const amount = Math.max(1, Math.round(+req.body?.amount || st.balance || 1)); const kavana = String(req.body?.kavana || '').slice(0, 120);
+  if (amount < MIN_EMPTY) return bad(res, `ריקון אפשרי מ-₪${MIN_EMPTY}`);
   const r = db.prepare("INSERT INTO collections(member_id,kind,amount_est,kavana,status) VALUES(?,?,?,?,'pending')").run(req.m.id, 'donation', amount, kavana);
   const url = String(S().donateUrl || '').replace(/\{(amount|box|name|phone|id)\}/g, (_, k) => encodeURIComponent(k === 'amount' ? amount : k === 'box' ? req.m.box_no : k === 'name' ? req.m.first + ' ' + req.m.last : k === 'phone' ? req.m.phone : r.lastInsertRowid));
   res.json({ ok: true, id: r.lastInsertRowid, url });

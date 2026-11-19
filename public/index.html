@@ -8,7 +8,7 @@
 <link rel="icon" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://images.unsplash.com">
 <link href="https://fonts.googleapis.com/css2?family=Bona+Nova:wght@700&family=Heebo:wght@200;800&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=5">
+<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=5"><script src="/i18n.js?v=1"></script>
 <style>
 .wrap{width:min(1200px,100% - 40px);margin-inline:auto}
 h1,h2,h3,.f{font-family:var(--fs)}
@@ -156,7 +156,7 @@ h2{font-weight:700;font-size:clamp(40px,5.6vw,80px);line-height:1;letter-spacing
 .phone{width:300px;height:610px;margin:auto;border-radius:46px;border:11px solid #14151c;background:#0b1026 url(/stone.jpg);background-size:300px;position:relative;overflow:hidden;box-shadow:0 60px 90px -40px rgba(0,0,0,.55);transform:rotate(-4deg)}
 .phone .story{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:16px;text-align:center;padding:30px;color:var(--ink)}
 .phone .story img{width:110px}.phone .story b{font-family:var(--fs);font-weight:700;font-size:38px;line-height:1.05}.phone .no{font-family:var(--fs);color:var(--gold2);font-size:20px;border:1px solid var(--line);border-radius:99px;padding:6px 18px}
-.phone .bars{position:absolute;top:14px;inset-inline:14px;display:flex;gap:4px}.phone .bars i{flex:1;height:3px;border-radius:9px;background:rgba(255,255,255,.25)}.phone .bars i:first-child{background:rgba(255,255,255,.8)}
+.phone .bars{position:absolute;top:14px;inset-inline:14px;display:flex;gap:4px}.phone .bars i{flex:1;height:3px;border-radius:9px;background:rgba(255,255,255,.25)}.phone .bars i{overflow:hidden}.phone .bars u{display:block;height:100%;width:0;background:rgba(255,255,255,.9)}.phone .bars i.d u{width:100%}.phone .bars i.a u{animation:phb var(--d,4.5s) linear forwards}@keyframes phb{to{width:100%}}.phone .sl{position:absolute;inset:0;opacity:0;transform:scale(1.04);transition:opacity .7s,transform 1.2s cubic-bezier(.2,.9,.25,1)}.phone .sl.on{opacity:1;transform:none}.phone .sl>img{width:100%;height:100%;object-fit:contain;background:#0d1330}.phone .bars{z-index:3}.phone{cursor:pointer}.phone .ln{width:1px;height:26px;background:linear-gradient(var(--gold),transparent)}.lslot{display:flex;margin-inline-start:10px}
 .perks{display:grid;gap:22px;margin-top:34px}.perk{display:flex;gap:18px;align-items:flex-start}.perk .ic{flex:none;width:50px;height:50px;color:#9a6b22}.perk b{font-size:20px;font-weight:600}.perk p{color:var(--mut);font-size:16px}
 @media(max-width:860px){.trend{grid-template-columns:1fr}.phone{width:260px;height:530px}}
 /* faq */
@@ -196,7 +196,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 </style>
 </head>
 <body>
-<nav id="nav"><div class="wrap"><a class="logo" href="#"><img class="lgo" src="/logo-420.png" alt="רבינו שלי"></a><div class="lk"><a href="#story">איך זה עובד</a><a href="#calc">המתמטיקה של האור</a><a href="#map-s">המפה</a><a href="#faq">שאלות</a></div><span id="navAct"><button class="btn" data-join>אני רוצה קופה</button></span></div></nav>
+<nav id="nav"><div class="wrap"><a class="logo" href="#"><img class="lgo" src="/logo-420.png" alt="רבינו שלי"></a><div class="lk"><a href="#story">איך זה עובד</a><a href="#calc">המתמטיקה של האור</a><a href="#map-s">המפה</a><a href="#faq">שאלות</a></div><span id="navAct"><button class="btn" data-join>אני רוצה קופה</button></span><span data-lang class="lslot"></span></div></nav>
 
 <header class="hero" id="main"><div class="wrap">
   <div class="txt">
@@ -267,7 +267,12 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 <section class="paper"><div class="wrap trend">
   <div data-r><span class="ey">#רבינו_שלי</span><h2>הקופה שכולם<br>מצלמים.</h2><p class="sub">לכל קופה מספר אישי. מצלמים ליד התפילין, משתפים, ומזמינים חבר – וכל הזמנה מדליקה עוד נקודה במפה.</p>
     <div class="perks"><div class="perk"><div class="ic" data-ic="spark"></div><div><b>כרטיס סטורי אישי</b><p>תמונה מעוצבת עם מספר הקופה שלך – מוכנה לסטטוס ולאינסטגרם.</p></div></div><div class="perk"><div class="ic" data-ic="users"></div><div><b>קישור הזמנה משלך</b><p>רואים באזור האישי כמה יהודים הצטרפו בזכותך.</p></div></div><div class="perk"><div class="ic" data-ic="flame"></div><div><b>רצף בוקר</b><p>לוחצים "שמתי היום" – והרצף גדל, יום אחרי יום.</p></div></div></div></div>
-  <div data-r><div class="phone"><div class="bars"><i></i><i></i><i></i></div><div class="story"><div style="font-size:14px;color:var(--mut);letter-spacing:.16em">לקחתי על עצמי</div><b style="font-size:30px">שקל ביום <span class="gt">לרבינו</span></b><img src="/box-sm.png" alt="" style="width:190px;filter:drop-shadow(0 20px 24px rgba(0,0,0,.6))"><span class="no">קופה מס׳ 0001</span><div style="font-size:13px;color:var(--mut)">הצטרפו גם ←</div></div></div></div>
+  <div data-r><div class="phone" id="ph"><div class="bars" id="phB"><i><u></u></i><i><u></u></i><i><u></u></i><i><u></u></i></div>
+    <div class="sl on"><img id="phCard" alt="כרטיס לסטורי"></div>
+    <div class="sl"><div class="story"><div style="font-size:14px;color:var(--mut);letter-spacing:.16em">לקחתי על עצמי</div><b style="font-size:30px">שקל ביום <span class="gt">לרבינו</span></b><img src="/box-sm.png" alt="" style="width:190px;filter:drop-shadow(0 20px 24px rgba(0,0,0,.6))"><span class="no">קופה מס׳ 0001</span><div style="font-size:13px;color:var(--mut)">הצטרפו גם ←</div></div></div>
+    <div class="sl"><div class="story"><div style="font-size:14px;color:var(--mut);letter-spacing:.16em">שקל נשמע קטן.</div><b class="gt" style="font-size:64px">₪1</b><div class="ln"></div><b class="gt" style="font-size:52px" id="phY">₪308</b><div style="font-size:15px;color:var(--mut)">עד ראש השנה</div><div class="ln"></div><b style="font-size:30px">✈️ אומן</b><div style="font-size:13px;color:var(--mut)">הצטרפו גם ←</div></div></div>
+    <div class="sl"><div class="story"><img src="/logo-420.png" alt="" style="width:170px"><b style="font-size:28px;line-height:1.2">עוד יהודי<br><span class="gt">אצל רבינו.</span></b><div style="font-size:15px;color:var(--mut);max-width:220px">כל בוקר. שקל אחד.</div><span class="no">#רבינו_שלי</span></div></div>
+  </div></div></div>
 </div></section>
 
 <section id="faq"><div class="wrap">
@@ -311,7 +316,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 </form></div>
 <canvas id="share" width="1080" height="1350" style="display:none"></canvas>
 <div class="toast" id="toast"></div><div class="jt" id="jt" aria-live="polite"></div>
-<script src="/cities.js?v=5"></script><script src="/share.js?v=5"></script>
+<script src="/cities.js?v=5"></script><script src="/share.js?v=6"></script>
 <script src="/ilmap.js?v=5"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -322,7 +327,7 @@ const svg=(n,go)=>`<svg class="li${go?' go':''}" viewBox="0 0 24 24" aria-hidden
 $$('[data-ic]').forEach(e=>e.innerHTML=svg(e.dataset.ic));
 $('#yr').textContent=new Date().getFullYear();
 // headline word split
-const H1=[['שקל','אחד','ביום.'],['יהודי','אחד','<span class="gt">אצל</span>','<span class="gt">רבינו.</span>']];let wi=0;
+const H1={en:[['One','shekel','a day.'],['One','Jew','with'],['<span class="gt">Rebbe</span>','<span class="gt">Nachman.</span>']],es:[['Un','shéquel','al día.'],['Un','judío','con el'],['<span class="gt">Rebe</span>','<span class="gt">Najmán.</span>']]}[window.RB_LANG]||[['שקל','אחד','ביום.'],['יהודי','אחד','<span class="gt">אצל</span>','<span class="gt">רבינו.</span>']];let wi=0;
 $('#h1').innerHTML=H1.map(l=>'<span style="white-space:nowrap;display:block">'+l.map(w=>`<span class="w"><span style="transition-delay:${.08*(wi++)+.15}s">${w}</span></span>`).join(' ')+'</span>').join('');
 requestAnimationFrame(()=>setTimeout(()=>document.body.classList.add('ready'),60));
 [['coinF','/shekel-front.png'],['coinB','/shekel-back.png']].forEach(([id,src])=>{const i=new Image();i.onload=()=>{const b=$('#'+id);b.style.backgroundImage=`url(${src})`;b.classList.add('photo')};i.src=src});
@@ -380,7 +385,7 @@ let ME=null;
 fetch('/api/me').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;ME=d;const m=d.member,b=d.box,no='#'+String(m.box_no).padStart(4,'0');
   $('#navAct').innerHTML=`<a class="me-chip" href="/me">הקופה שלי <b>${no}</b></a>`;
   $('#lead').innerHTML=`${esc(m.first)}, בקופה שלך כבר <b style="color:var(--gold2)">₪${fmt(b.balance)}</b>${b.streak>1?` · ${b.streak} ימים ברצף`:''}. ${b.checkedToday?'השקל של היום כבר בפנים – אשריך!':'שמת כבר את השקל של היום?'}`;
-  const link=location.origin+'/r/'+m.ref_code,wa='https://wa.me/?text='+encodeURIComponent(`לקחתי על עצמי שקל ביום לרבינו 🔥 כל השקלים הופכים בראש השנה לכרטיסי טיסה לאומן ליהודים שעוד לא זכו. רוצה קופה משלך? ${link}`);
+  const link=location.origin+'/r/'+m.ref_code+(window.RB_LQ||''),wa='https://wa.me/?text='+encodeURIComponent(RB_TEXT+'\n'+link);
   $('#heroCta').innerHTML=(b.checkedToday?'':`<button class="btn" id="hChk">שמתי את השקל של היום ✓</button>`)+`<a class="btn ${b.checkedToday?'':'ghost'}" href="/me">לקופה שלי ←</a><button class="btn ghost" data-sh>להזמין חבר 🤝</button>`;
   $('#proof').innerHTML=`<span>הזמנת עד עכשיו <b style="color:var(--gold2)">${fmt(m.refs)}</b> יהודים · <a href="#" data-sh style="color:var(--gold2);text-decoration:underline">להזמין עוד אחד</a></span>`;
   const chk=$('#hChk');if(chk)chk.onclick=async()=>{chk.disabled=true;const r=await fetch('/api/me/checkin',{method:'POST'});if(r.ok){chk.outerHTML='<span class="btn ghost" style="pointer-events:none">✓ השקל של היום בקופה</span>';toast('אשריך! עוד יום ברצף')}};
@@ -425,9 +430,17 @@ $('#wz').onsubmit=async e=>{e.preventDefault();if(!check(cur))return;if(cur<5)re
 function gold(){const c=document.createElement('canvas');c.style.cssText='position:fixed;inset:0;z-index:150;pointer-events:none';c.width=innerWidth;c.height=innerHeight;document.body.appendChild(c);const x=c.getContext('2d');const P=Array.from({length:140},()=>({x:innerWidth/2,y:innerHeight/2,vx:(Math.random()-.5)*16,vy:Math.random()*-16-4,r:Math.random()*5+2,a:1,s:Math.random()*.3}));let t=0;(function f(){x.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.vy+=.45;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.a-=.008;x.globalAlpha=Math.max(0,p.a);x.fillStyle=['#fbe7a6','#d9ae5b','#fff4d0'][p.r|0%3];x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill()});if(++t<160)requestAnimationFrame(f);else c.remove()})()}
 // share card
 $('#dLink').onclick=()=>rbShareLink(location.origin+'/r/'+JOINED.ref_code);
-$('#dShare').onclick=()=>rbShare({boxNo:JOINED.box_no,ref:JOINED.ref_code,first:JOINED.first},`לקחתי על עצמי שקל ביום לרבינו 🔥 קופה מס׳ ${JOINED.box_no}. בזכות השקל הזה עוד יהודי יגיע לאומן. רוצים גם? ${location.origin}/r/${JOINED.ref_code}`);
+$('#dShare').onclick=()=>rbShare({boxNo:JOINED.box_no,ref:JOINED.ref_code,first:JOINED.first},RB_TEXT+'\n'+location.origin+'/r/'+JOINED.ref_code+(window.RB_LQ||''));
 
 if(location.hash==='#join')setTimeout(wOpen,600);
+</script>
+<script>
+(function(){const ph=document.getElementById('ph');if(!ph)return;const sl=[...ph.querySelectorAll('.sl')],bs=[...ph.querySelectorAll('.bars i')];let i=0,tm;
+rbCard({boxNo:1,first:'',streak:7,url:location.origin+'/'+(window.RB_LQ||'')}).then(b=>{document.getElementById('phCard').src=URL.createObjectURL(b)}).catch(()=>{});
+const show=k=>{i=(k+sl.length)%sl.length;sl.forEach((x,j)=>x.classList.toggle('on',j===i));bs.forEach((x,j)=>{x.classList.remove('a');x.classList.toggle('d',j<i)});void bs[i].offsetWidth;bs[i].classList.add('a');clearTimeout(tm);tm=setTimeout(()=>show(i+1),i===0?6000:4500);bs[i].style.setProperty('--d',(i===0?6:4.5)+'s')};
+ph.onclick=e=>show(e.clientX-ph.getBoundingClientRect().left<ph.offsetWidth/3?(document.dir==='rtl'?i+1:i-1):(document.dir==='rtl'?i-1:i+1));
+new IntersectionObserver(es=>{if(es[0].isIntersecting){show(i)}else clearTimeout(tm)},{threshold:.3}).observe(ph);
+fetch('/api/stats').then(r=>r.json()).then(s=>{if(s.yearMornings)document.getElementById('phY').textContent='₪'+s.yearMornings}).catch(()=>{})})();
 </script>
 <script src="/a11y.js?v=2" defer></script>
 </body>
