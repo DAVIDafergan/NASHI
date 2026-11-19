@@ -345,6 +345,21 @@ app.post('/api/campaigns/:id/donations', auth, own, (req, res) => {
   const d = db.prepare('SELECT * FROM donations WHERE id=?').get(r.lastInsertRowid);
   emit(req.c.id, 'donation', { donation: publicDonation(d), stats: stats(req.c, d.test), teams: teamStats(req.c, d.test) }); res.json({ id: d.id });
 });
+app.post('/api/campaigns/:id/donations/import', auth, own, limit(10, 60000), (req, res) => {
+  const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 5000) : []; const months = Math.min(120, Math.max(0, Math.round(+req.body?.months || 0)));
+  if (!rows.length) return bad(res, 'לא נמצאו שורות לייבוא');
+  const ins = db.prepare("INSERT INTO donations(campaign_id,amount,currency,name,dedication,anonymous,status,test,provider,ref,installments,monthly,token,created,paid_at) VALUES(?,?,?,?,?,?,'paid',0,'import',?,?,?,?,?,?)");
+  const has = db.prepare("SELECT 1 FROM donations WHERE campaign_id=? AND ref=?");
+  let added = 0, skipped = 0, sum = 0;
+  db.transaction(() => { for (const r of rows) {
+    const amt = Math.round(+String(r.amount || '').replace(/[^\d.]/g, '') || 0); if (amt <= 0) { skipped++; continue; }
+    const ref = String(r.ref || '').slice(0, 80); if (ref && has.get(req.c.id, ref)) { skipped++; continue; }
+    const dt = /^\d{4}-\d{2}-\d{2}/.test(String(r.date || '')) ? String(r.date).slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const anon = r.anonymous ? 1 : 0; const name = anon ? 'אנונימי' : String(r.name || 'תורם').trim().slice(0, 80);
+    ins.run(req.c.id, amt, req.c.currency, name, String(r.dedication || '').slice(0, 300), anon, ref, months || 1, months ? 1 : 0, crypto.randomBytes(12).toString('hex'), dt, dt); added++; sum += amt;
+  } })();
+  res.json({ ok: true, added, skipped, sum, live: !isTest(req.c) });
+});
 app.patch('/api/campaigns/:id/donations/:did', auth, own, (req, res) => {
   const d = db.prepare('SELECT * FROM donations WHERE id=? AND campaign_id=?').get(req.params.did, req.c.id); if (!d) return bad(res, 'not found', 404);
   const b = req.body || {};
