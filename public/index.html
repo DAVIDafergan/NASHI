@@ -8,7 +8,7 @@
 <link rel="icon" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://images.unsplash.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/base.css?v=5">
+<link rel="stylesheet" href="/base.css?v=6">
 <style>
 .wrap{width:min(1200px,100% - 40px);margin-inline:auto}
 h1,h2,h3,.f{font-family:var(--fs)}
@@ -33,10 +33,11 @@ nav .logo img.lgo{height:64px}nav.s .logo img.lgo{height:50px}nav .logo img{tran
 /* arch */
 .arch{position:relative;justify-self:center;width:min(440px,100%);aspect-ratio:.78}
 .arch .frame{position:absolute;inset:0;border-radius:999px 999px 28px 28px;overflow:hidden;box-shadow:0 50px 90px -40px #000,0 0 0 1px rgba(217,174,91,.35)}
-.arch .frame img{width:100%;height:120%;object-fit:cover;filter:sepia(.35) saturate(.75) brightness(.72) contrast(1.08);transform:translateY(var(--py,0)) scale(1.08);will-change:transform;animation:kb 18s ease-in-out infinite alternate}
+.arch .frame img{width:100%;height:120%;object-fit:cover;filter:sepia(.25) saturate(.85) brightness(.92) contrast(1.06);transform:translateY(var(--py,0)) scale(1.08);will-change:transform;animation:kb 18s ease-in-out infinite alternate}
 @keyframes kb{to{scale:1.06}}
-.arch .frame::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(9,13,32,.85)),url(/grain.jpg);background-size:auto,300px;mix-blend-mode:normal;opacity:.9}
+.arch .frame::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,13,32,.05) 45%,rgba(9,13,32,.85))}
 .arch .ring{position:absolute;inset:-14px;border-radius:999px 999px 38px 38px;border:1px solid rgba(217,174,91,.35)}
+.badge{position:absolute;z-index:3;display:flex;align-items:center;gap:10px;background:rgba(14,19,46,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(217,174,91,.35);border-radius:16px;padding:10px 14px;font-weight:600;font-size:14px;box-shadow:0 16px 30px -14px #000;animation:fl 6s ease-in-out infinite}.badge span{color:var(--ink)}.b1{top:16%;inset-inline-start:-34px}.b2{top:44%;inset-inline-end:-40px;animation-delay:-3s}.dt{width:8px;height:8px;border-radius:50%;background:var(--ok)}@keyframes fl{50%{transform:translateY(-8px)}}@media(max-width:900px){.b1{inset-inline-start:-12px;font-size:12px}.b2{inset-inline-end:-14px}}
 .arch .cap{position:absolute;bottom:26px;inset-inline:26px;color:var(--ink);z-index:2}.arch .cap small{display:block;color:var(--gold2);font-weight:600;letter-spacing:.1em;font-size:13px}.arch .cap b{font-size:22px;font-weight:600}
 /* 3D box */
 .b3w{position:absolute;bottom:-34px;inset-inline-end:-50px;perspective:900px;z-index:3;transform:translateY(var(--by,0))}
@@ -72,8 +73,8 @@ h2{font-weight:700;font-size:clamp(40px,5.6vw,80px);line-height:1;letter-spacing
 .lay{position:absolute;inset:0;opacity:0;transform:scale(.94) translateY(30px);transition:opacity .8s,transform 1s cubic-bezier(.2,.9,.25,1);pointer-events:none}
 .lay.on{opacity:1;transform:none}
 .lay .ph{position:absolute;inset:0;border-radius:999px 999px 28px 28px;overflow:hidden;box-shadow:0 50px 90px -40px #000,0 0 0 1px rgba(217,174,91,.35)}
-.lay .ph img{width:100%;height:100%;object-fit:cover;filter:sepia(.35) saturate(.7) brightness(.62) contrast(1.1)}
-.lay .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(9,13,32,.9)),url(/grain.jpg);background-size:auto,300px;opacity:.85}
+.lay .ph img{width:100%;height:100%;object-fit:cover;filter:sepia(.25) saturate(.85) brightness(.85) contrast(1.06)}
+.lay .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,13,32,.1) 40%,rgba(9,13,32,.85))}
 .lay .big{position:absolute;bottom:30px;inset-inline:30px;z-index:2}.lay .big b{display:block;font-family:var(--fs);font-weight:700;font-size:clamp(46px,6vw,78px);line-height:1}.lay .big span{color:var(--mut);font-size:16px}
 .ship{position:absolute;bottom:22%;left:50%;width:120px;margin-left:-60px;z-index:2;transform:translateY(calc((1 - var(--lp,0)) * 140px));transition:transform .2s linear}
 .ship .bx{width:120px;height:150px;background:#141b45 url(/stone.jpg);background-size:300px;border:1px solid rgba(217,174,91,.6);box-shadow:inset 0 0 0 6px rgba(9,13,32,.4),inset 0 0 0 7px rgba(217,174,91,.6),0 30px 50px -20px #000;display:grid;place-items:center;align-content:center;gap:6px}.ship .bx img{width:48px}.ship .bx b{font-family:var(--fs);font-size:18px}
@@ -183,7 +184,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
     <div class="cta fade" style="transition-delay:.65s" id="heroCta"><button class="btn" data-join>אני רוצה קופה – עד הבית ←</button><a class="btn ghost" href="#story">איך זה עובד</a></div>
     <div class="proof fade" style="transition-delay:.8s" id="proof"></div>
   </div>
-  <div class="arch fade" style="transition-delay:.2s"><span class="ring"></span><div class="frame"><img id="heroImg" src="https://images.unsplash.com/photo-1792587151757-655084e32814?w=1100&q=70&auto=format&fit=crop" alt="הנחת תפילין בבית הכנסת"></div><div class="cap"><small>כל בוקר</small><b>שקל אחד, ליד התפילין</b></div>
+  <div class="arch fade" style="transition-delay:.2s"><span class="ring"></span><div class="frame"><img id="heroImg" src="https://images.unsplash.com/photo-1792587151757-655084e32814?w=1100&q=70&auto=format&fit=crop" alt="הנחת תפילין בבית הכנסת"></div><div class="badge b1"><i class="dt"></i><span id="liveB">קופה חדשה הצטרפה</span></div><div class="badge b2"><b class="foilt" style="font-size:22px">₪1</b><span>× 365 בוקרים</span></div><div class="cap"><small>כל בוקר</small><b>שקל אחד, ליד התפילין</b></div>
     <div class="b3w" id="b3w" aria-hidden="true"><div class="coin">₪</div><div class="b3"><div class="f fr"><img src="/logo-420.png" alt="" style="width:86%"><small>שקל · ליום · לאומן</small></div><div class="f bk"></div><div class="f lt"></div><div class="f rt"></div><div class="f tp"></div></div></div>
   </div>
 </div></header>
@@ -193,7 +194,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 
 <section class="story" id="story"><div class="st">
   <div class="stage">
-    <div class="lay on" data-l="0"><div class="ph"><img loading="lazy" src="https://images.unsplash.com/photo-1792587152057-d0fcc75f7e50?w=900&q=70&auto=format&fit=crop" alt=""></div><div class="ship" id="ship"><div class="bx"><img src="/logo-420.png" alt="" style="width:84%"></div></div></div>
+    <div class="lay on" data-l="0"><div class="ph"><img loading="lazy" src="https://images.unsplash.com/photo-1792587152057-d0fcc75f7e50?w=900&q=70&auto=format&fit=crop" alt=""></div><div class="badge" style="top:26px;inset-inline-start:22px;animation:none"><span>📦 בדרך אליך · שליח באזור</span></div><div class="ship" id="ship"><div class="bx"><img src="/logo-420.png" alt="" style="width:84%"></div></div></div>
     <div class="lay" data-l="1"><div class="bigbox"><div class="c2">₪</div><img src="/logo-420.png" alt="" style="width:78%"><div class="n foilt" id="dayN">₪1</div><small id="dayT">יום 1</small></div></div>
     <div class="lay" data-l="2"><div class="ph"><img loading="lazy" src="https://images.unsplash.com/photo-1542776488-a3bbacfcdccd?w=900&q=70&auto=format&fit=crop" alt=""></div>
       <svg class="route" viewBox="0 0 400 600" preserveAspectRatio="xMidYMid meet"><defs><mask id="rm"><path id="rmask" d="M300 520 C 360 380, 80 330, 120 90" stroke="#fff" stroke-width="8" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></mask></defs><path class="dash" d="M300 520 C 360 380, 80 330, 120 90" mask="url(#rm)"/><circle cx="300" cy="520" r="7" class="pl"/><circle cx="120" cy="90" r="7" class="pl" id="rEnd" opacity="0"/><text x="300" y="556" text-anchor="middle">ישראל</text><text x="120" y="66" text-anchor="middle" id="rTxt" opacity="0">אומן</text><g id="plane"><path class="pl" d="M0-9 3-2 11 2 11 4 3 2 2 8 5 10 5 11 0 10-5 11-5 10-2 8-3 2-11 4-11 2-3-2z"/></g></svg>
@@ -324,7 +325,8 @@ fetch('/api/stats').then(r=>r.json()).then(s=>{ST=s;$('#tpTxt').textContent='₪
   const bo=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){$$('[data-count]').forEach(el=>countUp(el,s[el.dataset.count]||0,el.dataset.pre||''));const pc=Math.min(100,s.boxes/s.goal*100);setTimeout(()=>$('#gBar').style.width=Math.max(1.5,pc)+'%',300);$('#gPct').textContent=pc.toFixed(pc<10?1:0)+'%';bo.disconnect()}}),{threshold:.3});bo.observe($('#nums-s'));
   if(s.whatsapp){$('#waLink').hidden=false;$('#waLink').href='https://wa.me/'+s.whatsapp.replace(/\D/g,'').replace(/^0/,'972')}
   proof();calc();drawMap();ticker()}).catch(()=>{calc();drawMap()});
-function proof(){const r=ST.recent||[];if(ME)return;$('#proof').innerHTML=ST.boxes?`<span class="av">${r.slice(0,4).map(x=>`<i>${esc(x.first[0])}</i>`).join('')}</span><span><b style="color:var(--gold2)">${fmt(ST.boxes)}</b> קופות כבר ב-<b style="color:var(--gold2)">${fmt(ST.cities)}</b> ערים</span>`:'<span>הקופות הראשונות יוצאות לדרך – היו בין הראשונים</span>'}
+function liveBadge(){const r=ST.recent||[];if(!r.length||ME)return;let i=0;const f=()=>{const x=r[i++%r.length];$('#liveB').textContent=`${x.first} מ${x.city} לקח/ה קופה`};f();setInterval(f,4000)}
+function proof(){liveBadge();const r=ST.recent||[];if(ME)return;$('#proof').innerHTML=ST.boxes?`<span class="av">${r.slice(0,4).map(x=>`<i>${esc(x.first[0])}</i>`).join('')}</span><span><b style="color:var(--gold2)">${fmt(ST.boxes)}</b> קופות כבר ב-<b style="color:var(--gold2)">${fmt(ST.cities)}</b> ערים</span>`:'<span>הקופות הראשונות יוצאות לדרך – היו בין הראשונים</span>'}
 // ---- calculator ----
 const cR=$('#cR');const realN=()=>Math.max(1,Math.round(Math.pow(1000,cR.value/1000)));
 function calc(){const n=realN(),days=ST.daysLeft||300,tot=n*days,tk=Math.floor(tot/(ST.ticketPrice||3800));$('#cN').textContent=fmt(n);$('#cD').textContent='₪'+fmt(n);$('#cT').textContent='₪'+fmt(tot);$('#cP').textContent=fmt(tk);
