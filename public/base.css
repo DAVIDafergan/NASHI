@@ -1,17 +1,19 @@
-:root{--night:#060a1c;--navy:#0c1330;--navy2:#141d45;--ink:#f6efe0;--mut:#b9b2a3;--mut2:#8b8578;--gold:#d9ae5b;--gold2:#f3d58a;--gold3:#9a6b22;--g:linear-gradient(180deg,#d8b46c,#b8914a);--gt:linear-gradient(180deg,#e3c27e,#c39a50);--line:rgba(217,174,91,.22);--line2:rgba(246,239,224,.1);--card:rgba(20,29,69,.55);--ok:#7ddc9a;--bad:#ff8a7a;--r:22px;--fs:'Rubik',system-ui,sans-serif;--fb:'Rubik',system-ui,sans-serif}
+:root{--night:#060a1c;--navy:#0c1330;--navy2:#141d45;--ink:#f6efe0;--mut:#b9b2a3;--mut2:#8b8578;--gold:#d9ae5b;--gold2:#f3d58a;--gold3:#9a6b22;--g:linear-gradient(180deg,#d8b46c,#b8914a);--gt:linear-gradient(180deg,#e3c27e,#c39a50);--line:rgba(217,174,91,.22);--line2:rgba(246,239,224,.1);--card:rgba(20,29,69,.55);--ok:#7ddc9a;--bad:#ff8a7a;--r:22px;--fs:'Fredoka',system-ui,sans-serif;--fb:'Fredoka',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}[hidden]{display:none!important}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}html,body{overflow-x:clip}
-body{background-color:var(--night);color:var(--ink);font:400 17px/1.65 var(--fb);letter-spacing:-.005em}
-body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.09;mix-blend-mode:overlay}
-body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(120% 90% at 50% 30%,transparent 55%,rgba(0,0,0,.45))}
+body{background:#0b1026 url(/stone.jpg) repeat;background-size:600px;color:var(--ink);font:400 18px/1.6 var(--fb)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(130% 100% at 50% 20%,transparent 50%,rgba(0,0,0,.5))}
+.paper{background:#e9dfca url(/paper.jpg) repeat;background-size:600px;color:#1d1a14;--mut:#5d564a;--mut2:#7b7466;--line2:rgba(29,26,20,.14);--line:rgba(150,110,40,.35)}
+.foil{background-image:url(/grain.jpg),linear-gradient(180deg,#e2c27f,#b48a42);background-blend-mode:soft-light;background-size:300px,100%}
+.foilt{background-image:url(/grain.jpg),linear-gradient(180deg,#e9cd8c,#b98d43);background-blend-mode:soft-light;background-size:300px,100%;-webkit-background-clip:text;background-clip:text;color:transparent}
 a{color:inherit;text-decoration:none}img,svg{display:block;max-width:100%}button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 input,select,textarea{min-width:0;font:inherit;color:var(--ink);background:rgba(255,255,255,.04);border:1px solid var(--line2);border-radius:14px;padding:14px 16px;width:100%;outline:none;transition:.2s;font-size:17px}
 input:focus,select:focus,textarea:focus{border-color:var(--gold);background:rgba(217,174,91,.06);box-shadow:0 0 0 4px rgba(217,174,91,.12)}
 input::placeholder{color:#6f6a60}select option{background:var(--navy);color:var(--ink)}
 label{display:grid;gap:6px;font-size:14px;font-weight:600;color:var(--mut)}
 .serif{font-family:var(--fs)}
-.gt{background:var(--gt);-webkit-background-clip:text;background-clip:text;color:transparent}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:0 30px;border-radius:999px;font-weight:700;font-size:17px;background:var(--g);color:#1a1205;box-shadow:0 8px 22px -12px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .25s,box-shadow .25s;position:relative;overflow:hidden;white-space:nowrap}
+.gt{background-image:url(/grain.jpg),var(--gt);background-blend-mode:soft-light;background-size:300px,100%;-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:0 30px;border-radius:999px;font-weight:700;font-size:17px;background-image:url(/grain.jpg),var(--g);background-blend-mode:soft-light;background-size:300px,100%;color:#1a1205;box-shadow:0 10px 24px -12px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .25s,box-shadow .25s;position:relative;overflow:hidden;white-space:nowrap}
 
 .btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}.btn.ghost:hover{border-color:var(--gold);background:rgba(217,174,91,.08)}

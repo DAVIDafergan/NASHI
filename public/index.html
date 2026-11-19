@@ -7,7 +7,7 @@
 <meta property="og:title" content="רבינו שלי · שקל אחד ביום. יהודי אחד אצל רבינו."><meta property="og:description" content="קופה מעוצבת ליד התפילין. שקל כל בוקר. בראש השנה – עוד יהודי באומן."><meta property="og:image" content="/og.jpg"><meta property="og:type" content="website"><meta name="theme-color" content="#060a1c">
 <link rel="icon" href="/mark.svg"><link rel="apple-touch-icon" href="/mark.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <link rel="stylesheet" href="/base.css">
 <style>
@@ -353,10 +353,10 @@ async function card(){const c=$('#share'),x=c.getContext('2d');await document.fo
   const r=x.createRadialGradient(W/2,560,0,W/2,560,520);r.addColorStop(0,'rgba(217,174,91,.12)');r.addColorStop(1,'rgba(243,213,138,0)');x.fillStyle=r;x.fillRect(0,0,W,H);
   x.strokeStyle='rgba(217,174,91,.6)';x.lineWidth=3;x.strokeRect(50,50,W-100,H-100);x.strokeStyle='rgba(217,174,91,.25)';x.lineWidth=1.5;x.strokeRect(68,68,W-136,H-136);
   const img=new Image();img.src='/mark.svg';await new Promise(ok=>{img.onload=ok;img.onerror=ok});x.drawImage(img,W/2-170,330,340,340);
-  x.textAlign='center';x.direction='rtl';x.fillStyle='#b9b2a3';x.font='600 40px Rubik';x.fillText('לקחתי על עצמי',W/2,250);
-  const gg=x.createLinearGradient(0,760,0,980);gg.addColorStop(0,'#fff1c4');gg.addColorStop(1,'#c08a37');x.fillStyle=gg;x.font='900 120px Rubik';x.fillText('שקל ביום',W/2,830);x.fillText('לרבינו',W/2,960);
-  x.fillStyle='#f6efe0';x.font='700 48px Rubik';x.fillText('קופה מס׳ '+String(JOINED.box_no).padStart(4,'0'),W/2,1080);
-  x.fillStyle='#d9ae5b';x.font='700 30px Rubik';x.fillText('נ נח נחמ נחמן מאומן',W/2,1170);x.fillStyle='#8b8578';x.font='600 30px Rubik';x.fillText(location.host+'/r/'+JOINED.ref_code,W/2,1230);
+  x.textAlign='center';x.direction='rtl';x.fillStyle='#b9b2a3';x.font='600 40px Fredoka';x.fillText('לקחתי על עצמי',W/2,250);
+  const gg=x.createLinearGradient(0,760,0,980);gg.addColorStop(0,'#fff1c4');gg.addColorStop(1,'#c08a37');x.fillStyle=gg;x.font='900 120px Fredoka';x.fillText('שקל ביום',W/2,830);x.fillText('לרבינו',W/2,960);
+  x.fillStyle='#f6efe0';x.font='700 48px Fredoka';x.fillText('קופה מס׳ '+String(JOINED.box_no).padStart(4,'0'),W/2,1080);
+  x.fillStyle='#d9ae5b';x.font='700 30px Fredoka';x.fillText('נ נח נחמ נחמן מאומן',W/2,1170);x.fillStyle='#8b8578';x.font='600 30px Fredoka';x.fillText(location.host+'/r/'+JOINED.ref_code,W/2,1230);
   return new Promise(ok=>c.toBlob(ok,'image/png'))}
 $('#dShare').onclick=async()=>{const blob=await card();const url=location.origin+'/r/'+JOINED.ref_code;const text=`לקחתי על עצמי שקל ביום לרבינו 🔥 קופה מס׳ ${JOINED.box_no}. בזכות השקל הזה עוד יהודי יגיע לאומן. רוצים גם? ${url}`;const file=new File([blob],'rabeinu.png',{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text});return}catch{}}
