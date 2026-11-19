@@ -78,7 +78,7 @@ label>b{color:var(--ink);font-weight:500}
 .shell.on{display:grid}
 aside{background:#0e0f14;color:#aeb2c2;padding:18px 12px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:2px;overflow:auto}
 aside .logo{color:#fff;font:900 24px var(--fh);padding:6px 10px 16px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
-aside .logo small{font-size:11px;font-weight:400;color:#94a3b8;letter-spacing:.12em}
+aside .logo b{color:#7cb4ff;font-weight:900}aside .logo small{font-size:11px;font-weight:400;color:#94a3b8;letter-spacing:.12em}
 aside .sec{font-size:11px;letter-spacing:.14em;color:#64748b;padding:14px 10px 6px;font-weight:700}
 aside a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:14px;font-weight:500;transition:.15s}
 aside a:hover{background:rgba(255,255,255,.06);color:#fff}
@@ -311,17 +311,18 @@ input[type=datetime-local],input[type=date],input[type=time]{width:100%;min-widt
   .msg{font-size:15px}
   .guide .in{padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
 }
+.wmk{unicode-bidi:isolate;white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="auth" id="auth">
-  <div class="art"><div><div class="logo" style="display:flex;align-items:center;gap:10px"><img src="/logo.svg" alt="" style="width:44px">Give<b style="color:#0038b8;font-weight:900">IL</b></div><h1 style="margin-top:50px">קמפיין גיוס שעובד,<br>תוך חצי שעה.</h1><p>פלטפורמת קמפייני גיוס לעמותות: דף קמפיין חי, שגרירים, סליקה שלכם, מסך אירוע ומדריך חכם שמלווה אתכם.</p>
+  <div class="art"><div><div class="logo" style="display:flex;align-items:center;gap:10px"><img src="/logo.svg" alt="" style="width:44px"><span dir="ltr" class="wmk">Give<b style="color:#0038b8;font-weight:900">IL</b></span></div><h1 style="margin-top:50px">קמפיין גיוס שעובד,<br>תוך חצי שעה.</h1><p>פלטפורמת קמפייני גיוס לעמותות: דף קמפיין חי, שגרירים, סליקה שלכם, מסך אירוע ומדריך חכם שמלווה אתכם.</p>
     <ul><li>הסליקה שלכם, בלי עמלת פלטפורמה</li><li>מצב בדיקה מלא לפני העלייה לאוויר</li><li>עברית, אנגלית, צרפתית, ספרדית</li><li>אימות עמותה מול רשם העמותות</li></ul></div><div class="small" style="opacity:.7;display:flex;align-items:center;gap:8px"><img src="/logo.svg" alt="" style="width:22px">GIVEIL · צדקה תציל ממוות</div></div>
   <div class="frm">
     <form id="loginF"><h2>כניסה לחשבון</h2><label>אימייל<input type="email" id="lEmail" autocomplete="email" dir="ltr" required></label><label>סיסמה<input type="password" id="lPass" autocomplete="current-password" required></label><div class="err" id="lErr"></div><button class="b p" type="submit">כניסה</button><div class="sw">אין לכם חשבון? <a href="#" onclick="swap('reg');return false">הרשמה חינם</a> · <a href="#" onclick="forgot();return false">שכחתי סיסמה</a></div></form>
     <form id="resetF" hidden><h2>בחירת סיסמה חדשה</h2><label>סיסמה חדשה (6+ תווים)<input type="password" id="nPass" autocomplete="new-password" required minlength="6"></label><div class="err" id="nErr"></div><button class="b p" type="submit">שמירה וכניסה</button></form>
     <form id="regF" hidden autocomplete="on" novalidate>
-      <div class="rlogo" dir="ltr"><img src="/logo.svg" alt="">Give<b style="color:#0038b8">IL</b></div>
+      <div class="rlogo"><img src="/logo.svg" alt=""><span dir="ltr" class="wmk">Give<b style="color:#0038b8">IL</b></span></div>
       <div class="rprog"><i class="on"></i><i></i><i></i><i></i></div>
       <div class="rhead"><div class="ric" id="rIcon"></div><h2 id="rTitle">נעים להכיר</h2><p id="rSub">כמה פרטים קטנים ומתחילים</p></div>
       <div class="rsteps-w">
@@ -356,7 +357,7 @@ input[type=datetime-local],input[type=date],input[type=time]{width:100%;min-widt
 
 <div class="shell" id="shell">
 <aside id="side">
-  <div class="logo"><img src="/logo.svg" alt="" style="width:30px;height:30px">GiveIL <small>ניהול</small></div>
+  <div class="logo"><img src="/logo.svg" alt="" style="width:30px;height:30px"><span dir="ltr" class="wmk">Give<b>IL</b></span> <small>ניהול</small></div>
   <a href="#/" data-p="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg>הקמפיינים שלי</a>
   <div id="campNav" hidden>
     <div class="sec">קמפיין</div><div class="camp" id="campName"></div>
@@ -377,7 +378,7 @@ input[type=datetime-local],input[type=date],input[type=time]{width:100%;min-widt
   <div class="foot"><div class="u"><div class="av" id="uAv"></div><div><b id="uName"></b><span id="uOrg" class="small"></span></div></div><a href="#" id="logout">יציאה</a></div>
 </aside>
 <main>
-  <div class="mbar"><button class="ib" onclick="drawer(true)" aria-label="תפריט">☰</button><a class="lg" href="#/"><img src="/logo.svg" alt="">Give<b style="color:#0038b8;font-weight:900">IL</b></a><span class="sp"></span><button class="ib ai" onclick="toggleGuide(true)" aria-label="המדריך">✦</button></div>
+  <div class="mbar"><button class="ib" onclick="drawer(true)" aria-label="תפריט">☰</button><a class="lg" href="#/"><img src="/logo.svg" alt=""><span dir="ltr" class="wmk">Give<b style="color:#0038b8;font-weight:900">IL</b></span></a><span class="sp"></span><button class="ib ai" onclick="toggleGuide(true)" aria-label="המדריך">✦</button></div>
   <nav class="ctabs" id="ctabs" hidden></nav>
   <div class="top" id="topbar"><div style="display:flex;gap:10px;align-items:center"><button class="b s burger" onclick="drawer(true)">☰</button><h1 id="pgTitle"></h1></div><div class="acts" id="pgActs"></div></div>
   <div id="content" role="main"></div>
