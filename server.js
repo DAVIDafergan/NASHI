@@ -189,6 +189,7 @@ app.post('/api/admin/payments/:id', auth, admOnly, (req, res) => {
   const st = req.body?.status === 'rejected' ? 'rejected' : 'approved';
   db.prepare("UPDATE payments SET status=?, note=?, approved_at=datetime('now') WHERE id=?").run(st, String(req.body?.note || '').slice(0, 300), pay.id);
   if (st === 'approved') { if (pay.kind === 'campaign' && pay.campaign_id) db.prepare('UPDATE campaigns SET paid=1 WHERE id=?').run(pay.campaign_id); else { const u = db.prepare('SELECT plan_until FROM users WHERE id=?').get(pay.user_id); db.prepare("UPDATE users SET plan='annual', plan_until=? WHERE id=?").run(addMonth(u.plan_until), pay.user_id); } }
+  if (st === 'approved' && mail.enabled()) { const u = db.prepare('SELECT email,name FROM users WHERE id=?').get(pay.user_id); const B = process.env.BASE_URL || ''; if (u) mail.send({ to: u.email, subject: 'התשלום אושר – אפשר לעלות לאוויר 🚀', html: mail.layout('התשלום אושר ✓', `<p>שלום ${mail.esc(u.name || '')}, התשלום התקבל ואושר. אפשר להעלות את הקמפיין לאוויר: <a href="${B}/app${pay.campaign_id ? '#/c/' + pay.campaign_id + '/overview' : ''}">כניסה לחשבון</a>.</p>`) }).catch(() => { }); }
   res.json({ ok: true });
 });
 app.post('/api/admin/campaigns/:id/paid', auth, admOnly, (req, res) => { db.prepare('UPDATE campaigns SET paid=? WHERE id=?').run(req.body?.paid ? 1 : 0, req.params.id); res.json({ ok: true }); });
