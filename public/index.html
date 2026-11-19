@@ -15,10 +15,11 @@ h1,h2,h3,.f{font-family:var(--fs)}
 /* nav */
 nav{position:fixed;top:0;inset-inline:0;z-index:50;transition:background .4s,padding .4s;padding:16px 0}
 nav.s{background:rgba(9,13,32,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:8px 0;box-shadow:0 1px 0 rgba(217,174,91,.15)}
-nav .wrap{display:flex;align-items:center;gap:22px}nav .lk{display:flex;gap:26px;margin-inline-start:auto;font-weight:500;color:var(--mut);font-size:16px}nav .lk a:hover{color:var(--gold2)}
+nav .wrap{display:flex;align-items:center;gap:22px}#navAct{margin-inline-start:auto;display:flex}nav .lk{display:flex;gap:26px;margin-inline-start:auto;font-weight:500;color:var(--mut);font-size:16px}nav .lk a:hover{color:var(--gold2)}
 nav .logo img.lgo{height:64px}nav.s .logo img.lgo{height:50px}nav .logo img{transition:height .4s}nav .btn{min-height:46px;padding:0 22px;font-size:16px}
 .me-chip{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 16px;font-weight:600;font-size:15px}.me-chip b{background-image:url(/grain.jpg),var(--g);background-blend-mode:soft-light;color:#1a1205;border-radius:999px;padding:6px 12px;font-weight:700}
-@media(max-width:900px){nav .lk{display:none}nav .btn,nav .me-chip{margin-inline-start:auto}}
+@media(max-width:900px){nav .lk{display:none}}
+@media(max-width:760px){:root{--a11y-b:92px}}
 /* hero */
 .hero{min-height:100svh;display:grid;align-items:center;padding:110px 0 60px;position:relative;overflow:hidden}
 .hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
@@ -176,7 +177,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 <body>
 <nav id="nav"><div class="wrap"><a class="logo" href="#"><img class="lgo" src="/logo-420.png" alt="רבינו שלי"></a><div class="lk"><a href="#story">איך זה עובד</a><a href="#calc">המתמטיקה של האור</a><a href="#map-s">המפה</a><a href="#faq">שאלות</a></div><span id="navAct"><button class="btn" data-join>אני רוצה קופה</button></span></div></nav>
 
-<header class="hero"><div class="wrap">
+<header class="hero" id="main"><div class="wrap">
   <div class="txt">
     <img class="hlogo fade" src="/logo-900.png" alt="רבינו שלי"><div class="kick fade" style="margin-top:6px">נ נח נחמ נחמן מאומן</div>
     <h1 id="h1"></h1>
@@ -264,7 +265,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
   <div data-r><span class="ey">הקופה שלך מחכה</span><h2>מחר בבוקר<br><span class="gt">יהודי אחד<br>מתקרב.</span></h2><p class="sub">הכל מתחיל בשקל. והשקל מתחיל בלחיצה.</p><div class="cta" id="finCta"><button class="btn" data-join>אני רוצה קופה ←</button><a class="btn ghost" href="/me">כבר יש לי קופה</a></div></div>
 </div></section>
 
-<footer><div class="wrap"><a class="logo" href="#" style="font-size:20px"><img class="lgo" src="/logo-420.png" alt="רבינו שלי"></a><div>נ נח נחמ נחמן מאומן · © <span id="yr"></span></div><div style="display:flex;gap:18px;flex-wrap:wrap"><a href="/me">האזור האישי</a><a href="#" id="waLink" hidden>וואטסאפ</a><a href="/terms.html">תנאים ופרטיות</a><span style="opacity:.6">צילומים: Shoham Avisrur, shraga kopstein, Lex Sirikiat · Unsplash</span></div></div></footer>
+<footer><div class="wrap"><a class="logo" href="#" style="font-size:20px"><img class="lgo" src="/logo-420.png" alt="רבינו שלי"></a><div>נ נח נחמ נחמן מאומן · © <span id="yr"></span></div><div style="display:flex;gap:18px;flex-wrap:wrap"><a href="/me">האזור האישי</a><a href="#" id="waLink" hidden>וואטסאפ</a><a href="/terms.html">תנאים ופרטיות</a><a href="/accessibility.html">הצהרת נגישות</a><span style="opacity:.6">צילומים: Shoham Avisrur, shraga kopstein, Lex Sirikiat · Unsplash</span></div></div></footer>
 <div class="mcta" id="mcta"><button class="btn" data-join>אני רוצה קופה ←</button></div>
 <!-- join wizard -->
 <div class="ov" id="ov"><form class="wz" id="wz" novalidate autocomplete="on">
@@ -412,5 +413,6 @@ $('#dShare').onclick=async()=>{const blob=await card();const url=location.origin
 
 if(location.hash==='#join')setTimeout(wOpen,600);
 </script>
+<script src="/a11y.js?v=2" defer></script>
 </body>
 </html>

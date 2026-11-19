@@ -169,5 +169,6 @@ $('#refS').onclick=async()=>{const m=D.member,c=$('#share'),x=c.getContext('2d')
 fetch('/api/stats').then(r=>r.json()).then(s=>{if(s.whatsapp)$('#forgot').innerHTML=`שכחת את הקוד? <a style="color:var(--gold2)" href="https://wa.me/${s.whatsapp.replace(/\D/g,'').replace(/^0/,'972')}" target="_blank">כתבו לנו בוואטסאפ</a>`}).catch(()=>{});
 load();
 </script>
+<script src="/a11y.js?v=2" defer></script>
 </body>
 </html>

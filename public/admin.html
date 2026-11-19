@@ -130,5 +130,6 @@ P.set=async()=>{const s=await api('/admin/settings');$('#main').innerHTML=`<div 
   $('#sGo').onclick=async()=>{await api('/admin/settings',{method:'PUT',body:{ticketPrice:$('#sT').value,targetDate:$('#sD').value,goal:$('#sG').value,donateUrl:$('#sU').value,whatsapp:$('#sW').value,smsUrl:$('#sS').value,showRecent:$('#sR').checked}});toast('נשמר ✓')}};
 boot();
 </script>
+<script src="/a11y.js?v=2" defer></script>
 </body>
 </html>
