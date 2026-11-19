@@ -241,7 +241,7 @@ setInterval(() => tickReminders().catch(e => console.error('reminders', e.messag
 const pub = f => path.join(__dirname, 'public', f);
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /me\nSitemap: ${process.env.BASE_URL || ''}/sitemap.xml\n`));
 app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${process.env.BASE_URL || ''}/</loc><changefreq>daily</changefreq></url></urlset>`));
-app.use(express.static(pub(''), { maxAge: '1h', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
+app.use(express.static(pub(''), { maxAge: '10m', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.get(['/me', '/me/*'], (_, res) => res.sendFile(pub('me.html')));
 app.get(['/admin', '/admin/*'], (_, res) => res.sendFile(pub('admin.html')));
 app.get('/r/:code', (req, res) => res.redirect('/?r=' + encodeURIComponent(req.params.code)));

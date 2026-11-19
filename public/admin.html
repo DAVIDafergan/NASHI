@@ -6,8 +6,8 @@
 <link rel="icon" href="/mark.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<link rel="stylesheet" href="/base.css">
+
+<link rel="stylesheet" href="/base.css?v=5">
 <style>
 body{font-size:15px}
 .login{min-height:100vh;display:grid;place-items:center;padding:20px}.login .card{width:min(380px,100%);display:grid;gap:14px;text-align:center}
@@ -51,8 +51,8 @@ select.s,input.s{padding:7px 10px;font-size:13px;border-radius:10px;width:auto}
   <main id="main"></main>
 </div>
 <div class="toast" id="toast"></div>
-<script src="/cities.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="/cities.js?v=5"></script><script src="/ilmap.js?v=5"></script>
+
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const fmt=n=>Math.round(+n||0).toLocaleString('he-IL');const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -89,8 +89,10 @@ P.ov=()=>{const t=O.totals,s=O.stats,st=O.settings,pct=Math.min(100,s.boxes/st.g
   <div class="g3"><div class="card"><h3>שקלים ליום</h3>${bars(O.amounts,r=>'₪'+r.k)}</div><div class="card"><h3>מתי שמים</h3>${bars(O.prayers)}</div><div class="card"><h3>ערוץ תזכורת</h3>${bars(O.channels,r=>CHL[r.k]||r.k)}</div></div>
   <div class="card" style="margin-top:16px"><h3>שגרירים מובילים (הזמינו הכי הרבה)</h3>${O.topRefs.length?`<div class="tblw"><table><tr><th>קופה</th><th>שם</th><th>עיר</th><th>הצטרפו בזכותו</th></tr>${O.topRefs.map(r=>`<tr><td>#${r.box_no}</td><td>${esc(r.first+' '+r.last)}</td><td>${esc(r.city)}</td><td><b class="gt">${r.n}</b></td></tr>`).join('')}</table></div>`:'<div style="color:var(--mut)">עדיין אין הצטרפויות דרך קישורי הזמנה</div>'}</div>`;
   map('amap',O.cities)};
-function map(id,cities){const el=document.getElementById(id);if(!el||!window.L)return;const m=L.map(el,{scrollWheelZoom:false,minZoom:6,zoomSnap:.25}).setView([31.45,35],7.25);L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd'}).addTo(m);
-  const mx=Math.max(1,...cities.map(c=>c.n));cities.forEach(c=>{const g=CITY.find(c.k);if(!g)return;L.circleMarker([g.lat,g.lng],{radius:6+Math.sqrt(c.n/mx)*22,color:'#f3d58a',weight:1.5,fillColor:'#d9ae5b',fillOpacity:.45}).bindTooltip(`<b>${esc(c.k)}</b><br>${fmt(c.n)} קופות · ₪${fmt(c.d)} ליום<br>נמסרו ${fmt(c.del)} · ממתינים ${fmt(c.pend)}`,{className:'gt2',direction:'top'}).on('click',()=>{location.hash='#boxes';setTimeout(()=>{$('#fCity').value=c.k;loadBoxes()},300)}).addTo(m)});setTimeout(()=>m.invalidateSize(),200)}
+function map(id,cities){const el=document.getElementById(id);const M=window.ILMAP;if(!el||!M)return;const P=(a,b)=>M.p(a,b).map(v=>+v.toFixed(1));const mx=Math.max(1,...cities.map(c=>c.n));
+  let pts='';cities.forEach(c=>{const g=CITY.find(c.k);if(!g)return;const [x,y]=P(g.lat,g.lng),r=(4+Math.sqrt(c.n/mx)*20).toFixed(1);pts+=`<circle cx="${x}" cy="${y}" r="${r}" fill="rgba(217,174,91,.45)" stroke="#f3d58a" stroke-width="1.2" data-k="${esc(c.k)}" style="cursor:pointer"><title>${esc(c.k)} · ${fmt(c.n)} קופות · ₪${fmt(c.d)} ליום · נמסרו ${fmt(c.del)} · ממתינות ${fmt(c.pend)}</title></circle>`});
+  el.style.background='transparent';el.innerHTML=`<svg viewBox="-10 -10 ${M.W+20} ${M.H+20}" style="width:100%;height:100%"><path d="${M.land}" fill="rgba(246,239,224,.05)" stroke="rgba(217,174,91,.7)" stroke-width="1.4"/>${pts}</svg>`;
+  el.querySelectorAll('circle[data-k]').forEach(c=>c.onclick=()=>{location.hash='#boxes';setTimeout(()=>{$('#fCity').value=c.dataset.k;loadBoxes()},400)})}
 // ---- boxes ----
 let SEL=new Set();
 P.boxes=()=>{const regions=CITY.REGIONS.concat(['אחר']);$('#main').innerHTML=`<div class="h"><h1>קופות ומשלוחים</h1><span class="sp"></span><a class="btn sm ghost" id="exp">⬇ ייצוא לאקסל</a><a class="btn sm" id="disp" target="_blank">🖨 דף לשליח</a></div>
