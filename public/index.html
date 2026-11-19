@@ -8,7 +8,7 @@
 <link rel="icon" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://images.unsplash.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/base.css?v=6">
+<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=1">
 <style>
 .wrap{width:min(1200px,100% - 40px);margin-inline:auto}
 h1,h2,h3,.f{font-family:var(--fs)}
@@ -42,7 +42,7 @@ nav .logo img.lgo{height:64px}nav.s .logo img.lgo{height:50px}nav .logo img{tran
 .arch .cap{position:absolute;bottom:26px;inset-inline:26px;color:var(--ink);z-index:2}.arch .cap small{display:block;color:var(--gold2);font-weight:600;letter-spacing:.1em;font-size:13px}.arch .cap b{font-size:22px;font-weight:600}
 /* 3D box */
 .b3w{position:absolute;bottom:-34px;inset-inline-end:-50px;perspective:900px;z-index:3;transform:translateY(var(--by,0))}
-.b3{--w:150px;--h:200px;--d:92px;width:var(--w);height:var(--h);position:relative;transform-style:preserve-3d;animation:sway 10s ease-in-out infinite;transform:rotateX(-10deg) rotateY(-30deg)}
+.kbs{--s:.56;transform:rotateX(-15deg) rotateY(-30deg);animation:sway2 10s ease-in-out infinite}@keyframes sway2{50%{transform:rotateX(-10deg) rotateY(18deg)}}.b3{--w:150px;--h:200px;--d:92px;width:var(--w);height:var(--h);position:relative;transform-style:preserve-3d;animation:sway 10s ease-in-out infinite;transform:rotateX(-10deg) rotateY(-30deg)}
 @keyframes sway{50%{transform:rotateX(-6deg) rotateY(20deg)}}
 .b3 .f{position:absolute;backface-visibility:hidden;background:#141b45 url(/stone.jpg);background-size:300px;border:1px solid rgba(217,174,91,.55)}
 .b3 .fr,.b3 .bk{width:var(--w);height:var(--h)}.b3 .fr{transform:translateZ(calc(var(--d)/2));display:grid;place-items:center;align-content:center;gap:8px;text-align:center;box-shadow:inset 0 0 0 6px rgba(9,13,32,.4),inset 0 0 0 7px rgba(217,174,91,.6)}
@@ -51,9 +51,9 @@ nav .logo img.lgo{height:64px}nav.s .logo img.lgo{height:50px}nav .logo img{tran
 .b3 .tp{width:var(--w);height:var(--d);top:calc((var(--h) - var(--d))/2);transform:rotateX(90deg) translateZ(calc(var(--h)/2));filter:brightness(1.2)}
 .b3 .tp::after{content:"";position:absolute;left:50%;top:50%;width:56px;height:8px;margin:-4px 0 0 -28px;border-radius:9px;background:#03050f;box-shadow:inset 0 2px 3px #000,0 0 0 1.5px rgba(217,174,91,.8)}
 .b3 .fr img{width:62px}.b3 .fr b{font-family:var(--fs);font-weight:700;font-size:24px;line-height:1}.b3 .fr small{font-size:11px;letter-spacing:.12em;color:var(--gold2)}
-.coin{position:absolute;top:-70px;left:50%;width:38px;height:38px;margin-left:-19px;border-radius:50%;background-image:url(/grain.jpg),radial-gradient(circle at 40% 35%,#e3c27e,#b48a42 60%,#7f5c22);background-blend-mode:soft-light;display:grid;place-items:center;font-weight:700;color:#4a320b;font-size:17px;animation:drop 3.6s cubic-bezier(.55,0,.85,.4) infinite;z-index:4;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
+.coin{position:absolute;top:-80px;left:50%;width:38px;height:38px;margin-left:-19px;border-radius:50%;background-image:url(/grain.jpg),radial-gradient(circle at 40% 35%,#e3c27e,#b48a42 60%,#7f5c22);background-blend-mode:soft-light;display:grid;place-items:center;font-weight:700;color:#4a320b;font-size:17px;animation:drop 3.6s cubic-bezier(.55,0,.85,.4) infinite;z-index:4;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
 @keyframes drop{0%{transform:translateY(-30px);opacity:0}15%{opacity:1}55%{transform:translateY(95px) rotateY(540deg) scaleX(.25);opacity:1}60%,100%{transform:translateY(100px) scaleX(.2);opacity:0}}
-@media(max-width:900px){.hero .wrap{grid-template-columns:1fr;gap:30px}.hero{padding-top:90px}.arch{width:min(280px,70vw);margin-top:10px}.hero .arch .cap{display:none}.b3w{inset-inline-end:-24px;bottom:-24px}.b3{--w:112px;--h:150px;--d:70px}.b3 .fr img{width:44px}.b3 .fr b{font-size:18px}.b3 .fr small{font-size:9px;letter-spacing:.04em}.hero h1{text-align:center}.hero .txt{text-align:center}.lead{margin-inline:auto}.cta,.proof{justify-content:center}.kick{justify-content:center}.hlogo{margin-inline:auto;width:170px}}
+@media(max-width:900px){.hero .wrap{grid-template-columns:1fr;gap:30px}.hero{padding-top:90px}.arch{width:min(280px,70vw);margin-top:10px}.hero .arch .cap{display:none}.b3w{inset-inline-end:-24px;bottom:-24px}.kbs{--s:.4}.b3{--w:112px;--h:150px;--d:70px}.b3 .fr img{width:44px}.b3 .fr b{font-size:18px}.b3 .fr small{font-size:9px;letter-spacing:.04em}.hero h1{text-align:center}.hero .txt{text-align:center}.lead{margin-inline:auto}.cta,.proof{justify-content:center}.kick{justify-content:center}.hlogo{margin-inline:auto;width:170px}}
 /* marquee */
 .mq{overflow:hidden;padding:26px 0;border-block:1px solid rgba(217,174,91,.18);background:rgba(0,0,0,.18)}
 .mq .row{display:flex;gap:46px;white-space:nowrap;width:max-content;animation:mq 38s linear infinite;font-family:var(--fs);font-weight:700;font-size:clamp(40px,6vw,84px);line-height:1.05}
@@ -77,7 +77,7 @@ h2{font-weight:700;font-size:clamp(40px,5.6vw,80px);line-height:1;letter-spacing
 .lay .ph img{width:100%;height:100%;object-fit:cover;filter:sepia(.25) saturate(.85) brightness(.85) contrast(1.06)}
 .lay .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,13,32,.1) 40%,rgba(9,13,32,.85))}
 .lay .big{position:absolute;bottom:30px;inset-inline:30px;z-index:2}.lay .big b{display:block;font-family:var(--fs);font-weight:700;font-size:clamp(46px,6vw,78px);line-height:1}.lay .big span{color:var(--mut);font-size:16px}
-.ship{position:absolute;bottom:22%;left:50%;width:120px;margin-left:-60px;z-index:2;transform:translateY(calc((1 - var(--lp,0)) * 140px));transition:transform .2s linear}
+.ship{position:absolute;bottom:14%;left:50%;width:170px;margin-left:-85px;z-index:2;transform:translateY(calc((1 - var(--lp,0)) * 140px));transition:transform .2s linear}
 .ship .bx{width:120px;height:150px;background:#141b45 url(/stone.jpg);background-size:300px;border:1px solid rgba(217,174,91,.6);box-shadow:inset 0 0 0 6px rgba(9,13,32,.4),inset 0 0 0 7px rgba(217,174,91,.6),0 30px 50px -20px #000;display:grid;place-items:center;align-content:center;gap:6px}.ship .bx img{width:48px}.ship .bx b{font-family:var(--fs);font-size:18px}
 .bigbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-44%);width:min(260px,60%);aspect-ratio:.76;background:#141b45 url(/stone.jpg);background-size:300px;border:1px solid rgba(217,174,91,.6);box-shadow:inset 0 0 0 10px rgba(9,13,32,.4),inset 0 0 0 11px rgba(217,174,91,.6),0 50px 80px -30px #000;display:grid;place-items:center;align-content:center;gap:12px;text-align:center}
 .bigbox::before{content:"";position:absolute;top:-6px;left:50%;width:44%;height:12px;margin-left:-22%;border-radius:9px;background:#03050f;box-shadow:0 0 0 1.5px rgba(217,174,91,.8)}
@@ -185,8 +185,8 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
     <div class="cta fade" style="transition-delay:.65s" id="heroCta"><button class="btn" data-join>אני רוצה קופה – עד הבית ←</button><a class="btn ghost" href="#story">איך זה עובד</a></div>
     <div class="proof fade" style="transition-delay:.8s" id="proof"></div>
   </div>
-  <div class="arch fade" style="transition-delay:.2s"><span class="ring"></span><div class="frame"><img id="heroImg" src="https://images.unsplash.com/photo-1792587151757-655084e32814?w=1100&q=70&auto=format&fit=crop" alt="הנחת תפילין בבית הכנסת"></div><div class="badge b1"><i class="dt"></i><span id="liveB">הקופות יוצאות לדרך</span></div><div class="badge b2"><b class="foilt" style="font-size:22px">₪1</b><span>× 365 בוקרים</span></div><div class="cap"><small>כל בוקר</small><b>שקל אחד, ליד התפילין</b></div>
-    <div class="b3w" id="b3w" aria-hidden="true"><div class="coin">₪</div><div class="b3"><div class="f fr"><img src="/logo-420.png" alt="" style="width:86%"><small>שקל · ליום · לאומן</small></div><div class="f bk"></div><div class="f lt"></div><div class="f rt"></div><div class="f tp"></div></div></div>
+  <div class="arch fade" style="transition-delay:.2s"><span class="ring"></span><div class="frame"><img id="heroImg" src="https://images.unsplash.com/photo-1792587151757-655084e32814?w=1100&q=70&auto=format&fit=crop" alt="הנחת תפילין בבית הכנסת"></div><div class="badge b1"><i class="dt"></i><span id="liveB">הקופות יוצאות לדרך</span></div><div class="badge b2"><b class="foilt" style="font-size:22px">₪1</b><span id="ymB">× 308 בקרים בשנה</span></div><div class="cap"><small>כל בוקר</small><b>שקל אחד, ליד התפילין</b></div>
+    <div class="b3w" id="b3w" aria-hidden="true"><div class="coin">₪</div><div class="kb kbs"><div class="f fr"><div class="g1"></div><div class="g2"></div><i class="dm a"></i><i class="dm b"></i><i class="dm c"></i><i class="dm d"></i><div class="arch"><img src="/logo-420.png" alt=""></div><div class="no">שקל · ליום · לאומן</div><div class="ln"></div><div class="nn">נ נח נחמ נחמן מאומן</div></div><div class="f bk"></div><div class="f lt"><div class="sd"><span>שקל · ליום · לאומן</span></div></div><div class="f rt"><div class="sd"><span>שקל · ליום · לאומן</span></div></div><div class="f tp"><div class="sd"><span>צדקה תציל ממוות</span></div><div class="slot"></div></div><div class="f bt"></div></div></div>
   </div>
 </div></header>
 
@@ -195,7 +195,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 
 <section class="story" id="story"><div class="st">
   <div class="stage">
-    <div class="lay on" data-l="0"><div class="ph"><img loading="lazy" src="https://images.unsplash.com/photo-1792587152057-d0fcc75f7e50?w=900&q=70&auto=format&fit=crop" alt=""></div><div class="badge" style="top:26px;inset-inline-start:22px;animation:none"><span>📦 בדרך אליך · שליח באזור</span></div><div class="ship" id="ship"><div class="bx"><img src="/logo-420.png" alt="" style="width:84%"></div></div></div>
+    <div class="lay on" data-l="0"><div class="ph"><img loading="lazy" src="https://images.unsplash.com/photo-1792587152057-d0fcc75f7e50?w=900&q=70&auto=format&fit=crop" alt=""></div><div class="badge" style="top:26px;inset-inline-start:22px;animation:none"><span>📦 בדרך אליך · שליח באזור</span></div><div class="ship" id="ship"><img src="/box-sm.png" alt="קופת רבינו שלי" style="width:170px;filter:drop-shadow(0 30px 30px rgba(0,0,0,.6))"></div></div>
     <div class="lay" data-l="1"><div class="bigbox"><div class="c2">₪</div><img src="/logo-420.png" alt="" style="width:78%"><div class="n foilt" id="dayN">₪1</div><small id="dayT">יום 1</small></div></div>
     <div class="lay" data-l="2"><div class="ph"><img loading="lazy" src="https://images.unsplash.com/photo-1542776488-a3bbacfcdccd?w=900&q=70&auto=format&fit=crop" alt=""></div>
       <svg class="route" viewBox="0 0 400 600" preserveAspectRatio="xMidYMid meet"><defs><mask id="rm"><path id="rmask" d="M300 520 C 360 380, 80 330, 120 90" stroke="#fff" stroke-width="8" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></mask></defs><path class="dash" d="M300 520 C 360 380, 80 330, 120 90" mask="url(#rm)"/><circle cx="300" cy="520" r="7" class="pl"/><circle cx="120" cy="90" r="7" class="pl" id="rEnd" opacity="0"/><text x="300" y="556" text-anchor="middle">ישראל</text><text x="120" y="66" text-anchor="middle" id="rTxt" opacity="0">אומן</text><g id="plane"><path class="pl" d="M0-9 3-2 11 2 11 4 3 2 2 8 5 10 5 11 0 10-5 11-5 10-2 8-3 2-11 4-11 2-3-2z"/></g></svg>
@@ -217,7 +217,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
     <div class="num"><b data-count="boxes">0</b><span>קופות פעילות</span></div>
     <div class="num"><b data-count="daily" data-pre="₪">0</b><span>נכנסים לקופות כל בוקר</span></div>
     <div class="num"><b data-count="tickets">0</b><span>יהודים בדרך לאומן</span></div>
-    <div class="num"><b data-count="daysLeft">0</b><span>ימים לראש השנה</span></div>
+    <div class="num"><b data-count="daysLeft">0</b><span>בקרים עד ראש השנה <small style="display:block;font-size:13px;opacity:.75">בלי שבתות וחגים</small></span></div>
   </div>
   <div class="gbar" data-r><div class="t"><span>היעד שלנו: <b id="gGoal">1,000</b> קופות בשבועיים</span><span id="gPct">0%</span></div><div class="bar"><i id="gBar"></i></div></div>
 </div></section>
@@ -225,7 +225,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 <section id="calc"><div class="wrap">
   <div data-r><span class="ey">המתמטיקה של האור</span><h2>שקל נשמע קטן.<br><span class="gt">עד שסופרים.</span></h2></div>
   <div class="calc">
-    <div class="cbox" data-r><div style="color:var(--mut);font-weight:500">כמה קופות? משפחה, בית כנסת, שכונה…</div><div class="cn foilt" id="cN">10</div><input type="range" class="rng" id="cR" min="0" max="1000" value="333" aria-label="מספר קופות"><div style="color:var(--mut2);font-size:14px">גררו וראו מה קורה ←</div></div>
+    <div class="cbox" data-r><div style="color:var(--mut);font-weight:500">כמה קופות? משפחה, בית כנסת, שכונה…</div><div class="cn foilt" id="cN">10</div><input type="range" class="rng" id="cR" min="0" max="1000" value="333" aria-label="מספר קופות"><div style="color:var(--mut2);font-size:14px">גררו וראו מה קורה ← · סופרים רק ימי חול, בלי שבתות וחגים</div></div>
     <div class="res" data-r>
       <div class="r"><span>שקלים בכל בוקר</span><b id="cD">₪10</b></div>
       <div class="r"><span>עד ראש השנה</span><b class="gt" id="cT">₪0</b></div>
@@ -246,13 +246,14 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 <section class="paper"><div class="wrap trend">
   <div data-r><span class="ey">#רבינו_שלי</span><h2>הקופה שכולם<br>מצלמים.</h2><p class="sub">לכל קופה מספר אישי. מצלמים ליד התפילין, משתפים, ומזמינים חבר – וכל הזמנה מדליקה עוד נקודה במפה.</p>
     <div class="perks"><div class="perk"><div class="ic" data-ic="spark"></div><div><b>כרטיס סטורי אישי</b><p>תמונה מעוצבת עם מספר הקופה שלך – מוכנה לסטטוס ולאינסטגרם.</p></div></div><div class="perk"><div class="ic" data-ic="users"></div><div><b>קישור הזמנה משלך</b><p>רואים באזור האישי כמה יהודים הצטרפו בזכותך.</p></div></div><div class="perk"><div class="ic" data-ic="flame"></div><div><b>רצף בוקר</b><p>לוחצים "שמתי היום" – והרצף גדל, יום אחרי יום.</p></div></div></div></div>
-  <div data-r><div class="phone"><div class="bars"><i></i><i></i><i></i></div><div class="story"><div style="font-size:14px;color:var(--mut);letter-spacing:.16em">לקחתי על עצמי</div><img src="/logo-420.png" alt="" style="width:190px"><b style="font-size:30px">שקל ביום<br><span class="gt">לרבינו</span></b><span class="no">קופה מס׳ 0001</span><div style="font-size:13px;color:var(--mut)">הצטרפו גם ←</div></div></div></div>
+  <div data-r><div class="phone"><div class="bars"><i></i><i></i><i></i></div><div class="story"><div style="font-size:14px;color:var(--mut);letter-spacing:.16em">לקחתי על עצמי</div><b style="font-size:30px">שקל ביום <span class="gt">לרבינו</span></b><img src="/box-sm.png" alt="" style="width:190px;filter:drop-shadow(0 20px 24px rgba(0,0,0,.6))"><span class="no">קופה מס׳ 0001</span><div style="font-size:13px;color:var(--mut)">הצטרפו גם ←</div></div></div></div>
 </div></section>
 
 <section id="faq"><div class="wrap">
   <div class="ctr" data-r><span class="ey">שאלות</span><h2>מה שרציתם לדעת</h2></div>
   <div class="faq">
     <details data-r><summary>מה בדיוק מתחייבים?</summary><p>לשים שקל אחד (או יותר, לבחירתכם) בקופה בכל יום. זו קבלה טובה, לא חוזה – אפשר לשנות או להפסיק בכל רגע מהאזור האישי.</p></details>
+    <details data-r><summary>ובשבת ובחגים?</summary><p>בשבת וביום טוב לא נוגעים בכסף – ולכן גם לא סופרים. הקופה סופרת רק בקרים של ימי חול, ובאזור האישי השבתות והחגים מסומנים בנפרד.</p></details>
     <details data-r><summary>פספסתי יום. מה עכשיו?</summary><p>שמים מחר שניים. אין שום יאוש בעולם כלל 🙂 האזור האישי סופר בשבילכם כמה אמור להיות בקופה.</p></details>
     <details data-r><summary>איך הקופה מגיעה אליי?</summary><p>אחרי ההרשמה הכתובת עוברת לשליח באזור, והוא מביא את הקופה עד הבית. את הסטטוס רואים באזור האישי.</p></details>
     <details data-r><summary>מה קורה עם הכסף?</summary><p>לפני ראש השנה אוספים את הקופות (או שמרוקנים אותן בתרומה אונליין מהאזור האישי), וכל הכסף הולך לכרטיסי טיסה לאומן ליהודים שלא זכו להגיע.</p></details>
@@ -290,7 +291,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 </form></div>
 <canvas id="share" width="1080" height="1350" style="display:none"></canvas>
 <div class="toast" id="toast"></div>
-<script src="/cities.js?v=5"></script>
+<script src="/cities.js?v=5"></script><script src="/share.js?v=1"></script>
 <script src="/ilmap.js?v=5"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -315,14 +316,14 @@ function onScroll(){const y=scrollY,h=innerHeight;$('#nav').classList.toggle('s'
   if(idx!==stIdx){stIdx=idx;lays.forEach((l,i)=>l.classList.toggle('on',i===idx));stps.forEach((s,i)=>s.classList.toggle('on',i===idx))}
   rails.forEach((b,i)=>b.style.width=(i<idx?100:i===idx?lp*100:0)+'%');
   if(idx===0)$('#ship').style.setProperty('--lp',Math.min(1,lp*1.6));
-  if(idx===1){const d=Math.max(1,Math.round(lp*365));$('#dayN').textContent='₪'+fmt(d);$('#dayT').textContent=d===1?'יום ראשון':d>=365?'שנה שלמה':'יום '+fmt(d)}
+  if(idx===1){const Y=ST.yearMornings||308,d=Math.max(1,Math.round(lp*Y));$('#dayN').textContent='₪'+fmt(d);$('#dayT').textContent=d===1?'בוקר ראשון':d>=Y?'שנה שלמה · בלי שבתות וחגים':'בוקר '+fmt(d)}
   if(idx===2){const q=Math.min(1,lp*1.4);rmask.style.strokeDashoffset=1-q;const L=routeP.getTotalLength(),pt=routeP.getPointAtLength(L*q),pt2=routeP.getPointAtLength(Math.min(L,L*q+2));const a=Math.atan2(pt2.y-pt.y,pt2.x-pt.x)*180/Math.PI+90;plane.setAttribute('transform',`translate(${pt.x} ${pt.y}) rotate(${a})`);$('#rEnd').setAttribute('opacity',q>.98?1:0);$('#rTxt').setAttribute('opacity',q>.98?1:0)}
   const qs=$('#qs').getBoundingClientRect();if(qs.top<h&&qs.bottom>0)$('#qs .bg').style.setProperty('--qy',((qs.top-h/2)*-.15)+'px')}
 let tick=false;addEventListener('scroll',()=>{if(!tick){tick=true;requestAnimationFrame(()=>{onScroll();tick=false})}},{passive:true});addEventListener('resize',onScroll);onScroll();
 // ---- stats ----
 let ST={boxes:0,cities:0,daily:0,tickets:0,daysLeft:300,ticketPrice:3800,goal:1000,points:[],recent:[]};
 const countUp=(el,to,pre='')=>{const t0=performance.now(),d=2000;(function f(t){const k=Math.min(1,(t-t0)/d),e=1-Math.pow(1-k,4);el.textContent=pre+fmt(to*e);if(k<1)requestAnimationFrame(f)})(t0)};
-fetch('/api/stats').then(r=>r.json()).then(s=>{ST=s;$('#tpTxt').textContent='₪'+fmt(s.ticketPrice);$('#gGoal').textContent=fmt(s.goal);
+fetch('/api/stats').then(r=>r.json()).then(s=>{ST=s;if(s.yearMornings)$('#ymB').textContent=`× ${fmt(s.yearMornings)} בקרים בשנה`;$('#tpTxt').textContent='₪'+fmt(s.ticketPrice);$('#gGoal').textContent=fmt(s.goal);
   const bo=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){$$('[data-count]').forEach(el=>countUp(el,s[el.dataset.count]||0,el.dataset.pre||''));const pc=Math.min(100,s.boxes/s.goal*100);setTimeout(()=>$('#gBar').style.width=Math.max(1.5,pc)+'%',300);$('#gPct').textContent=pc.toFixed(pc<10?1:0)+'%';bo.disconnect()}}),{threshold:.3});bo.observe($('#nums-s'));
   if(s.whatsapp){$('#waLink').hidden=false;$('#waLink').href='https://wa.me/'+s.whatsapp.replace(/\D/g,'').replace(/^0/,'972')}
   proof();calc();drawMap();ticker()}).catch(()=>{calc();drawMap()});
@@ -398,18 +399,7 @@ $('#wz').onsubmit=async e=>{e.preventDefault();if(!check(cur))return;if(cur<5)re
 // gold confetti
 function gold(){const c=document.createElement('canvas');c.style.cssText='position:fixed;inset:0;z-index:150;pointer-events:none';c.width=innerWidth;c.height=innerHeight;document.body.appendChild(c);const x=c.getContext('2d');const P=Array.from({length:140},()=>({x:innerWidth/2,y:innerHeight/2,vx:(Math.random()-.5)*16,vy:Math.random()*-16-4,r:Math.random()*5+2,a:1,s:Math.random()*.3}));let t=0;(function f(){x.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.vy+=.45;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.a-=.008;x.globalAlpha=Math.max(0,p.a);x.fillStyle=['#fbe7a6','#d9ae5b','#fff4d0'][p.r|0%3];x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill()});if(++t<160)requestAnimationFrame(f);else c.remove()})()}
 // share card
-async function card(){const c=$('#share'),x=c.getContext('2d');await document.fonts.ready;const W=1080,H=1350;const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#141d52');g.addColorStop(1,'#050817');x.fillStyle=g;x.fillRect(0,0,W,H);
-  const r=x.createRadialGradient(W/2,560,0,W/2,560,520);r.addColorStop(0,'rgba(217,174,91,.12)');r.addColorStop(1,'rgba(243,213,138,0)');x.fillStyle=r;x.fillRect(0,0,W,H);
-  x.strokeStyle='rgba(217,174,91,.6)';x.lineWidth=3;x.strokeRect(50,50,W-100,H-100);x.strokeStyle='rgba(217,174,91,.25)';x.lineWidth=1.5;x.strokeRect(68,68,W-136,H-136);
-  const img=new Image();img.src='/logo-900.png';await new Promise(ok=>{img.onload=ok;img.onerror=ok});x.drawImage(img,W/2-260,290,520,520*img.height/(img.width||1));
-  x.textAlign='center';x.direction='rtl';x.fillStyle='#b9b2a3';x.font='600 40px Fredoka';x.fillText('לקחתי על עצמי',W/2,250);
-  const gg=x.createLinearGradient(0,760,0,980);gg.addColorStop(0,'#fff1c4');gg.addColorStop(1,'#c08a37');x.fillStyle=gg;x.font='900 120px Fredoka';x.fillText('שקל ביום',W/2,830);x.fillText('לרבינו',W/2,960);
-  x.fillStyle='#f6efe0';x.font='700 48px Fredoka';x.fillText('קופה מס׳ '+String(JOINED.box_no).padStart(4,'0'),W/2,1080);
-  x.fillStyle='#d9ae5b';x.font='700 30px Fredoka';x.fillText('נ נח נחמ נחמן מאומן',W/2,1170);x.fillStyle='#8b8578';x.font='600 30px Fredoka';x.fillText(location.host+'/r/'+JOINED.ref_code,W/2,1230);
-  return new Promise(ok=>c.toBlob(ok,'image/png'))}
-$('#dShare').onclick=async()=>{const blob=await card();const url=location.origin+'/r/'+JOINED.ref_code;const text=`לקחתי על עצמי שקל ביום לרבינו 🔥 קופה מס׳ ${JOINED.box_no}. בזכות השקל הזה עוד יהודי יגיע לאומן. רוצים גם? ${url}`;const file=new File([blob],'rabeinu.png',{type:'image/png'});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text});return}catch{}}
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rabeinu-sheli.png';a.click();setTimeout(()=>open('https://wa.me/?text='+encodeURIComponent(text),'_blank'),400)};
+$('#dShare').onclick=()=>rbShare({boxNo:JOINED.box_no,ref:JOINED.ref_code,first:JOINED.first},`לקחתי על עצמי שקל ביום לרבינו 🔥 קופה מס׳ ${JOINED.box_no}. בזכות השקל הזה עוד יהודי יגיע לאומן. רוצים גם? ${location.origin}/r/${JOINED.ref_code}`);
 
 if(location.hash==='#join')setTimeout(wOpen,600);
 </script>

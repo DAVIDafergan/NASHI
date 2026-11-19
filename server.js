@@ -7,6 +7,17 @@ const https = require('https');
 const cookieParser = require('cookie-parser');
 const Database = require('better-sqlite3');
 const CITY = require('./public/cities');
+const { HebrewCalendar, flags: HF } = require('@hebcal/core');
+// ---- mornings calendar: Shabbat & Yom Tov (Israel) are not counted ----
+const isoD = d => d.toISOString().slice(0, 10);
+const OFF = new Map(); // 'YYYY-MM-DD' -> name
+(() => { const loc = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  for (const e of HebrewCalendar.calendar({ start: new Date(2024, 0, 1), end: new Date(2033, 11, 31), il: true })) if (e.getFlags() & HF.CHAG) OFF.set(loc(e.getDate().greg()), e.render('he').replace(/[\u0591-\u05C7]/g, '').replace(/ \d{4}$/, '')); })();
+const offName = ds => OFF.get(ds) || (new Date(ds + 'T12:00:00Z').getUTCDay() === 6 ? 'שבת' : null);
+const CUM = new Map(); (() => { let n = 0; for (let d = new Date('2024-01-01T12:00:00Z'); d < new Date('2034-01-01T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 1)) { const k = isoD(d); if (!offName(k)) n++; CUM.set(k, n); } })();
+const cum = ds => CUM.get(ds) ?? (ds < '2024-01-01' ? 0 : CUM.get('2033-12-31'));
+const addDay = (ds, n) => { const d = new Date(ds + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return isoD(d); };
+const mornings = (a, b) => (a > b ? 0 : cum(b) - cum(addDay(a, -1))); // inclusive count of counted mornings
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -54,14 +65,15 @@ const isAdmin = req => !!unsign(req.cookies.ra)?.a;
 const aAuth = (req, res, next) => isAdmin(req) ? next() : bad(res, 'auth', 401);
 
 function boxState(m) {
-  const t = today(); const since = m.last_empty && m.last_empty >= m.start_date ? m.last_empty : m.start_date;
-  const days = Math.max(0, dayDiff(since, t) + (since === m.last_empty ? 0 : 1));
-  const total = Math.max(0, dayDiff(m.start_date, t) + 1);
+  const t = today(); const emptied = m.last_empty && m.last_empty >= m.start_date;
+  const days = emptied ? mornings(addDay(m.last_empty, 1), t) : mornings(m.start_date, t);
+  const total = mornings(m.start_date, t);
   const checks = db.prepare('SELECT day FROM checkins WHERE member_id=? ORDER BY day DESC LIMIT 400').all(m.id).map(r => r.day);
-  let streak = 0; const set = new Set(checks); let d = new Date(t + 'T12:00:00Z'); if (!set.has(t)) d.setUTCDate(d.getUTCDate() - 1);
-  while (set.has(d.toISOString().slice(0, 10))) { streak++; d.setUTCDate(d.getUTCDate() - 1); }
-  const s = S(); const left = Math.max(0, dayDiff(t, s.targetDate));
-  return { balance: days * m.amount, days, totalDays: total, checkedToday: set.has(t), streak, checkins: checks.length, untilTarget: left, projected: (days + left) * m.amount, recent: checks.slice(0, 60) };
+  const set = new Set(checks); let streak = 0; let d = set.has(t) || offName(t) ? t : addDay(t, -1);
+  for (let i = 0; i < 800; i++) { if (offName(d)) { d = addDay(d, -1); continue; } if (!set.has(d)) break; streak++; d = addDay(d, -1); }
+  const s = S(); const left = mornings(addDay(t, 1), s.targetDate);
+  const off = []; for (let i = 0; i < 28; i++) { const k = addDay(t, -i); const n = offName(k); if (n) off.push({ day: k, name: n }); }
+  return { balance: days * m.amount, days, totalDays: total, checkedToday: set.has(t), todayOff: offName(t), tomorrowOff: offName(addDay(t, 1)), streak, checkins: checks.length, untilTarget: left, projected: (days + left) * m.amount, recent: checks.slice(0, 60), off };
 }
 const pubMember = m => ({ id: m.id, box_no: m.box_no, first: m.first, last: m.last, phone: m.phone, email: m.email, street: m.street, house: m.house, apt: m.apt, city: m.city, amount: m.amount, prayer: m.prayer, start_date: m.start_date, box_status: m.box_status, remind_channel: m.remind_channel, remind_time: m.remind_time, remind_days: m.remind_days, ref_code: m.ref_code, public: m.public, refs: db.prepare('SELECT COUNT(*) n FROM members WHERE referred_by=?').get(m.id).n });
 
@@ -72,9 +84,9 @@ function stats() {
   const s = S(); const t = today();
   const all = db.prepare("SELECT city,lat,lng,amount,start_date FROM members WHERE box_status!='cancelled'").all();
   let daily = 0, projected = 0; const byCity = {};
-  for (const m of all) { daily += m.amount; projected += Math.max(0, dayDiff(m.start_date, s.targetDate) + 1) * m.amount; if (m.lat) { const k = m.city; (byCity[k] ||= { c: k, lat: m.lat, lng: m.lng, n: 0 }).n++; } }
+  for (const m of all) { daily += m.amount; projected += mornings(m.start_date, s.targetDate) * m.amount; if (m.lat) { const k = m.city; (byCity[k] ||= { c: k, lat: m.lat, lng: m.lng, n: 0 }).n++; } }
   const recent = s.showRecent ? db.prepare("SELECT first, city, created FROM members WHERE public=1 AND box_status!='cancelled' ORDER BY id DESC LIMIT 12").all() : [];
-  const v = { boxes: all.length, cities: Object.keys(byCity).length, daily, projected, tickets: Math.floor(projected / s.ticketPrice), ticketPrice: s.ticketPrice, targetDate: s.targetDate, daysLeft: Math.max(0, dayDiff(t, s.targetDate)), goal: s.goal, points: Object.values(byCity), recent, whatsapp: s.whatsapp };
+  const v = { boxes: all.length, cities: Object.keys(byCity).length, daily, projected, tickets: Math.floor(projected / s.ticketPrice), ticketPrice: s.ticketPrice, targetDate: s.targetDate, daysLeft: mornings(addDay(t, 1), s.targetDate), calDaysLeft: Math.max(0, dayDiff(t, s.targetDate)), yearMornings: mornings(t, addDay(t, 364)), todayOff: offName(t), goal: s.goal, points: Object.values(byCity), recent, whatsapp: s.whatsapp };
   statsCache = { t: Date.now(), v }; return v;
 }
 app.get('/api/stats', (_, res) => res.json(stats()));
@@ -112,7 +124,7 @@ app.post('/api/logout', (_, res) => { res.clearCookie('rm'); res.clearCookie('ra
 
 // ---------- member ----------
 app.get('/api/me', mAuth, (req, res) => res.json({ member: pubMember(req.m), box: boxState(req.m), settings: { ticketPrice: S().ticketPrice, targetDate: S().targetDate, donate: !!S().donateUrl, whatsapp: S().whatsapp }, collections: db.prepare('SELECT id,kind,amount_est,amount_actual,kavana,status,preferred,created,done_at FROM collections WHERE member_id=? ORDER BY id DESC LIMIT 20').all(req.m.id) }));
-app.post('/api/me/checkin', mAuth, (req, res) => { db.prepare('INSERT OR IGNORE INTO checkins(member_id,day) VALUES(?,?)').run(req.m.id, today()); res.json({ ok: true, box: boxState(req.m) }); });
+app.post('/api/me/checkin', mAuth, (req, res) => { const off = offName(today()); if (off) return bad(res, off === 'שבת' ? 'שבת שלום! בשבת לא שמים – נתראה במוצאי שבת' : `${off} – חג שמח! היום לא שמים`); db.prepare('INSERT OR IGNORE INTO checkins(member_id,day) VALUES(?,?)').run(req.m.id, today()); res.json({ ok: true, box: boxState(req.m) }); });
 app.put('/api/me', mAuth, (req, res) => {
   const b = req.body || {}; const m = req.m; const str = (v, n) => String(v ?? '').trim().slice(0, n);
   const ch = ['sms', 'whatsapp', 'email', 'call', 'none'].includes(b.remind_channel) ? b.remind_channel : m.remind_channel;
@@ -224,6 +236,7 @@ function notifyAdmin(subject, text) { if (process.env.ADMIN_EMAIL) sendMail(proc
 const reminderText = m => `${m.first}, בוקר טוב ☀️ הגיע הזמן לשקל של היום בקופה של רבינו (${m.prayer}). בזכותך עוד יהודי יזכה להגיע לאומן 🔥`;
 async function tickReminders() {
   const now = new Date(); const hm = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit' }); const dow = String(new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' })).getDay()); const t = today();
+  if (offName(t)) return;
   const due = db.prepare("SELECT * FROM members WHERE remind_channel!='none' AND box_status!='cancelled' AND remind_time=? AND instr(remind_days, ?)>0 AND id NOT IN (SELECT member_id FROM checkins WHERE day=?) AND id NOT IN (SELECT member_id FROM reminders WHERE day=?)").all(hm, dow, t, t);
   for (const m of due) {
     let status = 'queued', info = '';
