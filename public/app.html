@@ -210,6 +210,23 @@ canvas.chart{width:100%;height:180px;display:block}
 @media(max-width:600px){.ctups{grid-template-columns:1fr}}
 .pls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pl{border:1px solid var(--line);border-radius:16px;padding:16px}.pl.hl{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}.pp{font-size:28px;font-weight:800;margin:6px 0 4px}.pp small{font-size:13px;font-weight:500;color:var(--mut)}
 @media(max-width:600px){.pls{grid-template-columns:1fr}}
+
+/* product tour */
+.tr-ov{position:fixed;inset:0;z-index:90;pointer-events:auto}
+.tr-hole{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(14,15,24,.58);transition:all .38s cubic-bezier(.2,.9,.25,1);pointer-events:none;outline:2px solid rgba(255,255,255,.9);outline-offset:3px}
+.tr-hole.c{width:0!important;height:0!important;left:50%!important;top:45%!important;outline:0}
+.tr-pop{position:fixed;z-index:91;width:min(360px,calc(100vw - 24px));background:#fff;border-radius:18px;box-shadow:0 24px 60px -12px rgba(14,15,24,.45);padding:18px 18px 14px;transition:top .38s cubic-bezier(.2,.9,.25,1),left .38s cubic-bezier(.2,.9,.25,1),opacity .2s;font-size:15px;line-height:1.55}
+.tr-pop .trh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.tr-pop .trh span{font-size:12px;font-weight:700;color:var(--p2);background:#f1edff;border-radius:99px;padding:3px 10px}
+.tr-pop .trh button{font-size:13px;color:var(--mut)}.tr-pop .trh button:hover{color:var(--ink);text-decoration:underline}
+.tr-pop h4{font-size:18px;font-weight:700;margin:0 0 4px}.tr-pop p{color:#46423d;margin:0}
+.tr-pop .trd{display:flex;direction:inherit;gap:5px;margin:14px 0 12px}.tr-pop .trd i{height:5px;flex:1;border-radius:9px;background:#ece9f7}.tr-pop .trd i.on{background:var(--grad,linear-gradient(90deg,#7c5cff,#22d3ee))}
+.tr-pop .bt{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.tr-pop .bt .b{min-height:40px}
+.tr-pop.ctr{left:50%!important;top:50%!important;transform:translate(-50%,-50%);text-align:center;width:min(420px,calc(100vw - 24px));padding:26px 24px 18px}.tr-pop.ctr .bt{justify-content:center}.tr-pop .em{font-size:40px;margin-bottom:6px}
+.tr-nx{position:fixed;bottom:22px;left:50%;transform:translate(-50%,140%);z-index:60;background:#1c1917;color:#fff;border-radius:99px;padding:8px 8px 8px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 18px 40px -12px rgba(0,0,0,.5);transition:transform .45s cubic-bezier(.2,.9,.25,1);font-size:14px;font-weight:600;white-space:nowrap}
+html[dir=rtl] .tr-nx{padding:8px 16px 8px 8px}
+.tr-nx.on{transform:translate(-50%,0)}.tr-nx a{background:#fff;color:#1c1917;border-radius:99px;padding:8px 14px;font-weight:700}.tr-nx button{color:#aaa;font-size:18px;padding:0 6px}
+.thelp{font-size:13px!important}
+@media(max-width:700px){.tr-pop:not(.ctr){left:12px!important;right:12px;width:auto;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom))}.tr-nx{bottom:14px;max-width:calc(100vw - 20px)}}
 /* guide */
 .hbtn{position:fixed;bottom:22px;inset-inline-end:22px;z-index:30;display:flex;align-items:center;gap:8px;padding:0 16px 0 12px;height:48px;border-radius:16px;background:#25D366;color:#fff!important;font-weight:800;text-decoration:none;box-shadow:0 14px 30px -12px rgba(37,211,102,.7);border:0;font-size:14px}.hbtn svg{width:22px;height:22px;fill:#fff}.hbtn:hover{transform:translateY(-2px)}
 @media(max-width:700px){.hbtn{bottom:16px;inset-inline-end:14px;height:44px;padding:0 12px}.hbtn span{display:none}}
@@ -430,8 +447,76 @@ const SHORT={overview:'סקירה',basic:'פרטים',design:'עיצוב',levels
 async function route(){const h=(location.hash||'#/').slice(2);const [a,b,c]=h.split('?')[0].split('/');drawer(false);$$('aside a[data-p]').forEach(x=>x.classList.remove('on'));scrollTo(0,0);
   if(a==='c'&&b){if(!C||C.id!=+b)C=await api('/campaigns/'+b);$('#campNav').hidden=false;$('#campName').textContent=C.title;$$('#campNav a').forEach(x=>{x.href=`#/c/${C.id}/${x.dataset.p.split('/')[1]}`;x.classList.toggle('on',x.dataset.p==='c/'+(c||'overview'))});
     const cur=c||'overview';$('#ctabs').hidden=false;$('#ctabs').innerHTML=$$('#campNav a').map(x=>{const k=x.dataset.p.split('/')[1];return `<a href="#/c/${C.id}/${k}" class="${k===cur?'on':''}">${x.querySelector('svg').outerHTML}${SHORT[k]||k}</a>`}).join('');const on=$('#ctabs a.on');if(on)on.scrollIntoView({inline:'center',block:'nearest'});
-    return (pages['c_'+cur]||pages.c_overview)()}
-  $('#ctabs').hidden=true;$('#campNav').hidden=true;C=null;if(es){es.close();es=null}const p=a||'home';$$(`aside a[data-p="${p}"]`).forEach(x=>x.classList.add('on'));(pages[p]||pages.home)()}
+    return Promise.resolve((pages['c_'+cur]||pages.c_overview)()).then(()=>tourAuto(pages['c_'+cur]?cur:'overview'))}
+  $('#ctabs').hidden=true;$('#campNav').hidden=true;C=null;if(es){es.close();es=null}const p=a||'home';$$(`aside a[data-p="${p}"]`).forEach(x=>x.classList.add('on'));Promise.resolve((pages[p]||pages.home)()).then(()=>tourAuto(pages[p]?p:'home'))}
+
+// ---- product tour: spotlight walkthrough per screen, shown once, skippable ----
+const FLOW=['overview','basic','design','levels','settings','teams','payment'];
+const FNAME={overview:'סקירה',basic:'פרטי הקמפיין',design:'עיצוב, מדיה וסיפור',levels:'כפתורי תרומה',settings:'הגדרות ושפות',teams:'שגרירים',payment:'סליקה ועלייה לאוויר'};
+const TOURS={
+ home:[{em:'👋',t:'ברוכים הבאים ל-GiveIL',d:'בכמה צעדים קצרים נראה לכם איך בונים קמפיין. אפשר לדלג בכל רגע.',first:1},
+  {s:'button[onclick="newCamp()"]',t:'פותחים קמפיין',d:'נותנים שם והקמפיין נוצר במצב בדיקה. שום דבר לא עולה לאוויר עד שתחליטו.'},
+  {s:'aside a[data-p=account], .mbar .ib',t:'העמותה והחשבון',d:'כאן מאמתים את העמותה וחותמים על ההסכם. צריך את זה לפני העלייה לאוויר, לא לפני הבנייה.'},
+  {s:'#gbtn, .mbar .ai',t:'המדריך החכם ✦',d:'נתקעתם? כתבו לו שאלה בעברית פשוטה. הוא גם כותב סיפור, כותרות והודעות.'}],
+ overview:[{em:'🚀',t:'זה מרכז הבקרה של הקמפיין',d:'בנייה בארבעה שלבים: פרטים, עיצוב, כפתורי תרומה וסליקה. נעבור עליהם יחד.',first:1},
+  {s:'#campNav, #ctabs',t:'כל שלב הוא טאב',d:'עוברים לפי הסדר מלמעלה למטה. אפשר לחזור לכל טאב בכל זמן.'},
+  {s:'#content .qa',t:'פעולות מהירות',d:'צפייה בדף, מסך אירוע ושיתוף בוואטסאפ, בלחיצה אחת.'},
+  {s:'#pgActs',t:'תצוגה ופעולות',d:'בפינה הזו תמיד יש את הפעולות של העמוד שאתם נמצאים בו.'}],
+ basic:[{s:'[data-f=title]',t:'שם הקמפיין',d:'קצר ומוחשי. "100 מלגות לסטודנטים" עובד יותר טוב מ"קמפיין שנתי".'},
+  {s:'[data-f=subtitle]',t:'משפט אחד שמסביר למה',d:'לא בטוחים איך לנסח? לחצו "✦ נסח לי" והמדריך יכתוב.'},
+  {s:'[data-f=slug]',t:'כתובת הדף',d:'זה הקישור שתשתפו. אותיות באנגלית, קצר וקל לזכור.'},
+  {s:'[data-f=goal]',t:'יעד',d:'יעד שאפשר לעבור. אחרי שעוברים אותו, יעד בונוס שומר על התנופה.'},
+  {s:'[data-f=end_at]',t:'מתי מסתיים',d:'ספירה לאחור יוצרת דחיפות. קמפיין קצר וממוקד מרגיש דחוף יותר.'},
+  {s:'#pv',t:'תצוגה מקדימה',d:'ככה התורמים יראו את הדף. מתעדכנת אחרי שמירה.'},
+  {s:'button[onclick="saveCamp()"]',t:'שומרים',d:'שינויים נשמרים רק בלחיצה כאן. אחרי השמירה נציע לכם את השלב הבא.'}],
+ design:[{s:'[data-f=story]',t:'הסיפור',d:'שלוש פסקאות: מה הצורך, מה תעשו עם הכסף, ולמה עכשיו. "✦ שהמדריך יכתוב" נותן טיוטה ראשונה.'},
+  {s:'[data-up=cover]',t:'התמונה הראשית',d:'הדבר הראשון שרואים. אנשים, פנים ורגש, באיכות טובה. רחבה: 1920×820.'},
+  {s:'#ml_default_mobile',t:'גרסה לנייד',d:'רוב התורמים מגיעים מהטלפון. תמונה ריבועית נראית שם הכי טוב.'},
+  {s:'#mlVideo_default',t:'סרטון',d:'לא חובה. קישור YouTube או קובץ MP4, ויופיע כפתור ▶ על הבאנר.'},
+  {s:'[data-up=share]',t:'תמונת שיתוף',d:'מה שרואים בוואטסאפ לפני שלוחצים על הקישור.'},
+  {s:'[data-f=color]',t:'צבע הקמפיין',d:'צבע הכפתורים וההדגשות. כדאי צבע של העמותה.'}],
+ levels:[{s:'#levels',t:'כפתורי תרומה',d:'שם וסכום מוחשי, למשל "סל מזון – ₪180". קל יותר לתרום כשיודעים מה הכסף קונה.'},
+  {s:'button[onclick="addLevel()"]',t:'מוסיפים כפתור',d:'3 עד 5 כפתורים זה נוח. סמנו "הו״ק" לתרומה חודשית.'},
+  {s:'#presets',t:'סכומים מהירים',d:'אם לא תגדירו כפתורים, אלה הסכומים שיוצעו לתורם.'}],
+ settings:[{s:'.langchips',t:'שפות',d:'מגייסים גם מחו״ל? סמנו שפות נוספות. הממשק מתורגם אוטומטית.'},
+  {s:'[data-s=idField]',t:'תעודת זהות',d:'לקבלות לפי סעיף 46 כדאי לבקש. היא עוברת לספק הסליקה.'},
+  {s:'[data-s=allowMonthly]',t:'הוראת קבע',d:'מאפשר לתורם לבחור תרומה חודשית.'},
+  {s:'[data-s=thanks]',t:'הודעת תודה',d:'מה שהתורם רואה מיד אחרי התרומה.'}],
+ teams:[{s:'button[onclick="teamForm()"]',t:'שגרירים',d:'מתנדבים, חברי ועד ומשפחות. כל שגריר מקבל קישור אישי ויעד משלו, ומגייס מהמעגל שלו.'},
+  {s:'#content',t:'הטבלה',d:'כאן רואים כמה כל שגריר גייס ומעתיקים לו את הקישור.'}],
+ payment:[{s:'#content .card',t:'מחברים סליקה',d:'בוחרים את ספק הסליקה של העמותה ומזינים את הפרטים. התרומות נכנסות ישירות לחשבון שלכם.'},
+  {s:'button[onclick="goLive()"]',t:'עלייה לאוויר',d:'כשהכל מוכן: תרומות הבדיקה נמחקות והסליקה האמיתית מופעלת.'}],
+ donations:[{s:'#content',t:'כל התרומות',d:'מתעדכן בזמן אמת. אפשר לסנן ולייצא לאקסל.'}],
+ messages:[{s:'#content .tabs',t:'הודעות לתורמים',d:'תודה, תזכורות ועדכונים, בוואטסאפ מהטלפון או במייל מעוצב.'}],
+ share:[{s:'#content',t:'שיתוף ומסך אירוע',d:'קישור, QR, קישורים עם סכום מוכן, ומסך לאולם שמציג תרומות בזמן אמת.'}]
+};
+const TK=k=>'gx_tour_'+(U?.id||0)+'_'+k;const tget=k=>{try{return localStorage.getItem(k)}catch{return null}};const tset=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
+const vis=e=>e&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden';
+const tfind=sel=>{for(const q of sel.split(',')){const e=[...document.querySelectorAll(q.trim())].find(vis);if(e)return e}return null};
+let TR=null;
+function tourAuto(k){$('.thelp')?.remove();if(!TOURS[k])return;const a=$('#pgActs');if(a)a.insertAdjacentHTML('afterbegin',`<button class="b s thelp" onclick="tour('${k}',1)" title="הדרכה לעמוד הזה">❔ הדרכה</button>`);if(tget('gx_tour_off')||tget(TK(k)))return;setTimeout(()=>tour(k),450)}
+function tour(k,force){tourEnd();const steps=TOURS[k].filter(x=>!x.s||tfind(x.s));if(!steps.length)return;TR={k,steps,i:0};
+  document.body.insertAdjacentHTML('beforeend','<div class="tr-ov" id="trOv"></div><div class="tr-hole" id="trHole"></div><div class="tr-pop" id="trPop" role="dialog" aria-live="polite"></div>');
+  $('#trOv').onclick=()=>tourGo(1);addEventListener('resize',tourPos);addEventListener('keydown',tourKey);tourShow()}
+function tourKey(e){if(!TR)return;if(e.key==='Escape')tourSkip();else if(e.key==='Enter'||e.key==='ArrowLeft')tourGo(1);else if(e.key==='ArrowRight')tourGo(-1)}
+function tourShow(){const {steps,i,k}=TR,st=steps[i],last=i===steps.length-1,P=$('#trPop');const nx=FLOW[FLOW.indexOf(k)+1];
+  P.classList.toggle('ctr',!st.s);
+  P.innerHTML=`${st.em?`<div class="em">${st.em}</div>`:''}<div class="trh"${st.s?'':' style="justify-content:center"'}><span>${i+1} / ${steps.length}</span>${st.s?'<button onclick="tourSkip()">דילוג</button>':''}</div><h4>${st.t}</h4><p>${st.d}</p><div class="trd">${steps.map((_,j)=>`<i class="${j<=i?'on':''}"></i>`).join('')}</div>
+  <div class="bt">${st.first?`<button class="b" onclick="tourOff()">בלי הדרכה</button><button class="b p" onclick="tourGo(1)">בואו נתחיל ←</button>`:`${i?'<button class="b" onclick="tourGo(-1)">הקודם</button>':''}${last?(nx&&C?`<button class="b" onclick="tourDone()">סיום</button><button class="b p" onclick="tourDone();location.hash='#/c/${C.id}/${nx}'">הבא: ${FNAME[nx]} ←</button>`:'<button class="b p" onclick="tourDone()">הבנתי ✓</button>'):'<button class="b p" onclick="tourGo(1)">הבא ←</button>'}`}</div>`;
+  const el=st.s&&tfind(st.s);if(el)el.scrollIntoView({block:innerWidth<=700?'start':'center',behavior:'smooth'});setTimeout(tourPos,el?320:0);P.querySelector('.bt .p')?.focus({preventScroll:true})}
+function tourPos(){if(!TR)return;const st=TR.steps[TR.i],H=$('#trHole'),P=$('#trPop');const el0=st.s&&tfind(st.s);const el=el0&&(el0.closest('label')&&el0.closest('label').offsetHeight<260?el0.closest('label'):el0.closest('.up')||el0);
+  if(!el){H.classList.add('c');P.style.left='';P.style.top='';return}H.classList.remove('c');const r=el.getBoundingClientRect(),pd=8;
+  Object.assign(H.style,{left:r.left-pd+'px',top:r.top-pd+'px',width:r.width+pd*2+'px',height:Math.min(r.height+pd*2,innerHeight-20)+'px'});
+  if(innerWidth<=700)return;const pw=P.offsetWidth,ph=P.offsetHeight;let top=r.bottom+16;if(top+ph>innerHeight-10)top=Math.max(10,r.top-ph-16);let left=r.left+r.width/2-pw/2;left=Math.max(12,Math.min(innerWidth-pw-12,left));P.style.left=left+'px';P.style.top=top+'px'}
+function tourGo(d){if(!TR)return;const n=TR.i+d;if(n<0)return;if(n>=TR.steps.length)return tourDone();TR.i=n;tourShow()}
+function tourEnd(){['trOv','trHole','trPop'].forEach(id=>document.getElementById(id)?.remove());removeEventListener('resize',tourPos);removeEventListener('keydown',tourKey);TR=null}
+function tourDone(){if(TR)tset(TK(TR.k),'1');tourEnd()}
+function tourSkip(){tourDone();toast('אפשר לחזור להדרכה בכל רגע: ❔ הדרכה')}
+function tourOff(){tset('gx_tour_off','1');tourDone();toast('בלי הדרכות. אפשר להפעיל דרך ❔ הדרכה')}
+// after saving a builder step – gentle nudge to the next tab
+function nextNudge(){if(!C)return;const cur=(location.hash.split('/')[3]||'').split('?')[0];const nx=FLOW[FLOW.indexOf(cur)+1];if(!nx||tget('gx_nudge_off'))return;$('#trNx')?.remove();
+  document.body.insertAdjacentHTML('beforeend',`<div class="tr-nx" id="trNx"><span>✓ נשמר</span><a href="#/c/${C.id}/${nx}" onclick="$('#trNx').remove()">הבא: ${FNAME[nx]} ←</a><button aria-label="סגירה" onclick="this.parentElement.remove()">×</button></div>`);requestAnimationFrame(()=>$('#trNx')?.classList.add('on'));setTimeout(()=>$('#trNx')?.classList.remove('on'),9000)}
+addEventListener('hashchange',()=>{$('#trNx')?.remove();tourEnd()});
 const setTop=(t,sub='',acts='')=>{$('#pgTitle').innerHTML=esc(t)+(sub?`<small>${sub}</small>`:'');$('#pgActs').innerHTML=acts};
 const pages={};
 
@@ -561,7 +646,7 @@ async function saveCamp(){const b={};$$('[data-f]').forEach(i=>b[i.dataset.f]=i.
   if(Object.keys(settings).length)b.settings=settings;
   if($('#levels'))b.levels=$$('#levels .lvl:not(.head)').map(r=>({name:r.querySelector('[data-l=name]').value,amount:r.querySelector('[data-l=amount]').value,descr:r.querySelector('[data-l=descr]').value,stock:r.querySelector('[data-l=stock]').value,icon:'',monthly:r.querySelector('[data-l=monthly]').checked,months:r.querySelector('[data-l=months]').value})).filter(l=>l.name&&+l.amount>0);
   if($('#matchers'))b.matchers=$$('#matchers .mtr').map(r=>({name:r.querySelector('[data-m=name]').value,logo:r.querySelector('[data-m=logo]').value})).filter(m=>m.name);
-  C=await api('/campaigns/'+C.id,{method:'PUT',body:b});toast('נשמר ✓');$('#campName').textContent=C.title;const pv=$('#pv');if(pv)pv.src=`/c/${C.slug}?lang=${C.lang}&t=${Date.now()}`}
+  C=await api('/campaigns/'+C.id,{method:'PUT',body:b});toast('נשמר ✓');$('#campName').textContent=C.title;const pv=$('#pv');if(pv)pv.src=`/c/${C.slug}?lang=${C.lang}&t=${Date.now()}`;nextNudge()}
 async function loadUpdates(){const u=await api(`/campaigns/${C.id}/updates`);const el=$('#updList');if(!el)return;$('#updN').textContent=u.length?`(${u.length})`:'';el.innerHTML=u.map(x=>`<div style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px 12px"><div style="flex:1;min-width:0"><b>${esc(x.title)}</b><div class="small muted" style="white-space:pre-wrap">${esc(x.body).slice(0,200)}</div><div class="small muted">${dt(x.created)}</div></div><button class="b s r" onclick="delUpdate(${x.id})">✕</button></div>`).join('')||'<div class="small muted">עדיין לא פורסמו עדכונים. עדכונים מופיעים בדף הקמפיין ומחזיקים את התורמים מעורבים.</div>'}
 function addUpdate(){modal(`<h3>📣 עדכון חדש לתורמים</h3><div class="grid"><label>כותרת<input id="uTitle" placeholder="למשל: עברנו 50%! תודה לכולם"></label><label>תוכן<textarea id="uBody" rows="5" placeholder="מה קרה, מה עשינו עם הכסף, מה הלאה…"></textarea></label><label>תמונה (לא חובה)<div class="up"><input type="file" accept="image/*" id="uImgF">לחצו להעלאת תמונה</div><input type="hidden" id="uImg"></label><div class="row"><button class="b" onclick="aiFillU()">✦ נסח לי</button><button class="b p" id="uGo">פרסום</button><button class="b" onclick="closeModal()">ביטול</button></div></div>`);
   $('#uImgF').onchange=async e=>{const fd=new FormData();fd.append('file',e.target.files[0]);const r=await api('/upload',{method:'POST',body:fd});$('#uImg').value=r.url;toast('הועלה')};
