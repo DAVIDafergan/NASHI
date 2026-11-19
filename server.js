@@ -21,20 +21,43 @@ const contract = require('./lib/contract');
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+// cross-site write protection: a logged-in browser may only change things from our own pages
+app.use((req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method) || !req.path.startsWith('/api/') || !req.cookies.sid) return next();
+  const o = req.get('origin'); if (!o) return next();
+  try { const h = new URL(o).host; if (h === req.get('host') || h === req.get('x-forwarded-host') || (process.env.BASE_URL && h === new URL(process.env.BASE_URL).host) || h.replace(/^www\./, '') === String(req.get('host')).replace(/^www\./, '')) return next(); } catch { }
+  logEvent('security.origin', { level: 'warn', ip: req.ip, msg: req.method + ' ' + req.path + ' ← ' + String(o).slice(0, 80) }); return bad(res, 'origin', 403);
+});
 
 // ---------- helpers ----------
 const SECRET = process.env.SECRET || (() => { const f = path.join(DATA_DIR, 'secret.txt'); try { return fs.readFileSync(f, 'utf8'); } catch { const s = crypto.randomBytes(32).toString('hex'); fs.writeFileSync(f, s); return s; } })();
 const hmac = v => crypto.createHmac('sha256', SECRET).update(v).digest('base64url');
 const sign = o => { const p = Buffer.from(JSON.stringify(o)).toString('base64url'); return p + '.' + hmac(p); };
-const verify = t => { if (!t) return null; const [p, s] = t.split('.'); if (!p || hmac(p) !== s) return null; try { const o = JSON.parse(Buffer.from(p, 'base64url')); return o.exp > Date.now() ? o : null; } catch { return null; } };
+const verify = t => { if (!t || typeof t !== 'string') return null; const [p, s] = t.split('.'); if (!p || !s) return null; const h = hmac(p); if (h.length !== s.length || !crypto.timingSafeEqual(Buffer.from(h), Buffer.from(s))) return null; try { const o = JSON.parse(Buffer.from(p, 'base64url')); return o.exp > Date.now() ? o : null; } catch { return null; } };
 const hashPw = pw => { const salt = crypto.randomBytes(16).toString('hex'); return salt + ':' + crypto.scryptSync(pw, salt, 32).toString('hex'); };
-const checkPw = (pw, h) => { const [salt, k] = (h || '').split(':'); if (!salt) return false; return crypto.timingSafeEqual(Buffer.from(k, 'hex'), crypto.scryptSync(pw, salt, 32)); };
+const checkPw = (pw, h) => { const [salt, k] = (h || '').split(':'); if (!salt || !k || k.length !== 64) return false; try { return crypto.timingSafeEqual(Buffer.from(k, 'hex'), crypto.scryptSync(pw, salt, 32)); } catch { return false; } };
 const J = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
 const slugify = s => { const t = String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40); return t.length >= 2 ? t : 'p-' + crypto.randomBytes(2).toString('hex'); };
 const base = req => process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 const bad = (res, m, c = 400) => res.status(c).json({ error: m });
 
-const user = req => { const s = verify(req.cookies.sid); if (!s) return null; return db.prepare('SELECT id,email,name,phone,org,role,org_verified FROM users WHERE id=?').get(s.uid) || null; };
+// ---------- activity log (everything that moves on the site) ----------
+db.exec("CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT DEFAULT (datetime('now')), type TEXT, level TEXT DEFAULT 'info', user_id INTEGER, campaign_id INTEGER, ip TEXT DEFAULT '', msg TEXT DEFAULT '', meta TEXT DEFAULT '{}')");
+db.exec("CREATE INDEX IF NOT EXISTS ev_type ON events(type, id)"); db.exec("CREATE INDEX IF NOT EXISTS ev_at ON events(at)");
+for (const col of ["blocked INTEGER DEFAULT 0", "block_note TEXT DEFAULT ''", "tv INTEGER DEFAULT 0", "last_seen TEXT DEFAULT ''", "last_ip TEXT DEFAULT ''", "logins INTEGER DEFAULT 0"]) { try { db.exec('ALTER TABLE users ADD COLUMN ' + col); } catch { } }
+const EVT = db.prepare('INSERT INTO events(type,level,user_id,campaign_id,ip,msg,meta) VALUES(?,?,?,?,?,?,?)');
+function logEvent(type, o = {}) { try { EVT.run(type, o.level || 'info', o.uid || null, o.cid || null, String(o.ip || '').slice(0, 64), String(o.msg || '').slice(0, 300), JSON.stringify(o.meta || {}).slice(0, 2000)); } catch { } }
+const ev = (req, type, o = {}) => logEvent(type, { uid: req.user?.imp ? req.user.imp : req.user?.id, ip: req.ip, ...o, meta: { ...(o.meta || {}), ...(req.user?.imp ? { as: req.user.id } : {}) } });
+setInterval(() => { try { db.prepare("DELETE FROM events WHERE at < datetime('now','-120 day')").run(); } catch { } }, 6 * 3600e3).unref();
+const setSid = (res, uid, extra = {}) => { const tv = (db.prepare('SELECT tv FROM users WHERE id=?').get(uid) || {}).tv || 0; res.cookie('sid', sign({ uid, tv, exp: Date.now() + 90 * 864e5, ...extra }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); };
+const seen = new Map();
+const user = req => {
+  const s = verify(req.cookies.sid); if (!s) return null;
+  const u = db.prepare('SELECT id,email,name,phone,org,role,org_verified,blocked,tv FROM users WHERE id=?').get(s.uid);
+  if (!u || u.blocked || (u.tv || 0) !== (s.tv || 0)) return null; // blocked users and sessions from before a password change are out
+  const now = Date.now(); if (!(seen.get(u.id) > now - 60000)) { seen.set(u.id, now); try { db.prepare("UPDATE users SET last_seen=datetime('now'), last_ip=? WHERE id=?").run(String(req.ip || '').slice(0, 64), u.id); } catch { } }
+  delete u.blocked; delete u.tv; if (s.imp) u.imp = s.imp; return u;
+};
 const auth = (req, res, next) => { req.user = user(req); if (!req.user) return bad(res, 'auth', 401); next(); };
 const own = (req, res, next) => {
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id);
@@ -43,7 +66,7 @@ const own = (req, res, next) => {
 };
 
 // SSE hub per campaign
-const subs = new Map();
+const subs = new Map(); const sseIp = new Map();
 const emit = (cid, ev, data) => { for (const r of subs.get(cid) || []) { try { r.write(`event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`); } catch { } } };
 
 function stats(c, test) {
@@ -61,6 +84,7 @@ function markPaid(id, { ref = '', meta = {}, amount } = {}) {
   const nd = db.prepare('SELECT * FROM donations WHERE id=?').get(id);
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id);
   emit(c.id, 'donation', { donation: publicDonation(nd), stats: stats(c, nd.test), teams: teamStats(c, nd.test) });
+  logEvent(nd.test ? 'donation.test' : 'donation.paid', { cid: c.id, msg: `${nd.anonymous ? 'אנונימי' : nd.name} · ₪${nd.amount}${nd.monthly ? ' (הו״ק)' : ''} · ${c.title}`, meta: { did: nd.id, provider: nd.provider } });
   thankMail(c, nd).catch(() => { });
   return nd;
 }
@@ -85,8 +109,8 @@ function payMethods(c) {
 
 try { db.prepare('UPDATE campaigns SET multiplier=1 WHERE multiplier!=1').run(); } catch { }
 const hits = new Map();
-const limit = (n, win) => (req, res, next) => { const k = req.ip + req.path; const now = Date.now(); const a = (hits.get(k) || []).filter(t => now - t < win); a.push(now); hits.set(k, a); if (a.length > n) return bad(res, 'יותר מדי ניסיונות, נסו שוב בעוד דקה', 429); next(); };
-setInterval(() => { const now = Date.now(); for (const [k, a] of hits) if (!a.some(t => now - t < 60000)) hits.delete(k); }, 60000).unref();
+const limit = (n, win) => (req, res, next) => { const k = req.ip + req.path; const now = Date.now(); const a = (hits.get(k)?.a || []).filter(t => now - t < win); a.push(now); hits.set(k, { a, win }); if (a.length > n) { if (a.length === n + 1) logEvent('security.ratelimit', { level: 'warn', ip: req.ip, msg: req.method + ' ' + req.path }); return bad(res, 'יותר מדי ניסיונות, נסו שוב בעוד דקה', 429); } next(); };
+setInterval(() => { const now = Date.now(); for (const [k, h] of hits) if (!h.a.some(t => now - t < h.win)) hits.delete(k); }, 60000).unref();
 // ---------- auth ----------
 app.post('/api/register', limit(5, 600000), (req, res) => {
   const { email, password, name, phone, org } = req.body || {};
@@ -101,9 +125,9 @@ app.post('/api/register', limit(5, 600000), (req, res) => {
   if (!b.consent) return bad(res, 'יש לאשר את התקנון ומדיניות הפרטיות');
   const S = (v, n) => String(v || '').trim().slice(0, n);
   const r = db.prepare('INSERT INTO users(email,pass,name,phone,org,role,role_title,address,city,website,s46,consent_at,marketing,org_number) VALUES(?,?,?,?,?,?,?,?,?,?,?,datetime(\'now\'),?,?)').run(email.toLowerCase(), hashPw(password), S(name, 60), S(phone, 20), S(org, 80), role, S(b.role_title, 40), S(b.address, 120), S(b.city, 60), S(b.website, 160), S(b.s46, 10), b.marketing ? 1 : 0, S(b.org_number, 12).replace(/\D/g, ''));
-  const uid = r.lastInsertRowid;
+  const uid = r.lastInsertRowid; logEvent('user.signup', { uid, ip: req.ip, msg: `${email.toLowerCase()} · ${S(org, 80) || ''}`, meta: { org_number: S(b.org_number, 12) } });
   sendVerify(uid).catch(() => { });
-  res.cookie('sid', sign({ uid, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT });
+  setSid(res, uid);
   res.json({ ok: true });
   // verify the NGO number in the background so the account is ready when they land in the dashboard
   if (b.org_number) lookupOrg(b.org_number).then(o => {
@@ -119,16 +143,16 @@ async function sendVerify(uid) {
   const r = await mail.send({ to: u.email, subject: 'אימות האימייל שלך ב-GiveIL', html: mail.layout('ברוכים הבאים ל-GiveIL', `<p>שלום ${mail.esc(u.name || '')}, לחצו כדי לאמת את כתובת האימייל ולהפעיל את החשבון:</p><p><a href="${url}" style="background:#1c1917;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block;font-weight:600">אימות האימייל</a></p><p style="color:#6b6762;font-size:13px">אם לא נרשמתם – התעלמו מהמייל.</p>`) });
   return r.ok;
 }
-app.get('/verify-email', (req, res) => { const t = String(req.query.t || ''); const u = t && db.prepare('SELECT id FROM users WHERE verify_token=?').get(t); if (!u) return res.redirect('/app#/?verified=0'); db.prepare("UPDATE users SET email_verified=1, verify_token='' WHERE id=?").run(u.id); res.cookie('sid', sign({ uid: u.id, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); res.redirect('/app#/?verified=1'); });
+app.get('/verify-email', (req, res) => { const t = String(req.query.t || ''); const u = t && db.prepare('SELECT id FROM users WHERE verify_token=?').get(t); if (!u) return res.redirect('/app#/?verified=0'); db.prepare("UPDATE users SET email_verified=1, verify_token='' WHERE id=?").run(u.id); setSid(res, u.id); res.redirect('/app#/?verified=1'); });
 app.post('/api/me/resend-verify', auth, limit(3, 600000), async (req, res) => { res.json({ ok: await sendVerify(req.user.id), mail: mail.enabled() }); });
 // ---- service agreement (signed before the first campaign) ----
 const PRICING_DEF = { campaign: 790, monthly: 440, vat: 'incl', payCampaignUrl: '', payMonthlyUrl: '' };
 const pricing = () => ({ ...PRICING_DEF, ...getKV('pricing') });
 app.get('/api/pricing', (_, res) => { const p = pricing(); res.json({ campaign: p.campaign, monthly: p.monthly, vat: p.vat }); });
 const privDir = path.join(DATA_DIR, 'private');
-const privUpload = multer({ storage: multer.diskStorage({ destination: privDir, filename: (req, f, cb) => cb(null, req.user.id + '-' + Date.now() + '-' + crypto.randomBytes(6).toString('hex') + (path.extname(f.originalname).toLowerCase().replace(/[^.a-z0-9]/g, '') || '.jpg')) }), limits: { fileSize: 15e6 }, fileFilter: (_, f, cb) => cb(null, /image\/(jpeg|png|webp|heic|heif)|application\/pdf/.test(f.mimetype)) });
+const privUpload = multer({ storage: multer.diskStorage({ destination: privDir, filename: (req, f, cb) => cb(null, req.user.id + '-' + Date.now() + '-' + crypto.randomBytes(6).toString('hex') + ({ 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/heic': '.heic', 'image/heif': '.heif', 'application/pdf': '.pdf' }[f.mimetype] || '.bin')) }), limits: { fileSize: 15e6 }, fileFilter: (_, f, cb) => cb(null, /image\/(jpeg|png|webp|heic|heif)|application\/pdf/.test(f.mimetype)) });
 app.post('/api/doc', auth, privUpload.single('file'), (req, res) => req.file ? res.json({ name: req.file.filename }) : bad(res, 'קובץ לא נתמך – אפשר תמונה (JPG/PNG) או PDF עד 15MB'));
-app.get('/api/doc/:name', auth, (req, res) => { const n = path.basename(req.params.name); if (req.user.role !== 'admin' && !n.startsWith(req.user.id + '-')) return res.status(404).end(); const f = path.join(privDir, n); if (!fs.existsSync(f)) return res.status(404).end(); res.setHeader('Cache-Control', 'private, no-store'); res.sendFile(f); });
+app.get('/api/doc/:name', auth, (req, res) => { const n = path.basename(req.params.name); if (req.user.role !== 'admin' && !n.startsWith(req.user.id + '-')) return res.status(404).end(); const f = path.join(privDir, n); if (!fs.existsSync(f)) return res.status(404).end(); res.setHeader('Cache-Control', 'private, no-store'); res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'; object-src 'self'; plugin-types application/pdf; sandbox allow-same-origin"); if (!/\.(jpe?g|png|webp|heic|heif|pdf)$/i.test(n)) res.setHeader('Content-Disposition', 'attachment'); res.sendFile(f); });
 const ownDoc = (uid, n) => typeof n === 'string' && /^[\w.-]+$/.test(n) && n.startsWith(uid + '-') && fs.existsSync(path.join(privDir, n));
 app.get('/api/contract/preview', auth, (req, res) => { const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id); const q = req.query; res.type('html').send(contract.render({ date: new Date().toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }), org: u.org_name || u.org, orgNumber: u.org_number, name: String(q.name || u.name || '').slice(0, 80), idNumber: String(q.idNumber || '').replace(/\D/g, '').slice(0, 9) || '________', roleTitle: String(q.role || u.role_title || '').slice(0, 60), email: u.email, phone: u.phone, pricing: pricing(), printBar: q.print === '1' })); });
 app.post('/api/contract', auth, limit(8, 600000), async (req, res) => {
@@ -146,6 +170,7 @@ app.post('/api/contract', auth, limit(8, 600000), async (req, res) => {
   const p = { date: new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }), org: u.org_name || u.org, orgNumber: u.org_number, name, idNumber: idn, roleTitle: role, email: u.email, phone: u.phone, signature: method === 'digital' ? sig : '', manual: method === 'manual', ip: req.ip, ua: req.headers['user-agent'] || '', pricing: pricing() };
   const r = db.prepare("INSERT INTO contracts(user_id,version,name,id_number,role_title,org,org_number,email,phone,signature,ip,ua,html,method,file,docs,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'pending')").run(u.id, contract.VERSION, name, idn, role, p.org, u.org_number, u.email, u.phone, p.signature, p.ip, p.ua, '', method, file, JSON.stringify(docs));
   p.id = r.lastInsertRowid; const html = contract.render(p); db.prepare('UPDATE contracts SET html=? WHERE id=?').run(html, p.id);
+  ev(req, 'contract.sign', { msg: `${String(b.name || '').slice(0, 60)} · ${u.org_name || u.org || ''}` });
   res.json({ ok: true, id: p.id });
   if (mail.enabled()) {
     const admin = process.env.ADMIN_EMAIL || contract.OPERATOR.email; const B = process.env.BASE_URL || ''; const link = `${B}/contract/${p.id}`;
@@ -159,7 +184,7 @@ app.post('/api/admin/contracts/:id/review', auth, (req, res, next) => req.user.r
   const st = req.body?.status; if (!['approved', 'rejected', 'pending'].includes(st)) return bad(res, 'status');
   const c = db.prepare('SELECT * FROM contracts WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404);
   const note = String(req.body?.note || '').slice(0, 500);
-  db.prepare("UPDATE contracts SET status=?, review_note=?, reviewed_at=datetime('now') WHERE id=?").run(st, note, c.id);
+  db.prepare("UPDATE contracts SET status=?, review_note=?, reviewed_at=datetime('now') WHERE id=?").run(st, note, c.id); ev(req, 'admin.contract', { msg: `${c.org || ''} · ${st}`, meta: { target: c.user_id } });
   if (mail.enabled() && st !== 'pending') mail.send({ to: c.email, subject: st === 'approved' ? 'ההסכם אושר – אפשר לעלות לאוויר' : 'נדרש תיקון בהסכם – GiveIL', html: mail.layout(st === 'approved' ? 'ההסכם אושר ✓' : 'נדרש תיקון', st === 'approved' ? `<p>שלום ${mail.esc(c.name)}, האימות הושלם וההסכם של ${mail.esc(c.org)} אושר. אפשר להעלות קמפיינים לאוויר.</p>` : `<p>שלום ${mail.esc(c.name)}, לא הצלחנו לאשר את ההסכם${note ? ': ' + mail.esc(note) : ''}. נא להיכנס לחשבון ולשלוח שוב.</p>`) }).catch(() => { });
   res.json({ ok: true });
 });
@@ -178,6 +203,7 @@ app.post('/api/billing/claim', auth, limit(10, 600000), async (req, res) => {
   if (db.prepare("SELECT 1 FROM payments WHERE user_id=? AND kind=? AND IFNULL(campaign_id,0)=IFNULL(?,0) AND status='pending'").get(req.user.id, kind, cid)) return res.json({ ok: true, dup: true });
   const amount = kind === 'monthly' ? p.monthly : p.campaign; const ref = String(req.body?.ref || '').slice(0, 120);
   db.prepare('INSERT INTO payments(user_id,campaign_id,kind,amount,ref) VALUES(?,?,?,?,?)').run(req.user.id, cid, kind, amount, ref);
+  ev(req, 'billing.claim', { cid, msg: `${req.user.org || req.user.email} · ${kind === 'monthly' ? 'מנוי' : 'קמפיין'} ₪${amount}` });
   res.json({ ok: true });
   if (mail.enabled()) mail.send({ to: process.env.ADMIN_EMAIL || contract.OPERATOR.email, subject: `תשלום לאישור – ${req.user.org || req.user.email}`, html: mail.layout('דיווח על תשלום', `<p>${mail.esc(req.user.org || '')} (${mail.esc(req.user.email)}) דיווח/ה על תשלום ${kind === 'monthly' ? 'מנוי שנתי – חודש' : 'קמפיין'}: ₪${amount}${ref ? ' · אסמכתא: ' + mail.esc(ref) : ''}.</p><p>בדקו שהכסף התקבל ואשרו בניהול-על ← תשלומים.</p>`) }).catch(() => { });
 });
@@ -187,13 +213,13 @@ app.get('/api/admin/payments', auth, admOnly, (_, res) => res.json(db.prepare("S
 app.post('/api/admin/payments/:id', auth, admOnly, (req, res) => {
   const pay = db.prepare('SELECT * FROM payments WHERE id=?').get(req.params.id); if (!pay) return bad(res, 'not found', 404);
   const st = req.body?.status === 'rejected' ? 'rejected' : 'approved';
-  db.prepare("UPDATE payments SET status=?, note=?, approved_at=datetime('now') WHERE id=?").run(st, String(req.body?.note || '').slice(0, 300), pay.id);
+  db.prepare("UPDATE payments SET status=?, note=?, approved_at=datetime('now') WHERE id=?").run(st, String(req.body?.note || '').slice(0, 300), pay.id); ev(req, 'admin.payment', { cid: pay.campaign_id, msg: `#${pay.id} ${st === 'approved' ? 'אושר' : 'נדחה'} · ₪${pay.amount}`, meta: { target: pay.user_id } });
   if (st === 'approved') { if (pay.kind === 'campaign' && pay.campaign_id) db.prepare('UPDATE campaigns SET paid=1 WHERE id=?').run(pay.campaign_id); else { const u = db.prepare('SELECT plan_until FROM users WHERE id=?').get(pay.user_id); db.prepare("UPDATE users SET plan='annual', plan_until=? WHERE id=?").run(addMonth(u.plan_until), pay.user_id); } }
   if (st === 'approved' && mail.enabled()) { const u = db.prepare('SELECT email,name FROM users WHERE id=?').get(pay.user_id); const B = process.env.BASE_URL || ''; if (u) mail.send({ to: u.email, subject: 'התשלום אושר – אפשר לעלות לאוויר 🚀', html: mail.layout('התשלום אושר ✓', `<p>שלום ${mail.esc(u.name || '')}, התשלום התקבל ואושר. אפשר להעלות את הקמפיין לאוויר: <a href="${B}/app${pay.campaign_id ? '#/c/' + pay.campaign_id + '/overview' : ''}">כניסה לחשבון</a>.</p>`) }).catch(() => { }); }
   res.json({ ok: true });
 });
 app.get('/api/admin/providers', auth, admOnly, (_, res) => { const rows = db.prepare("SELECT c.id,c.title,c.slug,c.status,c.provider,c.settings,u.email,u.org_name,u.org,u.org_number,u.phone FROM campaigns c LEFT JOIN users u ON u.id=c.user_id WHERE c.settings LIKE '%providerReview%' ORDER BY c.id DESC LIMIT 100").all(); res.json(rows.map(r => { const st = J(r.settings), cfg = J(r.provider); return { id: r.id, title: r.title, slug: r.slug, status: r.status, email: r.email, org: r.org_name || r.org, orgNumber: r.org_number, phone: r.phone, provider: provSummary(cfg), review: st.providerReview, approved: st.providerOk === provFp(cfg) }; })); });
-app.post('/api/admin/campaigns/:id/provider', auth, admOnly, (req, res) => { const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404); const st = J(c.settings), cfg = J(c.provider); const ok = req.body?.status !== 'rejected'; st.providerOk = ok ? provFp(cfg) : ''; st.providerReview = { ...(st.providerReview || {}), fp: provFp(cfg), status: ok ? 'approved' : 'rejected', note: String(req.body?.note || '').slice(0, 300), by: new Date().toISOString() }; db.prepare('UPDATE campaigns SET settings=? WHERE id=?').run(JSON.stringify(st), c.id); const u = db.prepare('SELECT email,name FROM users WHERE id=?').get(c.user_id); if (mail.enabled() && u) mail.send({ to: u.email, subject: ok ? 'פרטי הסליקה אושרו – אפשר לעלות לאוויר' : 'פרטי הסליקה לא אושרו', html: mail.layout(ok ? 'הסליקה אושרה ✓' : 'נדרש תיקון בסליקה', ok ? `<p>שלום ${mail.esc(u.name || '')}, חשבון הסליקה של "${mail.esc(c.title)}" אומת. אפשר להעלות את הקמפיין לאוויר.</p>` : `<p>שלום ${mail.esc(u.name || '')}, לא הצלחנו לאמת שחשבון הסליקה שייך לעמותה${st.providerReview.note ? ': ' + mail.esc(st.providerReview.note) : ''}. נא לבדוק את הפרטים או לפנות אלינו.</p>`) }).catch(() => { }); res.json({ ok: true }); });
+app.post('/api/admin/campaigns/:id/provider', auth, admOnly, (req, res) => { const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404); const st = J(c.settings), cfg = J(c.provider); const ok = req.body?.status !== 'rejected'; st.providerOk = ok ? provFp(cfg) : ''; st.providerReview = { ...(st.providerReview || {}), fp: provFp(cfg), status: ok ? 'approved' : 'rejected', note: String(req.body?.note || '').slice(0, 300), by: new Date().toISOString() }; db.prepare('UPDATE campaigns SET settings=? WHERE id=?').run(JSON.stringify(st), c.id); const u = db.prepare('SELECT email,name FROM users WHERE id=?').get(c.user_id); if (mail.enabled() && u) mail.send({ to: u.email, subject: ok ? 'פרטי הסליקה אושרו – אפשר לעלות לאוויר' : 'פרטי הסליקה לא אושרו', html: mail.layout(ok ? 'הסליקה אושרה ✓' : 'נדרש תיקון בסליקה', ok ? `<p>שלום ${mail.esc(u.name || '')}, חשבון הסליקה של "${mail.esc(c.title)}" אומת. אפשר להעלות את הקמפיין לאוויר.</p>` : `<p>שלום ${mail.esc(u.name || '')}, לא הצלחנו לאמת שחשבון הסליקה שייך לעמותה${st.providerReview.note ? ': ' + mail.esc(st.providerReview.note) : ''}. נא לבדוק את הפרטים או לפנות אלינו.</p>`) }).catch(() => { }); ev(req, 'admin.provider', { cid: c.id, msg: `${c.title}: ${ok ? 'אושר' : 'נדחה'}` }); res.json({ ok: true }); });
 app.post('/api/admin/campaigns/:id/paid', auth, admOnly, (req, res) => { db.prepare('UPDATE campaigns SET paid=? WHERE id=?').run(req.body?.paid ? 1 : 0, req.params.id); res.json({ ok: true }); });
 app.post('/api/admin/users/:id/plan', auth, admOnly, (req, res) => { const until = String(req.body?.until || '').slice(0, 10); if (until && !/^\d{4}-\d{2}-\d{2}$/.test(until)) return bad(res, 'תאריך לא תקין'); db.prepare('UPDATE users SET plan=?, plan_until=? WHERE id=?').run(until ? 'annual' : '', until, req.params.id); res.json({ ok: true }); });
 app.get('/api/admin/pricing', auth, admOnly, (_, res) => res.json(pricing()));
@@ -202,9 +228,15 @@ app.get('/contract/:id', auth, (req, res) => { const c = db.prepare('SELECT * FR
 // public lookup used by the signup form (no save)
 app.get('/api/org-lookup', limit(20, 60000), async (req, res) => { try { const o = await lookupOrg(req.query.number); if (!o) return res.json({ found: false }); const active = /פעיל|רשומ/.test(o.status) && !/מחוק|פירוק|בוטל/.test(o.status); res.json({ found: true, active, name: o.name, status: o.status, city: o.city, field: o.field }); } catch (e) { bad(res, e.message); } });
 app.post('/api/login', limit(10, 60000), (req, res) => {
-  const u = db.prepare('SELECT * FROM users WHERE email=?').get(String(req.body?.email || '').toLowerCase());
-  if (!u || !checkPw(String(req.body?.password || ''), u.pass)) return bad(res, 'אימייל או סיסמה שגויים', 401);
-  res.cookie('sid', sign({ uid: u.id, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT });
+  const email = String(req.body?.email || '').toLowerCase().trim().slice(0, 160); const fk = 'fail:' + email; const now = Date.now();
+  const fails = (hits.get(fk)?.a || []).filter(t => now - t < 900000);
+  if (fails.length >= 8) { if (fails.length === 8) { logEvent('auth.locked', { level: 'warn', ip: req.ip, msg: email }); fails.push(now); hits.set(fk, { a: fails, win: 900000 }); } return bad(res, 'יותר מדי ניסיונות כושלים לחשבון הזה. נסו שוב בעוד רבע שעה, או אפסו סיסמה.', 429); }
+  const u = db.prepare('SELECT * FROM users WHERE email=?').get(email);
+  if (!u || !checkPw(String(req.body?.password || ''), u.pass)) { fails.push(now); hits.set(fk, { a: fails, win: 900000 }); logEvent('auth.fail', { level: 'warn', uid: u?.id, ip: req.ip, msg: email + (u ? '' : ' (לא קיים)') }); return bad(res, 'אימייל או סיסמה שגויים', 401); }
+  if (u.blocked) { logEvent('auth.blocked', { level: 'warn', uid: u.id, ip: req.ip, msg: email }); return bad(res, 'החשבון מושעה. לפרטים פנו לתמיכה.', 403); }
+  hits.delete(fk); db.prepare('UPDATE users SET logins=COALESCE(logins,0)+1 WHERE id=?').run(u.id);
+  logEvent('auth.login', { uid: u.id, ip: req.ip, msg: email, meta: { ua: String(req.get('user-agent') || '').slice(0, 160) } });
+  setSid(res, u.id);
   res.json({ ok: true });
 });
 // ---------- NGO verification (רשם העמותות via data.gov.il) ----------
@@ -234,7 +266,7 @@ app.post('/api/logout', (_, res) => { res.clearCookie('sid'); res.json({ ok: tru
 app.post('/api/forgot', limit(5, 600000), async (req, res) => {
   const u = db.prepare('SELECT id,email,name FROM users WHERE email=?').get(String(req.body?.email || '').toLowerCase());
   if (u && mail.enabled()) {
-    const token = crypto.randomBytes(24).toString('hex'); db.prepare('INSERT INTO resets(token,user_id,exp) VALUES(?,?,?)').run(token, u.id, Date.now() + 3600e3);
+    const token = crypto.randomBytes(24).toString('hex'); db.prepare('INSERT INTO resets(token,user_id,exp) VALUES(?,?,?)').run(token, u.id, Date.now() + 3600e3); logEvent('auth.forgot', { uid: u.id, ip: req.ip, msg: u.email });
     const url = `${base(req)}/app#reset=${token}`;
     await mail.send({ to: u.email, subject: 'איפוס סיסמה ל-GiveIL', html: mail.layout('איפוס סיסמה', `<p>שלום ${mail.esc(u.name || '')}, לחצו על הקישור כדי לבחור סיסמה חדשה (תקף לשעה):</p><p><a href="${url}" style="background:#1c1917;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block;font-weight:600">בחירת סיסמה חדשה</a></p><p style="color:#6b6762;font-size:13px">אם לא ביקשתם איפוס – התעלמו מהמייל.</p>`) }).catch(() => { });
   }
@@ -243,17 +275,19 @@ app.post('/api/forgot', limit(5, 600000), async (req, res) => {
 app.post('/api/reset', limit(10, 600000), (req, res) => {
   const r = db.prepare('SELECT * FROM resets WHERE token=?').get(String(req.body?.token || '')); if (!r || r.exp < Date.now()) return bad(res, 'הקישור פג תוקף. בקשו איפוס חדש.');
   if (String(req.body?.password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים');
-  db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(req.body.password), r.user_id); db.prepare('DELETE FROM resets WHERE user_id=?').run(r.user_id);
-  res.cookie('sid', sign({ uid: r.user_id, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); res.json({ ok: true });
+  db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(req.body.password), r.user_id); db.prepare('DELETE FROM resets WHERE user_id=?').run(r.user_id); logEvent('auth.reset', { uid: r.user_id, ip: req.ip });
+  setSid(res, r.user_id); res.json({ ok: true });
 });
-app.post('/api/me/password', auth, (req, res) => { const u = db.prepare('SELECT pass FROM users WHERE id=?').get(req.user.id); if (!checkPw(String(req.body?.current || ''), u.pass)) return bad(res, 'הסיסמה הנוכחית שגויה'); if (String(req.body?.password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים'); db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(req.body.password), req.user.id); res.json({ ok: true }); });
+app.post('/api/me/password', auth, (req, res) => { const u = db.prepare('SELECT pass FROM users WHERE id=?').get(req.user.id); if (!checkPw(String(req.body?.current || ''), u.pass)) return bad(res, 'הסיסמה הנוכחית שגויה'); if (String(req.body?.password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים'); db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(req.body.password), req.user.id); setSid(res, req.user.id); ev(req, 'auth.password'); res.json({ ok: true }); });
 app.get('/api/me', (req, res) => { const u = user(req); if (!u) return res.json({ user: null }); const x = db.prepare('SELECT org_number,org_name,org_verified,org_status,email_verified,phone,role_title,org FROM users WHERE id=?').get(u.id); const ct = db.prepare('SELECT id,created,status,review_note,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(u.id); res.json({ user: { ...u, ...x, contract: ct || null, mailEnabled: mail.enabled() } }); });
-app.put('/api/me', auth, (req, res) => { const b = req.body || {}; db.prepare('UPDATE users SET name=?,phone=?,org=? WHERE id=?').run(String(b.name || '').slice(0, 60), String(b.phone || '').slice(0, 20), String(b.org || '').slice(0, 80), req.user.id); if (b.password && b.password.length >= 6) db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(b.password), req.user.id); res.json({ ok: true }); });
+app.put('/api/me', auth, (req, res) => { const b = req.body || {}; db.prepare('UPDATE users SET name=?,phone=?,org=? WHERE id=?').run(String(b.name || '').slice(0, 60), String(b.phone || '').slice(0, 20), String(b.org || '').slice(0, 80), req.user.id); if (b.password && String(b.password).length >= 6) { db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(String(b.password)), req.user.id); setSid(res, req.user.id); ev(req, 'auth.password'); } res.json({ ok: true }); });
 
 // ---------- uploads ----------
-const upload = multer({ storage: multer.diskStorage({ destination: path.join(DATA_DIR, 'uploads'), filename: (_, f, cb) => cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + path.extname(f.originalname).toLowerCase()) }), limits: { fileSize: 80e6 }, fileFilter: (_, f, cb) => cb(null, /image\/(jpeg|png|webp|gif|svg\+xml)|video\/(mp4|webm|quicktime)/.test(f.mimetype)) });
-app.post('/api/upload', auth, upload.single('file'), (req, res) => req.file ? res.json({ url: '/u/' + req.file.filename, type: req.file.mimetype }) : bad(res, 'no file'));
-app.use('/u', express.static(path.join(DATA_DIR, 'uploads'), { maxAge: '30d', immutable: true }));
+const UP_EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif', 'image/svg+xml': '.svg', 'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov' };
+const upload = multer({ storage: multer.diskStorage({ destination: path.join(DATA_DIR, 'uploads'), filename: (_, f, cb) => cb(null, Date.now() + '-' + crypto.randomBytes(6).toString('hex') + UP_EXT[f.mimetype]) }), limits: { fileSize: 80e6 }, fileFilter: (_, f, cb) => cb(null, !!UP_EXT[f.mimetype]) });
+const SANDBOX = (req, res, next) => { res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; sandbox"); res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'); next(); };
+app.post('/api/upload', auth, limit(60, 600000), upload.single('file'), (req, res) => { if (!req.file) return bad(res, 'קובץ לא נתמך – תמונה (JPG/PNG/WebP/GIF/SVG) או וידאו (MP4/WebM/MOV)'); ev(req, 'upload', { msg: req.file.mimetype + ' · ' + Math.round(req.file.size / 1024) + 'KB' }); res.json({ url: '/u/' + req.file.filename, type: req.file.mimetype }); });
+app.use('/u', SANDBOX, express.static(path.join(DATA_DIR, 'uploads'), { maxAge: '30d', immutable: true }));
 
 // ---------- campaigns (owner) ----------
 const campaignOut = c => ({ ...c, settings: J(c.settings), provider: { ...J(c.provider), _hasSecret: undefined }, lastPaid: (db.prepare("SELECT paid_at FROM donations WHERE campaign_id=? AND status='paid' AND test=0 ORDER BY paid_at DESC LIMIT 1").get(c.id) || {}).paid_at || null, levels: db.prepare('SELECT * FROM levels WHERE campaign_id=? ORDER BY pos,id').all(c.id), teams: db.prepare('SELECT * FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id), matchers: db.prepare('SELECT * FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id) });
@@ -269,20 +303,23 @@ app.post('/api/campaigns', auth, (req, res) => {
   const end = b.end_at || new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 16);
   const r = db.prepare('INSERT INTO campaigns(user_id,slug,title,subtitle,goal,multiplier,start_at,end_at,currency,settings) VALUES(?,?,?,?,?,?,?,?,?,?)').run(req.user.id, slug, title, String(b.subtitle || '').slice(0, 200), +b.goal || 100000, 1, b.start_at || new Date().toISOString().slice(0, 16), end, b.currency === 'USD' ? 'USD' : 'ILS', JSON.stringify({ showDonors: true, allowAnon: true, allowMonthly: true, installments: 12, minAmount: 10, presets: [100, 180, 360, 500, 1000, 1800], thanks: 'תודה רבה! התרומה שלך התקבלה.' }));
   const id = r.lastInsertRowid;
+  ev(req, 'campaign.create', { cid: id, msg: title });
   [[180, 'ידיד'], [500, 'שותף'], [1000, 'תומך'], [1800, 'מייסד']].forEach(([a, n], i) => db.prepare('INSERT INTO levels(campaign_id,name,amount,pos) VALUES(?,?,?,?)').run(id, n, a, i));
   res.json(campaignOut(db.prepare('SELECT * FROM campaigns WHERE id=?').get(id)));
 });
 app.get('/api/campaigns/:id', auth, own, (req, res) => res.json({ ...campaignOut(req.c), stats: stats(req.c, isTest(req.c)), teamStats: teamStats(req.c, isTest(req.c)) }));
+const ADMIN_KEYS = ['providerOk', 'providerReview', 'adminPaused', 'adminNote'];
 const provFp = cfg => { const o = { ...(cfg || {}) }; delete o._hasSecret; return crypto.createHash('sha256').update(JSON.stringify(Object.keys(o).sort().map(k => [k, o[k]]))).digest('hex').slice(0, 24); };
 const PROV_ID_KEYS = ['mosadId', 'apiValid', 'pageCode', 'userId', 'terminal', 'terminalName', 'clientId', 'email', 'url', 'link', 'phone', 'businessId'];
 const provSummary = cfg => Object.entries(cfg || {}).filter(([k, v]) => v && (PROV_ID_KEYS.includes(k) || k === 'type')).map(([k, v]) => k + ': ' + String(v).slice(0, 80)).join(' · ');
 app.put('/api/campaigns/:id', auth, own, (req, res) => {
   const b = req.body || {}; const c = req.c;
-  if (req.user.role !== 'admin' && b.settings && typeof b.settings === 'object') { delete b.settings.providerOk; delete b.settings.providerReview; }
+  if (req.user.role !== 'admin' && b.settings && typeof b.settings === 'object') { for (const k of ADMIN_KEYS) delete b.settings[k]; }
   if (b.provider && req.user.role !== 'admin') {
     const cur = J(c.provider), next = { ...cur, ...b.provider };
     if (provFp(next) !== provFp(cur) && next.type !== 'test') {
       if (c.status === 'live') return bad(res, 'מטעמי אבטחה אי אפשר לשנות פרטי סליקה בקמפיין שבאוויר. פנו אלינו ונעדכן יחד.');
+      ev(req, 'provider.change', { level: 'warn', cid: c.id, msg: `${c.title}: ${provSummary(next)}` });
       const st = J(c.settings); st.providerReview = { fp: provFp(next), status: 'pending', at: new Date().toISOString() }; b.settings = { ...(b.settings || {}), providerReview: st.providerReview };
       if (mail.enabled()) { const u = db.prepare('SELECT email,org_name,org,org_number FROM users WHERE id=?').get(c.user_id) || {}; mail.send({ to: process.env.ADMIN_EMAIL || contract.OPERATOR.email, subject: `סליקה לאישור – ${u.org_name || u.org || ''}`, html: mail.layout('פרטי סליקה ממתינים לאישור', `<p><b>${mail.esc(u.org_name || u.org || '')}</b> (ע"ר ${mail.esc(u.org_number || '—')}) · ${mail.esc(u.email || '')}<br>קמפיין: ${mail.esc(c.title)}<br>${mail.esc(provSummary(next))}</p><p>ודאו שחשבון הסליקה רשום על שם העמותה (שם המוטב בדף התשלום / אישור מהספק), ואשרו בניהול-על ← סליקות לאישור.</p>`) }).catch(() => { }); }
     }
@@ -290,7 +327,7 @@ app.put('/api/campaigns/:id', auth, own, (req, res) => {
   const f = {
     title: String(b.title ?? c.title).slice(0, 120), subtitle: String(b.subtitle ?? c.subtitle).slice(0, 200), story: String(b.story ?? c.story).slice(0, 20000),
     goal: +(b.goal ?? c.goal) || 0, bonus_goal: +(b.bonus_goal ?? c.bonus_goal) || 0, currency: (b.currency ?? c.currency) === 'USD' ? 'USD' : 'ILS', multiplier: 1,
-    start_at: b.start_at ?? c.start_at, end_at: b.end_at ?? c.end_at, cover: String(b.cover ?? c.cover).slice(0, 300), logo: String(b.logo ?? c.logo).slice(0, 300), video: String(b.video ?? c.video).slice(0, 300),
+    start_at: b.start_at ?? c.start_at, end_at: b.end_at ?? c.end_at, cover: safeUrl(b.cover ?? c.cover), logo: safeUrl(b.logo ?? c.logo), video: safeUrl(b.video ?? c.video),
     color: /^#[0-9a-f]{6}$/i.test(b.color || '') ? b.color : c.color, lang: b.lang === 'en' ? 'en' : 'he',
     settings: JSON.stringify({ ...J(c.settings), ...(b.settings || {}) }), provider: b.provider ? JSON.stringify({ ...J(c.provider), ...b.provider }) : c.provider
   };
@@ -300,6 +337,7 @@ app.put('/api/campaigns/:id', auth, own, (req, res) => {
   if (Array.isArray(b.matchers)) { db.prepare('DELETE FROM matchers WHERE campaign_id=?').run(c.id); b.matchers.forEach((m, i) => db.prepare('INSERT INTO matchers(campaign_id,name,logo,pos) VALUES(?,?,?,?)').run(c.id, String(m.name || '').slice(0, 80), String(m.logo || '').slice(0, 300), i)); }
   res.json(campaignOut(db.prepare('SELECT * FROM campaigns WHERE id=?').get(c.id)));
 });
+const safeUrl = v => { const u = String(v || '').trim().slice(0, 500); return /^(https?:\/\/|\/u\/)[^\s"'<>`\\]*$/i.test(u) ? u : ''; };
 const NO_PAY_OK = c => c.slug === 'nyalchun' || /נחלים\s*מהלכים/.test(String(c.title || ''));
 app.post('/api/campaigns/:id/status', auth, own, (req, res) => {
   const s = req.body?.status; if (!['draft', 'test', 'live', 'ended'].includes(s)) return bad(res, 'status');
@@ -309,9 +347,9 @@ app.post('/api/campaigns/:id/status', auth, own, (req, res) => {
   if (s === 'live' && req.user.role !== 'admin') { const u = db.prepare('SELECT email_verified FROM users WHERE id=?').get(req.user.id); if (mail.enabled() && !u.email_verified) return bad(res, 'כדי לעלות לאוויר יש לאמת את כתובת האימייל (בדקו את תיבת הדואר)'); const ct = db.prepare('SELECT status FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id); if (!ct || ct.status === 'rejected') return bad(res, 'כדי לעלות לאוויר יש לחתום על הסכם השימוש'); if (ct.status !== 'approved') return bad(res, 'ההסכם והמסמכים בבדיקה אצלנו (בדרך כלל עד יום עסקים). נעדכן במייל כשאפשר לעלות לאוויר.'); const uu = db.prepare('SELECT plan_until FROM users WHERE id=?').get(req.user.id); if (!req.c.paid && !planActive(uu)) return res.status(402).json({ error: 'כדי לעלות לאוויר יש להסדיר תשלום עבור הקמפיין', code: 'billing' }); }
   if (s === 'live' && req.user.role !== 'admin') { const st = J(req.c.settings); if (st.providerOk !== provFp(J(req.c.provider))) return res.status(409).json({ error: 'פרטי הסליקה בבדיקה אצלנו: מוודאים שחשבון הסליקה רשום על שם העמותה. בדרך כלל עד יום עסקים, ונעדכן במייל.', code: 'provider' }); }
   if (s === 'live' && req.body?.clearTest) db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id);
-  db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(s, req.c.id); res.json({ ok: true });
+  db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(s, req.c.id); if (s !== req.c.status) ev(req, 'campaign.status', { cid: req.c.id, msg: `${req.c.title}: ${req.c.status} → ${s}${force ? ' (בלי סליקה)' : ''}` }); res.json({ ok: true });
 });
-app.delete('/api/campaigns/:id', auth, own, (req, res) => { db.prepare('DELETE FROM campaigns WHERE id=?').run(req.c.id); res.json({ ok: true }); });
+app.delete('/api/campaigns/:id', auth, own, (req, res) => { const real = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE campaign_id=? AND test=0 AND status='paid'").get(req.c.id); if (real.n && req.user.role !== 'admin') return bad(res, `בקמפיין יש ${real.n} תרומות אמיתיות, ולכן אי אפשר למחוק אותו. אפשר לסיים אותו, או לפנות אלינו.`); db.prepare('DELETE FROM campaigns WHERE id=?').run(req.c.id); ev(req, 'campaign.delete', { level: real.n ? 'warn' : 'info', cid: req.c.id, msg: `${req.c.title}${real.n ? ` (${real.n} תרומות, ₪${real.s})` : ''}` }); res.json({ ok: true }); });
 app.post('/api/campaigns/:id/duplicate', auth, own, (req, res) => {
   const c = req.c; let slug = c.slug + '-copy'; while (db.prepare('SELECT 1 FROM campaigns WHERE slug=?').get(slug)) slug += crypto.randomBytes(1).toString('hex');
   const r = db.prepare('INSERT INTO campaigns(user_id,slug,title,subtitle,story,goal,bonus_goal,currency,multiplier,start_at,end_at,cover,logo,video,color,lang,settings,provider) SELECT user_id,?,title||\' (עותק)\',subtitle,story,goal,bonus_goal,currency,multiplier,start_at,end_at,cover,logo,video,color,lang,settings,provider FROM campaigns WHERE id=?').run(slug, c.id);
@@ -384,6 +422,7 @@ app.post('/api/campaigns/:id/donations/import', auth, own, limit(10, 60000), (re
     const anon = r.anonymous ? 1 : 0; const name = anon ? 'אנונימי' : String(r.name || 'תורם').trim().slice(0, 80);
     ins.run(req.c.id, amt, req.c.currency, name, String(r.dedication || '').slice(0, 300), anon, ref, months || 1, months ? 1 : 0, crypto.randomBytes(12).toString('hex'), dt, dt); added++; sum += amt;
   } })();
+  ev(req, 'donation.import', { cid: req.c.id, msg: `${req.c.title}: ${added} תרומות · ₪${sum}${skipped ? ` · ${skipped} דולגו` : ''}` });
   res.json({ ok: true, added, skipped, sum, live: !isTest(req.c) });
 });
 app.get('/api/campaigns/:id/donations/:did', auth, own, (req, res) => { const d = db.prepare('SELECT d.*, t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.id=? AND d.campaign_id=?').get(req.params.did, req.c.id); if (!d) return bad(res, 'not found', 404); res.json(d); });
@@ -427,29 +466,128 @@ app.get('/api/providers', (_, res) => res.json(Object.entries(providers).map(([k
 // ---------- superadmin ----------
 const adm = (req, res, next) => req.user.role === 'admin' ? next() : bad(res, 'auth', 403);
 app.get('/api/admin/overview', auth, adm, (req, res) => res.json({
-  users: db.prepare('SELECT id,email,name,org,org_number,org_name,org_verified,org_status,phone,role,created,role_title,address,city,website,s46,consent_at,marketing,email_verified,plan_until,(SELECT COUNT(*) FROM contracts WHERE user_id=users.id) contracts,(SELECT status FROM contracts WHERE user_id=users.id ORDER BY id DESC LIMIT 1) contract_status,(SELECT COUNT(*) FROM campaigns WHERE user_id=users.id) campaigns FROM users ORDER BY id DESC').all(),
-  campaigns: db.prepare("SELECT c.id,c.slug,c.title,c.status,c.paid,c.user_id,u.plan_until,c.goal,c.multiplier,c.end_at,c.created,u.email owner,u.org_name, (SELECT COUNT(*) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) n, (SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) raised FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC").all(),
+  users: db.prepare('SELECT id,email,name,org,org_number,org_name,org_verified,org_status,phone,role,created,role_title,address,city,website,s46,consent_at,marketing,email_verified,plan_until,blocked,block_note,last_seen,logins,(SELECT COUNT(*) FROM contracts WHERE user_id=users.id) contracts,(SELECT status FROM contracts WHERE user_id=users.id ORDER BY id DESC LIMIT 1) contract_status,(SELECT COUNT(*) FROM campaigns WHERE user_id=users.id) campaigns FROM users ORDER BY id DESC').all(),
+  campaigns: db.prepare("SELECT c.id,c.slug,c.title,c.status,c.paid,c.user_id,c.settings,(SELECT COALESCE(SUM(n),0) FROM pv WHERE k='c:'||c.id AND day>=date('now','-6 day')) views7,u.plan_until,c.goal,c.multiplier,c.end_at,c.created,u.email owner,u.org_name, (SELECT COUNT(*) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) n, (SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) raised FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC").all().map(c => { const st = J(c.settings); return { ...c, settings: undefined, paused: !!st.adminPaused, providerOk: !!st.providerOk }; }),
   totals: db.prepare("SELECT COUNT(*) donations, COALESCE(SUM(amount),0) raised FROM donations WHERE status='paid' AND test=0").get(),
   live: db.prepare("SELECT COUNT(*) c FROM campaigns WHERE status='live'").get().c,
   today: db.prepare("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE status='paid' AND test=0 AND date(paid_at)=date('now')").get(),
   daily: db.prepare("SELECT date(paid_at) d, COUNT(*) n, SUM(amount) s FROM donations WHERE status='paid' AND test=0 AND paid_at>=date('now','-30 day') GROUP BY d ORDER BY d").all()
 }));
 app.get('/api/admin/contracts', auth, adm, (_, res) => res.json(db.prepare("SELECT id,user_id,name,id_number,role_title,org,org_number,email,phone,sent,created,method,file,docs,status,review_note FROM contracts ORDER BY status='pending' DESC, id DESC").all().map(c => ({ ...c, docs: J(c.docs) }))));
-app.post('/api/admin/users/:id/reset', auth, adm, (req, res) => { const pw = 'Ttm' + crypto.randomBytes(3).toString('hex') + '!'; db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(pw), req.params.id); res.json({ ok: true, password: pw }); });
+app.post('/api/admin/users/:id/reset', auth, adm, (req, res) => { const pw = 'Ttm' + crypto.randomBytes(3).toString('hex') + '!'; db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(pw), req.params.id); ev(req, 'admin.reset_pw', { meta: { target: +req.params.id } }); res.json({ ok: true, password: pw }); });
 app.get('/api/admin/mail', auth, adm, (_, res) => res.json({ enabled: mail.enabled(), from: process.env.MAIL_FROM || '' }));
 app.patch('/api/admin/users/:id', auth, adm, (req, res) => {
   if (req.body?.email_verified !== undefined) db.prepare('UPDATE users SET email_verified=? WHERE id=?').run(req.body.email_verified ? 1 : 0, req.params.id); const b = req.body || {}; db.prepare("UPDATE users SET role=COALESCE(?,role), org_verified=COALESCE(?,org_verified), org_status=CASE WHEN ? IS NULL THEN org_status ELSE 'אומת ידנית' END, org_name=COALESCE(?,org_name) WHERE id=?").run(b.role || null, b.org_verified ?? null, b.org_verified ?? null, b.org_name || null, req.params.id); res.json({ ok: true }); });
 app.delete('/api/admin/users/:id', auth, adm, (req, res) => { if (+req.params.id === req.user.id) return bad(res, 'self'); db.prepare('DELETE FROM users WHERE id=?').run(req.params.id); res.json({ ok: true }); });
-app.post('/api/admin/campaigns/:id/status', auth, adm, (req, res) => { db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(['draft', 'test', 'live', 'ended'].includes(req.body?.status) ? req.body.status : 'draft', req.params.id); res.json({ ok: true }); });
+app.post('/api/admin/campaigns/:id/status', auth, adm, (req, res) => { const st = ['draft', 'test', 'live', 'ended'].includes(req.body?.status) ? req.body.status : 'draft'; db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(st, req.params.id); ev(req, 'admin.campaign_status', { cid: +req.params.id, msg: '→ ' + st }); res.json({ ok: true }); });
 
+// ---------- superadmin: live control room ----------
+db.exec("CREATE TABLE IF NOT EXISTS pv(day TEXT, k TEXT, n INTEGER DEFAULT 0, PRIMARY KEY(day,k))");
+const PV = db.prepare("INSERT INTO pv(day,k,n) VALUES(date('now'),?,1) ON CONFLICT(day,k) DO UPDATE SET n=n+1");
+const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|curl|wget|python|headless|lighthouse/i;
+const pageView = (req, k) => { if (!BOT.test(req.get('user-agent') || '')) try { PV.run(k); } catch { } };
+const BOOT = Date.now();
+let sizeCache = { at: 0 };
+function dirSize(d) { let n = 0, f = 0; try { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) { const r = dirSize(p); n += r.n; f += r.f; } else { n += fs.statSync(p).size; f++; } } } catch { } return { n, f }; }
+function sizes() { if (Date.now() - sizeCache.at < 10 * 60e3) return sizeCache; const fsz = f => { try { return fs.statSync(f).size; } catch { return 0; } }; const db0 = path.join(DATA_DIR, 'givex.db'); sizeCache = { at: Date.now(), db: fsz(db0) + fsz(db0 + '-wal'), uploads: dirSize(path.join(DATA_DIR, 'uploads')), priv: dirSize(privDir) }; return sizeCache; }
+const evRows = (where, params, lim) => db.prepare(`SELECT e.*, u.email, u.name uname, c.title ctitle, c.slug cslug FROM events e LEFT JOIN users u ON u.id=e.user_id LEFT JOIN campaigns c ON c.id=e.campaign_id ${where} ORDER BY e.id DESC LIMIT ?`).all(...params, lim).map(r => ({ ...r, meta: J(r.meta) }));
+app.get('/api/admin/live', auth, adm, (req, res) => {
+  const q1 = (sql, ...p) => db.prepare(sql).get(...p);
+  const m = process.memoryUsage(); const z = sizes();
+  const viewers = []; for (const [cid, set] of subs) if (set.size) { const c = db.prepare('SELECT id,title,slug,status FROM campaigns WHERE id=?').get(cid); if (c) viewers.push({ ...c, n: set.size }); }
+  viewers.sort((a, b) => b.n - a.n);
+  const dayCount = (type, mod = "'-0 day'") => q1(`SELECT COUNT(*) n FROM events WHERE type=? AND at>=datetime('now','start of day')`, type).n;
+  res.json({
+    now: new Date().toISOString(),
+    health: { uptime: Math.round((Date.now() - BOOT) / 1000), rss: m.rss, heap: m.heapUsed, node: process.version, db: z.db, uploads: z.uploads, priv: z.priv, commit: (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7), mail: mail.enabled(), sse: [...subs.values()].reduce((a, s) => a + s.size, 0) },
+    today: {
+      signups: dayCount('user.signup'), logins: dayCount('auth.login'), failed: dayCount('auth.fail'), created: dayCount('campaign.create'),
+      donations: q1("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE status='paid' AND test=0 AND paid_at>=datetime('now','start of day')"),
+      pending: q1("SELECT COUNT(*) n FROM donations WHERE status='pending' AND test=0 AND created>=datetime('now','start of day')").n,
+      failedPay: q1("SELECT COUNT(*) n FROM donations WHERE status='failed' AND test=0 AND created>=datetime('now','start of day')").n,
+      views: db.prepare("SELECT k, n FROM pv WHERE day=date('now') ORDER BY n DESC").all(),
+      errors: q1("SELECT COUNT(*) n FROM events WHERE level='error' AND at>=datetime('now','-1 day')").n,
+      warns: q1("SELECT COUNT(*) n FROM events WHERE level='warn' AND at>=datetime('now','-1 day')").n
+    },
+    views7: db.prepare("SELECT day, SUM(n) n FROM pv WHERE day>=date('now','-13 day') GROUP BY day ORDER BY day").all(),
+    online: db.prepare("SELECT id,email,name,org_name,org,role,last_seen,last_ip FROM users WHERE last_seen>=datetime('now','-15 minute') ORDER BY last_seen DESC LIMIT 50").all(),
+    viewers,
+    todo: {
+      contracts: q1("SELECT COUNT(*) n FROM contracts WHERE status='pending'").n,
+      payments: q1("SELECT COUNT(*) n FROM payments WHERE status='pending'").n,
+      providers: db.prepare("SELECT settings FROM campaigns WHERE settings LIKE '%providerReview%'").all().filter(r => { const st = J(r.settings); return st.providerReview?.status === 'pending'; }).length,
+      orgs: q1("SELECT COUNT(*) n FROM users WHERE org_verified=2").n,
+      mails: q1("SELECT COUNT(*) n FROM users WHERE email_verified=0 AND role!='admin' AND created>=datetime('now','-14 day')").n,
+      liveUnpaid: q1("SELECT COUNT(*) n FROM campaigns c JOIN users u ON u.id=c.user_id WHERE c.status='live' AND c.paid=0 AND (u.plan_until='' OR u.plan_until<date('now'))").n,
+      endingSoon: db.prepare("SELECT id,title,slug,end_at FROM campaigns WHERE status='live' AND end_at!='' AND end_at<=strftime('%Y-%m-%dT%H:%M','now','+2 day') ORDER BY end_at LIMIT 10").all()
+    },
+    alerts: evRows("WHERE e.level IN ('error','warn')", [], 12),
+    feed: evRows("WHERE e.type NOT IN ('donation.test')", [], 40)
+  });
+});
+app.get('/api/admin/events', auth, adm, (req, res) => {
+  const w = [], p = []; const Q = req.query;
+  if (Q.type) { const t = String(Q.type); if (t.endsWith('.')) { w.push('e.type LIKE ?'); p.push(t + '%'); } else { w.push('e.type=?'); p.push(t); } }
+  if (['info', 'warn', 'error'].includes(Q.level)) { w.push('e.level=?'); p.push(Q.level); }
+  if (+Q.uid) { w.push('e.user_id=?'); p.push(+Q.uid); }
+  if (+Q.cid) { w.push('e.campaign_id=?'); p.push(+Q.cid); }
+  if (+Q.before) { w.push('e.id<?'); p.push(+Q.before); }
+  if (Q.q) { const s = '%' + String(Q.q).slice(0, 60) + '%'; w.push('(e.msg LIKE ? OR e.ip LIKE ? OR u.email LIKE ? OR c.title LIKE ?)'); p.push(s, s, s, s); }
+  if (Q.hideTest !== '0') w.push("e.type!='donation.test'");
+  res.json(evRows(w.length ? 'WHERE ' + w.join(' AND ') : '', p, Math.min(500, +Q.limit || 100)));
+});
+app.get('/api/admin/search', auth, adm, (req, res) => {
+  const q = String(req.query.q || '').trim().slice(0, 60); if (q.length < 2) return res.json({ users: [], campaigns: [], donations: [] });
+  const s = '%' + q + '%', dg = q.replace(/\D/g, ''), ds = dg.length >= 4 ? '%' + dg + '%' : '@@none@@';
+  res.json({
+    users: db.prepare("SELECT id,email,name,phone,org,org_name,org_number,org_verified,blocked,last_seen,role FROM users WHERE email LIKE ? OR name LIKE ? OR org LIKE ? OR org_name LIKE ? OR phone LIKE ? OR org_number LIKE ? OR id=? ORDER BY id DESC LIMIT 15").all(s, s, s, s, ds, ds, +q || -1),
+    campaigns: db.prepare("SELECT c.id,c.title,c.slug,c.status,c.settings,u.org_name,u.email FROM campaigns c LEFT JOIN users u ON u.id=c.user_id WHERE c.title LIKE ? OR c.slug LIKE ? OR c.id=? ORDER BY c.id DESC LIMIT 15").all(s, s, +q || -1).map(c => ({ ...c, paused: !!J(c.settings).adminPaused, settings: undefined })),
+    donations: db.prepare("SELECT d.id,d.campaign_id,d.name,d.amount,d.status,d.test,d.phone,d.email,d.ref,d.created,d.paid_at,d.monthly,d.installments,c.title FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.name LIKE ? OR d.email LIKE ? OR d.ref LIKE ? OR d.phone LIKE ? OR d.id_number LIKE ? OR d.id=? ORDER BY d.id DESC LIMIT 25").all(s, s, s, ds, ds, +q || -1)
+  });
+});
+app.get('/api/admin/donations', auth, adm, (req, res) => {
+  const w = ['d.test=?'], p = [req.query.test === '1' ? 1 : 0]; const Q = req.query;
+  if (['paid', 'pending', 'failed'].includes(Q.status)) { w.push('d.status=?'); p.push(Q.status); }
+  if (+Q.cid) { w.push('d.campaign_id=?'); p.push(+Q.cid); }
+  if (+Q.before) { w.push('d.id<?'); p.push(+Q.before); }
+  res.json(db.prepare(`SELECT d.id,d.campaign_id,d.name,d.amount,d.status,d.test,d.phone,d.email,d.ref,d.provider,d.created,d.paid_at,d.monthly,d.installments,d.anonymous,d.meta,c.title,c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE ${w.join(' AND ')} ORDER BY d.id DESC LIMIT ?`).all(...p, Math.min(300, +Q.limit || 100)).map(d => ({ ...d, error: J(d.meta).error || '', meta: undefined })));
+});
+app.get('/api/admin/users/:id', auth, adm, (req, res) => {
+  const u = db.prepare('SELECT id,email,name,phone,org,org_name,org_number,org_verified,org_status,role,role_title,city,website,created,email_verified,plan_until,blocked,block_note,last_seen,last_ip,logins FROM users WHERE id=?').get(req.params.id); if (!u) return bad(res, 'not found', 404);
+  res.json({ user: u, campaigns: db.prepare("SELECT c.id,c.title,c.slug,c.status,c.paid,(SELECT COUNT(*) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) n,(SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) raised FROM campaigns c WHERE c.user_id=? ORDER BY c.id DESC").all(u.id), payments: db.prepare('SELECT id,kind,amount,status,created FROM payments WHERE user_id=? ORDER BY id DESC LIMIT 20').all(u.id), contracts: db.prepare('SELECT id,status,created,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 5').all(u.id), events: evRows('WHERE e.user_id=?', [u.id], 60) });
+});
+app.post('/api/admin/users/:id/block', auth, adm, (req, res) => {
+  const id = +req.params.id; if (id === req.user.id) return bad(res, 'אי אפשר להשעות את עצמכם');
+  const on = !!req.body?.blocked; const note = String(req.body?.note || '').slice(0, 300);
+  db.prepare('UPDATE users SET blocked=?, block_note=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(on ? 1 : 0, note, id); // tv bump signs them out everywhere
+  ev(req, on ? 'admin.block' : 'admin.unblock', { level: on ? 'warn' : 'info', msg: note, meta: { target: id } }); res.json({ ok: true });
+});
+app.post('/api/admin/campaigns/:id/pause', auth, adm, (req, res) => {
+  const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404);
+  const st = J(c.settings); st.adminPaused = !!req.body?.paused; db.prepare('UPDATE campaigns SET settings=? WHERE id=?').run(JSON.stringify(st), c.id);
+  emit(c.id, 'refresh', { stats: stats(c, isTest(c)), teams: teamStats(c, isTest(c)) });
+  ev(req, st.adminPaused ? 'admin.pause' : 'admin.resume', { level: 'warn', cid: c.id, msg: c.title }); res.json({ ok: true, paused: st.adminPaused });
+});
+app.post('/api/admin/users/:id/impersonate', auth, adm, (req, res) => {
+  if (req.user.imp) return bad(res, 'כבר במצב צפייה כמשתמש');
+  const u = db.prepare('SELECT id,email,role,blocked FROM users WHERE id=?').get(req.params.id); if (!u) return bad(res, 'not found', 404); if (u.role === 'admin') return bad(res, 'לא נכנסים כמנהל אחר');
+  ev(req, 'admin.impersonate', { level: 'warn', msg: u.email, meta: { target: u.id } });
+  const s = verify(req.cookies.sid); res.cookie('sid_adm', req.cookies.sid, { httpOnly: true, sameSite: 'lax', maxAge: 4 * 36e5, secure: !!process.env.RAILWAY_ENVIRONMENT });
+  setSid(res, u.id, { imp: req.user.id, exp: Date.now() + 4 * 36e5 }); res.json({ ok: true });
+});
+app.post('/api/impersonate/stop', (req, res) => {
+  const a = verify(req.cookies.sid_adm); const me = verify(req.cookies.sid);
+  if (!a || !me?.imp || a.uid !== me.imp) return bad(res, 'no');
+  res.cookie('sid', req.cookies.sid_adm, { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); res.clearCookie('sid_adm'); res.json({ ok: true });
+});
 // ---------- public campaign API ----------
 const getC = slug => db.prepare('SELECT * FROM campaigns WHERE slug=?').get(slug);
 app.get('/api/c/:slug', (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404);
-  const test = isTest(c); const s = J(c.settings);
+  const test = isTest(c); const s = J(c.settings); const paused = !!s.adminPaused; for (const k of ADMIN_KEYS) delete s[k];
   const t = req.query.team ? db.prepare('SELECT id,slug,name,goal,photo,descr FROM teams WHERE campaign_id=? AND slug=?').get(c.id, req.query.team) : null;
   res.json({
-    campaign: { closed: !isTest(c) && (J(c.provider).type || 'test') === 'test', payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test' },
+    campaign: { closed: (!isTest(c) && (J(c.provider).type || 'test') === 'test') || paused, paused, payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test' },
     levels: db.prepare('SELECT id,name,amount,descr,stock,icon,monthly,months,(SELECT COUNT(*) FROM donations WHERE level_id=levels.id AND status=\'paid\' AND test=?) used FROM levels WHERE campaign_id=? ORDER BY pos,id').all(test ? 1 : 0, c.id),
     teams: teamStats(c, test), team: t, matchers: db.prepare('SELECT name,logo FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id),
     stats: stats(c, test),
@@ -459,15 +597,17 @@ app.get('/api/c/:slug', (req, res) => {
 app.get('/api/c/:slug/donations', (req, res) => { const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const off = +req.query.offset || 0; const team = +req.query.team || 0; const q = String(req.query.q || '').slice(0, 60); const p = [c.id, isTest(c) ? 1 : 0]; let w = ''; if (team) { w += ' AND team_id=?'; p.push(team); } if (q) { w += " AND anonymous=0 AND (name LIKE ? OR dedication LIKE ?)"; p.push('%' + q + '%', '%' + q + '%'); } p.push(off); res.json(db.prepare(`SELECT * FROM donations WHERE campaign_id=? AND status='paid' AND test=?${w} ORDER BY ${req.query.sort === 'top' ? 'amount DESC, id DESC' : 'paid_at DESC, id DESC'} LIMIT 60 OFFSET ?`).all(...p).map(publicDonation)); });
 app.get('/api/c/:slug/stream', (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).end();
+  const ipN = sseIp.get(req.ip) || 0; if (ipN >= 40) return res.status(429).end(); sseIp.set(req.ip, ipN + 1);
   res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' }); res.write(':ok\n\n');
   if (!subs.has(c.id)) subs.set(c.id, new Set()); subs.get(c.id).add(res);
   const ping = setInterval(() => { try { res.write(':p\n\n'); } catch { } }, 25000);
-  req.on('close', () => { clearInterval(ping); subs.get(c.id)?.delete(res); });
+  req.on('close', () => { clearInterval(ping); subs.get(c.id)?.delete(res); const n = (sseIp.get(req.ip) || 1) - 1; if (n > 0) sseIp.set(req.ip, n); else sseIp.delete(req.ip); });
 });
 app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404);
   if (c.status === 'ended') return bad(res, 'הקמפיין הסתיים');
   const s = J(c.settings); const b = req.body || {};
+  if (s.adminPaused) return bad(res, 'התרומות בקמפיין מושהות זמנית');
   const amount = Math.round(+b.amount || 0); if (amount < (s.minAmount || 1)) return bad(res, `סכום מינימלי ₪${s.minAmount || 1}`); if (amount > 5000000) return bad(res, 'סכום גבוה מדי');
   const name = String(b.name || '').trim().slice(0, 80); if (name.length < 2) return bad(res, 'נא להזין שם');
   const phone = String(b.phone || '').replace(/[^\d+]/g, '').slice(0, 20); const email = String(b.email || '').trim().slice(0, 120);
@@ -493,7 +633,7 @@ app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
     if (method !== 'card') db.prepare('UPDATE donations SET meta=? WHERE id=?').run(JSON.stringify({ method }), donation.id);
     if (out.ref) db.prepare('UPDATE donations SET ref=? WHERE id=?').run(String(out.ref), donation.id);
     res.json({ ...out, donationId: donation.id, token, returnUrl: `${base(req)}/pay/return/${token}` });
-  } catch (e) { db.prepare("UPDATE donations SET status='failed', meta=? WHERE id=?").run(JSON.stringify({ error: e.message }), donation.id); bad(res, 'שגיאה בחיבור לספק הסליקה: ' + e.message, 502); }
+  } catch (e) { db.prepare("UPDATE donations SET status='failed', meta=? WHERE id=?").run(JSON.stringify({ error: e.message }), donation.id); logEvent('payment.error', { level: 'error', cid: c.id, ip: req.ip, msg: `${c.title} · ${type}: ${e.message}`.slice(0, 300) }); bad(res, 'שגיאה בחיבור לספק הסליקה: ' + e.message, 502); }
 });
 app.post('/api/c/:slug/join', limit(5, 600000), (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const s = J(c.settings); if (s.allowJoin === false || c.status === 'ended') return bad(res, 'ההצטרפות סגורה');
@@ -503,7 +643,7 @@ app.post('/api/c/:slug/join', limit(5, 600000), (req, res) => {
   let slug = slugify(b.slug || name); while (db.prepare('SELECT 1 FROM teams WHERE campaign_id=? AND slug=?').get(c.id, slug)) slug += crypto.randomBytes(1).toString('hex');
   db.prepare('INSERT INTO teams(campaign_id,slug,name,goal,phone,email,descr,pos) VALUES(?,?,?,?,?,?,?,99)').run(c.id, slug, name, Math.max(0, +b.goal || 0), phone, String(b.email || '').trim().slice(0, 120), String(b.descr || '').slice(0, 300));
   const em = String(b.email || '').trim().toLowerCase(); if (mail.enabled() && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { try { const { subject, html } = renderMail(c, 'ambassador', { name, amount: 0, email: em, link: '/c/' + c.slug + '/' + slug }, base(req)); mail.send({ to: em, subject, html }).catch(() => { }); } catch { } }
-  emit(c.id, 'refresh', { stats: stats(c, isTest(c)), teams: teamStats(c, isTest(c)) });
+  emit(c.id, 'refresh', { stats: stats(c, isTest(c)), teams: teamStats(c, isTest(c)) }); logEvent('team.join', { cid: c.id, ip: req.ip, msg: `${name} הצטרף/ה כשגריר/ה · ${c.title}` });
   res.json({ ok: true, slug });
 });
 app.get('/api/public/campaigns', (_, res) => {
@@ -693,6 +833,7 @@ app.post('/api/campaigns/:id/messages', auth, own, async (req, res) => {
     if (!mail.enabled()) return bad(res, 'שליחת מייל עדיין לא מופעלת במערכת');
     const list = recipients(req.c, b.audience, true); if (!list.length) return bad(res, 'אין נמענים עם אימייל'); if (list.length > 2000) return bad(res, 'עד 2000 נמענים בשליחה אחת');
     const m = db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total) VALUES(?,?,?,?,?,?)').run(req.c.id, req.user.id, 'email', b.audience || 'donors', text, list.length);
+    ev(req, 'message.send', { cid: req.c.id, msg: `אימייל ל-${list.length} נמענים · ${req.c.title}` });
     res.json({ ok: true, queued: list.length });
     let sent = 0, failed = 0; const owner = db.prepare('SELECT email FROM users WHERE id=?').get(req.user.id) || {};
     for (const r of list) { try { const { subject, html } = renderMail(req.c, b.kind || 'update', r, base(req)); const o = await mail.send({ to: r.email, subject, html, replyTo: owner.email }); if (o.ok) sent++; else failed++; } catch { failed++; } await new Promise(x => setTimeout(x, 120)); }
@@ -746,27 +887,40 @@ app.post('/api/assist', auth, async (req, res) => {
 
 // ---------- pages ----------
 const pub = f => path.join(__dirname, 'public', f);
+app.use((req, res, next) => { if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) pageView(req, 'home'); next(); });
 app.use(express.static(pub(''), { maxAge: '1h', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.get('/c/:slug/screen', (_, res) => res.sendFile(pub('screen.html')));
 app.get('/c/:slug/widget', (_, res) => res.sendFile(pub('widget.html')));
 app.get(['/c/:slug', '/c/:slug/:team'], (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).sendFile(pub('404.html'));
+  pageView(req, 'c:' + c.id);
   let html = fs.readFileSync(pub('c.html'), 'utf8');
   const esc = s => String(s || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   const sh = J(c.settings).share || c.cover; const img = sh ? (sh.startsWith('http') ? sh : base(req) + sh) : base(req) + '/icon.svg';
   const st = J(c.settings); const langs = st.langs && st.langs.length ? st.langs : [c.lang || 'he'];
-  let auto = c.lang || 'he'; if (st.autoLang !== false) { const al = String(req.headers['accept-language'] || '').toLowerCase().split(',').map(x => x.split(';')[0].trim().slice(0, 2)); const hit = al.find(l => langs.includes(l)); if (hit) auto = hit; }
+  let auto = c.lang || 'he'; if (st.autoLang !== false) { const al = String(req.headers['accept-language'] || '').toLowerCase().split(',').map(x => x.split(';')[0].trim().slice(0, 2)); const hit = al.find(l => langs.includes(l)); if (hit) auto = hit; } if (!/^[a-z]{2}$/.test(auto)) auto = 'he';
   html = html.replace('<html lang="he" dir="rtl">', `<html lang="he" dir="rtl" data-auto-lang="${auto}">`);
   html = html.replace('<!--META-->', `<title>${esc(c.title)}</title><meta name="description" content="${esc(c.subtitle)}"><meta property="og:title" content="${esc(c.title)}"><meta property="og:description" content="${esc(c.subtitle)}"><meta property="og:image" content="${esc(img)}"><meta property="og:type" content="website"><meta name="theme-color" content="${esc(c.color)}">`).replace('<html lang="he" dir="rtl">', `<html lang="${c.lang}" dir="${c.lang === 'en' ? 'ltr' : 'rtl'}" data-auto-lang="${auto}">`);
   res.setHeader('Cache-Control', 'no-cache'); res.send(html);
 });
 app.get(['/app', '/app/*'], (_, res) => res.sendFile(pub('app.html')));
-app.get('/', (_, res) => res.sendFile(pub('index.html')));
+app.get('/', (req, res) => res.sendFile(pub('index.html')));
 app.get(['/terms', '/privacy', '/accessibility'], (_, res) => res.sendFile(pub('legal.html')));
 app.get('/sitemap.xml', (req, res) => { const b = base(req); const slugs = db.prepare("SELECT slug FROM campaigns WHERE status='live'").all().map(x => x.slug); res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + [...new Set(['', '/terms', '/privacy', '/accessibility', ...slugs.map(x => '/c/' + x)])].map(u => `<url><loc>${b}${u || "/"}</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod><changefreq>${u ? 'weekly' : 'daily'}</changefreq><priority>${u ? (u.startsWith('/c/') ? '0.8' : '0.3') : '1.0'}</priority></url>`).join('') + '</urlset>'); });
 app.get('/googlea5465d57b3c11b70.html', (_, res) => res.type('text/html').send('google-site-verification: googlea5465d57b3c11b70.html'));
 app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: ' + base(req) + '/sitemap.xml\nDisallow: /app\nDisallow: /pay/\nDisallow: /api/\n'));
-app.use((_, res) => res.status(404).sendFile(pub('404.html')));
+app.use((err, req, res, next) => { // anything that throws inside a route lands here instead of crashing
+  if (err && (err.code === 'LIMIT_FILE_SIZE' || err.name === 'MulterError')) return bad(res, err.code === 'LIMIT_FILE_SIZE' ? 'הקובץ גדול מדי' : 'שגיאה בהעלאת הקובץ');
+  if (err?.type === 'entity.too.large') return bad(res, 'הבקשה גדולה מדי', 413);
+  if (err?.type === 'entity.parse.failed') return bad(res, 'בקשה לא תקינה');
+  logEvent('server.error', { level: 'error', ip: req.ip, uid: (() => { try { return verify(req.cookies?.sid)?.uid; } catch { return null; } })(), msg: `${req.method} ${req.path}: ${err?.message || err}`.slice(0, 300), meta: { stack: String(err?.stack || '').split('\n').slice(0, 5).join(' | ') } });
+  console.error(err); if (res.headersSent) return; res.status(500).json({ error: 'שגיאה זמנית בשרת. נסו שוב, ואם זה חוזר – פנו אלינו.' });
+});
+app.get(['/favicon.ico', '/apple-touch-icon.png', '/apple-touch-icon-precomposed.png'], (_, res) => { res.setHeader('Cache-Control', 'public, max-age=604800'); res.type('image/svg+xml').sendFile(pub('icon.svg')); });
+const SCAN = /(\.env|\.git|\.ssh|\.svn|wp-|phpinfo|\.php$|\.sql$|backup|dump|secrets|actuator|\.npmrc|docker-compose|\.bash_history|server\.key|config\.(xml|php|json))/i; const scanSeen = new Map();
+app.use((req, res) => { if (SCAN.test(req.path)) { const t = scanSeen.get(req.ip) || 0; if (Date.now() - t > 10 * 60e3) { if (scanSeen.size > 5000) scanSeen.clear(); scanSeen.set(req.ip, Date.now()); logEvent('security.scan', { level: 'warn', ip: req.ip, msg: 'סריקת פרצות אוטומטית (נחסמה): ' + req.path.slice(0, 80) }); } } res.status(404).sendFile(pub('404.html')); });
+process.on('unhandledRejection', e => { logEvent('server.error', { level: 'error', msg: 'unhandled: ' + String(e?.message || e).slice(0, 280) }); console.error(e); });
+process.on('uncaughtException', e => { logEvent('server.crash', { level: 'error', msg: String(e?.message || e).slice(0, 280), meta: { stack: String(e?.stack || '').split('\n').slice(0, 5).join(' | ') } }); console.error(e); process.exit(1); });
 
 // ---- demo campaign shown in the landing-page phone (test data, clearly labelled "קמפיין לדוגמה") ----
 (function ensureDemo() {
@@ -794,4 +948,4 @@ app.use((_, res) => res.status(404).sendFile(pub('404.html')));
     }
   } catch (e) { console.error('demo seed', e.message); }
 })();
-app.listen(process.env.PORT || 3000, () => console.log('ttm up'));
+app.listen(process.env.PORT || 3000, () => { console.log('ttm up'); logEvent('server.start', { msg: (process.env.RAILWAY_GIT_COMMIT_SHA || 'local').slice(0, 7) }); });
