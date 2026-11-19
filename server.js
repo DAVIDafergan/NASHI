@@ -122,7 +122,7 @@ async function sendVerify(uid) {
 app.get('/verify-email', (req, res) => { const t = String(req.query.t || ''); const u = t && db.prepare('SELECT id FROM users WHERE verify_token=?').get(t); if (!u) return res.redirect('/app#/?verified=0'); db.prepare("UPDATE users SET email_verified=1, verify_token='' WHERE id=?").run(u.id); res.cookie('sid', sign({ uid: u.id, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); res.redirect('/app#/?verified=1'); });
 app.post('/api/me/resend-verify', auth, limit(3, 600000), async (req, res) => { res.json({ ok: await sendVerify(req.user.id), mail: mail.enabled() }); });
 // ---- service agreement (signed before the first campaign) ----
-const PRICING_DEF = { campaign: 790, monthly: 450, vat: 'incl', payCampaignUrl: '', payMonthlyUrl: '' };
+const PRICING_DEF = { campaign: 790, monthly: 440, vat: 'incl', payCampaignUrl: '', payMonthlyUrl: '' };
 const pricing = () => ({ ...PRICING_DEF, ...getKV('pricing') });
 app.get('/api/pricing', (_, res) => { const p = pricing(); res.json({ campaign: p.campaign, monthly: p.monthly, vat: p.vat }); });
 const privDir = path.join(DATA_DIR, 'private');
