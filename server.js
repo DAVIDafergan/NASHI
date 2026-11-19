@@ -386,13 +386,40 @@ app.post('/api/campaigns/:id/donations/import', auth, own, limit(10, 60000), (re
   } })();
   res.json({ ok: true, added, skipped, sum, live: !isTest(req.c) });
 });
+app.get('/api/campaigns/:id/donations/:did', auth, own, (req, res) => { const d = db.prepare('SELECT d.*, t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.id=? AND d.campaign_id=?').get(req.params.did, req.c.id); if (!d) return bad(res, 'not found', 404); res.json(d); });
+function donUpdate(c, d, b, user) {
+  if (b.status === 'paid' && d.status !== 'paid') { markPaid(d.id, { ref: b.ref || d.ref || 'manual', meta: { ...J(d.meta), manualBy: user.email, manualAt: new Date().toISOString(), verified: 1 } }); if (!b.note) b.note = `אושר ידנית על ידי ${user.email}`; delete b.status; }
+  const f = {};
+  if (b.name !== undefined) f.name = String(b.name).trim().slice(0, 80) || 'תורם';
+  if (b.amount !== undefined && +b.amount > 0) f.amount = Math.round(+b.amount);
+  for (const [k, n] of [['phone', 20], ['email', 120], ['dedication', 300], ['ref', 80], ['note', 300], ['id_number', 12]]) if (b[k] !== undefined) f[k] = String(b[k] ?? '').trim().slice(0, n);
+  if (b.anonymous !== undefined) f.anonymous = b.anonymous ? 1 : 0;
+  if (b.team_id !== undefined) f.team_id = +b.team_id && db.prepare('SELECT 1 FROM teams WHERE id=? AND campaign_id=?').get(+b.team_id, c.id) ? +b.team_id : null;
+  if (b.status !== undefined && ['paid', 'pending', 'failed', 'refunded', 'cancelled'].includes(b.status)) f.status = b.status;
+  if (b.kind !== undefined) { const n = Math.min(120, Math.max(1, Math.round(+b.months || 1))); if (b.kind === 'monthly') { f.monthly = 1; f.installments = Math.max(2, n); } else if (b.kind === 'installments') { f.monthly = 0; f.installments = Math.max(2, n); } else { f.monthly = 0; f.installments = 1; } }
+  if (b.date !== undefined && b.date) { const u = ilToUtc(b.date); if (u) { f.paid_at = u; } }
+  const keys = Object.keys(f); if (keys.length) db.prepare(`UPDATE donations SET ${keys.map(k => k + '=@' + k).join(',')} WHERE id=@id`).run({ ...f, id: d.id });
+}
 app.patch('/api/campaigns/:id/donations/:did', auth, own, (req, res) => {
   const d = db.prepare('SELECT * FROM donations WHERE id=? AND campaign_id=?').get(req.params.did, req.c.id); if (!d) return bad(res, 'not found', 404);
-  const b = req.body || {};
-  if (b.status === 'paid' && d.status !== 'paid') { markPaid(d.id, { ref: b.ref || d.ref || 'manual', meta: { ...J(d.meta), manualBy: req.user.email, manualAt: new Date().toISOString(), verified: 1 } }); db.prepare('UPDATE donations SET note=? WHERE id=?').run(`אושר ידנית על ידי ${req.user.email}`, d.id); }
-  else db.prepare('UPDATE donations SET status=COALESCE(?,status), name=COALESCE(?,name), phone=COALESCE(?,phone), email=COALESCE(?,email), dedication=COALESCE(?,dedication), anonymous=COALESCE(?,anonymous), team_id=? , amount=COALESCE(?,amount) WHERE id=?').run(b.status || null, b.name ?? null, b.phone ?? null, b.email ?? null, b.dedication ?? null, b.anonymous === undefined ? null : (b.anonymous ? 1 : 0), b.team_id === undefined ? d.team_id : (+b.team_id || null), b.amount ? Math.round(+b.amount) : null, d.id);
+  donUpdate(req.c, d, { ...(req.body || {}) }, req.user);
   emit(req.c.id, 'refresh', { stats: stats(req.c, d.test), teams: teamStats(req.c, d.test) }); res.json({ ok: true });
 });
+app.post('/api/campaigns/:id/donations/bulk', auth, own, (req, res) => {
+  const ids = (Array.isArray(req.body?.ids) ? req.body.ids : []).map(Number).filter(Boolean).slice(0, 5000); const act = req.body?.action; const v = req.body?.value || {};
+  if (!ids.length) return bad(res, 'לא נבחרו תרומות');
+  const rows = db.prepare(`SELECT * FROM donations WHERE campaign_id=? AND id IN (${ids.map(() => '?').join(',')})`).all(req.c.id, ...ids); let n = 0;
+  db.transaction(() => { for (const d of rows) {
+    if (act === 'delete') db.prepare('DELETE FROM donations WHERE id=?').run(d.id);
+    else if (act === 'team') donUpdate(req.c, d, { team_id: v.team_id }, req.user);
+    else if (act === 'kind') donUpdate(req.c, d, { kind: v.kind, months: v.months }, req.user);
+    else if (act === 'status') donUpdate(req.c, d, { status: v.status }, req.user);
+    else if (act === 'anonymous') donUpdate(req.c, d, { anonymous: !!v.anonymous }, req.user);
+    else continue; n++;
+  } })();
+  emit(req.c.id, 'refresh', { stats: stats(req.c, isTest(req.c)), teams: teamStats(req.c, isTest(req.c)) }); res.json({ ok: true, n });
+});
+
 app.delete('/api/campaigns/:id/donations/:did', auth, own, (req, res) => { const d = db.prepare('SELECT test FROM donations WHERE id=? AND campaign_id=?').get(req.params.did, req.c.id); db.prepare('DELETE FROM donations WHERE id=? AND campaign_id=?').run(req.params.did, req.c.id); if (d) emit(req.c.id, 'refresh', { stats: stats(req.c, d.test), teams: teamStats(req.c, d.test) }); res.json({ ok: true }); });
 app.post('/api/campaigns/:id/clear-test', auth, own, (req, res) => { db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id); emit(req.c.id, 'refresh', { stats: stats(req.c, true), teams: teamStats(req.c, true) }); res.json({ ok: true }); });
 app.get('/api/providers', (_, res) => res.json(Object.entries(providers).map(([k, v]) => ({ type: k, label: v.label, fields: v.fields, manual: !!v.manual, wallets: v.wallets || [] }))));
