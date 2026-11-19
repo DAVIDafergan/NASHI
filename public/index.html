@@ -19,7 +19,7 @@
 html[data-theme=dark]{--ink:#f3f4f8;--paper:#0b0b12;--card:rgba(24,25,34,.7);--cardS:#181922;--mut:#9a9eae;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--soft:#1b1c26;--sh:0 1px 2px rgba(0,0,0,.4),0 16px 50px -16px rgba(0,0,0,.6)}
 *{box-sizing:border-box;margin:0;padding:0}[hidden]{display:none!important}
 html{scroll-behavior:smooth}html,body{overflow-x:clip}
-body{font:400 17px/1.6 var(--f);color:var(--ink);background:var(--paper);-webkit-text-size-adjust:100%;position:relative}
+html{background:var(--paper)}body{font:400 17px/1.6 var(--f);color:var(--ink);background:transparent;-webkit-text-size-adjust:100%;position:relative}
 .aur{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .aur i{position:absolute;border-radius:50%;background:radial-gradient(closest-side,currentColor,transparent)!important;transform:translateZ(0);opacity:.16;animation:drift 18s ease-in-out infinite}
 .aur .a1{color:#7c5cff;width:52vw;height:52vw;background:#7c5cff;top:-22vw;inset-inline-end:-12vw}.aur .a2{color:#22d3ee;width:40vw;height:40vw;background:#22d3ee;top:30vh;inset-inline-start:-16vw;animation-delay:-6s}.aur .a3{color:#a3ff6f;width:34vw;height:34vw;background:#a3ff6f;bottom:-14vw;inset-inline-end:10vw;animation-delay:-12s;opacity:.35}
@@ -130,6 +130,24 @@ nav .btn{min-height:40px;padding:0 18px;font-size:14px}
 .stp::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:36px;height:36px;border-radius:999px;background:#fff;font-weight:700;font-size:15px;margin-bottom:14px;color:var(--ink)}
 .stp h3{font-size:18px;font-weight:600;margin-bottom:6px}.stp p{font-size:14px;color:#aeb2c2}
 @media(max-width:860px){.steps{grid-template-columns:1fr 1fr}}@media(max-width:520px){.steps{grid-template-columns:1fr}}
+.aura{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.aura i{position:absolute;width:62vmax;height:62vmax;border-radius:50%;filter:blur(90px);opacity:.16;will-change:transform}
+.aura i:nth-child(1){background:#7c5cff;top:-22vmax;inset-inline-start:-14vmax;animation:au1 26s ease-in-out infinite alternate}
+.aura i:nth-child(2){background:#22d3ee;top:30vh;inset-inline-end:-24vmax;animation:au2 32s ease-in-out infinite alternate}
+.aura i:nth-child(3){background:#a3ff6f;bottom:-30vmax;inset-inline-start:20vw;opacity:.12;animation:au3 38s ease-in-out infinite alternate}
+@keyframes au1{to{transform:translate(18vw,22vh) scale(1.15)}}@keyframes au2{to{transform:translate(-22vw,-16vh) scale(.9)}}@keyframes au3{to{transform:translate(-16vw,-24vh) scale(1.2)}}
+[data-theme=dark] .aura i{opacity:.22}
+@media(prefers-reduced-motion:reduce){.aura i{animation:none}}
+.calc{margin-top:36px;border:1px solid var(--line);border-radius:20px;background:var(--card);box-shadow:var(--sh);padding:26px}
+.calc .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}.calc .top b{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.calc input[type=range]{width:100%;margin:16px 0 20px;accent-color:#5b3df5}
+.cc{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.cc>div{border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}.cc span{display:block;font-size:13px;color:var(--mut)}.cc b{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.cc .us{background:var(--ink);color:#f3f4f8;border-color:transparent}.cc .us>span{color:#c9c9d6}
+.save{margin-top:14px;text-align:center;font-weight:700;font-size:17px}.save b{background:var(--gtxt);-webkit-background-clip:text;background-clip:text;color:transparent}
+.fn{font-size:13px;color:var(--mut);margin-top:10px;text-align:center}
+.ft{width:100%;border-collapse:separate;border-spacing:0;margin-top:22px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card);font-size:15px}
+.ft th,.ft td{padding:14px 16px;text-align:start;border-bottom:1px solid var(--line);vertical-align:top}.ft tr:last-child td{border-bottom:0}.ft th{font-size:13px;color:var(--mut);font-weight:600;background:var(--soft)}.ft td:first-child{font-weight:700;width:24%}.ft td.us{font-weight:600}
+@media(max-width:700px){.cc{grid-template-columns:1fr}.ft,.ft tbody{display:block}.ft thead{display:none}.ft tr{display:block;border-bottom:1px solid var(--line);padding:8px 0}.ft tr:last-child{border-bottom:0}.ft td{display:block;border-bottom:0;padding:6px 16px;width:auto!important}.ft td:first-child{font-size:16px}.ft td.us::before{content:"GiveIL: ";color:var(--mut);font-weight:600}.ft td.ot::before{content:"מבוססת אחוזים: ";color:var(--mut);font-weight:600}}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:40px}
 .cmp .c{border:1px solid var(--line);border-radius:16px;padding:28px;background:var(--card);box-shadow:var(--sh)}
 .cmp .c.us{background:var(--ink);color:#f3f4f8;border-color:transparent;position:relative;overflow:hidden}
@@ -185,7 +203,7 @@ html[data-theme=dark] .tile .ti{color:#a99bff}
 @media(max-width:760px){.phone .float{display:none}.phone{width:300px;height:614px;border-radius:46px}.phone .scr{border-radius:36px}.phone iframe{transform:scale(.7077)}}
 </style>
 </head>
-<body>
+<body><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
 <nav><div class="wrap"><a class="logo" href="/"><img src="/logo.svg" alt="GiveIL"><span class="wm">Give<b>IL</b></span></a><div class="links"><a href="#features">יכולות</a><a href="#who">למי זה מתאים</a><a href="#how">איך זה עובד</a><a href="#pricing">מחיר</a><a href="#faq">שאלות</a></div><div class="acts"><button class="ib" id="theme" title="מצב כהה">☾</button><a class="btn o" href="/app">כניסה</a><a class="btn" href="/app#reg"><span class="ar">←</span>פתיחת קמפיין</a></div></div></nav>
 
@@ -207,7 +225,7 @@ html[data-theme=dark] .tile .ti{color:#a99bff}
 </div></section>
 
 <section id="features"><div class="wrap">
-  <div data-r style="text-align:center"><span class="lbl">יכולות</span><h2 style="margin-top:12px">כל מה שקמפיין מיליונים צריך.<br><span class="g">ועוד כמה דברים שאין לאף אחד.</span></h2></div>
+  <div data-r style="text-align:center"><span class="lbl">יכולות</span><h2 style="margin-top:12px">כל מה שקמפיין מיליונים צריך.<br><span class="g">הכל כלול במחיר.</span></h2></div>
   <div class="tiles">
     <div class="tile" data-r><div class="ti"><svg class="li" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg></div><h3>קמפיין תוך חצי שעה</h3><p>בונים, מעצבים ומשתפים – בלי מתכנת</p></div>
     <div class="tile" data-r><div class="ti"><svg class="li" viewBox="0 0 24 24" aria-hidden="true"><circle pathLength="1" cx="12" cy="12" r="9"/><circle pathLength="1" cx="12" cy="12" r="5"/><path pathLength="1" d="M12 12l7-7M16 5h3v3"/></svg></div><h3>יעד וספירה לאחור</h3><p>התקדמות חיה ויעד בונוס אוטומטי</p></div>
@@ -231,9 +249,18 @@ html[data-theme=dark] .tile .ti{color:#a99bff}
 </div></section>
 
 <section><div class="wrap">
-  <div data-r style="text-align:center"><span class="lbl">למה GiveIL</span><h2 style="margin-top:12px">הכסף שלכם <span class="g">נשאר אצלכם</span></h2></div>
-  <div class="cmp"><div class="c us" data-r><h3>GiveIL</h3><ul><li>0% עמלת פלטפורמה. מנוי קבוע וידוע מראש</li><li>הסליקה שלכם, הכסף נכנס ישירות לחשבון העמותה</li><li>מצב בדיקה מלא לפני העלייה לאוויר</li><li>מסך אירוע חי ומדריך חכם מובנים</li><li>אימות אוטומטי מול רשם העמותות</li><li>4 שפות מהקופסה</li></ul></div>
-  <div class="c" data-r><h3>פלטפורמות גיוס מסורתיות</h3><ul class="no"><li>3%–8% מכל שקל שמגויס</li><li>הכסף עובר דרך הפלטפורמה ומשתחרר אחרי הקמפיין</li><li>בודקים "על חי"</li><li>מסך אירוע כתוספת בתשלום, אם בכלל</li><li>הדרכה ידנית לכל קמפיין</li></ul></div></div>
+  <div data-r style="text-align:center"><span class="lbl">למה GiveIL</span><h2 style="margin-top:12px">כמה עולה לכם <span class="g">הקמפיין?</span></h2><p class="sub" style="margin-inline:auto">חשבון פשוט: עמלה באחוזים מכל תרומה, מול מחיר קבוע.</p></div>
+  <div class="calc" data-r><div class="top"><span>יעד הקמפיין</span><b id="cAmt">₪200,000</b></div>
+  <input type="range" id="cRng" min="20000" max="2000000" step="10000" value="200000" aria-label="יעד הקמפיין">
+  <div class="cc"><div><span>עמלה של 3%</span><b id="c3">₪6,000</b></div><div><span>עמלה של 6%</span><b id="c6">₪12,000</b></div><div class="us"><span>GiveIL – מחיר קבוע</span><b id="cUs">₪790</b></div></div>
+  <div class="save">נשאר בעמותה: עד <b id="cSave">₪11,210</b> יותר</div>
+  <div class="fn">האחוזים להמחשה. עמלת חברת האשראי קיימת בכל מקרה, גם אצלנו – והיא משולמת ישירות לספק הסליקה שלכם.</div></div>
+  <table class="ft" data-r><thead><tr><th></th><th>GiveIL</th><th>פלטפורמה מבוססת אחוזים</th></tr></thead><tbody>
+  <tr><td>מחיר</td><td class="us">קבוע: ₪790 לקמפיין, או ₪440 לחודש במנוי שנתי</td><td class="ot">אחוז מכל תרומה – ככל שמגייסים יותר, משלמים יותר</td></tr>
+  <tr><td>לאן נכנס הכסף</td><td class="us">לחשבון הסליקה של העמותה (נדרים פלוס, Grow, קארדקום, PayPal…)</td><td class="ot">בדרך כלל לחשבון של הפלטפורמה, ומשם בהעברה תקופתית לעמותה</td></tr>
+  <tr><td>מתי משלמים</td><td class="us">רק כשעולים לאוויר. בנייה ובדיקה – חינם</td><td class="ot">מנוכה מכל תרומה לאורך הקמפיין</td></tr>
+  <tr><td>מה כלול</td><td class="us">שגרירים, מסך אירוע, 4 שפות, דולר, תרומות חודשיות, ייצוא לאקסל</td><td class="ot">משתנה בין פלטפורמות ומסלולים</td></tr>
+  </tbody></table>
 </div></section>
 
 <section id="pricing"><div class="wrap">
@@ -278,6 +305,10 @@ html[data-theme=dark] .tile .ti{color:#a99bff}
 <footer><div class="wrap"><div style="display:flex;align-items:center;gap:12px"><img src="/logo.svg" alt="" style="width:34px"><div><b style="font-size:16px;color:var(--ink)">Give<b style="color:#0038b8">IL</b></b><div style="font-size:12px;letter-spacing:.08em">GIVEIL · צדקה תציל ממוות · © <span id="y"></span></div></div></div><div class="links"><a href="/app">כניסה</a><a href="/terms">תקנון</a><a href="/privacy">פרטיות</a><a href="/accessibility">נגישות</a><a href="mailto:hello@giveil.com">צור קשר</a></div></div></footer>
 <script>try{if(localStorage.getItem('gx_theme')==='dark')document.documentElement.dataset.theme='dark'}catch{}document.getElementById('theme').onclick=()=>{const d=document.documentElement.dataset.theme==='dark'?'':'dark';document.documentElement.dataset.theme=d;try{localStorage.setItem('gx_theme',d)}catch{}};fetch('/api/public/campaigns').then(r=>r.json()).then(l=>{const g=document.getElementById('cg');if(!l.length){document.getElementById('live').hidden=true;return}const f=n=>Math.round(n).toLocaleString('he-IL');g.innerHTML=l.map(c=>{const cur=c.currency==='USD'?'$':'₪';const w=Math.min(100,c.pct);return `<a class="cgc" href="/c/${c.slug}"><div class="im" style="${c.cover?`background-image:url('${c.cover.replace(/'/g,'')}')`:''}">${c.demo?'<span>קמפיין לדוגמה</span>':''}${c.live?'<span class="lv">● באוויר</span>':''}</div><div class="bd"><h3>${c.title.replace(/</g,'&lt;')}</h3><div class="bar"><i style="width:${w}%"></i></div><div class="m"><span><b>${cur}${f(c.total)}</b> מתוך ${cur}${f(c.goal)}</span><span>${Math.round(c.pct)}%</span></div></div></a>`}).join('')}).catch(()=>{document.getElementById('live').hidden=true});document.getElementById('y').textContent=new Date().getFullYear();const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});document.querySelectorAll('[data-r]').forEach(el=>io.observe(el));</script>
 <script src="/a11y.js?v=3" defer></script>
+<script>
+(function(){const r=document.getElementById('cRng');if(!r)return;let P=790;const f=n=>'₪'+Math.round(n).toLocaleString('he-IL');const up=()=>{const v=+r.value;document.getElementById('cAmt').textContent=f(v);document.getElementById('c3').textContent=f(v*.03);document.getElementById('c6').textContent=f(v*.06);document.getElementById('cUs').textContent=f(P);document.getElementById('cSave').textContent=f(Math.max(0,v*.06-P))};r.oninput=up;fetch('/api/pricing').then(x=>x.json()).then(p=>{P=+p.campaign||P;up()}).catch(up);up()})();
+fetch('/api/me',{credentials:'same-origin'}).then(r=>r.json()).then(j=>{if(!j||!j.user)return;const a=document.querySelector('nav .acts');if(!a)return;a.querySelectorAll('a.btn').forEach(x=>x.remove());a.insertAdjacentHTML('beforeend','<a class="btn" href="/app"><span class="ar">←</span>לאזור האישי</a>');const h=document.querySelector('.hero .cta a.btn');if(h){h.href='/app';h.innerHTML='<span class="ar">←</span>לאזור האישי'}}).catch(()=>{});
+</script>
 <script>fetch('/api/pricing').then(r=>r.json()).then(p=>{document.querySelectorAll('[data-price]').forEach(e=>e.textContent='₪'+Number(p[e.dataset.price]).toLocaleString('he-IL'));const v=document.querySelector('[data-vat]');if(v)v.textContent=(p.vat==='plus'?'המחירים אינם כוללים מע״מ':'המחירים כוללים מע״מ')+' · 0% מהתרומות'}).catch(()=>{})</script>
 </body>
 </html>

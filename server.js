@@ -683,4 +683,31 @@ app.get('/sitemap.xml', (req, res) => { const b = base(req); const slugs = db.pr
 app.get('/googlea5465d57b3c11b70.html', (_, res) => res.type('text/html').send('google-site-verification: googlea5465d57b3c11b70.html'));
 app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: ' + base(req) + '/sitemap.xml\nDisallow: /app\nDisallow: /pay/\nDisallow: /api/\n'));
 app.use((_, res) => res.status(404).sendFile(pub('404.html')));
+
+// ---- demo campaign shown in the landing-page phone (test data, clearly labelled "קמפיין לדוגמה") ----
+(function ensureDemo() {
+  try {
+    const COVER = 'https://images.unsplash.com/photo-1593113616828-6f22bca04804?auto=format&fit=crop&w=1400&q=80';
+    let c = db.prepare("SELECT * FROM campaigns WHERE slug='demo'").get();
+    const end = new Date(Date.now() + 9 * 864e5 + 5 * 36e5).toISOString().slice(0, 16);
+    const story = 'לקראת החג, 500 משפחות בפריפריה מחכות לחבילת מזון מלאה – עוף, ירקות, מוצרי יסוד ומתוק לילדים.\n\nכל חבילה נארזת בידי מתנדבים ומגיעה עד הבית, בצנעה ובכבוד. ₪180 = חבילה אחת למשפחה אחת.\n\nהמטרה: 500 חבילות עד ערב החג. כל שקל נכנס ישירות לחשבון העמותה.\n\n(צילום: Joel Muniz, Unsplash)';
+    if (!c) {
+      const adm = db.prepare("SELECT id FROM users WHERE role='admin' ORDER BY id LIMIT 1").get();
+      const r = db.prepare("INSERT INTO campaigns(user_id,slug,title,subtitle,story,goal,currency,status,cover,color,lang,settings,end_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)")
+        .run(adm ? adm.id : null, 'demo', 'חבילות מזון לחג – 500 משפחות', 'כל ₪180 = חבילה מלאה למשפחה אחת', story, 90000, 'ILS', 'test', COVER, '#0f766e', 'he', JSON.stringify({ demo: true }), end);
+      c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(r.lastInsertRowid);
+    } else {
+      const s = J(c.settings); s.demo = true;
+      db.prepare('UPDATE campaigns SET cover=CASE WHEN cover=\'\' THEN ? ELSE cover END, story=CASE WHEN story=\'\' THEN ? ELSE story END, settings=?, end_at=? WHERE id=?').run(COVER, story, JSON.stringify(s), end, c.id);
+    }
+    if (!db.prepare('SELECT 1 FROM levels WHERE campaign_id=?').get(c.id)) [['חבילה למשפחה', 180], ['שתי משפחות', 360], ['סל חג לחודש', 1000], ['שותף/ה מרכזי/ת', 5000]].forEach(([n, a], i) => db.prepare('INSERT INTO levels(campaign_id,name,amount,pos) VALUES(?,?,?,?)').run(c.id, n, a, i));
+    if (!db.prepare('SELECT 1 FROM teams WHERE campaign_id=?').get(c.id)) [['הרב יוסי', 'yossi', 20000], ['משפחת לוי', 'levi', 12000], ['נועה – שגרירה', 'noa', 8000], ['ישיבת אור', 'or', 15000]].forEach(([n, sl, g], i) => db.prepare('INSERT INTO teams(campaign_id,slug,name,goal,pos) VALUES(?,?,?,?,?)').run(c.id, sl, n, g, i));
+    if (db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND test=1 AND status='paid'").get(c.id).n < 10) {
+      const teams = db.prepare('SELECT id FROM teams WHERE campaign_id=? ORDER BY pos').all(c.id).map(t => t.id);
+      const D = [['משפחת כהן', 1800, 'לעילוי נשמת סבא משה'], ['דוד ושרה', 360, ''], ['', 180, ''], ['אבי מזרחי', 540, 'לרפואת רחל בת לאה'], ['יעל ב.', 180, 'שיהיה חג שמח לכולם ❤️'], ['משפחת פרץ', 5000, ''], ['רונית', 250, ''], ['', 1000, ''], ['איתי ונועם', 360, 'מהכיתה של ד׳2'], ['שמעון', 180, ''], ['משפחת אזולאי', 2600, 'להצלחת הילדים'], ['תמר', 100, ''], ['חברת אור-טק', 10000, 'בשם כל העובדים'], ['מיכל ויוני', 720, ''], ['', 180, ''], ['הדס', 180, 'בזכות הסבתא שלי'], ['משפחת ביטון', 1800, ''], ['אריאל', 360, ''], ['', 500, 'לזכות עם ישראל'], ['שירה', 180, ''], ['משה ורבקה', 3600, 'לעילוי נשמת אמא'], ['נתנאל', 180, ''], ['משפחת שלום', 1000, ''], ['אורית', 360, 'לרפואת יעקב בן שושנה'], ['ליאור', 250, ''], ['', 18000, ''], ['בני ומאיה', 540, ''], ['גלית', 180, ''], ['משפחת דהן', 1800, 'לזיווג הגון לבת'], ['עמית', 180, ''], ['קהילת נווה', 7200, ''], ['יוסי ש.', 360, ''], ['', 180, ''], ['רחל', 720, 'שנה טובה ומתוקה'], ['משפחת גבאי', 1000, ''], ['אלון', 180, ''], ['חן ודניאל', 360, ''], ['משפחת וקנין', 5400, ''], ['נעמה', 180, ''], ['שלמה', 1800, 'להצלחה בעסקים']];
+      const now = Date.now(); const ins = db.prepare("INSERT INTO donations(campaign_id,team_id,amount,currency,name,dedication,anonymous,status,test,provider,created,paid_at) VALUES(?,?,?,?,?,?,?,'paid',1,'test',?,?)");
+      D.forEach(([n, a, ded], i) => { const t = new Date(now - (D.length - i) * (2.6 * 36e5) - (i % 5) * 7e5).toISOString().replace('T', ' ').slice(0, 19); ins.run(c.id, i % 3 === 0 ? teams[i % teams.length] || null : null, a, 'ILS', n || 'אנונימי', ded, n ? 0 : 1, t, t); });
+    }
+  } catch (e) { console.error('demo seed', e.message); }
+})();
 app.listen(process.env.PORT || 3000, () => console.log('ttm up'));
