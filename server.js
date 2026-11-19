@@ -234,6 +234,7 @@ app.put('/api/campaigns/:id', auth, own, (req, res) => {
 app.post('/api/campaigns/:id/status', auth, own, (req, res) => {
   const s = req.body?.status; if (!['draft', 'test', 'live', 'ended'].includes(s)) return bad(res, 'status');
   if (s === 'live' && J(req.c.provider).type === 'test') return bad(res, 'כדי לעלות לאוויר צריך לחבר ספק סליקה אמיתי');
+  if (s === 'live' && J(req.c.provider).type === 'nedarim' && !J(req.c.provider).apiPassword) return bad(res, 'נדרים פלוס: חובה להזין ApiPassword לפני העלייה לאוויר – בלעדיו אי אפשר לאמת תרומות');
   if (s === 'live' && req.user.role !== 'admin') { const u = db.prepare('SELECT email_verified FROM users WHERE id=?').get(req.user.id); if (mail.enabled() && !u.email_verified) return bad(res, 'כדי לעלות לאוויר יש לאמת את כתובת האימייל (בדקו את תיבת הדואר)'); if (!db.prepare('SELECT 1 FROM contracts WHERE user_id=?').get(req.user.id)) return bad(res, 'כדי לעלות לאוויר יש לחתום על הסכם השימוש'); }
   if (s === 'live' && req.body?.clearTest) db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id);
   db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(s, req.c.id); res.json({ ok: true });
@@ -398,14 +399,26 @@ app.all('/pay/nedarim/callback', limit(120, 60000), async (req, res) => {
   const amtOk = !r.amount || Math.abs(r.amount - d.amount) <= 1 || Math.abs(r.amount - perPay) <= 1;
   if (!amtOk) return log(`⚠ סכום לא תואם (נדרים: ${r.amount}, בקשה: ${d.amount}) – לא נספר.`);
   const isHK = !!d.monthly || String(b.PaymentType || '').toUpperCase() === 'HK' || (!!b.KevaId && !b.TransactionId);
-  let verified = 0;
-  if (cfg.apiPassword && !isHK) {
-    try { const v = await providers.nedarim.verify({ cfg, transactionId: r.ref }); if (v.checked && !v.found) return log('⚠ העסקה לא נמצאה בהיסטוריית נדרים – לא נספר. לחצו "סנכרון מול נדרים".'); if (v.found && Math.abs(v.amount - d.amount) > 1 && Math.abs(v.amount - perPay) > 1) return log(`⚠ סכום בנדרים (${v.amount}) שונה מהבקשה (${d.amount}) – לא נספר.`); verified = v.found ? 1 : 0; }
-    catch (e) { verified = 0; r.meta._verifyError = e.message; }
+  db.prepare('UPDATE donations SET ref=? WHERE id=? AND ref=\'\'').run(r.ref, d.id);
+  console.log('nedarim callback', d.id, JSON.stringify({ Status: b.Status, TransactionId: b.TransactionId, KevaId: b.KevaId, Amount: b.Amount, Mosad: b.Mosad, PaymentType: b.PaymentType }));
+  // STRICT: a one-time charge is counted only after we read it back from Nedarim's own history (ApiPassword).
+  if (!cfg.apiPassword) return log('⏳ ממתין לאימות: חסר ApiPassword בהגדרות הסליקה. הוסיפו אותו ולחצו "סנכרון מול נדרים" – התרומה תאומת ותיספר.');
+  if (isHK) {
+    markPaid(d.id, { ref: r.ref, meta: { ...r.meta, verified: 1, hk: true }, amount: d.amount });
+    return db.prepare('UPDATE donations SET verified=1, note=? WHERE id=?').run(`הוראת קבע נרשמה בנדרים (מזהה ${r.ref}). החיובים החודשיים מתבצעים ומנוהלים בנדרים פלוס.`, d.id);
   }
-  markPaid(d.id, { ref: r.ref, meta: { ...r.meta, verified, hk: isHK }, amount: d.amount });
-  const note = isHK ? `הוראת קבע נרשמה בנדרים (מזהה ${r.ref}). החיובים החודשיים מתבצעים ומנוהלים בנדרים פלוס.` : verified ? 'אומת מול שרת נדרים ✓' : (cfg.apiPassword ? 'שולם; אימות מול נדרים נכשל זמנית – יושלם בסנכרון' : 'שולם לפי הודעת נדרים (הוסיפו ApiPassword לאימות מלא)');
-  db.prepare('UPDATE donations SET verified=?, note=? WHERE id=?').run(isHK ? 1 : verified, note, d.id);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const v = await providers.nedarim.verify({ cfg, transactionId: r.ref });
+      if (v.found) {
+        if (Math.abs(v.amount - d.amount) > 1 && Math.abs(v.amount - perPay) > 1) return log(`⚠ סכום בנדרים (${v.amount}) שונה מהבקשה (${d.amount}) – לא נספר.`);
+        markPaid(d.id, { ref: r.ref, meta: { ...r.meta, verified: 1, nedarim: v.record }, amount: d.amount });
+        return db.prepare('UPDATE donations SET verified=1, note=? WHERE id=?').run('אומת מול שרת נדרים ✓', d.id);
+      }
+      return log('⏳ נדרים דיווחו OK אבל העסקה עדיין לא מופיעה בהיסטוריה שלהם – לא נספרה. נבדוק שוב אוטומטית כל 5 דקות.');
+    } catch (e) { r.meta._verifyError = e.message; if (attempt < 2) await new Promise(x => setTimeout(x, [2000, 6000][attempt])); }
+  }
+  return log('⏳ ממתין לאימות מול נדרים (שגיאת תקשורת: ' + String(r.meta._verifyError || '').slice(0, 80) + '). נבדוק שוב אוטומטית כל 5 דקות.');
 });
 // Reconcile: pull Nedarim history and match it against our donations (missed callbacks, unverified rows)
 async function reconcileNedarim(c) {
@@ -456,10 +469,10 @@ app.post('/api/campaigns/:id/provider/test', auth, own, limit(10, 60000), async 
 app.post('/api/campaigns/:id/reconcile', auth, own, async (req, res) => { try { res.json(await reconcileNedarim(req.c)); } catch (e) { bad(res, e.message, 502); } });
 // every 10 minutes: reconcile live Nedarim campaigns that have unverified/pending donations in the last 2 days
 setInterval(async () => {
-  for (const c of db.prepare("SELECT c.* FROM campaigns c WHERE c.status='live' AND c.provider LIKE '%nedarim%' AND EXISTS(SELECT 1 FROM donations d WHERE d.campaign_id=c.id AND d.provider='nedarim' AND d.test=0 AND (d.status='pending' OR d.verified=0) AND d.created > datetime('now','-2 days'))").all()) {
+  for (const c of db.prepare("SELECT c.* FROM campaigns c WHERE c.provider LIKE '%nedarim%' AND EXISTS(SELECT 1 FROM donations d WHERE d.campaign_id=c.id AND d.provider='nedarim' AND d.test=0 AND (d.status='pending' OR d.verified=0) AND d.created > datetime('now','-2 days'))").all()) {
     try { await reconcileNedarim(c); } catch (e) { console.error('reconcile', c.id, e.message); }
   }
-}, 10 * 60000).unref();
+}, 5 * 60000).unref();
 app.all('/pay/meshulam/webhook', (req, res) => {
   const b = { ...req.query, ...req.body }; const r = providers.meshulam.callback(b);
   // must match BOTH our id and the secret token; amount must equal what the donor asked for; a transaction id is required
