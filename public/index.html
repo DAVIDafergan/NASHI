@@ -171,6 +171,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 .flame{width:120px;height:140px;margin:0 auto;position:relative}.flame img{width:120px}@keyframes fl{50%{transform:scale(1.05) translateY(-3px)}}
 
 .ws .chip{font-family:var(--fs)}
+.jt{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));inset-inline-end:16px;z-index:45;display:flex;align-items:center;gap:9px;background:rgba(12,17,40,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(212,176,106,.35);border-radius:999px;padding:7px 14px 7px 8px;font-size:13.5px;color:var(--ink);box-shadow:0 14px 30px -14px #000;transform:translateY(140%);opacity:0;transition:transform .6s cubic-bezier(.2,.9,.25,1),opacity .6s;pointer-events:none;max-width:calc(100vw - 84px);white-space:nowrap}.jt span{overflow:hidden;text-overflow:ellipsis}.jt.on{transform:none;opacity:1}.jt i{width:24px;height:24px;border-radius:50%;background:linear-gradient(180deg,#e0bf7a,#b38a45);color:#1a1205;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:12px;flex:none}.jt small{color:var(--mut2);font-size:12px}@media(max-width:760px){.jt{bottom:calc(88px + env(safe-area-inset-bottom))}}
 [data-r]{opacity:0;transform:translateY(40px);transition:opacity 1.1s cubic-bezier(.2,.9,.25,1),transform 1.1s cubic-bezier(.2,.9,.25,1)}[data-r].in{opacity:1;transform:none}
 </style>
 </head>
@@ -285,13 +286,13 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
     <label class="ck"><input type="checkbox" id="jPub" checked><span>אפשר להציג את השם הפרטי והעיר שלי באתר ("דוד מצפת לקח קופה")</span></label>
     <label class="ck"><input type="checkbox" id="jOk"><span>אני מאשר/ת את <a href="/terms.html" target="_blank" style="color:var(--gold2);text-decoration:underline">התנאים ומדיניות הפרטיות</a> ומסכים/ה לקבל עדכונים ותזכורות</span></label></div>
   <div class="ws done" data-s="6"><div class="flame" style="width:220px;height:auto"><img src="/logo-420.png" alt="" style="width:220px"></div><div class="big gt" id="dNo">#0001</div><p style="color:var(--mut)" id="dTxt">הקופה שלך בדרך. מחר בבוקר – השקל הראשון.</p>
-    <div style="display:grid;gap:10px;margin-top:18px"><button type="button" class="btn" id="dShare">שיתוף הכרטיס שלי 📸</button><a class="btn ghost" href="/me">לאזור האישי ←</a></div></div>
+    <div style="display:grid;gap:10px;margin-top:18px"><button type="button" class="btn" id="dShare">שיתוף הכרטיס שלי לסטורי 📸</button><button type="button" class="btn ghost" id="dLink">שליחה לחברים בוואטסאפ</button><a class="btn ghost" href="/me">לאזור האישי ←</a></div></div>
   <div class="err" id="jErr" style="text-align:center;margin-top:10px"></div>
   <div class="wnav" id="wnav"><button type="button" class="btn ghost" id="jBack" hidden>→</button><button type="submit" class="btn" id="jNext">המשך ←</button></div>
 </form></div>
 <canvas id="share" width="1080" height="1350" style="display:none"></canvas>
-<div class="toast" id="toast"></div>
-<script src="/cities.js?v=5"></script><script src="/share.js?v=4"></script>
+<div class="toast" id="toast"></div><div class="jt" id="jt" aria-live="polite"></div>
+<script src="/cities.js?v=5"></script><script src="/share.js?v=5"></script>
 <script src="/ilmap.js?v=5"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -329,7 +330,8 @@ fetch('/api/stats').then(r=>r.json()).then(s=>{ST=s;if(s.yearMornings)$('#ymB').
   if(s.whatsapp){$('#waLink').hidden=false;$('#waLink').href='https://wa.me/'+s.whatsapp.replace(/\D/g,'').replace(/^0/,'972')}
   proof();calc();drawMap();ticker()}).catch(()=>{calc();drawMap()});
 function liveBadge(){const r=ST.recent||[];if(!r.length||ME)return;let i=0;const f=()=>{const x=r[i++%r.length];$('#liveB').textContent=`${x.first} מ${x.city} לקח/ה קופה`};f();setInterval(f,4000)}
-function proof(){liveBadge();const r=ST.recent||[];if(ME)return;$('#proof').innerHTML=ST.boxes?`<span class="av">${r.slice(0,4).map(x=>`<i>${esc(x.first[0])}</i>`).join('')}</span><span><b style="color:var(--gold2)">${fmt(ST.boxes)}</b> קופות כבר ב-<b style="color:var(--gold2)">${fmt(ST.cities)}</b> ערים</span>`:'<span>הקופות הראשונות יוצאות לדרך – היו בין הראשונים</span>'}
+function joinToasts(){const l=(ST.recent||[]).slice();if(!l.length)return;let v=1;try{v=+(localStorage.getItem('rb_v')||0)+1;localStorage.setItem('rb_v',v)}catch{}if(v>2)return;let i=0;const jt=$('#jt');const show=()=>{if(ME||i>=Math.min(l.length,10))return;const r=l[i++];jt.innerHTML=`<i>${esc(r.first[0])}</i><span><b>${esc(r.first)} מ${esc(r.city)}</b> לקח/ה קופה <small>· ${ago(r.created)}</small></span>`;jt.classList.add('on');setTimeout(()=>jt.classList.remove('on'),5200);setTimeout(show,11000)};setTimeout(show,6000)}
+function proof(){liveBadge();joinToasts();const r=ST.recent||[];if(ME)return;$('#proof').innerHTML=ST.boxes?`<span class="av">${r.slice(0,4).map(x=>`<i>${esc(x.first[0])}</i>`).join('')}</span><span><b style="color:var(--gold2)">${fmt(ST.boxes)}</b> קופות כבר ב-<b style="color:var(--gold2)">${fmt(ST.cities)}</b> ערים</span>`:'<span>הקופות הראשונות יוצאות לדרך – היו בין הראשונים</span>'}
 // ---- calculator ----
 const cR=$('#cR');const realN=()=>Math.max(1,Math.round(Math.pow(1000,cR.value/1000)));
 function calc(){const n=realN(),days=ST.daysLeft||300,tot=n*days,tk=Math.floor(tot/(ST.ticketPrice||3800));$('#cN').textContent=fmt(n);$('#cD').textContent='₪'+fmt(n);$('#cT').textContent='₪'+fmt(tot);$('#cP').textContent=fmt(tk);
@@ -359,16 +361,17 @@ fetch('/api/me').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;ME=d;const m=
   $('#lead').innerHTML=`${esc(m.first)}, בקופה שלך כבר <b style="color:var(--gold2)">₪${fmt(b.balance)}</b>${b.streak>1?` · ${b.streak} ימים ברצף`:''}. ${b.checkedToday?'השקל של היום כבר בפנים – אשריך!':'שמת כבר את השקל של היום?'}`;
   const link=location.origin+'/r/'+m.ref_code,wa='https://wa.me/?text='+encodeURIComponent(`לקחתי על עצמי שקל ביום לרבינו 🔥 כל השקלים הופכים בראש השנה לכרטיסי טיסה לאומן ליהודים שעוד לא זכו. רוצה קופה משלך? ${link}`);
   $('#heroCta').innerHTML=(b.checkedToday?'':`<button class="btn" id="hChk">שמתי את השקל של היום ✓</button>`)+`<a class="btn ${b.checkedToday?'':'ghost'}" href="/me">לקופה שלי ←</a>`;
-  $('#proof').innerHTML=`<span>הזמנת עד עכשיו <b style="color:var(--gold2)">${fmt(m.refs)}</b> יהודים · <a href="${wa}" target="_blank" style="color:var(--gold2);text-decoration:underline">להזמין עוד אחד</a></span>`;
+  $('#proof').innerHTML=`<span>הזמנת עד עכשיו <b style="color:var(--gold2)">${fmt(m.refs)}</b> יהודים · <a href="#" data-sh style="color:var(--gold2);text-decoration:underline">להזמין עוד אחד</a></span>`;
   const chk=$('#hChk');if(chk)chk.onclick=async()=>{chk.disabled=true;const r=await fetch('/api/me/checkin',{method:'POST'});if(r.ok){chk.outerHTML='<span class="btn ghost" style="pointer-events:none">✓ השקל של היום בקופה</span>';toast('אשריך! עוד יום ברצף')}};
-  $('#mapCta').innerHTML=`<a class="btn" href="${wa}" target="_blank">להזמין חבר ולהדליק עוד נקודה ←</a>`;
-  $('#finCta').innerHTML=`<a class="btn" href="/me">לקופה שלי ←</a><a class="btn ghost" href="${wa}" target="_blank">להזמין חבר</a>`;
+  $('#mapCta').innerHTML=`<button class="btn" data-sh>להזמין חבר ולהדליק עוד נקודה ←</button>`;
+  $('#finCta').innerHTML=`<a class="btn" href="/me">לקופה שלי ←</a><button class="btn ghost" data-sh>להזמין חבר</button>`;
   $('.mcta').innerHTML=`<a class="btn" href="/me">הקופה שלי ${no} ←</a>`;
-  $$('[data-join]').forEach(x=>{x.onclick=()=>location.href='/me';x.textContent='לקופה שלי ←'})}).catch(()=>{});
+  $$('[data-join]').forEach(x=>{x.onclick=()=>location.href='/me';x.textContent='לקופה שלי ←'});
+  $$('[data-sh]').forEach(x=>x.onclick=e=>{e.preventDefault();rbShareLink(link)})}).catch(()=>{});
 </script>
 <script>
 // ---- join wizard ----
-const ref=new URLSearchParams(location.search).get('r')||'';try{if(ref)localStorage.setItem('rb_ref',ref)}catch{}
+const ref=new URLSearchParams(location.search).get('r')||(document.querySelector('meta[name=rb-ref]')||{}).content||'';try{if(ref)localStorage.setItem('rb_ref',ref)}catch{}
 $('#cityList').innerHTML=CITY.CITIES.map(c=>`<option value="${c.name}">`).join('');
 const WS=[null,['user','נעים להכיר','איך קוראים לבעל/ת הקופה?'],['phone','איך נשיג אותך?','הטלפון הוא גם הכניסה לאזור האישי'],['home','לאן להביא את הקופה?','השליח שלנו יגיע עד הדלת'],['heart','הקבלה שלך','שקל אחד – או כמה שהלב אומר'],['bell','תזכורת קטנה בבוקר','ואחרונה: קוד אישי לאזור שלך'],null];
 let cur=1;const ov=$('#ov');
@@ -400,6 +403,7 @@ $('#wz').onsubmit=async e=>{e.preventDefault();if(!check(cur))return;if(cur<5)re
 // gold confetti
 function gold(){const c=document.createElement('canvas');c.style.cssText='position:fixed;inset:0;z-index:150;pointer-events:none';c.width=innerWidth;c.height=innerHeight;document.body.appendChild(c);const x=c.getContext('2d');const P=Array.from({length:140},()=>({x:innerWidth/2,y:innerHeight/2,vx:(Math.random()-.5)*16,vy:Math.random()*-16-4,r:Math.random()*5+2,a:1,s:Math.random()*.3}));let t=0;(function f(){x.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.vy+=.45;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.a-=.008;x.globalAlpha=Math.max(0,p.a);x.fillStyle=['#fbe7a6','#d9ae5b','#fff4d0'][p.r|0%3];x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill()});if(++t<160)requestAnimationFrame(f);else c.remove()})()}
 // share card
+$('#dLink').onclick=()=>rbShareLink(location.origin+'/r/'+JOINED.ref_code);
 $('#dShare').onclick=()=>rbShare({boxNo:JOINED.box_no,ref:JOINED.ref_code,first:JOINED.first},`לקחתי על עצמי שקל ביום לרבינו 🔥 קופה מס׳ ${JOINED.box_no}. בזכות השקל הזה עוד יהודי יגיע לאומן. רוצים גם? ${location.origin}/r/${JOINED.ref_code}`);
 
 if(location.hash==='#join')setTimeout(wOpen,600);

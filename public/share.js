@@ -27,3 +27,5 @@ window.rbCard=async function({boxNo,ref,streak,first}){
 window.rbShare=async function(o,text){const blob=await rbCard(o);const f=new File([blob],'rabeinu-sheli.png',{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],text});return}catch(e){if(e.name==='AbortError')return}}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rabeinu-sheli.png';a.click();setTimeout(()=>open('https://wa.me/?text='+encodeURIComponent(text),'_blank'),500)};
+window.RB_TEXT='🔥 לקחתי על עצמי שקל ביום לרבינו.\nקופה קטנה ליד התפילין – ובראש השנה כל השקלים הופכים לכרטיס טיסה לאומן ליהודי שעוד לא זכה.\nרוצה גם? הקופה מגיעה עד הבית 👇';
+window.rbShareLink=async function(url,text){text=text||RB_TEXT;try{if(navigator.share){await navigator.share({title:'רבינו שלי',text,url});return}}catch(e){if(e.name==='AbortError')return}open('https://wa.me/?text='+encodeURIComponent(text+'\n'+url),'_blank')};

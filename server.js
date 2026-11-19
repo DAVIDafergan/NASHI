@@ -86,7 +86,7 @@ function stats() {
   const all = db.prepare("SELECT city,lat,lng,amount,start_date FROM members WHERE box_status!='cancelled'").all();
   let daily = 0, projected = 0; const byCity = {};
   for (const m of all) { daily += m.amount; projected += mornings(m.start_date, s.targetDate) * m.amount; if (m.lat) { const k = m.city; (byCity[k] ||= { c: k, lat: m.lat, lng: m.lng, n: 0 }).n++; } }
-  const recent = s.showRecent ? db.prepare("SELECT first, city, created FROM members WHERE public=1 AND box_status!='cancelled' ORDER BY id DESC LIMIT 12").all() : [];
+  const recent = s.showRecent ? db.prepare("SELECT first, city, created FROM members WHERE public=1 AND box_status!='cancelled' ORDER BY id DESC LIMIT 40").all() : [];
   const v = { boxes: all.length, cities: Object.keys(byCity).length, daily, projected, tickets: Math.floor(projected / s.ticketPrice), ticketPrice: s.ticketPrice, targetDate: s.targetDate, daysLeft: mornings(addDay(t, 1), s.targetDate), calDaysLeft: Math.max(0, dayDiff(t, s.targetDate)), yearMornings: mornings(t, addDay(t, 364)), todayOff: offName(t), goal: s.goal, points: Object.values(byCity), recent, whatsapp: s.whatsapp };
   statsCache = { t: Date.now(), v }; return v;
 }
@@ -255,13 +255,22 @@ setInterval(() => tickReminders().catch(e => console.error('reminders', e.messag
 const pub = f => path.join(__dirname, 'public', f);
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /me\nSitemap: ${process.env.BASE_URL || ''}/sitemap.xml\n`));
 app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${process.env.BASE_URL || ''}/</loc><changefreq>daily</changefreq></url></urlset>`));
+const absOg = (req, html) => { const b = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`; return html.replace('content="/og.jpg"', `content="${b}/og.jpg?v=2"`).replace('<meta property="og:type"', `<meta property="og:url" content="${b}${req.path}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta property="og:type"`); };
+app.get(['/', '/index.html'], (req, res) => { res.setHeader('Cache-Control', 'no-cache'); res.send(absOg(req, fs.readFileSync(pub('index.html'), 'utf8'))); });
 app.use(express.static(pub(''), { maxAge: '10m', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.get(['/me', '/me/*'], (_, res) => res.sendFile(pub('me.html')));
 app.get(['/admin', '/admin/*'], (_, res) => res.sendFile(pub('admin.html')));
 app.get('/q', (req, res) => res.redirect(member(req) ? '/me' : '/?utm_source=box#join'));
 app.get('/api/qr', async (req, res) => { const d = String(req.query.d || '').slice(0, 300); if (!d) return bad(res, 'd'); const c = /^#?[0-9a-f]{6}$/i.test(req.query.c || '') ? '#' + String(req.query.c).replace('#', '') : '#d4b06a';
   try { const svg = await QR.toString(d, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: c, light: '#0000' } }); res.setHeader('Cache-Control', 'public, max-age=86400'); res.type('image/svg+xml').send(svg); } catch { bad(res, 'qr'); } });
-app.get('/r/:code', (req, res) => res.redirect('/?r=' + encodeURIComponent(req.params.code)));
+app.get('/r/:code', (req, res) => {
+  const code = String(req.params.code).replace(/[^\w]/g, '').slice(0, 20); const m = db.prepare('SELECT first, city FROM members WHERE ref_code=?').get(code);
+  const e = v => String(v || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let html = fs.readFileSync(pub('index.html'), 'utf8');
+  if (m) { const t = `${m.first}${m.city ? ' מ' + m.city : ''} לקח על עצמו שקל ביום לרבינו – וגם אתה מוזמן`; html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${e(t)}">`).replace(/<meta property="og:description" content="[^"]*">/, '<meta property="og:description" content="קופה מעוצבת ליד התפילין. שקל כל בוקר. ובראש השנה – עוד יהודי אצל רבינו באומן. לחצו לקבלת קופה עד הבית.">'); }
+  html = absOg(req, html.replace('<head>', `<head><meta name="rb-ref" content="${e(code)}">`));
+  res.setHeader('Cache-Control', 'no-cache'); res.send(html);
+});
 app.get('*', (_, res) => res.sendFile(pub('index.html')));
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('rabeinu up', PORT));

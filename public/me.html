@@ -95,7 +95,7 @@ h2{font-family:var(--fs);font-weight:900;font-size:24px;display:flex;align-items
       <button class="btn sm" id="rSave" style="justify-self:start">שמירה</button></div></div>
     <div class="card"><h2><span class="ic" data-ic="users"></span>תדליקו עוד נקודה</h2><p class="s">כל מי שמצטרף דרך הקישור שלך – נספר לזכותך.</p>
       <div class="copy"><code id="refL"></code><button class="btn sm" id="refC">העתקה</button></div>
-      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><a class="btn sm" id="refW" target="_blank" rel="noopener">שליחה בוואטסאפ</a><button class="btn sm ghost" id="refS">כרטיס לסטורי 📸</button></div></div>
+      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn sm" id="refW">שיתוף לחברים</button><button class="btn sm ghost" id="refS">כרטיס לסטורי 📸</button></div></div>
   </div>
 
   <div class="card" style="margin-top:20px"><h2><span class="ic" data-ic="home"></span>הפרטים שלי</h2><p class="s">כתובת לשליח וגובה הקבלה.</p>
@@ -110,7 +110,7 @@ h2{font-family:var(--fs);font-weight:900;font-size:24px;display:flex;align-items
 <div class="mod" id="mod"><div class="card" id="modC"></div></div>
 <div class="toast" id="toast"></div>
 <canvas id="share" width="1080" height="1350" hidden></canvas>
-<script src="/cities.js?v=5"></script><script src="/share.js?v=4"></script>
+<script src="/cities.js?v=5"></script><script src="/share.js?v=5"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const fmt=n=>Math.round(+n||0).toLocaleString('he-IL');const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -139,7 +139,7 @@ function render(){const m=D.member,b=D.box,s=D.settings;
   const ST=['new','assigned','out','delivered'],SL=['נרשמת','שובצה לשליח','בדרך אליך','אצלך בבית'],si=m.box_status==='cancelled'?-1:ST.indexOf(m.box_status);$('#trk').innerHTML=SL.map((l,i)=>`<div class="${i<=si?'on':''}"><i>${i<si||si===3?'✓':i+1}</i>${l}</div>`).join('');
   $('#trkT').textContent=si===3?`הקופה אצלך מאז ${new Date(m.start_date).toLocaleDateString('he-IL')}. הכתובת: ${m.street} ${m.house}, ${m.city}.`:`הקופה בדרך אל ${m.street} ${m.house}, ${m.city}. בינתיים – אפשר כבר לשים שקל בצד 🙂`;
   $$('#rCh .chip').forEach(c=>c.classList.toggle('on',c.dataset.v===m.remind_channel));$('#rTime').value=m.remind_time;$$('#rDays .chip').forEach(c=>c.classList.toggle('on',m.remind_days.includes(c.dataset.d)));$('#rEmail').value=m.email||'';rMore();
-  const link=location.origin+'/r/'+m.ref_code;$('#refL').textContent=link;$('#refW').href='https://wa.me/?text='+encodeURIComponent(`לקחתי על עצמי שקל ביום לרבינו 🔥 כל השקלים הופכים בראש השנה לכרטיסי טיסה לאומן ליהודים שעוד לא זכו. רוצה קופה משלך? ${link}`);
+  const link=location.origin+'/r/'+m.ref_code;$('#refL').textContent=link;$('#refW').onclick=()=>rbShareLink(link);
   $('#dCity').value=m.city;$('#dStreet').value=m.street;$('#dHouse').value=m.house;$('#dApt').value=m.apt;$('#dAmt').value=String(m.amount);if(![...$('#dAmt').options].some(o=>o.value==m.amount))$('#dAmt').insertAdjacentHTML('beforeend',`<option value="${m.amount}">₪${m.amount}</option>`),$('#dAmt').value=String(m.amount);$('#dPray').value=m.prayer;$('#dPub').checked=!!m.public;
   const KS={requested:'התקבלה',scheduled:'נקבע מועד',collected:'נאסף ✓',cancelled:'בוטל',pending:'ממתין לתשלום',reported:'דווח – בבדיקה',paid:'התקבל ✓'};
   $('#hist').innerHTML=D.collections.length?D.collections.map(c=>`<div><span>${c.kind==='pickup'?'🚚 איסוף':'✨ תרומה'}${c.kavana?' · '+esc(c.kavana):''} · ${new Date(c.created.replace(' ','T')+'Z').toLocaleDateString('he-IL')}</span><b>₪${fmt(c.amount_actual||c.amount_est)} <span class="tag">${KS[c.status]||c.status}</span></b></div>`).join(''):''}
