@@ -14,10 +14,11 @@ html[data-theme=dark]{--ink:#f3f4f8;--paper:#0b0b12;--card:rgba(24,25,34,.7);--c
 html{scroll-behavior:smooth}html,body{overflow-x:clip}
 body{font:400 16px/1.6 var(--f);color:var(--ink);background:var(--paper);-webkit-text-size-adjust:100%;position:relative}
 .aur{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.aur i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.14;animation:drift 18s ease-in-out infinite}
-.aur .a1{width:52vw;height:52vw;background:#7c5cff;top:-22vw;inset-inline-end:-12vw}
-.aur .a2{width:40vw;height:40vw;background:#22d3ee;top:30vh;inset-inline-start:-16vw;animation-delay:-6s}
-.aur .a3{width:34vw;height:34vw;background:#a3ff6f;bottom:-14vw;inset-inline-end:10vw;animation-delay:-12s;opacity:.35}
+.aur i{position:absolute;border-radius:50%;background-image:radial-gradient(closest-side,currentColor,transparent)!important;transform:translateZ(0);opacity:.14;animation:drift 18s ease-in-out infinite}
+.aur .a1{color:#7c5cff;width:52vw;height:52vw;background:#7c5cff;top:-22vw;inset-inline-end:-12vw}
+.aur .a2{color:#22d3ee;width:40vw;height:40vw;background:#22d3ee;top:30vh;inset-inline-start:-16vw;animation-delay:-6s}
+.aur .a3{color:#a3ff6f;width:34vw;height:34vw;background:#a3ff6f;bottom:-14vw;inset-inline-end:10vw;animation-delay:-12s;opacity:.35}
+@media (hover:none){.aur i{animation:none!important}}
 html[data-theme=dark] .aur i{opacity:.28}
 @keyframes drift{50%{transform:translate(4vw,3vh) scale(1.08)}}
 header,main,footer,.sticky,.mod,.toast{position:relative;z-index:1}
