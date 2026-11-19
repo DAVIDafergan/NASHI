@@ -122,25 +122,79 @@ async function sendVerify(uid) {
 app.get('/verify-email', (req, res) => { const t = String(req.query.t || ''); const u = t && db.prepare('SELECT id FROM users WHERE verify_token=?').get(t); if (!u) return res.redirect('/app#/?verified=0'); db.prepare("UPDATE users SET email_verified=1, verify_token='' WHERE id=?").run(u.id); res.cookie('sid', sign({ uid: u.id, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); res.redirect('/app#/?verified=1'); });
 app.post('/api/me/resend-verify', auth, limit(3, 600000), async (req, res) => { res.json({ ok: await sendVerify(req.user.id), mail: mail.enabled() }); });
 // ---- service agreement (signed before the first campaign) ----
-app.get('/api/contract/preview', auth, (req, res) => { const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id); res.type('html').send(contract.render({ date: new Date().toLocaleDateString('he-IL'), org: u.org_name || u.org, orgNumber: u.org_number, name: u.name, idNumber: '________', roleTitle: u.role_title, email: u.email, phone: u.phone })); });
-app.post('/api/contract', auth, limit(5, 600000), async (req, res) => {
+const PRICING_DEF = { campaign: 790, monthly: 450, vat: 'incl', payCampaignUrl: '', payMonthlyUrl: '' };
+const pricing = () => ({ ...PRICING_DEF, ...getKV('pricing') });
+app.get('/api/pricing', (_, res) => { const p = pricing(); res.json({ campaign: p.campaign, monthly: p.monthly, vat: p.vat }); });
+const privDir = path.join(DATA_DIR, 'private');
+const privUpload = multer({ storage: multer.diskStorage({ destination: privDir, filename: (req, f, cb) => cb(null, req.user.id + '-' + Date.now() + '-' + crypto.randomBytes(6).toString('hex') + (path.extname(f.originalname).toLowerCase().replace(/[^.a-z0-9]/g, '') || '.jpg')) }), limits: { fileSize: 15e6 }, fileFilter: (_, f, cb) => cb(null, /image\/(jpeg|png|webp|heic|heif)|application\/pdf/.test(f.mimetype)) });
+app.post('/api/doc', auth, privUpload.single('file'), (req, res) => req.file ? res.json({ name: req.file.filename }) : bad(res, 'קובץ לא נתמך – אפשר תמונה (JPG/PNG) או PDF עד 15MB'));
+app.get('/api/doc/:name', auth, (req, res) => { const n = path.basename(req.params.name); if (req.user.role !== 'admin' && !n.startsWith(req.user.id + '-')) return res.status(404).end(); const f = path.join(privDir, n); if (!fs.existsSync(f)) return res.status(404).end(); res.setHeader('Cache-Control', 'private, no-store'); res.sendFile(f); });
+const ownDoc = (uid, n) => typeof n === 'string' && /^[\w.-]+$/.test(n) && n.startsWith(uid + '-') && fs.existsSync(path.join(privDir, n));
+app.get('/api/contract/preview', auth, (req, res) => { const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id); const q = req.query; res.type('html').send(contract.render({ date: new Date().toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }), org: u.org_name || u.org, orgNumber: u.org_number, name: String(q.name || u.name || '').slice(0, 80), idNumber: String(q.idNumber || '').replace(/\D/g, '').slice(0, 9) || '________', roleTitle: String(q.role || u.role_title || '').slice(0, 60), email: u.email, phone: u.phone, pricing: pricing(), printBar: q.print === '1' })); });
+app.post('/api/contract', auth, limit(8, 600000), async (req, res) => {
   const b = req.body || {}; const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
-  const name = String(b.name || '').trim(), idn = String(b.idNumber || '').replace(/\D/g, ''); const sig = String(b.signature || '');
-  if (name.length < 2) return bad(res, 'נא להזין שם מלא של החותם'); if (idn.length < 8 || idn.length > 9) return bad(res, 'מספר ת.ז. לא תקין'); if (!b.agree) return bad(res, 'יש לאשר את ההסכם');
-  if (!/^data:image\/png;base64,[A-Za-z0-9+/=]{200,}$/.test(sig) || sig.length > 200000) return bad(res, 'נא לחתום בתיבת החתימה');
-  const p = { date: new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }), org: u.org_name || u.org, orgNumber: u.org_number, name, idNumber: idn, roleTitle: u.role_title, email: u.email, phone: u.phone, signature: sig, ip: req.ip, ua: req.headers['user-agent'] || '' };
-  const r = db.prepare('INSERT INTO contracts(user_id,version,name,id_number,role_title,org,org_number,email,phone,signature,ip,ua,html) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').run(u.id, contract.VERSION, name, idn, u.role_title, p.org, u.org_number, u.email, u.phone, sig, p.ip, p.ua, '');
+  const name = String(b.name || '').trim().slice(0, 80), idn = String(b.idNumber || '').replace(/\D/g, ''), role = String(b.role || u.role_title || '').trim().slice(0, 60); const method = b.method === 'manual' ? 'manual' : 'digital'; const sig = String(b.signature || '');
+  if (name.length < 2) return bad(res, 'נא להזין שם מלא של החותם'); if (idn.length < 8 || idn.length > 9) return bad(res, 'מספר ת.ז. לא תקין'); if (role.length < 2) return bad(res, 'נא לציין את תפקיד החותם בעמותה');
+  if (!b.agree) return bad(res, 'יש לאשר את ההסכם');
+  const docs = { id: b.docs?.id, auth: b.docs?.auth };
+  if (!ownDoc(u.id, docs.id)) return bad(res, 'נא לצרף צילום תעודת זהות של החותם');
+  if (!ownDoc(u.id, docs.auth)) return bad(res, 'נא לצרף מסמך הסמכה (פרוטוקול מורשי חתימה / אישור עו"ד או רו"ח)');
+  let file = '';
+  if (method === 'digital') { if (!/^data:image\/png;base64,[A-Za-z0-9+/=]{200,}$/.test(sig) || sig.length > 200000) return bad(res, 'נא לחתום בתיבת החתימה'); }
+  else { file = b.file; if (!ownDoc(u.id, file)) return bad(res, 'נא להעלות את ההסכם החתום (צילום/סריקה)'); }
+  if (role !== u.role_title) db.prepare('UPDATE users SET role_title=? WHERE id=?').run(role, u.id);
+  const p = { date: new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }), org: u.org_name || u.org, orgNumber: u.org_number, name, idNumber: idn, roleTitle: role, email: u.email, phone: u.phone, signature: method === 'digital' ? sig : '', manual: method === 'manual', ip: req.ip, ua: req.headers['user-agent'] || '', pricing: pricing() };
+  const r = db.prepare("INSERT INTO contracts(user_id,version,name,id_number,role_title,org,org_number,email,phone,signature,ip,ua,html,method,file,docs,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'pending')").run(u.id, contract.VERSION, name, idn, role, p.org, u.org_number, u.email, u.phone, p.signature, p.ip, p.ua, '', method, file, JSON.stringify(docs));
   p.id = r.lastInsertRowid; const html = contract.render(p); db.prepare('UPDATE contracts SET html=? WHERE id=?').run(html, p.id);
   res.json({ ok: true, id: p.id });
-  // auto-send to the platform admin + a copy to the signer
   if (mail.enabled()) {
-    const admin = process.env.ADMIN_EMAIL || contract.OPERATOR.email; const link = `${process.env.BASE_URL || ''}/contract/${p.id}`;
-    const body = `<p>נחתם הסכם שימוש חדש:</p><p><b>${mail.esc(p.org)}</b> (${mail.esc(u.org_number || '')})<br>חותם: ${mail.esc(name)}, ת.ז. ${mail.esc(idn)}, ${mail.esc(u.role_title || '')}<br>${mail.esc(u.email)} · ${mail.esc(u.phone || '')}<br>${mail.esc(p.date)} · IP ${mail.esc(p.ip)}</p><p><a href="${link}">לצפייה והדפסה של ההסכם החתום</a></p><p><img src="${sig}" style="max-width:260px;border:1px solid #e9e6e2;border-radius:8px"></p>`;
-    const ok = await mail.send({ to: admin, subject: `הסכם חתום – ${p.org}`, html: mail.layout('הסכם שימוש חתום', body), replyTo: u.email }).then(x => x.ok).catch(() => false);
+    const admin = process.env.ADMIN_EMAIL || contract.OPERATOR.email; const B = process.env.BASE_URL || ''; const link = `${B}/contract/${p.id}`;
+    const body = `<p>הסכם חדש ממתין לאישור שלך (${method === 'manual' ? 'חתימה ידנית' : 'חתימה דיגיטלית'}):</p><p><b>${mail.esc(p.org)}</b> (${mail.esc(u.org_number || '')})<br>חותם: ${mail.esc(name)}, ת.ז. ${mail.esc(idn)}, ${mail.esc(role)}<br>${mail.esc(u.email)} · ${mail.esc(u.phone || '')}<br>${mail.esc(p.date)}</p><p><a href="${link}">ההסכם</a> · <a href="${B}/api/doc/${docs.id}">ת.ז.</a> · <a href="${B}/api/doc/${docs.auth}">מסמך הסמכה</a>${file ? ` · <a href="${B}/api/doc/${file}">ההסכם החתום</a>` : ''}</p><p>לאישור: ניהול-על ← הסכמים. מומלץ לוודא מול רשם העמותות/גיידסטאר שהחותם מופיע כבעל תפקיד, ולהתקשר למספר הטלפון הרשום של העמותה.</p>`;
+    const ok = await mail.send({ to: admin, subject: `הסכם לאישור – ${p.org}`, html: mail.layout('הסכם ממתין לאישור', body), replyTo: u.email }).then(x => x.ok).catch(() => false);
     db.prepare('UPDATE contracts SET sent=? WHERE id=?').run(ok ? 1 : 0, p.id);
-    mail.send({ to: u.email, subject: 'עותק ההסכם החתום שלך – GiveIL', html: mail.layout('ההסכם נחתם', `<p>שלום ${mail.esc(name)}, תודה! ההסכם נחתם ונשמר. <a href="${link}">לצפייה ולהדפסה</a>.</p>`) }).catch(() => { });
+    mail.send({ to: u.email, subject: 'קיבלנו את ההסכם – GiveIL', html: mail.layout('ההסכם התקבל', `<p>שלום ${mail.esc(name)}, ההסכם והמסמכים התקבלו ונבדקים (בדרך כלל עד יום עסקים). בינתיים אפשר לבנות את הקמפיין ולעבוד במצב בדיקה. <a href="${link}">לצפייה בהסכם</a>.</p>`) }).catch(() => { });
   }
 });
+app.post('/api/admin/contracts/:id/review', auth, (req, res, next) => req.user.role === 'admin' ? next() : bad(res, 'auth', 403), (req, res) => {
+  const st = req.body?.status; if (!['approved', 'rejected', 'pending'].includes(st)) return bad(res, 'status');
+  const c = db.prepare('SELECT * FROM contracts WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404);
+  const note = String(req.body?.note || '').slice(0, 500);
+  db.prepare("UPDATE contracts SET status=?, review_note=?, reviewed_at=datetime('now') WHERE id=?").run(st, note, c.id);
+  if (mail.enabled() && st !== 'pending') mail.send({ to: c.email, subject: st === 'approved' ? 'ההסכם אושר – אפשר לעלות לאוויר' : 'נדרש תיקון בהסכם – GiveIL', html: mail.layout(st === 'approved' ? 'ההסכם אושר ✓' : 'נדרש תיקון', st === 'approved' ? `<p>שלום ${mail.esc(c.name)}, האימות הושלם וההסכם של ${mail.esc(c.org)} אושר. אפשר להעלות קמפיינים לאוויר.</p>` : `<p>שלום ${mail.esc(c.name)}, לא הצלחנו לאשר את ההסכם${note ? ': ' + mail.esc(note) : ''}. נא להיכנס לחשבון ולשלוח שוב.</p>`) }).catch(() => { });
+  res.json({ ok: true });
+});
+// ---- billing: campaign fee / annual plan (paid to the operator, separate from donations) ----
+const planActive = u => !!(u.plan_until && u.plan_until >= new Date().toISOString().slice(0, 10));
+app.get('/api/billing', auth, (req, res) => {
+  const u = db.prepare('SELECT plan,plan_until FROM users WHERE id=?').get(req.user.id); const p = pricing(); const cid = +req.query.campaignId || 0;
+  const c = cid ? db.prepare('SELECT id,title,paid,user_id FROM campaigns WHERE id=?').get(cid) : null; if (c && c.user_id !== req.user.id && req.user.role !== 'admin') return bad(res, 'not found', 404);
+  const ct = db.prepare('SELECT id,status,review_note,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id);
+  const fill = (url, amount) => String(url || '').replace(/\{(amount|campaign|org|email)\}/g, (_, k) => encodeURIComponent(k === 'amount' ? amount : k === 'campaign' ? (c?.title || '') : k === 'org' ? (req.user.org || '') : req.user.email));
+  res.json({ pricing: { campaign: p.campaign, monthly: p.monthly, vat: p.vat }, links: { campaign: fill(p.payCampaignUrl, p.campaign), monthly: fill(p.payMonthlyUrl, p.monthly) }, plan: u.plan, planUntil: u.plan_until, planActive: planActive(u), campaignPaid: !!c?.paid, contract: ct || null, pending: db.prepare("SELECT id,kind,amount,campaign_id,created FROM payments WHERE user_id=? AND status='pending' ORDER BY id DESC").all(req.user.id) });
+});
+app.post('/api/billing/claim', auth, limit(10, 600000), async (req, res) => {
+  const kind = req.body?.kind === 'monthly' ? 'monthly' : 'campaign'; const cid = +req.body?.campaignId || null; const p = pricing();
+  if (kind === 'campaign') { const c = cid && db.prepare('SELECT user_id FROM campaigns WHERE id=?').get(cid); if (!c || c.user_id !== req.user.id) return bad(res, 'קמפיין לא נמצא'); }
+  if (db.prepare("SELECT 1 FROM payments WHERE user_id=? AND kind=? AND IFNULL(campaign_id,0)=IFNULL(?,0) AND status='pending'").get(req.user.id, kind, cid)) return res.json({ ok: true, dup: true });
+  const amount = kind === 'monthly' ? p.monthly : p.campaign; const ref = String(req.body?.ref || '').slice(0, 120);
+  db.prepare('INSERT INTO payments(user_id,campaign_id,kind,amount,ref) VALUES(?,?,?,?,?)').run(req.user.id, cid, kind, amount, ref);
+  res.json({ ok: true });
+  if (mail.enabled()) mail.send({ to: process.env.ADMIN_EMAIL || contract.OPERATOR.email, subject: `תשלום לאישור – ${req.user.org || req.user.email}`, html: mail.layout('דיווח על תשלום', `<p>${mail.esc(req.user.org || '')} (${mail.esc(req.user.email)}) דיווח/ה על תשלום ${kind === 'monthly' ? 'מנוי שנתי – חודש' : 'קמפיין'}: ₪${amount}${ref ? ' · אסמכתא: ' + mail.esc(ref) : ''}.</p><p>בדקו שהכסף התקבל ואשרו בניהול-על ← תשלומים.</p>`) }).catch(() => { });
+});
+const admOnly = (req, res, next) => req.user.role === 'admin' ? next() : bad(res, 'auth', 403);
+const addMonth = (from) => { const d = new Date(Math.max(Date.now(), from ? Date.parse(from) || 0 : 0)); d.setMonth(d.getMonth() + 1); return d.toISOString().slice(0, 10); };
+app.get('/api/admin/payments', auth, admOnly, (_, res) => res.json(db.prepare("SELECT p.*, u.email, u.org_name, u.org, c.title FROM payments p LEFT JOIN users u ON u.id=p.user_id LEFT JOIN campaigns c ON c.id=p.campaign_id ORDER BY p.status='pending' DESC, p.id DESC LIMIT 200").all()));
+app.post('/api/admin/payments/:id', auth, admOnly, (req, res) => {
+  const pay = db.prepare('SELECT * FROM payments WHERE id=?').get(req.params.id); if (!pay) return bad(res, 'not found', 404);
+  const st = req.body?.status === 'rejected' ? 'rejected' : 'approved';
+  db.prepare("UPDATE payments SET status=?, note=?, approved_at=datetime('now') WHERE id=?").run(st, String(req.body?.note || '').slice(0, 300), pay.id);
+  if (st === 'approved') { if (pay.kind === 'campaign' && pay.campaign_id) db.prepare('UPDATE campaigns SET paid=1 WHERE id=?').run(pay.campaign_id); else { const u = db.prepare('SELECT plan_until FROM users WHERE id=?').get(pay.user_id); db.prepare("UPDATE users SET plan='annual', plan_until=? WHERE id=?").run(addMonth(u.plan_until), pay.user_id); } }
+  res.json({ ok: true });
+});
+app.post('/api/admin/campaigns/:id/paid', auth, admOnly, (req, res) => { db.prepare('UPDATE campaigns SET paid=? WHERE id=?').run(req.body?.paid ? 1 : 0, req.params.id); res.json({ ok: true }); });
+app.post('/api/admin/users/:id/plan', auth, admOnly, (req, res) => { const until = String(req.body?.until || '').slice(0, 10); if (until && !/^\d{4}-\d{2}-\d{2}$/.test(until)) return bad(res, 'תאריך לא תקין'); db.prepare('UPDATE users SET plan=?, plan_until=? WHERE id=?').run(until ? 'annual' : '', until, req.params.id); res.json({ ok: true }); });
+app.get('/api/admin/pricing', auth, admOnly, (_, res) => res.json(pricing()));
+app.put('/api/admin/pricing', auth, admOnly, (req, res) => { const b = req.body || {}; setKV('pricing', { campaign: Math.max(0, Math.round(+b.campaign || 0)), monthly: Math.max(0, Math.round(+b.monthly || 0)), vat: b.vat === 'plus' ? 'plus' : 'incl', payCampaignUrl: String(b.payCampaignUrl || '').slice(0, 500), payMonthlyUrl: String(b.payMonthlyUrl || '').slice(0, 500) }); res.json({ ok: true }); });
 app.get('/contract/:id', auth, (req, res) => { const c = db.prepare('SELECT * FROM contracts WHERE id=?').get(req.params.id); if (!c || (c.user_id !== req.user.id && req.user.role !== 'admin')) return res.status(404).send('not found'); res.type('html').send(c.html); });
 // public lookup used by the signup form (no save)
 app.get('/api/org-lookup', limit(20, 60000), async (req, res) => { try { const o = await lookupOrg(req.query.number); if (!o) return res.json({ found: false }); const active = /פעיל|רשומ/.test(o.status) && !/מחוק|פירוק|בוטל/.test(o.status); res.json({ found: true, active, name: o.name, status: o.status, city: o.city, field: o.field }); } catch (e) { bad(res, e.message); } });
@@ -190,7 +244,7 @@ app.post('/api/reset', limit(10, 600000), (req, res) => {
   res.cookie('sid', sign({ uid: r.user_id, exp: Date.now() + 90 * 864e5 }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); res.json({ ok: true });
 });
 app.post('/api/me/password', auth, (req, res) => { const u = db.prepare('SELECT pass FROM users WHERE id=?').get(req.user.id); if (!checkPw(String(req.body?.current || ''), u.pass)) return bad(res, 'הסיסמה הנוכחית שגויה'); if (String(req.body?.password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים'); db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(req.body.password), req.user.id); res.json({ ok: true }); });
-app.get('/api/me', (req, res) => { const u = user(req); if (!u) return res.json({ user: null }); const x = db.prepare('SELECT org_number,org_name,org_verified,org_status,email_verified,phone,role_title,org FROM users WHERE id=?').get(u.id); const ct = db.prepare('SELECT id,created FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(u.id); res.json({ user: { ...u, ...x, contract: ct || null, mailEnabled: mail.enabled() } }); });
+app.get('/api/me', (req, res) => { const u = user(req); if (!u) return res.json({ user: null }); const x = db.prepare('SELECT org_number,org_name,org_verified,org_status,email_verified,phone,role_title,org FROM users WHERE id=?').get(u.id); const ct = db.prepare('SELECT id,created,status,review_note,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(u.id); res.json({ user: { ...u, ...x, contract: ct || null, mailEnabled: mail.enabled() } }); });
 app.put('/api/me', auth, (req, res) => { const b = req.body || {}; db.prepare('UPDATE users SET name=?,phone=?,org=? WHERE id=?').run(String(b.name || '').slice(0, 60), String(b.phone || '').slice(0, 20), String(b.org || '').slice(0, 80), req.user.id); if (b.password && b.password.length >= 6) db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(b.password), req.user.id); res.json({ ok: true }); });
 
 // ---------- uploads ----------
@@ -205,7 +259,7 @@ app.get('/api/campaigns', auth, (req, res) => {
   res.json(rows.map(c => ({ id: c.id, slug: c.slug, title: c.title, status: c.status, goal: c.goal, multiplier: c.multiplier, end_at: c.end_at, cover: c.cover, owner: c.owner, stats: stats(c, isTest(c)) })));
 });
 app.post('/api/campaigns', auth, (req, res) => {
-  if (req.user.role !== 'admin' && !db.prepare('SELECT 1 FROM contracts WHERE user_id=?').get(req.user.id)) return res.status(403).json({ error: 'לפני פתיחת קמפיין יש לחתום על הסכם השימוש', code: 'contract' });
+  if (req.user.role !== 'admin' && !db.prepare("SELECT 1 FROM contracts WHERE user_id=? AND status!='rejected'").get(req.user.id)) return res.status(403).json({ error: 'לפני פתיחת קמפיין יש לחתום על הסכם השימוש', code: 'contract' });
   if (req.user.role !== 'admin' && req.user.org_verified !== 1) return bad(res, 'כדי לפתוח קמפיין צריך עמותה מאומתת. אמתו את מספר העמותה בהגדרות החשבון.', 403);
   const b = req.body || {}; const title = String(b.title || 'קמפיין חדש').slice(0, 120);
   let slug = slugify(b.slug || title); while (db.prepare('SELECT 1 FROM campaigns WHERE slug=?').get(slug)) slug = slug + '-' + crypto.randomBytes(2).toString('hex');
@@ -235,7 +289,7 @@ app.post('/api/campaigns/:id/status', auth, own, (req, res) => {
   const s = req.body?.status; if (!['draft', 'test', 'live', 'ended'].includes(s)) return bad(res, 'status');
   if (s === 'live' && J(req.c.provider).type === 'test') return bad(res, 'כדי לעלות לאוויר צריך לחבר ספק סליקה אמיתי');
   if (s === 'live' && J(req.c.provider).type === 'nedarim' && !J(req.c.provider).apiPassword) return bad(res, 'נדרים פלוס: חובה להזין ApiPassword לפני העלייה לאוויר – בלעדיו אי אפשר לאמת תרומות');
-  if (s === 'live' && req.user.role !== 'admin') { const u = db.prepare('SELECT email_verified FROM users WHERE id=?').get(req.user.id); if (mail.enabled() && !u.email_verified) return bad(res, 'כדי לעלות לאוויר יש לאמת את כתובת האימייל (בדקו את תיבת הדואר)'); if (!db.prepare('SELECT 1 FROM contracts WHERE user_id=?').get(req.user.id)) return bad(res, 'כדי לעלות לאוויר יש לחתום על הסכם השימוש'); }
+  if (s === 'live' && req.user.role !== 'admin') { const u = db.prepare('SELECT email_verified FROM users WHERE id=?').get(req.user.id); if (mail.enabled() && !u.email_verified) return bad(res, 'כדי לעלות לאוויר יש לאמת את כתובת האימייל (בדקו את תיבת הדואר)'); const ct = db.prepare('SELECT status FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id); if (!ct || ct.status === 'rejected') return bad(res, 'כדי לעלות לאוויר יש לחתום על הסכם השימוש'); if (ct.status !== 'approved') return bad(res, 'ההסכם והמסמכים בבדיקה אצלנו (בדרך כלל עד יום עסקים). נעדכן במייל כשאפשר לעלות לאוויר.'); const uu = db.prepare('SELECT plan_until FROM users WHERE id=?').get(req.user.id); if (!req.c.paid && !planActive(uu)) return res.status(402).json({ error: 'כדי לעלות לאוויר יש להסדיר תשלום עבור הקמפיין', code: 'billing' }); }
   if (s === 'live' && req.body?.clearTest) db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id);
   db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(s, req.c.id); res.json({ ok: true });
 });
@@ -289,14 +343,14 @@ app.get('/api/providers', (_, res) => res.json(Object.entries(providers).map(([k
 // ---------- superadmin ----------
 const adm = (req, res, next) => req.user.role === 'admin' ? next() : bad(res, 'auth', 403);
 app.get('/api/admin/overview', auth, adm, (req, res) => res.json({
-  users: db.prepare('SELECT id,email,name,org,org_number,org_name,org_verified,org_status,phone,role,created,role_title,address,city,website,s46,consent_at,marketing,email_verified,(SELECT COUNT(*) FROM contracts WHERE user_id=users.id) contracts,(SELECT COUNT(*) FROM campaigns WHERE user_id=users.id) campaigns FROM users ORDER BY id DESC').all(),
-  campaigns: db.prepare("SELECT c.id,c.slug,c.title,c.status,c.goal,c.multiplier,c.end_at,c.created,u.email owner,u.org_name, (SELECT COUNT(*) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) n, (SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) raised FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC").all(),
+  users: db.prepare('SELECT id,email,name,org,org_number,org_name,org_verified,org_status,phone,role,created,role_title,address,city,website,s46,consent_at,marketing,email_verified,plan_until,(SELECT COUNT(*) FROM contracts WHERE user_id=users.id) contracts,(SELECT status FROM contracts WHERE user_id=users.id ORDER BY id DESC LIMIT 1) contract_status,(SELECT COUNT(*) FROM campaigns WHERE user_id=users.id) campaigns FROM users ORDER BY id DESC').all(),
+  campaigns: db.prepare("SELECT c.id,c.slug,c.title,c.status,c.paid,c.user_id,u.plan_until,c.goal,c.multiplier,c.end_at,c.created,u.email owner,u.org_name, (SELECT COUNT(*) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) n, (SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) raised FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC").all(),
   totals: db.prepare("SELECT COUNT(*) donations, COALESCE(SUM(amount),0) raised FROM donations WHERE status='paid' AND test=0").get(),
   live: db.prepare("SELECT COUNT(*) c FROM campaigns WHERE status='live'").get().c,
   today: db.prepare("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE status='paid' AND test=0 AND date(paid_at)=date('now')").get(),
   daily: db.prepare("SELECT date(paid_at) d, COUNT(*) n, SUM(amount) s FROM donations WHERE status='paid' AND test=0 AND paid_at>=date('now','-30 day') GROUP BY d ORDER BY d").all()
 }));
-app.get('/api/admin/contracts', auth, adm, (_, res) => res.json(db.prepare('SELECT id,user_id,name,id_number,role_title,org,org_number,email,phone,sent,created FROM contracts ORDER BY id DESC').all()));
+app.get('/api/admin/contracts', auth, adm, (_, res) => res.json(db.prepare("SELECT id,user_id,name,id_number,role_title,org,org_number,email,phone,sent,created,method,file,docs,status,review_note FROM contracts ORDER BY status='pending' DESC, id DESC").all().map(c => ({ ...c, docs: J(c.docs) }))));
 app.post('/api/admin/users/:id/reset', auth, adm, (req, res) => { const pw = 'Ttm' + crypto.randomBytes(3).toString('hex') + '!'; db.prepare('UPDATE users SET pass=? WHERE id=?').run(hashPw(pw), req.params.id); res.json({ ok: true, password: pw }); });
 app.get('/api/admin/mail', auth, adm, (_, res) => res.json({ enabled: mail.enabled(), from: process.env.MAIL_FROM || '' }));
 app.patch('/api/admin/users/:id', auth, adm, (req, res) => {
