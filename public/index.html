@@ -238,7 +238,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
     <div class="num"><b data-count="boxes">0</b><span>קופות פעילות</span></div>
     <div class="num"><b data-count="daily" data-pre="₪">0</b><span>נכנסים לקופות כל בוקר</span></div>
     <div class="num"><b data-count="tickets">0</b><span>יהודים בדרך לאומן</span></div>
-    <div class="num"><b data-count="daysLeft">0</b><span>בקרים עד ראש השנה <small style="display:block;font-size:13px;opacity:.75">בלי שבתות וחגים</small></span></div>
+    <div class="num"><b data-count="daysLeft">0</b><span>בקרים עד ראש השנה</span></div>
   </div>
   <div class="gbar" data-r><div class="t"><span>היעד שלנו: <b id="gGoal">1,000</b> קופות בשבועיים</span><span id="gPct">0%</span></div><div class="bar"><i id="gBar"></i></div></div>
 </div></section>
@@ -246,7 +246,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 <section id="calc"><div class="wrap">
   <div data-r class="ctop"><div><span class="ey">המתמטיקה של האור</span><h2>שקל נשמע קטן.<br><span class="gt">עד שסופרים.</span></h2></div><div class="spin" aria-hidden="true"><div class="sc3"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><b class="sf" id="coinF"><em>1</em><small>שקל חדש</small></b><b class="sb" id="coinB"><em>₪</em><small>ישראל</small></b></div><div class="sshadow"></div></div></div>
   <div class="calc">
-    <div class="cbox" data-r><div style="color:var(--mut);font-weight:500">כמה קופות? משפחה, בית כנסת, שכונה…</div><div class="cn foilt" id="cN">10</div><input type="range" class="rng" id="cR" min="0" max="1000" value="333" aria-label="מספר קופות"><div style="color:var(--mut2);font-size:14px">גררו וראו מה קורה ← · סופרים רק ימי חול, בלי שבתות וחגים</div></div>
+    <div class="cbox" data-r><div style="color:var(--mut);font-weight:500">כמה קופות? משפחה, בית כנסת, שכונה…</div><div class="cn foilt" id="cN">10</div><input type="range" class="rng" id="cR" min="0" max="1000" value="333" aria-label="מספר קופות"><div style="color:var(--mut2);font-size:14px">גררו וראו מה קורה ←</div></div>
     <div class="res" data-r>
       <div class="r"><span>שקלים בכל בוקר</span><b id="cD">₪10</b></div>
       <div class="r"><span>עד ראש השנה</span><b class="gt" id="cT">₪0</b></div>
@@ -274,7 +274,6 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
   <div class="ctr" data-r><span class="ey">שאלות</span><h2>מה שרציתם לדעת</h2></div>
   <div class="faq">
     <details data-r><summary>מה בדיוק מתחייבים?</summary><p>לשים שקל אחד (או יותר, לבחירתכם) בקופה בכל יום. זו קבלה טובה, לא חוזה – אפשר לשנות או להפסיק בכל רגע מהאזור האישי.</p></details>
-    <details data-r><summary>ובשבת ובחגים?</summary><p>בשבת וביום טוב לא נוגעים בכסף – ולכן גם לא סופרים. הקופה סופרת רק בקרים של ימי חול, ובאזור האישי השבתות והחגים מסומנים בנפרד.</p></details>
     <details data-r><summary>פספסתי יום. מה עכשיו?</summary><p>שמים מחר שניים. אין שום יאוש בעולם כלל 🙂 האזור האישי סופר בשבילכם כמה אמור להיות בקופה.</p></details>
     <details data-r><summary>איך הקופה מגיעה אליי?</summary><p>אחרי ההרשמה הכתובת עוברת לשליח באזור, והוא מביא את הקופה עד הבית. את הסטטוס רואים באזור האישי.</p></details>
     <details data-r><summary>מה קורה עם הכסף?</summary><p>לפני ראש השנה אוספים את הקופות (או שמרוקנים אותן בתרומה אונליין מהאזור האישי), וכל הכסף הולך לכרטיסי טיסה לאומן ליהודים שלא זכו להגיע.</p></details>
@@ -339,7 +338,7 @@ function onScroll(){const y=scrollY,h=innerHeight;$('#nav').classList.toggle('s'
   if(idx!==stIdx){stIdx=idx;lays.forEach((l,i)=>l.classList.toggle('on',i===idx));stps.forEach((s,i)=>s.classList.toggle('on',i===idx))}
   rails.forEach((b,i)=>b.style.width=(i<idx?100:i===idx?lp*100:0)+'%');
   shipT=idx>0?1:1-Math.pow(1-Math.min(1,lp*1.5),3);
-  if(idx===1){const Y=ST.yearMornings||308,d=Math.max(1,Math.round(lp*Y));$('#dayN').textContent='₪'+fmt(d);$('#dayT').textContent=d===1?'בוקר ראשון':d>=Y?'שנה שלמה · בלי שבתות וחגים':'בוקר '+fmt(d)}
+  if(idx===1){const Y=ST.yearMornings||308,d=Math.max(1,Math.round(lp*Y));$('#dayN').textContent='₪'+fmt(d);$('#dayT').textContent=d===1?'בוקר ראשון':d>=Y?'שנה שלמה':'בוקר '+fmt(d)}
   if(idx===2){const q=Math.min(1,lp*1.4);rmask.style.strokeDashoffset=1-q;const L=routeP.getTotalLength(),pt=routeP.getPointAtLength(L*q),pt2=routeP.getPointAtLength(Math.min(L,L*q+2));const a=Math.atan2(pt2.y-pt.y,pt2.x-pt.x)*180/Math.PI+90;plane.setAttribute('transform',`translate(${pt.x} ${pt.y}) rotate(${a})`);$('#rEnd').setAttribute('opacity',q>.98?1:0);$('#rTxt').setAttribute('opacity',q>.98?1:0)}
   const qs=$('#qs').getBoundingClientRect();if(qs.top<h&&qs.bottom>0)$('#qs .bg').style.setProperty('--qy',((qs.top-h/2)*-.15)+'px')}
 let shipT=0,shipC=0;const ship=$('#ship');(function sl(){shipC+=(shipT-shipC)*.09;ship.style.transform=`translateY(${(1-shipC)*190}px) scale(${.86+.14*shipC}) rotate(${(1-shipC)*-6}deg)`;ship.style.opacity=(.15+.85*shipC).toFixed(3);requestAnimationFrame(sl)})();
