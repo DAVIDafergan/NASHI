@@ -77,7 +77,7 @@ h2{font-weight:700;font-size:clamp(40px,5.6vw,80px);line-height:1;letter-spacing
 .lay .ph img{width:100%;height:100%;object-fit:cover;filter:sepia(.25) saturate(.85) brightness(.85) contrast(1.06)}
 .lay .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,13,32,.1) 40%,rgba(9,13,32,.85))}
 .lay .big{position:absolute;bottom:30px;inset-inline:30px;z-index:2}.lay .big b{display:block;font-family:var(--fs);font-weight:700;font-size:clamp(46px,6vw,78px);line-height:1}.lay .big span{color:var(--mut);font-size:16px}
-.ship{position:absolute;bottom:14%;left:50%;width:170px;margin-left:-85px;z-index:2;transform:translateY(calc((1 - var(--lp,0)) * 140px));transition:transform .2s linear}
+.ship{position:absolute;bottom:12%;left:50%;width:170px;margin-left:-85px;z-index:2;will-change:transform,opacity}
 .ship .bx{width:120px;height:150px;background:#141b45 url(/stone.jpg);background-size:300px;border:1px solid rgba(217,174,91,.6);box-shadow:inset 0 0 0 6px rgba(9,13,32,.4),inset 0 0 0 7px rgba(217,174,91,.6),0 30px 50px -20px #000;display:grid;place-items:center;align-content:center;gap:6px}.ship .bx img{width:48px}.ship .bx b{font-family:var(--fs);font-size:18px}
 .bigbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-44%);width:min(260px,60%);aspect-ratio:.76;background:#141b45 url(/stone.jpg);background-size:300px;border:1px solid rgba(217,174,91,.6);box-shadow:inset 0 0 0 10px rgba(9,13,32,.4),inset 0 0 0 11px rgba(217,174,91,.6),0 50px 80px -30px #000;display:grid;place-items:center;align-content:center;gap:12px;text-align:center}
 .bigbox::before{content:"";position:absolute;top:-6px;left:50%;width:44%;height:12px;margin-left:-22%;border-radius:9px;background:#03050f;box-shadow:0 0 0 1.5px rgba(217,174,91,.8)}
@@ -112,6 +112,12 @@ h2{font-weight:700;font-size:clamp(40px,5.6vw,80px);line-height:1;letter-spacing
 .sshadow{position:absolute;bottom:4px;left:50%;width:120px;height:16px;margin-left:-60px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.55),transparent);animation:shd 3s ease-in-out infinite}
 @keyframes shd{50%{transform:scaleX(.35);opacity:.6}}
 @media(max-width:700px){.ctop{flex-direction:column-reverse;align-items:flex-start}.spin{width:130px;height:160px;align-self:center}.sc3{width:104px;height:104px}.sc3 b em{font-size:44px}.sc3 b small{font-size:10px}}
+/* story box 2 */
+.bbw{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:56px;perspective:1100px}
+.kb2{--s:.78;transform:rotateX(-16deg) rotateY(-28deg);animation:sway2 10s ease-in-out infinite}
+.kb2 .cn3,.j2{animation-duration:2.4s}
+.cnt{text-align:center}.cnt .n{font-family:var(--fs);font-weight:700;font-size:clamp(46px,5.4vw,70px);line-height:1}.cnt small{display:block;color:var(--mut);font-size:15px;margin-top:6px}
+@media(max-width:900px){.kb2{--s:.38}.bbw{gap:22px;padding-top:30px}.cnt .n{font-size:40px}}
 /* calc */
 .calc{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-top:56px}
 .cbox{border:1px solid var(--line);border-radius:28px;padding:34px;background:rgba(9,13,32,.45)}
@@ -211,7 +217,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 <section class="story" id="story"><div class="st">
   <div class="stage">
     <div class="lay on" data-l="0"><div class="ph"><img loading="lazy" src="https://images.unsplash.com/photo-1792587152057-d0fcc75f7e50?w=900&q=70&auto=format&fit=crop" alt=""></div><div class="badge" style="top:26px;inset-inline-start:22px;animation:none"><span>📦 בדרך אליך · שליח באזור</span></div><div class="ship" id="ship"><img src="/box-sm.png" alt="קופת רבינו שלי" style="width:170px;filter:drop-shadow(0 30px 30px rgba(0,0,0,.6))"></div></div>
-    <div class="lay" data-l="1"><div class="bigbox"><div class="c2">₪</div><img src="/logo-420.png" alt="" style="width:78%"><div class="n foilt" id="dayN">₪1</div><small id="dayT">יום 1</small></div></div>
+    <div class="lay" data-l="1"><div class="bbw"><div class="jig j2"><div class="kb kb2"><div class="cn3"><i></i><i></i><i></i><i></i><i></i><b class="cf"></b><b class="cb"></b></div><div class="f fr"><img class="lg" src="/logo-420.png" alt=""><div class="nn">נ נח נחמ נחמן מאומן</div></div><div class="f bk"></div><div class="f lt"><div class="qr"><img class="bq" alt="" src=""></div><div class="qt">סרקו לקופה שלכם</div></div><div class="f rt"><div class="qr"><img class="bq" alt="" src=""></div><div class="qt">סרקו לקופה שלכם</div></div><div class="f tp"><div class="slot"></div></div><div class="f bt"></div></div></div><div class="cnt"><div class="n foilt" id="dayN">₪1</div><small id="dayT">בוקר ראשון</small></div></div></div>
     <div class="lay" data-l="2"><div class="ph"><img loading="lazy" src="https://images.unsplash.com/photo-1542776488-a3bbacfcdccd?w=900&q=70&auto=format&fit=crop" alt=""></div>
       <svg class="route" viewBox="0 0 400 600" preserveAspectRatio="xMidYMid meet"><defs><mask id="rm"><path id="rmask" d="M300 520 C 360 380, 80 330, 120 90" stroke="#fff" stroke-width="8" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></mask></defs><path class="dash" d="M300 520 C 360 380, 80 330, 120 90" mask="url(#rm)"/><circle cx="300" cy="520" r="7" class="pl"/><circle cx="120" cy="90" r="7" class="pl" id="rEnd" opacity="0"/><text x="300" y="556" text-anchor="middle">ישראל</text><text x="120" y="66" text-anchor="middle" id="rTxt" opacity="0">אומן</text><g id="plane"><path class="pl" d="M0-9 3-2 11 2 11 4 3 2 2 8 5 10 5 11 0 10-5 11-5 10-2 8-3 2-11 4-11 2-3-2z"/></g></svg>
       <div class="big" style="top:34px;bottom:auto"><b class="foilt">1,350 ק״מ</b><span>מהשקל שלך – עד הציון</span></div></div>
@@ -332,10 +338,11 @@ function onScroll(){const y=scrollY,h=innerHeight;$('#nav').classList.toggle('s'
   const r=story.getBoundingClientRect(),tot=story.offsetHeight-h,p=Math.min(1,Math.max(0,-r.top/tot));const seg=p*3,idx=Math.min(2,Math.floor(seg)),lp=Math.min(1,seg-idx);
   if(idx!==stIdx){stIdx=idx;lays.forEach((l,i)=>l.classList.toggle('on',i===idx));stps.forEach((s,i)=>s.classList.toggle('on',i===idx))}
   rails.forEach((b,i)=>b.style.width=(i<idx?100:i===idx?lp*100:0)+'%');
-  if(idx===0)$('#ship').style.setProperty('--lp',Math.min(1,lp*1.6));
+  shipT=idx>0?1:1-Math.pow(1-Math.min(1,lp*1.5),3);
   if(idx===1){const Y=ST.yearMornings||308,d=Math.max(1,Math.round(lp*Y));$('#dayN').textContent='₪'+fmt(d);$('#dayT').textContent=d===1?'בוקר ראשון':d>=Y?'שנה שלמה · בלי שבתות וחגים':'בוקר '+fmt(d)}
   if(idx===2){const q=Math.min(1,lp*1.4);rmask.style.strokeDashoffset=1-q;const L=routeP.getTotalLength(),pt=routeP.getPointAtLength(L*q),pt2=routeP.getPointAtLength(Math.min(L,L*q+2));const a=Math.atan2(pt2.y-pt.y,pt2.x-pt.x)*180/Math.PI+90;plane.setAttribute('transform',`translate(${pt.x} ${pt.y}) rotate(${a})`);$('#rEnd').setAttribute('opacity',q>.98?1:0);$('#rTxt').setAttribute('opacity',q>.98?1:0)}
   const qs=$('#qs').getBoundingClientRect();if(qs.top<h&&qs.bottom>0)$('#qs .bg').style.setProperty('--qy',((qs.top-h/2)*-.15)+'px')}
+let shipT=0,shipC=0;const ship=$('#ship');(function sl(){shipC+=(shipT-shipC)*.09;ship.style.transform=`translateY(${(1-shipC)*190}px) scale(${.86+.14*shipC}) rotate(${(1-shipC)*-6}deg)`;ship.style.opacity=(.15+.85*shipC).toFixed(3);requestAnimationFrame(sl)})();
 let tick=false;addEventListener('scroll',()=>{if(!tick){tick=true;requestAnimationFrame(()=>{onScroll();tick=false})}},{passive:true});addEventListener('resize',onScroll);onScroll();
 // ---- stats ----
 let ST={boxes:0,cities:0,daily:0,tickets:0,daysLeft:300,ticketPrice:3800,goal:1000,points:[],recent:[]};
