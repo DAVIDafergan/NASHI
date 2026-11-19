@@ -7,8 +7,8 @@
 <meta property="og:title" content="רבינו שלי · שקל אחד ביום. יהודי אחד אצל רבינו."><meta property="og:description" content="קופה מעוצבת ליד התפילין. שקל כל בוקר. בראש השנה – עוד יהודי באומן."><meta property="og:image" content="/og.jpg"><meta property="og:type" content="website"><meta name="theme-color" content="#0b1026">
 <link rel="icon" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://images.unsplash.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=1">
+<link href="https://fonts.googleapis.com/css2?family=Bona+Nova:wght@700&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=3">
 <style>
 .wrap{width:min(1200px,100% - 40px);margin-inline:auto}
 h1,h2,h3,.f{font-family:var(--fs)}
@@ -186,7 +186,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
     <div class="proof fade" style="transition-delay:.8s" id="proof"></div>
   </div>
   <div class="arch fade" style="transition-delay:.2s"><span class="ring"></span><div class="frame"><img id="heroImg" src="https://images.unsplash.com/photo-1792587151757-655084e32814?w=1100&q=70&auto=format&fit=crop" alt="הנחת תפילין בבית הכנסת"></div><div class="badge b1"><i class="dt"></i><span id="liveB">הקופות יוצאות לדרך</span></div><div class="badge b2"><b class="foilt" style="font-size:22px">₪1</b><span id="ymB">× 308 בקרים בשנה</span></div><div class="cap"><small>כל בוקר</small><b>שקל אחד, ליד התפילין</b></div>
-    <div class="b3w" id="b3w" aria-hidden="true"><div class="coin">₪</div><div class="kb kbs"><div class="f fr"><div class="g1"></div><div class="g2"></div><i class="dm a"></i><i class="dm b"></i><i class="dm c"></i><i class="dm d"></i><div class="arch"><img src="/logo-420.png" alt=""></div><div class="no">שקל · ליום · לאומן</div><div class="ln"></div><div class="nn">נ נח נחמ נחמן מאומן</div></div><div class="f bk"></div><div class="f lt"><div class="sd"><span>שקל · ליום · לאומן</span></div></div><div class="f rt"><div class="sd"><span>שקל · ליום · לאומן</span></div></div><div class="f tp"><div class="sd"><span>צדקה תציל ממוות</span></div><div class="slot"></div></div><div class="f bt"></div></div></div>
+    <div class="b3w" id="b3w" aria-hidden="true"><div class="coin">₪</div><div class="kb kbs"><div class="f fr"><img class="lg" src="/logo-420.png" alt=""><div class="nn">נ נח נחמ נחמן מאומן</div></div><div class="f bk"></div><div class="f lt"><div class="qr"><img class="bq" alt="" src=""></div><div class="qt">סרקו לקופה שלכם</div></div><div class="f rt"><div class="qr"><img class="bq" alt="" src=""></div><div class="qt">סרקו לקופה שלכם</div></div><div class="f tp"><div class="slot"></div></div><div class="f bt"></div></div></div>
   </div>
 </div></header>
 
@@ -291,7 +291,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 </form></div>
 <canvas id="share" width="1080" height="1350" style="display:none"></canvas>
 <div class="toast" id="toast"></div>
-<script src="/cities.js?v=5"></script><script src="/share.js?v=1"></script>
+<script src="/cities.js?v=5"></script><script src="/share.js?v=3"></script>
 <script src="/ilmap.js?v=5"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -305,6 +305,7 @@ $('#yr').textContent=new Date().getFullYear();
 const H1=[['שקל','אחד','ביום.'],['יהודי','אחד','<span class="gt">אצל</span>','<span class="gt">רבינו.</span>']];let wi=0;
 $('#h1').innerHTML=H1.map(l=>'<span style="white-space:nowrap;display:block">'+l.map(w=>`<span class="w"><span style="transition-delay:${.08*(wi++)+.15}s">${w}</span></span>`).join(' ')+'</span>').join('');
 requestAnimationFrame(()=>setTimeout(()=>document.body.classList.add('ready'),60));
+$$('.bq').forEach(i=>i.src='/api/qr?c=141c4a&d='+encodeURIComponent(location.origin+'/q'));
 // reveal
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.14});$$('[data-r]').forEach(e=>io.observe(e));
 // ---- scroll engine: nav, parallax, story ----

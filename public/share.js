@@ -1,20 +1,28 @@
-// Story card (1080x1920) – the box on stone, ready for Instagram/WhatsApp status
+// Story card 1080x1920 – Bona Nova headline, the box, personal number + QR to join
 window.rbCard=async function({boxNo,ref,streak,first}){
-  const c=document.createElement('canvas');c.width=1080;c.height=1920;const x=c.getContext('2d');
+  const W=1080,H=1920,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   const load=s=>new Promise(ok=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ok(null);i.src=s});
-  try{await document.fonts.load('600 60px Fredoka');await document.fonts.load('700 120px Fredoka')}catch{}
-  const [st,bx,lg]=await Promise.all([load('/stone.jpg'),load('/box.png'),load('/logo-900.png')]);
-  if(st){x.fillStyle=x.createPattern(st,'repeat');x.fillRect(0,0,1080,1920)}else{x.fillStyle='#0e1430';x.fillRect(0,0,1080,1920)}
-  const v=x.createRadialGradient(540,900,200,540,900,1200);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.55)');x.fillStyle=v;x.fillRect(0,0,1080,1920);
-  x.strokeStyle='rgba(212,176,106,.75)';x.lineWidth=3;x.strokeRect(46,46,988,1828);x.strokeStyle='rgba(212,176,106,.3)';x.lineWidth=1.5;x.strokeRect(62,62,956,1796);
+  try{await Promise.all([document.fonts.load('700 120px "Bona Nova"'),document.fonts.load('500 40px Fredoka'),document.fonts.load('600 40px Fredoka')])}catch{}
+  const link=location.origin+'/r/'+ref;
+  const [st,bx,qr]=await Promise.all([load('/stone.jpg'),load('/box.png'),load('/api/qr?c=141c4a&d='+encodeURIComponent(link))]);
+  x.fillStyle=st?x.createPattern(st,'repeat'):'#0e1430';x.fillRect(0,0,W,H);
+  let g=x.createRadialGradient(540,980,120,540,980,1250);g.addColorStop(0,'rgba(217,174,91,.10)');g.addColorStop(.45,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.6)');x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.strokeStyle='rgba(212,176,106,.55)';x.lineWidth=2;x.strokeRect(40,40,W-80,H-80);
+  // arch behind the box (the tziyun)
+  const arch=(w,top,bot,lw,a)=>{x.beginPath();x.moveTo(540-w/2,bot);x.lineTo(540-w/2,top+w/2);x.arc(540,top+w/2,w/2,Math.PI,0);x.lineTo(540+w/2,bot);x.strokeStyle=`rgba(212,176,106,${a})`;x.lineWidth=lw;x.stroke()};
+  arch(780,560,1470,2.5,.55);arch(740,600,1470,1,.3);
   x.textAlign='center';x.direction='rtl';
-  x.fillStyle='#cfc6b3';x.font='500 44px Fredoka, sans-serif';x.fillText(streak>1?`${first?first+' · ':''}${streak} בקרים ברצף`:(first?first+' לקח/ה על עצמו/ה':'לקחתי על עצמי'),540,190);
-  const gg=x.createLinearGradient(0,230,0,400);gg.addColorStop(0,'#ecd08f');gg.addColorStop(1,'#b8904a');x.fillStyle=gg;x.font='700 116px Fredoka, sans-serif';x.fillText('שקל ביום לרבינו',540,340);
-  if(bx){const sh=x.createRadialGradient(540,1440,10,540,1440,380);sh.addColorStop(0,'rgba(0,0,0,.6)');sh.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=sh;x.beginPath();x.ellipse(540,1440,380,70,0,0,7);x.fill();const w=760,h=w*bx.height/bx.width;x.drawImage(bx,540-w/2,430,w,h)}
-  x.fillStyle='rgba(14,20,48,.85)';const tw=520;x.beginPath();x.roundRect(540-tw/2,1520,tw,96,48);x.fill();x.strokeStyle='#d4b06a';x.lineWidth=2.5;x.stroke();
-  x.fillStyle='#ecd08f';x.font='600 54px Fredoka, sans-serif';x.fillText('קופה מס׳ '+String(boxNo).padStart(4,'0'),540,1585);
-  x.fillStyle='#d4b06a';x.font='500 36px Fredoka, sans-serif';x.fillText('נ נח נחמ נחמן מאומן',540,1720);
-  x.fillStyle='#9a937f';x.font='500 32px Fredoka, sans-serif';x.fillText(location.host+'/r/'+ref,540,1790);
+  x.fillStyle='#d4b06a';x.font='500 30px Fredoka, sans-serif';x.letterSpacing='10px';x.fillText('נ נח נחמ נחמן מאומן',540,130);x.letterSpacing='0px';
+  x.fillStyle='#f3ead7';x.font='700 132px "Bona Nova", serif';x.fillText('שקל אחד ביום',540,300);
+  g=x.createLinearGradient(0,330,0,500);g.addColorStop(0,'#f1d697');g.addColorStop(.55,'#d2ab62');g.addColorStop(1,'#a97f39');x.fillStyle=g;x.font='700 196px "Bona Nova", serif';x.fillText('לרבינו',540,490);
+  if(bx){const sh=x.createRadialGradient(540,1435,10,540,1435,330);sh.addColorStop(0,'rgba(0,0,0,.7)');sh.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=sh;x.beginPath();x.ellipse(540,1435,330,60,0,0,7);x.fill();const w=720,h=w*bx.height/bx.width;x.drawImage(bx,540-w/2,1450-h,w,h)}
+  g=x.createLinearGradient(0,1500,0,1580);g.addColorStop(0,'#f1d697');g.addColorStop(1,'#b98d43');x.fillStyle=g;x.font='700 74px "Bona Nova", serif';x.fillText((first?first+' · ':'')+'קופה מס׳ '+String(boxNo).padStart(4,'0'),540,1565);
+  x.fillStyle='#cfc6b3';x.font='500 36px Fredoka, sans-serif';x.fillText(streak>1?`${streak} בקרים ברצף · בזכותי עוד יהודי באומן`:'לקחתי על עצמי – בזכותי עוד יהודי באומן',540,1625);
+  // bottom: QR + call to action
+  const qx=130,qy=1680,qs=170;x.fillStyle='#e6d3a6';x.beginPath();x.roundRect(qx,qy,qs,qs,18);x.fill();if(qr)x.drawImage(qr,qx+14,qy+14,qs-28,qs-28);
+  x.textAlign='right';x.fillStyle='#f3ead7';x.font='700 58px "Bona Nova", serif';x.fillText('רוצים קופה משלכם?',950,1740);
+  x.fillStyle='#d4b06a';x.font='600 34px Fredoka, sans-serif';x.fillText('סרקו את הקוד · שקל אחד ביום',950,1792);
+  x.fillStyle='#8f8878';x.font='500 26px Fredoka, sans-serif';x.fillText(location.host+'/r/'+ref,950,1836);
   return new Promise(ok=>c.toBlob(ok,'image/png'))};
 window.rbShare=async function(o,text){const blob=await rbCard(o);const f=new File([blob],'rabeinu-sheli.png',{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],text});return}catch(e){if(e.name==='AbortError')return}}

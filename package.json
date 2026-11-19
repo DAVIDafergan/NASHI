@@ -1,1 +1,1 @@
-{"name":"rabeinu-sheli","version":"1.0.0","private":true,"scripts":{"start":"node server.js"},"dependencies":{"@hebcal/core":"^5.10.1","better-sqlite3":"^11.5.0","cookie-parser":"^1.4.6","express":"^4.19.2"},"engines":{"node":">=18"}}
+{"name":"rabeinu-sheli","version":"1.0.0","private":true,"scripts":{"start":"node server.js"},"dependencies":{"@hebcal/core":"^5.10.1","better-sqlite3":"^11.5.0","cookie-parser":"^1.4.6","express":"^4.19.2","qrcode":"^1.5.4"},"engines":{"node":">=18"}}

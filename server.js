@@ -7,6 +7,7 @@ const https = require('https');
 const cookieParser = require('cookie-parser');
 const Database = require('better-sqlite3');
 const CITY = require('./public/cities');
+const QR = require('qrcode');
 const { HebrewCalendar, flags: HF } = require('@hebcal/core');
 // ---- mornings calendar: Shabbat & Yom Tov (Israel) are not counted ----
 const isoD = d => d.toISOString().slice(0, 10);
@@ -257,6 +258,9 @@ app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(`<?xml ve
 app.use(express.static(pub(''), { maxAge: '10m', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.get(['/me', '/me/*'], (_, res) => res.sendFile(pub('me.html')));
 app.get(['/admin', '/admin/*'], (_, res) => res.sendFile(pub('admin.html')));
+app.get('/q', (req, res) => res.redirect(member(req) ? '/me' : '/?utm_source=box#join'));
+app.get('/api/qr', async (req, res) => { const d = String(req.query.d || '').slice(0, 300); if (!d) return bad(res, 'd'); const c = /^#?[0-9a-f]{6}$/i.test(req.query.c || '') ? '#' + String(req.query.c).replace('#', '') : '#d4b06a';
+  try { const svg = await QR.toString(d, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: c, light: '#0000' } }); res.setHeader('Cache-Control', 'public, max-age=86400'); res.type('image/svg+xml').send(svg); } catch { bad(res, 'qr'); } });
 app.get('/r/:code', (req, res) => res.redirect('/?r=' + encodeURIComponent(req.params.code)));
 app.get('*', (_, res) => res.sendFile(pub('index.html')));
 const PORT = process.env.PORT || 3000;
