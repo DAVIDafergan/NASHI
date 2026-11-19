@@ -199,7 +199,7 @@ app.post('/api/upload', auth, upload.single('file'), (req, res) => req.file ? re
 app.use('/u', express.static(path.join(DATA_DIR, 'uploads'), { maxAge: '30d', immutable: true }));
 
 // ---------- campaigns (owner) ----------
-const campaignOut = c => ({ ...c, settings: J(c.settings), provider: { ...J(c.provider), _hasSecret: undefined }, levels: db.prepare('SELECT * FROM levels WHERE campaign_id=? ORDER BY pos,id').all(c.id), teams: db.prepare('SELECT * FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id), matchers: db.prepare('SELECT * FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id) });
+const campaignOut = c => ({ ...c, settings: J(c.settings), provider: { ...J(c.provider), _hasSecret: undefined }, lastPaid: (db.prepare("SELECT paid_at FROM donations WHERE campaign_id=? AND status='paid' AND test=0 ORDER BY paid_at DESC LIMIT 1").get(c.id) || {}).paid_at || null, levels: db.prepare('SELECT * FROM levels WHERE campaign_id=? ORDER BY pos,id').all(c.id), teams: db.prepare('SELECT * FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id), matchers: db.prepare('SELECT * FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id) });
 app.get('/api/campaigns', auth, (req, res) => {
   const rows = req.user.role === 'admin' && req.query.all ? db.prepare('SELECT c.*, u.email owner FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC').all() : db.prepare('SELECT * FROM campaigns WHERE user_id=? ORDER BY id DESC').all(req.user.id);
   res.json(rows.map(c => ({ id: c.id, slug: c.slug, title: c.title, status: c.status, goal: c.goal, multiplier: c.multiplier, end_at: c.end_at, cover: c.cover, owner: c.owner, stats: stats(c, isTest(c)) })));
