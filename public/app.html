@@ -208,7 +208,7 @@ html[dir=rtl] .guide{transform:translateX(100%)}
 .guide .sug button{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:5px 10px;color:var(--mut)}
 .guide .sug button:hover{border-color:var(--p);color:var(--p)}
 .guide .in{display:flex;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
-.guide .in input{flex:1}
+.guide .in input{flex:1;font-size:16px}
 .guide .x{margin-inline-start:auto;font-size:18px;color:var(--mut)}
 .typing{color:var(--mut);font-size:13px;padding:0 16px 8px}
 main input,main select,main textarea{min-width:0;max-width:100%}
@@ -266,7 +266,7 @@ input[type=datetime-local],input[type=date],input[type=time]{width:100%;min-widt
   .vsteps{grid-template-columns:1fr}
   .copy span{font-size:12px}
   .tabs{flex-wrap:wrap;gap:4px;border:0}.tabs a{border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;margin:0}.tabs a.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .guide:not(.on){visibility:hidden}
+  .guide:not(.on){visibility:hidden;transition:transform .35s,visibility 0s .35s}
   .guide,html[dir=rtl] .guide{top:auto;bottom:0;inset-inline:0;width:100%;height:82dvh;border-radius:22px 22px 0 0;border:0;transform:translateY(110%);box-shadow:0 -20px 60px -20px rgba(15,23,42,.5)}
   .guide .hd{padding:12px 16px}.guide .hd::before{content:"";position:absolute;top:6px;left:50%;width:40px;height:4px;border-radius:99px;background:#d4d7e3;transform:translateX(-50%)}.guide{position:fixed}.guide .hd{position:relative;padding-top:16px}
   .guide .x{width:36px;height:36px;border-radius:10px;background:#f1f5f9;display:grid;place-items:center}
@@ -699,7 +699,7 @@ async function admDel(id,title){if(!confirm(`למחוק לצמיתות את "${t
 
 // ---- guide ----
 let gHist=[];
-function toggleGuide(on){$('#guide').classList.toggle('on',on);if(innerWidth<=900)$('#bk').classList.toggle('on',on);if(on){if(!gHist.length)gMsg('a','שלום! אני המדריך של GiveIL. אני מכיר את הקמפיין שאתם עובדים עליו ויכול לכתוב טקסטים, להסביר על סליקה ושגרירים, ולתת טיפים לגיוס. מה נעשה?');$('#gIn').focus();renderSug()}}
+function toggleGuide(on){$('#guide').classList.toggle('on',on);if(innerWidth<=900)$('#bk').classList.toggle('on',on);if(on){if(!gHist.length)gMsg('a','שלום! אני המדריך של GiveIL. אני מכיר את הקמפיין שאתם עובדים עליו ויכול לכתוב טקסטים, להסביר על סליקה ושגרירים, ולתת טיפים לגיוס. מה נעשה?');if(innerWidth>900)$('#gIn').focus();renderSug()}}
 $('#gbtn').onclick=()=>toggleGuide(!$('#guide').classList.contains('on'));
 function gMsg(r,t){const el=document.createElement('div');el.className='msg '+r;el.textContent=t;if(r==='a'&&t.length>60){const c=document.createElement('span');c.className='cp';c.textContent='העתקה';c.onclick=()=>{navigator.clipboard.writeText(t);toast('הועתק')};el.appendChild(c)}$('#gMsgs').appendChild(el);$('#gMsgs').scrollTop=1e9}
 function renderSug(){const s=C?['כתוב הודעת וואטסאפ לשגרירים','כתוב 3 פוסטים לרשתות','איך מחברים נדרים פלוס?','טיפים ליום האחרון של הקמפיין','הצע רמות תרומה']:['איך פותחים קמפיין?','איך מוסיפים שגרירים?','איך עובד מצב הבדיקה?','אילו ספקי סליקה נתמכים?'];$('#gSug').innerHTML=s.map(x=>`<button>${esc(x)}</button>`).join('');$$('#gSug button').forEach(b=>b.onclick=()=>askGuide(b.textContent))}

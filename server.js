@@ -599,10 +599,10 @@ const FAQ = [[/סליקה|נדרים|משולם|paypal|תשלום/i, 'חיבור
 app.post('/api/assist', auth, async (req, res) => {
   const msgs = (req.body?.messages || []).slice(-12); if (!msgs.length) return bad(res, 'messages');
   try { const out = await llm(msgs, ctxFor(req.user.id, req.body?.campaignId)); if (out) return res.json({ reply: out, ai: true }); }
-  catch (e) { return res.json({ reply: 'המדריך החכם לא זמין כרגע (' + e.message + '). ' , ai: false }); }
+  catch (e) { console.error('assist', e.message); }
   const q = String(msgs[msgs.length - 1].content || '');
   const hit = FAQ.find(([re]) => re.test(q));
-  res.json({ reply: hit ? hit[1] : 'אני יכול לעזור עם: חיבור סליקה, שגרירים, מצב בדיקה ועלייה לאוויר, מסך אירוע, ייצוא, שפות. (כדי לקבל מדריך AI מלא, הגדירו ANTHROPIC_API_KEY או GEMINI_API_KEY בשרת.)', ai: false });
+  res.json({ reply: hit ? hit[1] : 'המדריך החכם (AI) עדיין לא הופעל בשרת. בינתיים אני עונה על שאלות נפוצות: חיבור סליקה, שגרירים, מצב בדיקה ועלייה לאוויר, מסך אירוע, ייצוא, שפות – או כתבו לנו בוואטסאפ דרך כפתור העזרה.', ai: false });
 });
 
 // ---------- pages ----------
@@ -624,7 +624,7 @@ app.get(['/c/:slug', '/c/:slug/:team'], (req, res) => {
 app.get(['/app', '/app/*'], (_, res) => res.sendFile(pub('app.html')));
 app.get('/', (_, res) => res.sendFile(pub('index.html')));
 app.get(['/terms', '/privacy', '/accessibility'], (_, res) => res.sendFile(pub('legal.html')));
-app.get('/sitemap.xml', (req, res) => { const b = base(req); const slugs = db.prepare("SELECT slug FROM campaigns WHERE status='live'").all().map(x => x.slug); res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + ['', '/terms', '/privacy', '/accessibility', '/c/demo', ...slugs.map(x => '/c/' + x)].map(u => `<url><loc>${b}${u}</loc></url>`).join('') + '</urlset>'); });
+app.get('/sitemap.xml', (req, res) => { const b = base(req); const slugs = db.prepare("SELECT slug FROM campaigns WHERE status='live'").all().map(x => x.slug); res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + [...new Set(['', '/terms', '/privacy', '/accessibility', ...slugs.map(x => '/c/' + x)])].map(u => `<url><loc>${b}${u}</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod><changefreq>${u ? 'weekly' : 'daily'}</changefreq><priority>${u ? (u.startsWith('/c/') ? '0.8' : '0.3') : '1.0'}</priority></url>`).join('') + '</urlset>'); });
 app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: ' + base(req) + '/sitemap.xml\nDisallow: /app\nDisallow: /pay/\nDisallow: /api/\n'));
 app.use((_, res) => res.status(404).sendFile(pub('404.html')));
 app.listen(process.env.PORT || 3000, () => console.log('ttm up'));
