@@ -302,8 +302,9 @@ app.put('/api/campaigns/:id', auth, own, (req, res) => {
 });
 app.post('/api/campaigns/:id/status', auth, own, (req, res) => {
   const s = req.body?.status; if (!['draft', 'test', 'live', 'ended'].includes(s)) return bad(res, 'status');
-  if (s === 'live' && J(req.c.provider).type === 'test') return bad(res, 'כדי לעלות לאוויר צריך לחבר ספק סליקה אמיתי');
-  if (s === 'live' && J(req.c.provider).type === 'nedarim' && !J(req.c.provider).apiPassword) return bad(res, 'נדרים פלוס: חובה להזין ApiPassword לפני העלייה לאוויר – בלעדיו אי אפשר לאמת תרומות');
+  const force = req.user.role === 'admin' && req.body?.force === true; // admin: publish without payments (donations closed)
+  if (s === 'live' && !force && (J(req.c.provider).type || 'test') === 'test') return bad(res, 'כדי לעלות לאוויר צריך לחבר ספק סליקה אמיתי');
+  if (s === 'live' && !force && J(req.c.provider).type === 'nedarim' && !J(req.c.provider).apiPassword) return bad(res, 'נדרים פלוס: חובה להזין ApiPassword לפני העלייה לאוויר – בלעדיו אי אפשר לאמת תרומות');
   if (s === 'live' && req.user.role !== 'admin') { const u = db.prepare('SELECT email_verified FROM users WHERE id=?').get(req.user.id); if (mail.enabled() && !u.email_verified) return bad(res, 'כדי לעלות לאוויר יש לאמת את כתובת האימייל (בדקו את תיבת הדואר)'); const ct = db.prepare('SELECT status FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id); if (!ct || ct.status === 'rejected') return bad(res, 'כדי לעלות לאוויר יש לחתום על הסכם השימוש'); if (ct.status !== 'approved') return bad(res, 'ההסכם והמסמכים בבדיקה אצלנו (בדרך כלל עד יום עסקים). נעדכן במייל כשאפשר לעלות לאוויר.'); const uu = db.prepare('SELECT plan_until FROM users WHERE id=?').get(req.user.id); if (!req.c.paid && !planActive(uu)) return res.status(402).json({ error: 'כדי לעלות לאוויר יש להסדיר תשלום עבור הקמפיין', code: 'billing' }); }
   if (s === 'live' && req.user.role !== 'admin') { const st = J(req.c.settings); if (st.providerOk !== provFp(J(req.c.provider))) return res.status(409).json({ error: 'פרטי הסליקה בבדיקה אצלנו: מוודאים שחשבון הסליקה רשום על שם העמותה. בדרך כלל עד יום עסקים, ונעדכן במייל.', code: 'provider' }); }
   if (s === 'live' && req.body?.clearTest) db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id);
@@ -420,7 +421,7 @@ app.get('/api/c/:slug', (req, res) => {
   const test = isTest(c); const s = J(c.settings);
   const t = req.query.team ? db.prepare('SELECT id,slug,name,goal,photo,descr FROM teams WHERE campaign_id=? AND slug=?').get(c.id, req.query.team) : null;
   res.json({
-    campaign: { payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test' },
+    campaign: { closed: !isTest(c) && (J(c.provider).type || 'test') === 'test', payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test' },
     levels: db.prepare('SELECT id,name,amount,descr,stock,icon,monthly,months,(SELECT COUNT(*) FROM donations WHERE level_id=levels.id AND status=\'paid\' AND test=?) used FROM levels WHERE campaign_id=? ORDER BY pos,id').all(test ? 1 : 0, c.id),
     teams: teamStats(c, test), team: t, matchers: db.prepare('SELECT name,logo FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id),
     stats: stats(c, test),
@@ -448,6 +449,7 @@ app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
   const team = b.team_id ? db.prepare('SELECT id FROM teams WHERE id=? AND campaign_id=?').get(b.team_id, c.id) : null;
   const prov = J(c.provider); const method = ['card', 'bit', 'paybox', 'applepay', 'googlepay'].includes(b.method) ? b.method : 'card';
   const type = isTest(c) ? 'test' : (prov.type || 'test'); const cfg = prov;
+  if (!isTest(c) && type === 'test') return bad(res, 'התרומות בקמפיין זה סגורות');
   const P = providers[type]; if (!P) return bad(res, 'ספק סליקה לא מוגדר');
   let inst = Math.min(Math.max(1, +b.installments || 1), s.installments || 1);
   // monthly quick button: the donor pledges amount × months; the processor charges `amount` every month for `months` months

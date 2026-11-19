@@ -317,6 +317,7 @@ html[dir=rtl] .ncard{transform:translateX(-120%)}
 .ncard .i{min-width:0}.ncard small{display:block;font-size:11px;color:var(--mut)}.ncard b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ncard span{display:block;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ncard .a{font-weight:700;font-size:17px;color:var(--v)}
 @media(max-width:640px){.pcard{padding:18px 16px;border-radius:18px;margin-top:-28px;width:calc(100% - 0px)}.pcard .big{font-size:40px}.pcard .pct{min-width:70px;padding:8px 10px}.pcard .pct b{font-size:18px}.card{padding:18px;border-radius:16px}.maincol{gap:12px}.layout{gap:12px}.mcta .btn.grad{flex-basis:100%}.pcard .amt{min-width:0;flex:1 1 30%}.amt.lvb{min-width:0;flex:1 1 46%}.ncard{top:auto;bottom:96px}}
+body.closed .mcta,body.closed #sticky .btn,body.closed #levels,body.closed .amts,body.closed #goDonate{display:none!important}
 html.embed{scrollbar-width:none}html.embed::-webkit-scrollbar{display:none}
 </style>
 </head>
@@ -443,7 +444,7 @@ $$('[data-r]').forEach(el=>io.observe(el));
 
 async function load(){
   const r=await fetch(`/api/c/${slug}${teamSlug?'?team='+encodeURIComponent(teamSlug):''}`);if(!r.ok){document.body.innerHTML='<div class="empty" style="padding:80px">הקמפיין לא נמצא</div>';return}
-  D=await r.json();const c=D.campaign;cur=SYM[c.currency]||'₪';if(c.settings&&c.settings.demo)$('#testbar').dataset.demo='1';
+  D=await r.json();const c=D.campaign;document.body.classList.toggle('closed',!!c.closed);cur=SYM[c.currency]||'₪';if(c.settings&&c.settings.demo)$('#testbar').dataset.demo='1';
   const langs=(c.settings&&c.settings.langs&&c.settings.langs.length?c.settings.langs:[c.lang||'he']);$('#langs').innerHTML=langs.length>1?langs.map(l=>`<button data-l="${l}">${l.toUpperCase()}</button>`).join(''):'';$$('#langs button').forEach(b=>b.onclick=()=>{setLang(b.dataset.l);rerender()});
   let want=new URLSearchParams(location.search).get('lang');try{want=want||localStorage.getItem('gx_lang')}catch{}const auto=document.documentElement.dataset.autoLang;setLang(langs.includes(want)?want:(langs.includes(auto)?auto:(c.lang||'he')));
   document.documentElement.style.setProperty('--c',c.color);document.documentElement.style.setProperty('--c2',shade(c.color,-18));
@@ -521,7 +522,7 @@ function stream(){const es=new EventSource(`/api/c/${slug}/stream`);es.addEventL
 function showStep(n){['stepAmt','stepForm','stepPay','stepThx'].forEach((id,i)=>$('#'+id).hidden=i!==n);$('#mod').classList.add('on');document.body.style.overflow='hidden'}
 function go0(){showStep(0);$('#levelsCard').hidden=!D.levels.length}
 function go1(){if(!(sel>0)){go0();return}$('#mAmt').textContent=cur+fmt(sel);$('#err').textContent='';showStep(1);setTimeout(()=>$('#fName').focus(),300)}
-function openDonate(){if(!D)return;if(sel>0)go1();else go0()}
+function openDonate(){if(!D||D.campaign.closed)return;if(sel>0)go1();else go0()}
 $('#amtGo').onclick=()=>{if(!(sel>0)){toast(T('pickAmount'));return}go1()};
 function closeMod(){$('#mod').classList.remove('on');document.body.style.overflow='';$('#payArea').innerHTML='';if(location.search.includes('thanks'))history.replaceState(null,'',location.pathname)}
 
