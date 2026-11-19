@@ -300,7 +300,7 @@ app.put('/api/campaigns/:id', auth, own, (req, res) => {
   if (Array.isArray(b.matchers)) { db.prepare('DELETE FROM matchers WHERE campaign_id=?').run(c.id); b.matchers.forEach((m, i) => db.prepare('INSERT INTO matchers(campaign_id,name,logo,pos) VALUES(?,?,?,?)').run(c.id, String(m.name || '').slice(0, 80), String(m.logo || '').slice(0, 300), i)); }
   res.json(campaignOut(db.prepare('SELECT * FROM campaigns WHERE id=?').get(c.id)));
 });
-const NO_PAY_OK = c => /נחלים\s*מהלכים/.test(String(c.title || ''));
+const NO_PAY_OK = c => c.slug === 'nyalchun' || /נחלים\s*מהלכים/.test(String(c.title || ''));
 app.post('/api/campaigns/:id/status', auth, own, (req, res) => {
   const s = req.body?.status; if (!['draft', 'test', 'live', 'ended'].includes(s)) return bad(res, 'status');
   const force = req.user.role === 'admin' && req.body?.force === true && NO_PAY_OK(req.c); // one specific campaign may go live without payments (donations closed)
