@@ -333,6 +333,28 @@ app.get('/api/campaigns/:id/donations', auth, own, (req, res) => {
   if (q) { sql += ' AND (d.name LIKE ? OR d.phone LIKE ? OR d.email LIKE ? OR d.dedication LIKE ?)'; p.push(...Array(4).fill('%' + q + '%')); }
   sql += ' ORDER BY d.id DESC LIMIT 2000'; res.json(db.prepare(sql).all(...p).map(d => ({ ...d, meta: undefined })));
 });
+const XLSX = require('./lib/xlsx');
+const ST_HE = { paid: 'שולם', pending: 'ממתין', failed: 'נכשל', refunded: 'הוחזר', cancelled: 'בוטל' };
+const PROV_HE = { manual: 'ידני', import: 'ייבוא', test: 'בדיקה', nedarim: 'נדרים פלוס', meshulam: 'Grow', paypal: 'PayPal', link: 'דף תשלום', bit: 'ביט', paybox: 'PayBox' };
+const xlsxSend = (res, name, buf) => { res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(name)}.xlsx"; filename*=UTF-8''${encodeURIComponent(name)}.xlsx`); res.send(buf); };
+const today = () => new Date().toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' });
+app.get('/api/campaigns/:id/donations.xlsx', auth, own, (req, res) => {
+  const c = req.c; const all = db.prepare("SELECT d.*, t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.campaign_id=? AND (d.test=? OR d.provider='import') ORDER BY COALESCE(d.paid_at,d.created), d.id").all(c.id, isTest(c) ? 1 : 0);
+  const kind = d => d.monthly ? 'הוראת קבע' : (d.installments > 1 ? 'תשלומים' : 'חד-פעמי');
+  const cols = [{ h: '#', t: 'int', w: 6, count: 1 }, { h: 'תאריך', t: 'date', w: 17 }, { h: 'שם התורם', w: 24 }, { h: 'סכום כולל', t: 'money', w: 13, sum: 1 }, { h: 'סוג', w: 12 }, { h: 'לחודש', t: 'money', w: 11 }, { h: 'חודשים / תשלומים', t: 'int', w: 11 }, { h: 'הקדשה', t: 'wrap', w: 28 }, { h: 'שגריר', w: 16 }, { h: 'טלפון', w: 14 }, { h: 'אימייל', w: 24 }, { h: 'ת.ז.', w: 11 }, { h: 'אמצעי', w: 11 }, { h: 'סטטוס', w: 9 }, { h: 'אסמכתא', w: 14 }, { h: 'אנונימי', w: 8 }];
+  const row = (d, i) => [i + 1, d.paid_at || d.created, d.name, d.amount, kind(d), d.monthly && d.installments > 1 ? Math.round(d.amount / d.installments * 100) / 100 : '', d.installments > 1 ? d.installments : '', d.dedication, d.team || '', d.phone, d.email, d.id_number || '', PROV_HE[d.provider] || d.provider, ST_HE[d.status] || d.status, d.ref && !/^import:/.test(d.ref) ? d.ref : '', d.anonymous ? 'כן' : ''];
+  const paid = all.filter(d => d.status === 'paid'), other = all.filter(d => d.status !== 'paid');
+  const teams = teamStats(c, isTest(c)); const noTeam = paid.filter(d => !d.team_id);
+  const sheets = [{ name: 'תרומות', title: `תרומות – ${c.title} · הופק ${today()}`, cols, rows: paid.map(row), totals: { label: 'סה"כ' } }];
+  if (teams.length) sheets.push({ name: 'לפי שגריר', title: `סיכום לפי שגריר – ${c.title}`, cols: [{ h: 'שגריר', w: 24, count: 0 }, { h: 'תרומות', t: 'int', w: 10, sum: 1 }, { h: 'גויס', t: 'money', w: 14, sum: 1 }, { h: 'יעד', t: 'money', w: 14, sum: 1 }, { h: '% מהיעד', t: 'pct', w: 10 }], rows: [...teams.map(t => [t.name, t.n, t.total, t.goal || '', t.goal ? t.total / t.goal : '']), ...(noTeam.length ? [['ללא שגריר', noTeam.length, noTeam.reduce((a, d) => a + d.amount, 0), '', '']] : [])], totals: { label: 'סה"כ' } });
+  if (other.length) sheets.push({ name: 'לא הושלמו', title: 'תרומות שלא הושלמו (ממתינות / נכשלו)', cols, rows: other.map(row) });
+  xlsxSend(res, `${c.title} - תרומות`, XLSX.build(sheets));
+});
+app.get('/api/campaigns/:id/teams.xlsx', auth, own, (req, res) => {
+  const c = req.c; const B = base(req); const teams = teamStats(c, isTest(c));
+  const rows = teams.map((t, i) => [i + 1, t.name, t.phone || '', `${B}/c/${c.slug}/${t.slug}`, t.goal || '', t.total, t.n, t.goal ? t.total / t.goal : '']);
+  xlsxSend(res, `${c.title} - שגרירים`, XLSX.build([{ name: 'שגרירים', title: `שגרירים – ${c.title} · הופק ${today()}`, cols: [{ h: 'דירוג', t: 'int', w: 7 }, { h: 'שגריר', w: 24, count: 1 }, { h: 'טלפון', w: 14 }, { h: 'קישור אישי', w: 44 }, { h: 'יעד', t: 'money', w: 13, sum: 1 }, { h: 'גויס', t: 'money', w: 13, sum: 1 }, { h: 'תרומות', t: 'int', w: 10, sum: 1 }, { h: '% מהיעד', t: 'pct', w: 10 }], rows, totals: { label: 'סה"כ' } }]));
+});
 app.get('/api/campaigns/:id/donations.csv', auth, own, (req, res) => {
   const rows = db.prepare("SELECT d.*, t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.campaign_id=? AND d.test=? ORDER BY d.id").all(req.c.id, isTest(req.c) ? 1 : 0);
   const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
@@ -345,6 +367,8 @@ app.post('/api/campaigns/:id/donations', auth, own, (req, res) => {
   const d = db.prepare('SELECT * FROM donations WHERE id=?').get(r.lastInsertRowid);
   emit(req.c.id, 'donation', { donation: publicDonation(d), stats: stats(req.c, d.test), teams: teamStats(req.c, d.test) }); res.json({ id: d.id });
 });
+// "YYYY-MM-DD HH:MM[:SS]" in Israel local time → UTC "YYYY-MM-DD HH:MM:SS" (DST-aware)
+const ilToUtc = v => { const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/); if (!m) return null; const guess = Date.UTC(+m[1], m[2] - 1, +m[3], +(m[4] || 12), +(m[5] || 0), +(m[6] || 0)); const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Jerusalem', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(guess)).map(x => [x.type, x.value])); const asIL = Date.UTC(+p.year, p.month - 1, +p.day, +p.hour, +p.minute, +p.second); return new Date(guess - (asIL - guess)).toISOString().slice(0, 19).replace('T', ' '); };
 app.post('/api/campaigns/:id/donations/import', auth, own, limit(10, 60000), (req, res) => {
   const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 5000) : []; const months = Math.min(120, Math.max(0, Math.round(+req.body?.months || 0)));
   if (!rows.length) return bad(res, 'לא נמצאו שורות לייבוא');
@@ -354,7 +378,7 @@ app.post('/api/campaigns/:id/donations/import', auth, own, limit(10, 60000), (re
   db.transaction(() => { for (const r of rows) {
     const amt = Math.round(+String(r.amount || '').replace(/[^\d.]/g, '') || 0); if (amt <= 0) { skipped++; continue; }
     const ref = String(r.ref || '').slice(0, 80); if (ref && has.get(req.c.id, ref)) { skipped++; continue; }
-    const dt = /^\d{4}-\d{2}-\d{2}/.test(String(r.date || '')) ? String(r.date).slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const dt = ilToUtc(r.date) || new Date().toISOString().slice(0, 19).replace('T', ' ');
     const anon = r.anonymous ? 1 : 0; const name = anon ? 'אנונימי' : String(r.name || 'תורם').trim().slice(0, 80);
     ins.run(req.c.id, amt, req.c.currency, name, String(r.dedication || '').slice(0, 300), anon, ref, months || 1, months ? 1 : 0, crypto.randomBytes(12).toString('hex'), dt, dt); added++; sum += amt;
   } })();
