@@ -476,6 +476,11 @@ app.get('/api/admin/overview', auth, adm, (req, res) => res.json({
 app.get('/api/admin/contracts', auth, adm, (_, res) => res.json(db.prepare("SELECT id,user_id,name,id_number,role_title,org,org_number,email,phone,sent,created,method,file,docs,status,review_note FROM contracts ORDER BY status='pending' DESC, id DESC").all().map(c => ({ ...c, docs: J(c.docs) }))));
 app.post('/api/admin/users/:id/reset', auth, adm, (req, res) => { const pw = 'Ttm' + crypto.randomBytes(3).toString('hex') + '!'; db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(pw), req.params.id); ev(req, 'admin.reset_pw', { meta: { target: +req.params.id } }); res.json({ ok: true, password: pw }); });
 app.get('/api/admin/mail', auth, adm, (_, res) => res.json({ enabled: mail.enabled(), from: process.env.MAIL_FROM || '' }));
+app.post('/api/admin/mail/test', auth, adm, limit(5, 600000), async (req, res) => {
+  const r = await mail.send({ to: req.user.email, subject: 'בדיקת מייל מ-GiveIL ✓', html: mail.layout('זה עובד 🎉', '<p>אם קיבלת את המייל הזה – מיילי התודה לתורמים ואיפוס הסיסמה פועלים.</p>'), text: 'זה עובד – מיילים מ-GiveIL פועלים.' }).catch(e => ({ ok: false, error: e.message }));
+  ev(req, 'mail.test', { level: r.ok ? 'info' : 'error', msg: (r.ok ? 'נשלח ל-' : 'נכשל: ') + (r.ok ? req.user.email : (r.error || JSON.stringify(r).slice(0, 200))) });
+  res.json({ ok: !!r.ok, to: req.user.email, error: r.ok ? '' : (r.error || r.body || 'שליחה נכשלה') });
+});
 app.patch('/api/admin/users/:id', auth, adm, (req, res) => {
   if (req.body?.email_verified !== undefined) db.prepare('UPDATE users SET email_verified=? WHERE id=?').run(req.body.email_verified ? 1 : 0, req.params.id); const b = req.body || {}; db.prepare("UPDATE users SET role=COALESCE(?,role), org_verified=COALESCE(?,org_verified), org_status=CASE WHEN ? IS NULL THEN org_status ELSE 'אומת ידנית' END, org_name=COALESCE(?,org_name) WHERE id=?").run(b.role || null, b.org_verified ?? null, b.org_verified ?? null, b.org_name || null, req.params.id); res.json({ ok: true }); });
 app.delete('/api/admin/users/:id', auth, adm, (req, res) => { if (+req.params.id === req.user.id) return bad(res, 'self'); db.prepare('DELETE FROM users WHERE id=?').run(req.params.id); res.json({ ok: true }); });
