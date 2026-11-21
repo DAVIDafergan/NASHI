@@ -982,37 +982,26 @@ app.get('/api/campaigns/:id/mail-preview', auth, own, (req, res) => { const r = 
 app.post('/api/campaigns/:id/mail-test', auth, own, limit(10, 600000), async (req, res) => { if (!mail.enabled()) return bad(res, 'שליחת מייל עדיין לא מופעלת – נפעיל אותה בקרוב'); const r = { name: req.user.name || 'ישראל', amount: 180, email: req.user.email, link: '/c/' + req.c.slug }; const { subject, html } = renderMail(req.c, String(req.body?.kind || 'thanks'), r, base(req)); const o = await mail.send({ to: req.user.email, subject: '[בדיקה] ' + subject, html }); res.json({ ok: o.ok, to: req.user.email, err: o.ok ? '' : o.body }); });
 app.post('/api/campaigns/:id/messages/log', auth, own, (req, res) => { const b = req.body || {}; db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total,sent) VALUES(?,?,?,?,?,?,?)').run(req.c.id, req.user.id, 'manual', b.audience || 'donors', String(b.text || '').slice(0, 600), +b.total || 0, +b.sent || 0); res.json({ ok: true }); });
 
-// ---------- AI guide ----------
-function ctxFor(uid, cid) {
-  const c = cid ? db.prepare('SELECT * FROM campaigns WHERE id=? AND user_id=?').get(cid, uid) : null; if (!c) return '';
-  const st = stats(c, isTest(c)); const last = db.prepare("SELECT name,amount,created FROM donations WHERE campaign_id=? AND status='paid' ORDER BY id DESC LIMIT 5").all(c.id);
-  const lastHour = db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND paid_at>=datetime('now','-1 hour')").get(c.id).n;
-  return `\nקמפיין נוכחי: "${c.title}" (${c.status}), יעד ${c.goal} ${c.currency}, מסתיים ${c.end_at}. גויסו ${st.total} (${st.pct}%) מ-${st.count} תורמים. תרומות בשעה האחרונה: ${lastHour}. ספק סליקה: ${J(c.provider).type}. שגרירים: ${db.prepare('SELECT COUNT(*) n FROM teams WHERE campaign_id=?').get(c.id).n}. רמות: ${db.prepare('SELECT name,amount FROM levels WHERE campaign_id=?').all(c.id).map(l => l.name + ' ' + l.amount).join(', ')}. סיפור: ${(c.story || '').slice(0, 600)}. תרומות אחרונות: ${last.map(d => d.name + ' ' + d.amount).join(', ')}`;
+// ---------- guide (built-in knowledge, no AI) ----------
+const guide = require('./lib/guide');
+function guideCtx(uid, cid, req) {
+  const adminU = db.prepare('SELECT role FROM users WHERE id=?').get(uid)?.role === 'admin'; const c = cid ? (adminU ? db.prepare('SELECT * FROM campaigns WHERE id=?').get(cid) : db.prepare('SELECT * FROM campaigns WHERE id=? AND user_id=?').get(cid, uid)) : null; if (!c) return null; uid = c.user_id;
+  const st = stats(c, isTest(c)); const u = db.prepare('SELECT org_name,org,email_verified,plan_until FROM users WHERE id=?').get(uid) || {};
+  const prov = J(c.provider), sett = J(c.settings); const ct = db.prepare('SELECT status FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(uid);
+  const top = db.prepare("SELECT t.name FROM teams t JOIN donations d ON d.team_id=t.id AND d.status='paid' WHERE t.campaign_id=? GROUP BY t.id ORDER BY SUM(d.amount) DESC LIMIT 1").get(c.id);
+  let unfinished = 0; try { unfinished = recipients(c, 'unfinished', false).length; } catch { }
+  const levels = db.prepare('SELECT COUNT(*) n FROM levels WHERE campaign_id=?').get(c.id).n;
+  const paidTest = db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid'").get(c.id).n;
+  const checklist = [[!!(c.title && c.goal), 'שם ויעד לקמפיין'], [!!(c.story || c.image), 'סיפור או תמונה'], [levels > 0, 'לפחות כפתור תרומה אחד'], [(prov.type || 'test') !== 'test', 'חיבור ספק סליקה'], [!!prov.type && prov.type !== 'test' && sett.providerOk === provFp(prov), 'אישור GiveIL לחשבון הסליקה'], [paidTest > 0, 'תרומת בדיקה אחת לפחות'], [!mail.enabled() || !!u.email_verified, 'אימות כתובת האימייל'], [!!ct && ct.status === 'approved', 'הסכם חתום ומאושר'], [!!c.paid || planActive(u), 'תשלום לפלטפורמה (קמפיין או מנוי)']];
+  return { c, stats: st, org: u.org_name || u.org, link: base(req) + '/c/' + c.slug, teams: db.prepare('SELECT COUNT(*) n FROM teams WHERE campaign_id=?').get(c.id).n, topTeam: top?.name, unfinished, checklist, lastHour: db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND paid_at>=datetime('now','-1 hour')").get(c.id).n };
 }
-const SYS = `אתה "המדריך" של GiveIL (ראשי תיבות: צדקה תציל ממות), פלטפורמת גיוס תרומות ישראלית לעמותות. אתה עוזר למנהלי קמפיינים: כתיבת סיפור קמפיין, כותרות, רמות תרומה, הודעות וואטסאפ לשגרירים ולתורמים, טיפים לקמפיין גיוס, הסבר על המערכת (אשף קמפיין, מצב בדיקה, חיבור סליקה: נדרים פלוס, משולם/Grow, PayPal, דף תשלום חיצוני; שגרירים עם קישור אישי; מסך אירוע חי; ייצוא CSV; רב-לשוניות). ענה בשפה של המשתמש, קצר, מעשי, עם דוגמאות מוכנות להעתקה. כשמבקשים טקסט, תן את הטקסט עצמו. אל תמציא נתונים שאינם בהקשר.`;
-async function llm(messages, context) {
-  const sys = SYS + (context || '');
-  if (process.env.ANTHROPIC_API_KEY) {
-    const body = JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5', max_tokens: 1200, system: sys, messages: messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content).slice(0, 6000) })) });
-    const r = await new Promise((resolve, reject) => { const q = https.request({ hostname: 'api.anthropic.com', path: '/v1/messages', method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Length': Buffer.byteLength(body) } }, res => { let d = ''; res.on('data', c => d += c); res.on('end', () => resolve(d)); }); q.on('error', reject); q.write(body); q.end(); });
-    const j = JSON.parse(r); if (j.error) throw new Error(j.error.message); return j.content?.map(x => x.text || '').join('') || '';
-  }
-  if (process.env.GEMINI_API_KEY) {
-    const body = JSON.stringify({ system_instruction: { parts: [{ text: sys }] }, contents: messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: String(m.content).slice(0, 6000) }] })) });
-    const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-    const r = await new Promise((resolve, reject) => { const q = https.request({ hostname: 'generativelanguage.googleapis.com', path: `/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, res => { let d = ''; res.on('data', c => d += c); res.on('end', () => resolve(d)); }); q.on('error', reject); q.write(body); q.end(); });
-    const j = JSON.parse(r); if (j.error) throw new Error(j.error.message); return j.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
-  }
-  return null;
-}
-const FAQ = [[/סליקה|נדרים|משולם|paypal|תשלום/i, 'חיבור סליקה: בקמפיין → "סליקה" בחרו ספק והזינו את הפרטים שקיבלתם ממנו (נדרים פלוס: מספר מוסד + ApiValid; משולם: Page code + User ID; PayPal: Client ID + Secret). עד שתעלו לאוויר, הקמפיין במצב בדיקה ואפשר לתרגל תרומות מדומות.'], [/שגריר|צוות|קישור אישי/i, 'שגרירים: בקמפיין → "שגרירים" → הוספה. לכל שגריר נוצר קישור אישי (כתובת הקמפיין + שם), יעד אישי ודירוג חי בדף הקמפיין. שלחו לו את הקישור בוואטסאפ מהכפתור ליד שמו.'], [/בדיקה|לאוויר|live|test/i, 'מצב בדיקה: כל קמפיין מתחיל בבדיקה. תרמו דרך "עמוד הבדיקה", ראו איך הדף, המסך וההודעות נראים. כשמוכנים: "עלייה לאוויר" — המערכת מוחקת תרומות בדיקה ומפעילה את הסליקה האמיתית.'], [/מסך|טלוויזיה|אירוע/i, 'מסך אירוע: לכל קמפיין יש כתובת /c/<כתובת>/screen. פתחו אותה בטלוויזיה/מקרן באירוע, והיא מציגה תורמים וסכום בזמן אמת.'], [/ייצוא|אקסל|csv/i, 'ייצוא: בעמוד התרומות של הקמפיין → "ייצוא CSV". הקובץ נפתח באקסל עם כל הפרטים, כולל אסמכתאות.'], [/שפה|אנגלית|english/i, 'שפות: בהגדרות הקמפיין בחרו אילו שפות להציע (עברית, אנגלית, צרפתית, ספרדית). בדף הקמפיין יופיע מתג שפה, והקישור ?lang=en פותח ישירות באנגלית.']];
-app.post('/api/assist', auth, async (req, res) => {
+app.post('/api/assist', auth, limit(60, 60000), (req, res) => {
+  let cx = null; try { cx = guideCtx(req.user.id, +req.body?.campaignId || 0, req); } catch (e) { console.error('guide ctx', e.message); }
+  if (req.body?.kind) { const t = guide.write(String(req.body.kind), cx, String(req.body.text || '').slice(0, 8000)); return t ? res.json({ reply: t, ai: true }) : bad(res, 'kind'); }
   const msgs = (req.body?.messages || []).slice(-12); if (!msgs.length) return bad(res, 'messages');
-  try { const out = await llm(msgs, ctxFor(req.user.id, req.body?.campaignId)); if (out) return res.json({ reply: out, ai: true }); }
-  catch (e) { console.error('assist', e.message); }
-  const q = String(msgs[msgs.length - 1].content || '');
-  const hit = FAQ.find(([re]) => re.test(q));
-  res.json({ reply: hit ? hit[1] : 'המדריך החכם (AI) עדיין לא הופעל בשרת. בינתיים אני עונה על שאלות נפוצות: חיבור סליקה, שגרירים, מצב בדיקה ועלייה לאוויר, מסך אירוע, ייצוא, שפות – או כתבו לנו בוואטסאפ דרך כפתור העזרה.', ai: false });
+  const q = String(msgs[msgs.length - 1].content || '').slice(0, 3000);
+  const out = guide.answer(q, cx); if (out.go && out.go[1].startsWith('c/')) out.go = cx ? [out.go[0], `#/c/${cx.c.id}/${out.go[1].slice(2)}`] : null;
+  res.json({ ...out, ai: !!out.filled });
 });
 
 // ---------- pages ----------
