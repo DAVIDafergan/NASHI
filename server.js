@@ -475,7 +475,7 @@ app.post('/api/campaigns/:id/donations/bulk', auth, own, (req, res) => {
 
 app.delete('/api/campaigns/:id/donations/:did', auth, own, (req, res) => { const d = db.prepare('SELECT test FROM donations WHERE id=? AND campaign_id=?').get(req.params.did, req.c.id); db.prepare('DELETE FROM donations WHERE id=? AND campaign_id=?').run(req.params.did, req.c.id); if (d) emit(req.c.id, 'refresh', { stats: stats(req.c, d.test), teams: teamStats(req.c, d.test) }); res.json({ ok: true }); });
 app.post('/api/campaigns/:id/clear-test', auth, own, (req, res) => { db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id); emit(req.c.id, 'refresh', { stats: stats(req.c, true), teams: teamStats(req.c, true) }); res.json({ ok: true }); });
-app.get('/api/providers', (_, res) => res.json(Object.entries(providers).map(([k, v]) => ({ type: k, label: v.label, fields: v.fields, manual: !!v.manual, wallets: v.wallets || [] }))));
+app.get('/api/providers', (_, res) => res.json(Object.entries(providers).map(([k, v]) => ({ type: k, label: v.label, fields: v.fields, manual: !!v.manual, wallets: v.wallets || [], noMonthly: !!v.noMonthly, unverified: ['tranzila', 'morning'].includes(k) }))));
 
 // ---------- superadmin ----------
 const adm = (req, res, next) => req.user.role === 'admin' ? next() : bad(res, 'auth', 403);
@@ -621,7 +621,7 @@ app.get('/api/c/:slug', (req, res) => {
   const test = isTest(c); const s = J(c.settings); const paused = !!s.adminPaused; for (const k of ADMIN_KEYS) delete s[k];
   const t = req.query.team ? db.prepare('SELECT id,slug,name,goal,photo,descr FROM teams WHERE campaign_id=? AND slug=?').get(c.id, req.query.team) : null;
   res.json({
-    campaign: { closed: (!isTest(c) && (J(c.provider).type || 'test') === 'test') || paused || isEnded(c), paused, ended: isEnded(c), payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test' },
+    campaign: { closed: (!isTest(c) && (J(c.provider).type || 'test') === 'test') || paused || isEnded(c), paused, ended: isEnded(c), payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test', noMonthly: !isTest(c) && !!providers[J(c.provider).type || 'test']?.noMonthly },
     levels: db.prepare('SELECT id,name,amount,descr,stock,icon,monthly,months,(SELECT COUNT(*) FROM donations WHERE level_id=levels.id AND status=\'paid\' AND test=?) used FROM levels WHERE campaign_id=? ORDER BY pos,id').all(test ? 1 : 0, c.id),
     teams: teamStats(c, test), team: t, matchers: db.prepare('SELECT name,logo FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id),
     stats: stats(c, test),
@@ -660,6 +660,7 @@ app.post('/api/c/:slug/donate', limit(600, 60000), async (req, res) => {
   if (level && level.monthly) { inst = Math.max(1, +level.months || 12); finalAmount = level.amount * inst; isMonthly = true; }
   else if (isMonthly) { inst = Math.min(Math.max(1, +b.months || 12), 120); finalAmount = amount * inst; }
   if (finalAmount > 20000000) return bad(res, 'סכום גבוה מדי');
+  if (isMonthly && !isTest(c) && providers[J(c.provider).type || 'test']?.noMonthly) return bad(res, 'הוראת קבע עדיין לא נתמכת בספק הסליקה של הקמפיין – אפשר לתרום חד-פעמי או בתשלומים');
   const resumed = b.resume ? db.prepare("SELECT id FROM donations WHERE token=? AND campaign_id=? AND status IN ('pending','failed')").get(String(b.resume), c.id) : null;
   const token = crypto.randomBytes(16).toString('hex');
   if (s.idField === 'required') { const z = String(b.id_number || '').replace(/\D/g, ''); if (z.length < 8 || z.length > 9) return bad(res, 'נא להזין מספר תעודת זהות תקין'); }
@@ -778,6 +779,39 @@ app.post('/pay/test/:token', (req, res) => {
   markPaid(d.id, { ref: 'TEST-' + d.id, meta: { simulated: true } }); res.json({ ok: true });
 });
 app.get('/pay/return/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return res.redirect('/'); if (d.status === 'pending' && d.provider === 'link') { /* manual providers: keep pending, owner confirms */ } res.redirect(`/c/${d.slug}?thanks=${d.token}`); });
+// ---------- generic hosted-page processors (lib/gateways.js) ----------
+async function gwSettle(d, c, input, raw = '') {
+  const cfg = J(c.provider); const P = providers[cfg.type]; if (!P?.gateway || P !== providers[d.provider] || d.status === 'paid') return d.status === 'paid';
+  const r = await P.verify({ cfg, donation: d, input, rawQuery: raw });
+  const note = n => n && db.prepare('UPDATE donations SET note=? WHERE id=?').run(String(n).slice(0, 300), d.id);
+  if (r.state === 'failed') { db.prepare("UPDATE donations SET status='failed' WHERE id=? AND status='pending'").run(d.id); note(r.note); return false; }
+  if (r.state !== 'paid') { note(r.note); return false; }
+  const per = d.monthly && d.installments > 1 ? d.amount / d.installments : d.amount;
+  if (r.amount !== undefined && r.amount !== null && r.amount !== '' && Math.abs(+r.amount - per) > 1) { note(`⚠ סכום לא תואם (${r.amount} מול ${per}) – לא נספר`); logEvent('pay.mismatch', { level: 'warn', cid: c.id, msg: `${cfg.type} תרומה #${d.id}: ${r.amount}≠${per}` }); return false; }
+  markPaid(d.id, { ref: r.ref || '', meta: { ...(r.meta || {}), gateway: cfg.type, verified: r.verified ? 1 : 0 } });
+  if (r.verified) db.prepare("UPDATE donations SET note='' WHERE id=?").run(d.id);
+  if (!r.verified) { note(r.note || 'לא אומת מול הספק – בדקו שהתשלום התקבל'); logEvent('pay.unverified', { level: 'warn', cid: c.id, msg: `${providers[cfg.type].label}: תרומה #${d.id} נספרה בלי אימות שרת` }); }
+  return true;
+}
+const gwFind = (type, token) => db.prepare('SELECT d.*, c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=? AND d.provider=?').get(String(token), String(type));
+app.all('/pay/g/:type/return/:token', limit(60, 60000), async (req, res) => {
+  const d = gwFind(req.params.type, req.params.token); if (!d) return res.redirect('/');
+  const raw = (req.originalUrl.split('?')[1] || '');
+  try { const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id); await gwSettle(d, c, { ...req.query, ...(req.body || {}) }, raw); } catch (e) { logEvent('pay.error', { level: 'error', cid: d.campaign_id, msg: `${req.params.type} return: ${e.message}` }); }
+  res.redirect(`/c/${d.slug}?thanks=${d.token}`);
+});
+app.all('/pay/g/:type/notify/:token', limit(240, 60000), async (req, res) => {
+  const d = gwFind(req.params.type, req.params.token); if (!d) return res.status(404).send('no donation');
+  res.send('OK');
+  try { const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id); await gwSettle(d, c, { ...req.query, ...(req.body || {}) }, req.originalUrl.split('?')[1] || ''); } catch (e) { logEvent('pay.error', { level: 'error', cid: d.campaign_id, msg: `${req.params.type} notify: ${e.message}` }); }
+});
+// donors who paid and closed the tab: poll the processors that have a lookup by our stored session id
+async function reconcileGateways() {
+  const rows = db.prepare("SELECT d.* FROM donations d WHERE d.status='pending' AND d.test=0 AND d.ref!='' AND d.provider IN ('cardcom','payplus','payme','zcredit') AND d.created > datetime('now','-2 days') AND d.created < datetime('now','-3 minutes') LIMIT 200").all();
+  for (const d of rows) { try { const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id); await gwSettle(d, c, {}); } catch (e) { console.error('gw reconcile', d.id, e.message); } }
+}
+setInterval(() => reconcileGateways().catch(() => { }), 15 * 60e3).unref();
+
 // SUMIT → donor comes back with OG-PaymentID. We re-read the payment from SUMIT (with the NGO's key) before counting it.
 async function sumitSettle(d, c, paymentId) {
   const cfg = J(c.provider); if (cfg.type !== 'sumit' || !paymentId) return false;
@@ -957,9 +991,10 @@ async function provTest(c, req) {
       const r = await new Promise((resolve, reject) => { const q = https.request({ hostname: host, path: '/v1/oauth2/token', method: 'POST', headers: { Authorization: 'Basic ' + auth, 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': 29 } }, rs => { let d = ''; rs.on('data', c => d += c); rs.on('end', () => resolve({ status: rs.statusCode, body: d })); }); q.on('error', reject); q.write('grant_type=client_credentials'); q.end(); });
       return res.json({ ok: r.status === 200, msg: r.status === 200 ? 'PayPal אישר את המפתחות.' : 'PayPal דחה את המפתחות (' + r.status + ')' });
     }
+    if (providers[t]?.gateway) { try { return await providers[t].ping(cfg); } catch (e) { return { ok: false, msg: e.message }; } }
     if (t === 'sumit') {
       if (!cfg.companyId || !cfg.apiKey) return res.json({ ok: false, msg: 'חסר מספר חברה או מפתח API' });
-      try { await sumit.ping(cfg); return res.json({ ok: true, msg: `SUMIT אישר את המפתחות (חברה ${cfg.companyId}). תרומות ייקלטו אוטומטית עם קבלה לתורם.` }); } catch (e) { return res.json({ ok: false, msg: e.message }); }
+      try { await sumit.ping(cfg); return res.json({ ok: true, msg: `SUMIT אישר את המפתחות (חברה ${cfg.companyId}).` }); } catch (e) { return res.json({ ok: false, msg: e.message }); }
     }
     if (t === 'link') { const ok = /^https:\/\//.test(cfg.url || ''); return res.json({ ok, msg: ok ? 'הקישור תקין. זכרו: אישור התרומות ידני.' : 'הקישור חייב להתחיל ב-https://' }); }
     return { ok: false, msg: 'ספק לא מוכר' };
@@ -1002,6 +1037,7 @@ app.get('/api/admin/campaigns/:id/health', auth, adm, async (req, res) => {
   const fr = (d24.p || 0) + (d24.f || 0) ? Math.round(100 * (d24.f || 0) / ((d24.p || 0) + (d24.f || 0))) : 0;
   add(S, 'תשלומים שנכשלו (24 שעות)', fr > 30 ? 'bad' : fr > 10 ? 'warn' : 'ok', `${d24.f || 0} נכשלו · ${d24.p || 0} הצליחו${fr ? ` (${fr}% כישלון)` : ''}`);
   add(S, 'תקועות בהמתנה מעל שעה (24 שעות)', (d24.s || 0) > 20 ? 'warn' : 'ok', `${d24.s || 0} – לרוב תורמים שלא סיימו`);
+  if (providers[type]?.gateway) { const uv = q1("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND test=0 AND provider=? AND verified=0", c.id, type).n; add(S, 'תרומות שלא אומתו מול הספק', uv ? 'warn' : 'ok', uv ? `${uv} תרומות נספרו לפי הודעת הספק בלבד – כדאי להשוות לדוח של הספק` : 'כל התרומות אומתו'); }
   if (type === 'nedarim') { const nv = q1("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND test=0 AND provider='nedarim' AND verified=0", c.id).n; add(S, 'אימות מול נדרים', nv ? 'warn' : 'ok', nv ? `${nv} תרומות עוד לא אומתו מול נדרים` : 'כל התרומות אומתו'); }
   if (live) { const lt = q1('SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND test=1', c.id).n; if (lt) add(S, 'תרומות בדיקה שנשארו', 'warn', `${lt} תרומות בדיקה (לא נספרות בדף)`); }
   // messages
