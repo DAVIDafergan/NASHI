@@ -837,8 +837,9 @@ async function reconcileNedarim(c) {
     return { ok: true, pulled: rows.length, verified, recovered };
   }
 }
-app.post('/api/campaigns/:id/provider/test', auth, own, limit(10, 60000), async (req, res) => {
-  const cfg = J(req.c.provider); const t = cfg.type || 'test';
+async function provTest(c, req) {
+  const res = { json: o => o };
+  const cfg = J(c.provider); const t = cfg.type || 'test';
   try {
     if (t === 'test') return res.json({ ok: true, msg: 'מצב בדיקה – אין ספק אמיתי' });
     if (t === 'nedarim') {
@@ -849,7 +850,7 @@ app.post('/api/campaigns/:id/provider/test', auth, own, limit(10, 60000), async 
     }
     if (t === 'meshulam') {
       if (!cfg.pageCode || !cfg.userId) return res.json({ ok: false, msg: 'חסר Page code או User ID' });
-      try { await providers.meshulam.start({ base: base(req), donation: { id: 0, amount: 1, name: 'בדיקה', phone: '', email: '', installments: 1, token: 'test' }, campaign: req.c, cfg }); return res.json({ ok: true, msg: 'Grow יצר דף תשלום בהצלחה – המזהים נכונים.' }); } catch (e) { return res.json({ ok: false, msg: e.message }); }
+      try { await providers.meshulam.start({ base: base(req), donation: { id: 0, amount: 1, name: 'בדיקה', phone: '', email: '', installments: 1, token: 'test' }, campaign: c, cfg }); return res.json({ ok: true, msg: 'Grow יצר דף תשלום בהצלחה – המזהים נכונים.' }); } catch (e) { return res.json({ ok: false, msg: e.message }); }
     }
     if (t === 'paypal') {
       if (!cfg.clientId || !cfg.secret) return res.json({ ok: false, msg: 'חסר Client ID או Secret' });
@@ -859,8 +860,87 @@ app.post('/api/campaigns/:id/provider/test', auth, own, limit(10, 60000), async 
       return res.json({ ok: r.status === 200, msg: r.status === 200 ? 'PayPal אישר את המפתחות.' : 'PayPal דחה את המפתחות (' + r.status + ')' });
     }
     if (t === 'link') { const ok = /^https:\/\//.test(cfg.url || ''); return res.json({ ok, msg: ok ? 'הקישור תקין. זכרו: אישור התרומות ידני.' : 'הקישור חייב להתחיל ב-https://' }); }
-    res.json({ ok: false, msg: 'ספק לא מוכר' });
-  } catch (e) { res.json({ ok: false, msg: e.message }); }
+    return { ok: false, msg: 'ספק לא מוכר' };
+  } catch (e) { return { ok: false, msg: e.message }; }
+}
+app.post('/api/campaigns/:id/provider/test', auth, own, limit(10, 60000), async (req, res) => res.json(await provTest(req.c, req)));
+
+// ---------- super-admin: full health check of one campaign ----------
+const selfGet = pth => new Promise(resolve => { const t0 = Date.now(); const q = require('http').get({ host: '127.0.0.1', port: process.env.PORT || 3000, path: pth, headers: { 'User-Agent': 'GiveIL-health' } }, r => { let n = 0; r.on('data', d => n += d.length); r.on('end', () => resolve({ status: r.statusCode, ms: Date.now() - t0, bytes: n })); }); q.on('error', e => resolve({ status: 0, ms: Date.now() - t0, err: e.message })); q.setTimeout(8000, () => q.destroy(new Error('timeout'))); });
+app.get('/api/admin/campaigns/:id/health', auth, adm, async (req, res) => {
+  const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404);
+  const q1 = (sql, ...p) => db.prepare(sql).get(...p); const st = J(c.settings), prov = J(c.provider), type = prov.type || 'test';
+  const u = q1('SELECT id,email,name,phone,org_name,org,org_verified,email_verified,plan_until,blocked,last_seen FROM users WHERE id=?', c.user_id) || {};
+  const ct = q1('SELECT id,status,created FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1', c.user_id);
+  const test = isTest(c), live = c.status === 'live' && !isEnded(c), ended = isEnded(c);
+  const G = []; const add = (group, label, state, detail = '', fix = null) => { let g = G.find(x => x.group === group); if (!g) G.push(g = { group, items: [] }); g.items.push({ label, state, detail, fix }); };
+  const fmtD = d => d ? d.replace('T', ' ').slice(0, 16) : '—';
+  // page
+  const [pg, ap, sc] = await Promise.all([selfGet('/c/' + encodeURIComponent(c.slug)), selfGet('/api/c/' + encodeURIComponent(c.slug)), selfGet('/c/' + encodeURIComponent(c.slug) + '/screen')]);
+  const P = 'דף הקמפיין';
+  add(P, 'הדף נטען', pg.status === 200 ? (pg.ms > 2000 ? 'warn' : 'ok') : 'bad', pg.status === 200 ? `${pg.ms}ms` : `שגיאה ${pg.status || pg.err}`);
+  add(P, 'נתוני הדף (API)', ap.status === 200 ? (ap.ms > 1500 ? 'warn' : 'ok') : 'bad', ap.status === 200 ? `${ap.ms}ms` : `שגיאה ${ap.status || ap.err}`);
+  add(P, 'מסך אירוע', sc.status === 200 ? 'ok' : 'bad', sc.status === 200 ? 'תקין' : `שגיאה ${sc.status || sc.err}`);
+  add(P, 'סטטוס', st.adminPaused ? 'bad' : ended ? 'off' : live ? 'ok' : 'warn', st.adminPaused ? '⏸ מושהה ע״י מנהל – אי אפשר לתרום' : ended ? 'הסתיים' : live ? 'באוויר' : 'במצב בדיקה', st.adminPaused ? 'unpause' : null);
+  const endU = c.end_at ? ilToUtc(c.end_at) : null, startU = c.start_at ? ilToUtc(c.start_at) : null;
+  add(P, 'תאריכים', !c.end_at ? 'warn' : (startU && endU && startU >= endU) ? 'bad' : 'ok', `התחלה ${fmtD(c.start_at)} · סיום ${fmtD(c.end_at)}${!c.end_at ? ' – אין תאריך סיום' : ''}${startU && endU && startU >= endU ? ' – הסיום לפני ההתחלה!' : ''}`);
+  const lv = db.prepare('SELECT amount,stock FROM levels WHERE campaign_id=?').all(c.id);
+  add(P, 'כפתורי תרומה', lv.length ? 'ok' : 'bad', lv.length ? `${lv.length} רמות` : 'אין אף כפתור תרומה');
+  add(P, 'יעד, סיפור ותמונה', c.goal > 0 && (c.story || c.cover) ? 'ok' : 'warn', `יעד ${c.goal}${c.story ? ' · יש סיפור' : ' · אין סיפור'}${c.cover ? ' · יש תמונה' : ' · אין תמונה'}`);
+  // payments
+  const S = 'סליקה'; const pdef = providers[type];
+  add(S, 'ספק סליקה', type === 'test' ? (live ? 'bad' : 'warn') : 'ok', pdef ? pdef.label.split('(')[0].trim() : type);
+  if (type !== 'test' && pdef) { const miss = (pdef.fields || []).filter(f => !/sandbox|group/i.test(f.k) && !prov[f.k] && !(f.secret && prov._hasSecret)).map(f => f.k); add(S, 'פרטי הספק מלאים', miss.length ? 'bad' : 'ok', miss.length ? 'חסר: ' + miss.join(', ') : 'כל השדות הוזנו'); }
+  if (type !== 'test') add(S, 'אישור GiveIL לחשבון', st.providerOk === provFp(prov) ? 'ok' : st.providerReview?.status === 'rejected' ? 'bad' : 'warn', st.providerOk === provFp(prov) ? 'אושר' : st.providerReview?.status === 'rejected' ? 'נדחה' : 'ממתין לאישור', st.providerOk === provFp(prov) ? null : 'approve');
+  let pt = { ok: true, msg: 'מצב בדיקה' }; if (type !== 'test') { try { pt = await Promise.race([provTest(c, req), new Promise(r => setTimeout(() => r({ ok: false, msg: 'הספק לא ענה תוך 10 שניות' }), 10000))]); } catch (e) { pt = { ok: false, msg: e.message }; } }
+  add(S, 'בדיקת חיבור חיה לספק', type === 'test' ? 'off' : pt.ok ? 'ok' : 'bad', pt.msg);
+  const lastPaid = q1("SELECT MAX(paid_at) t, COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND test=?", c.id, test ? 1 : 0);
+  add(S, 'תרומה אחרונה ששולמה', lastPaid.n ? 'ok' : live ? 'warn' : 'off', lastPaid.n ? `${fmtD(lastPaid.t)} (${lastPaid.n} תרומות${test ? ' בדיקה' : ''})` : 'עוד אין');
+  const d24 = q1("SELECT SUM(status='paid') p, SUM(status='failed') f, SUM(status='pending' AND created<datetime('now','-1 hour')) s FROM donations WHERE campaign_id=? AND test=? AND created>=datetime('now','-1 day')", c.id, test ? 1 : 0);
+  const fr = (d24.p || 0) + (d24.f || 0) ? Math.round(100 * (d24.f || 0) / ((d24.p || 0) + (d24.f || 0))) : 0;
+  add(S, 'תשלומים שנכשלו (24 שעות)', fr > 30 ? 'bad' : fr > 10 ? 'warn' : 'ok', `${d24.f || 0} נכשלו · ${d24.p || 0} הצליחו${fr ? ` (${fr}% כישלון)` : ''}`);
+  add(S, 'תקועות בהמתנה מעל שעה (24 שעות)', (d24.s || 0) > 20 ? 'warn' : 'ok', `${d24.s || 0} – לרוב תורמים שלא סיימו`);
+  if (type === 'nedarim') { const nv = q1("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND test=0 AND provider='nedarim' AND verified=0", c.id).n; add(S, 'אימות מול נדרים', nv ? 'warn' : 'ok', nv ? `${nv} תרומות עוד לא אומתו מול נדרים` : 'כל התרומות אומתו'); }
+  if (live) { const lt = q1('SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND test=1', c.id).n; if (lt) add(S, 'תרומות בדיקה שנשארו', 'warn', `${lt} תרומות בדיקה (לא נספרות בדף)`); }
+  // messages
+  const M = 'הודעות'; const kv = getKV('msg');
+  add(M, 'מייל – חיבור בפלטפורמה', mail.enabled() ? 'ok' : 'bad', mail.enabled() ? (process.env.MAIL_FROM || 'מחובר') : 'שליחת מיילים לא מחוברת');
+  add(M, 'מייל – פתוח לקמפיין', chAllowed(c, 'email') ? 'ok' : 'off', chAllowed(c, 'email') ? 'כן' : 'סגור', 'ch');
+  for (const [k, l] of [['wa', 'וואטסאפ אוטומטי'], ['sms', 'SMS']]) { const al = chAllowed(c, k), rd = chReady(k); add(M, l, al && rd ? 'ok' : al && !rd ? 'bad' : 'off', al ? (rd ? `פתוח · ספק ${kv[k].type}` : 'פתוח לקמפיין אבל אין ספק מחובר בפלטפורמה') : rd ? 'הספק מחובר – סגור לקמפיין הזה' : 'לא מחובר', 'ch'); }
+  add(M, 'תודה + הזמנה לשגרירים בוואטסאפ', waOn(c) ? 'ok' : 'off', waOn(c) ? 'פעיל' : st.waFlow === false ? 'כובה בהגדרות הקמפיין' : 'וואטסאפ אוטומטי לא פתוח');
+  const lm = db.prepare('SELECT channel,audience,total,sent,failed,created FROM messages WHERE campaign_id=? ORDER BY id DESC LIMIT 5').all(c.id);
+  const mf = lm.reduce((a, m) => a + (m.failed || 0), 0);
+  add(M, 'שליחות אחרונות', mf ? 'warn' : lm.length ? 'ok' : 'off', lm.length ? lm.map(m => `${fmtD(m.created)} ${m.channel}: ${m.sent}/${m.total}${m.failed ? ` (${m.failed} נכשלו)` : ''}`).join(' · ') : 'עוד לא נשלחו הודעות');
+  const mev = q1("SELECT COUNT(*) n FROM events WHERE campaign_id=? AND type LIKE 'mail.%' AND level IN ('warn','error') AND at>=datetime('now','-7 day')", c.id).n;
+  if (mev) add(M, 'תקלות שליחה (7 ימים)', 'warn', `${mev} תקלות ביומן`);
+  // owner
+  const O = 'בעלים והסכם';
+  add(O, 'חשבון הבעלים', u.blocked ? 'bad' : 'ok', `${u.org_name || u.org || ''} · ${u.email || ''}${u.blocked ? ' · 🚫 מושעה' : ''}`);
+  add(O, 'מייל מאומת', u.email_verified ? 'ok' : 'warn', u.email_verified ? 'כן' : 'לא');
+  add(O, 'הסכם', ct?.status === 'approved' ? 'ok' : !ct || ct.status === 'rejected' ? (live ? 'bad' : 'warn') : 'warn', ct ? ({ approved: 'אושר', pending: 'ממתין לאישור', rejected: 'נדחה' }[ct.status] || ct.status) : 'לא נחתם');
+  add(O, 'תשלום לפלטפורמה', c.paid || planActive(u) ? 'ok' : live ? 'bad' : 'warn', c.paid ? 'הקמפיין שולם' : planActive(u) ? `מנוי עד ${u.plan_until}` : 'לא שולם', c.paid || planActive(u) ? null : 'paid');
+  // ambassadors & data
+  const A = 'שגרירים ונתונים';
+  const tm = q1("SELECT COUNT(*) n, SUM(phone='' OR phone IS NULL) np FROM teams WHERE campaign_id=?", c.id);
+  add(A, 'שגרירים', tm.n ? 'ok' : 'off', tm.n ? `${tm.n} שגרירים${tm.np ? ` · ${tm.np} בלי טלפון` : ''}` : 'אין שגרירים');
+  const s1 = stats(c, test);
+  const orphan = q1("SELECT COUNT(*) n FROM donations d WHERE d.campaign_id=? AND d.team_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM teams t WHERE t.id=d.team_id)", c.id).n;
+  add(A, 'גויס', 'ok', `₪${Math.round(s1.total).toLocaleString('he-IL')} מתוך ₪${(c.goal || 0).toLocaleString('he-IL')} (${s1.pct}%) · ${s1.count} תרומות`);
+  if (orphan) add(A, 'תרומות של שגרירים שנמחקו', 'warn', `${orphan} תרומות משויכות לשגריר שכבר לא קיים`);
+  const unf = (() => { try { return recipients(c, 'unfinished', false).length; } catch { return 0; } })();
+  add(A, 'התחילו ולא סיימו', unf ? 'warn' : 'ok', unf ? `${unf} תורמים – אפשר לשלוח תזכורת` : 'אין');
+  // system
+  const Y = 'מערכת';
+  const er = q1("SELECT COUNT(*) n FROM events WHERE campaign_id=? AND level='error' AND at>=datetime('now','-1 day')", c.id).n;
+  add(Y, 'שגיאות בקמפיין (24 שעות)', er ? 'bad' : 'ok', er ? `${er} שגיאות ביומן` : 'אין', er ? 'log' : null);
+  let bk = ''; try { bk = fs.readdirSync(BK_DIR).filter(x => x.startsWith('hourly')).sort().pop() || ''; } catch { }
+  const bkAge = bk ? (Date.now() - fs.statSync(path.join(BK_DIR, bk)).mtimeMs) / 36e5 : 99;
+  add(Y, 'גיבוי אחרון', bkAge < 2 ? 'ok' : 'warn', bk ? `לפני ${bkAge < 1 ? Math.round(bkAge * 60) + ' דק׳' : bkAge.toFixed(1) + ' שעות'}` : 'אין גיבוי');
+  add(Y, 'צופים עכשיו', 'ok', String((subs.get(c.id) || new Set()).size));
+  const all = G.flatMap(g => g.items); const score = { bad: all.filter(i => i.state === 'bad').length, warn: all.filter(i => i.state === 'warn').length, ok: all.filter(i => i.state === 'ok').length };
+  ev(req, 'admin.health', { cid: c.id, msg: `${c.title}: ${score.bad} תקלות, ${score.warn} אזהרות` });
+  res.json({ at: new Date().toISOString(), campaign: { id: c.id, title: c.title, slug: c.slug, status: c.status, ended, paused: !!st.adminPaused, user_id: c.user_id, msg: { email: chAllowed(c, 'email'), wa: chAllowed(c, 'wa'), sms: chAllowed(c, 'sms') } }, owner: { id: u.id, name: u.name, email: u.email, phone: u.phone, org: u.org_name || u.org }, stats: s1, score, groups: G,
+    events: db.prepare('SELECT id,at,type,level,msg FROM events WHERE campaign_id=? ORDER BY id DESC LIMIT 15').all(c.id) });
 });
 app.post('/api/campaigns/:id/reconcile', auth, own, async (req, res) => { try { res.json(await reconcileNedarim(req.c)); } catch (e) { bad(res, e.message, 502); } });
 // every 10 minutes: reconcile live Nedarim campaigns that have unverified/pending donations in the last 2 days
@@ -993,7 +1073,7 @@ function guideCtx(uid, cid, req) {
   let unfinished = 0; try { unfinished = recipients(c, 'unfinished', false).length; } catch { }
   const levels = db.prepare('SELECT COUNT(*) n FROM levels WHERE campaign_id=?').get(c.id).n;
   const paidTest = db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid'").get(c.id).n;
-  const checklist = [[!!(c.title && c.goal), 'שם ויעד לקמפיין'], [!!(c.story || c.image), 'סיפור או תמונה'], [levels > 0, 'לפחות כפתור תרומה אחד'], [(prov.type || 'test') !== 'test', 'חיבור ספק סליקה'], [!!prov.type && prov.type !== 'test' && sett.providerOk === provFp(prov), 'אישור GiveIL לחשבון הסליקה'], [paidTest > 0, 'תרומת בדיקה אחת לפחות'], [!mail.enabled() || !!u.email_verified, 'אימות כתובת האימייל'], [!!ct && ct.status === 'approved', 'הסכם חתום ומאושר'], [!!c.paid || planActive(u), 'תשלום לפלטפורמה (קמפיין או מנוי)']];
+  const checklist = [[!!(c.title && c.goal), 'שם ויעד לקמפיין'], [!!(c.story || c.cover), 'סיפור או תמונה'], [levels > 0, 'לפחות כפתור תרומה אחד'], [(prov.type || 'test') !== 'test', 'חיבור ספק סליקה'], [!!prov.type && prov.type !== 'test' && sett.providerOk === provFp(prov), 'אישור GiveIL לחשבון הסליקה'], [paidTest > 0, 'תרומת בדיקה אחת לפחות'], [!mail.enabled() || !!u.email_verified, 'אימות כתובת האימייל'], [!!ct && ct.status === 'approved', 'הסכם חתום ומאושר'], [!!c.paid || planActive(u), 'תשלום לפלטפורמה (קמפיין או מנוי)']];
   return { c, stats: st, org: u.org_name || u.org, link: base(req) + '/c/' + c.slug, teams: db.prepare('SELECT COUNT(*) n FROM teams WHERE campaign_id=?').get(c.id).n, topTeam: top?.name, unfinished, checklist, lastHour: db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND paid_at>=datetime('now','-1 hour')").get(c.id).n };
 }
 app.post('/api/assist', auth, limit(60, 60000), (req, res) => {
