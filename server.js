@@ -18,6 +18,7 @@ app.use((req, res, next) => {
 });
 const mail = require('./lib/mail');
 const contract = require('./lib/contract');
+const sumit = require('./lib/sumit');
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -204,7 +205,7 @@ app.get('/api/billing', auth, (req, res) => {
   const c = cid ? db.prepare('SELECT id,title,paid,user_id FROM campaigns WHERE id=?').get(cid) : null; if (c && c.user_id !== req.user.id && req.user.role !== 'admin') return bad(res, 'not found', 404);
   const ct = db.prepare('SELECT id,status,review_note,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id);
   const fill = (url, amount) => String(url || '').replace(/\{(amount|campaign|org|email)\}/g, (_, k) => encodeURIComponent(k === 'amount' ? amount : k === 'campaign' ? (c?.title || '') : k === 'org' ? (req.user.org || '') : req.user.email));
-  res.json({ pricing: { campaign: p.campaign, monthly: p.monthly, vat: p.vat }, links: { campaign: fill(p.payCampaignUrl, p.campaign), monthly: fill(p.payMonthlyUrl, p.monthly) }, plan: u.plan, planUntil: u.plan_until, planActive: planActive(u), campaignPaid: !!c?.paid, contract: ct || null, pending: db.prepare("SELECT id,kind,amount,campaign_id,created FROM payments WHERE user_id=? AND status='pending' ORDER BY id DESC").all(req.user.id) });
+  res.json({ card: billOn(), pricing: { campaign: p.campaign, monthly: p.monthly, vat: p.vat }, links: { campaign: fill(p.payCampaignUrl, p.campaign), monthly: fill(p.payMonthlyUrl, p.monthly) }, plan: u.plan, planUntil: u.plan_until, planActive: planActive(u), campaignPaid: !!c?.paid, contract: ct || null, pending: db.prepare("SELECT id,kind,amount,campaign_id,created FROM payments WHERE user_id=? AND status='pending' AND ref!='SUMIT' ORDER BY id DESC").all(req.user.id) });
 });
 app.post('/api/billing/claim', auth, limit(10, 600000), async (req, res) => {
   const kind = req.body?.kind === 'monthly' ? 'monthly' : 'campaign'; const cid = +req.body?.campaignId || null; const p = pricing();
@@ -323,7 +324,7 @@ const chAllowed = (c, ch) => { const m = J(c.settings).msg || {}; return ch === 
 const chReady = ch => ch === 'email' ? mail.enabled() : !!((getKV('msg')[ch] || {}).type);
 const chOn = (c, ch) => chAllowed(c, ch) && chReady(ch);
 const provFp = cfg => { const o = { ...(cfg || {}) }; delete o._hasSecret; return crypto.createHash('sha256').update(JSON.stringify(Object.keys(o).sort().map(k => [k, o[k]]))).digest('hex').slice(0, 24); };
-const PROV_ID_KEYS = ['mosadId', 'apiValid', 'pageCode', 'userId', 'terminal', 'terminalName', 'clientId', 'email', 'url', 'link', 'phone', 'businessId'];
+const PROV_ID_KEYS = ['companyId', 'mosadId', 'apiValid', 'pageCode', 'userId', 'terminal', 'terminalName', 'clientId', 'email', 'url', 'link', 'phone', 'businessId'];
 const provSummary = cfg => Object.entries(cfg || {}).filter(([k, v]) => v && (PROV_ID_KEYS.includes(k) || k === 'type')).map(([k, v]) => k + ': ' + String(v).slice(0, 80)).join(' · ');
 app.put('/api/campaigns/:id', auth, own, (req, res) => {
   const b = req.body || {}; const c = req.c;
@@ -777,6 +778,101 @@ app.post('/pay/test/:token', (req, res) => {
   markPaid(d.id, { ref: 'TEST-' + d.id, meta: { simulated: true } }); res.json({ ok: true });
 });
 app.get('/pay/return/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return res.redirect('/'); if (d.status === 'pending' && d.provider === 'link') { /* manual providers: keep pending, owner confirms */ } res.redirect(`/c/${d.slug}?thanks=${d.token}`); });
+// SUMIT → donor comes back with OG-PaymentID. We re-read the payment from SUMIT (with the NGO's key) before counting it.
+async function sumitSettle(d, c, paymentId) {
+  const cfg = J(c.provider); if (cfg.type !== 'sumit' || !paymentId) return false;
+  const p = await sumit.getPayment(cfg, paymentId); if (!sumit.isPaid(p)) { db.prepare("UPDATE donations SET note=? WHERE id=?").run('SUMIT: התשלום לא אושר' + (p?.StatusDescription ? ' – ' + p.StatusDescription : ''), d.id); return false; }
+  if (p.ExternalIdentifier && p.ExternalIdentifier !== 'gx-d-' + d.id) { logEvent('pay.mismatch', { level: 'warn', cid: c.id, msg: `SUMIT: מזהה לא תואם לתרומה #${d.id}` }); return false; }
+  const per = d.monthly && d.installments > 1 ? d.amount / d.installments : d.amount;
+  if (Math.abs((+p.Amount || 0) - per) > 1) { db.prepare("UPDATE donations SET note=? WHERE id=?").run(`⚠ SUMIT: סכום לא תואם (${p.Amount} מול ${per}) – לא נספר`, d.id); return false; }
+  markPaid(d.id, { ref: String(p.ID), meta: { verified: 1, sumit: { payment: p.ID, customer: p.CustomerID, document: p.DocumentID, auth: p.AuthNumber } } });
+  if (d.monthly && d.installments > 1 && p.CustomerID) { // remaining months as a standing order on the saved card
+    const fresh = db.prepare('SELECT meta FROM donations WHERE id=?').get(d.id); const m = J(fresh.meta);
+    if (!m.sumitRecurring) {
+      m.sumitRecurring = 'starting'; db.prepare('UPDATE donations SET meta=? WHERE id=?').run(JSON.stringify(m), d.id);
+      try { const docType = { receipt: sumit.DOC.receipt, invoice: sumit.DOC.invoiceReceipt }[String(cfg.docType || '').trim()] ?? sumit.DOC.donationReceipt; const r = await sumit.startRecurring(cfg, { customerId: p.CustomerID, amount: per, currency: d.currency, count: d.installments - 1, start: sumit.nextMonth(), itemName: `תרומה חודשית – ${c.title}`.slice(0, 120), docType }); m.sumitRecurring = r.itemId || 'ok'; }
+      catch (e) { m.sumitRecurring = 'error: ' + e.message; logEvent('pay.recurring', { level: 'error', cid: c.id, msg: `SUMIT הו״ק לתרומה #${d.id}: ${e.message}` }); }
+      db.prepare('UPDATE donations SET meta=? WHERE id=?').run(JSON.stringify(m), d.id);
+    }
+  }
+  return true;
+}
+app.get('/pay/sumit/return/:token', limit(60, 60000), async (req, res) => {
+  const d = db.prepare('SELECT d.*, c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return res.redirect('/');
+  if (d.status !== 'paid') { try { const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id); await sumitSettle(d, c, String(req.query['OG-PaymentID'] || '').replace(/\D/g, '')); } catch (e) { logEvent('pay.error', { level: 'error', cid: d.campaign_id, msg: 'SUMIT return: ' + e.message }); } }
+  res.redirect(`/c/${d.slug}?thanks=${d.token}`);
+});
+// donors who paid but closed the tab before coming back: every 10 min match recent SUMIT payments by our reference
+async function reconcileSumit() {
+  const camps = db.prepare("SELECT c.* FROM campaigns c WHERE c.provider LIKE '%\"sumit\"%' AND EXISTS(SELECT 1 FROM donations d WHERE d.campaign_id=c.id AND d.provider='sumit' AND d.status='pending' AND d.test=0 AND d.created > datetime('now','-2 days'))").all();
+  for (const c of camps) {
+    try {
+      const from = new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 19), to = new Date(Date.now() + 864e5).toISOString().slice(0, 19);
+      const list = await sumit.listPayments(J(c.provider), from, to);
+      for (const p of list) { const m = /^gx-d-(\d+)$/.exec(p.ExternalIdentifier || ''); if (!m) continue; const d = db.prepare("SELECT * FROM donations WHERE id=? AND campaign_id=? AND status='pending'").get(+m[1], c.id); if (d) await sumitSettle(d, c, p.ID); }
+    } catch (e) { console.error('sumit reconcile', c.id, e.message); }
+  }
+}
+setInterval(() => reconcileSumit().catch(() => { }), 10 * 60e3).unref();
+
+// ---- platform billing through GiveIL's own SUMIT account (campaign fee / monthly plan, automatic invoice-receipt) ----
+const billCfg = () => { const k = getKV('billing'); return { companyId: k.companyId || process.env.SUMIT_COMPANY_ID || '', apiKey: k.apiKey || process.env.SUMIT_API_KEY || '', docType: k.docType || 'invoice', months: +(k.months ?? 12) }; };
+const billOn = () => { const b = billCfg(); return !!(b.companyId && b.apiKey); };
+app.post('/api/billing/pay', auth, limit(10, 600000), async (req, res) => {
+  if (!billOn()) return bad(res, 'תשלום בכרטיס עדיין לא מחובר');
+  const kind = req.body?.kind === 'monthly' ? 'monthly' : 'campaign'; const cid = +req.body?.campaignId || null; const p = pricing(); const b = billCfg();
+  let c = null; if (kind === 'campaign') { c = cid && db.prepare('SELECT id,title,user_id,paid FROM campaigns WHERE id=?').get(cid); if (!c || c.user_id !== req.user.id) return bad(res, 'קמפיין לא נמצא'); if (c.paid) return bad(res, 'הקמפיין כבר שולם'); }
+  const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id); const amount = kind === 'monthly' ? p.monthly : p.campaign;
+  const gross = p.vat === 'plus' ? Math.round(amount * 1.18 * 100) / 100 : amount;
+  const id = db.prepare("INSERT INTO payments(user_id,campaign_id,kind,amount,ref,note) VALUES(?,?,?,?,?,?)").run(u.id, cid, kind, amount, 'SUMIT', 'ממתין לתשלום בכרטיס').lastInsertRowid;
+  try {
+    const r = await sumit.beginRedirect(b, { name: u.org_name || u.org || u.name, email: u.email, phone: u.phone, companyNumber: u.org_number || null, customerRef: 'gx-u-' + u.id, amount: gross,
+      itemName: kind === 'monthly' ? 'מנוי GiveIL – חודש ראשון' : `GiveIL – קמפיין: ${c.title}`.slice(0, 120), docType: { receipt: sumit.DOC.receipt, donation: sumit.DOC.donationReceipt }[b.docType] ?? sumit.DOC.invoiceReceipt,
+      ref: 'gx-p-' + id, returnUrl: `${base(req)}/billing/sumit/return/${id}`, cancelUrl: `${base(req)}/app${cid ? '#/c/' + cid + '/payment' : ''}`, saveCard: kind === 'monthly' });
+    ev(req, 'billing.start', { cid, msg: `${u.org_name || u.email} · ${kind === 'monthly' ? 'מנוי' : 'קמפיין'} ₪${gross} (SUMIT)` });
+    res.json({ url: r.url });
+  } catch (e) { db.prepare("UPDATE payments SET status='rejected', note=? WHERE id=?").run(e.message.slice(0, 300), id); logEvent('billing.error', { level: 'error', uid: u.id, msg: e.message }); bad(res, e.message, 502); }
+});
+async function billSettle(pay, paymentId) {
+  if (pay.status === 'approved') return true; const b = billCfg(); const p = await sumit.getPayment(b, paymentId);
+  if (!sumit.isPaid(p) || (p.ExternalIdentifier && p.ExternalIdentifier !== 'gx-p-' + pay.id)) return false;
+  const pr = pricing(); const gross = pr.vat === 'plus' ? pay.amount * 1.18 : pay.amount; if (Math.abs((+p.Amount || 0) - gross) > 1) { logEvent('billing.mismatch', { level: 'warn', uid: pay.user_id, msg: `SUMIT ${p.Amount} מול ${gross}` }); return false; }
+  db.prepare("UPDATE payments SET status='approved', ref=?, note=?, approved_at=datetime('now') WHERE id=? AND status='pending'").run('SUMIT ' + p.ID, 'שולם בכרטיס · מסמך ' + (p.DocumentID || ''), pay.id);
+  if (pay.kind === 'campaign' && pay.campaign_id) db.prepare('UPDATE campaigns SET paid=1 WHERE id=?').run(pay.campaign_id);
+  else {
+    const u = db.prepare('SELECT plan_until,sms FROM users WHERE id=?').get(pay.user_id); db.prepare("UPDATE users SET plan='annual', plan_until=? WHERE id=?").run(addMonth(u.plan_until), pay.user_id);
+    if (p.CustomerID && !getKV('sub:' + pay.user_id).item) { // following months: SUMIT charges the saved card and issues the document automatically
+      try { const r = await sumit.startRecurring(b, { customerId: p.CustomerID, amount: gross, count: b.months > 1 ? b.months - 1 : null, start: sumit.nextMonth(), itemName: 'מנוי GiveIL חודשי', docType: { receipt: sumit.DOC.receipt }[b.docType] ?? sumit.DOC.invoiceReceipt }); setKV('sub:' + pay.user_id, { customer: p.CustomerID, item: r.itemId, amount: gross, since: new Date().toISOString() }); }
+      catch (e) { logEvent('billing.error', { level: 'error', uid: pay.user_id, msg: 'הו״ק מנוי: ' + e.message }); }
+    }
+  }
+  logEvent('billing.paid', { uid: pay.user_id, cid: pay.campaign_id, msg: `${pay.kind === 'monthly' ? 'מנוי' : 'קמפיין'} ₪${Math.round(gross)} · SUMIT ${p.ID}` });
+  return true;
+}
+app.get('/billing/sumit/return/:id', limit(60, 60000), async (req, res) => {
+  const pay = db.prepare('SELECT * FROM payments WHERE id=?').get(+req.params.id); if (!pay) return res.redirect('/app');
+  let ok = false; try { ok = await billSettle(pay, String(req.query['OG-PaymentID'] || '').replace(/\D/g, '')); } catch (e) { logEvent('billing.error', { level: 'error', uid: pay.user_id, msg: e.message }); }
+  res.redirect(`/app${pay.campaign_id ? '#/c/' + pay.campaign_id + '/payment' : '#/account'}${ok ? '' : ''}`);
+});
+// monthly plans: each renewal SUMIT charges by itself → extend plan_until when we see the payment
+async function billRenewals() {
+  if (!billOn()) return; const b = billCfg();
+  const from = new Date(Date.now() - 3 * 864e5).toISOString().slice(0, 19), to = new Date(Date.now() + 864e5).toISOString().slice(0, 19);
+  const list = await sumit.listPayments(b, from, to); const seen = getKV('billSeen'); const ids = new Set(seen.ids || []);
+  for (const p of list) {
+    if (ids.has(p.ID)) continue; const pend = /^gx-p-(\d+)$/.exec(p.ExternalIdentifier || '');
+    if (pend) { const pay = db.prepare("SELECT * FROM payments WHERE id=? AND status='pending'").get(+pend[1]); if (pay) await billSettle(pay, p.ID); ids.add(p.ID); continue; }
+    const subs = db.prepare("SELECT k, v FROM kv WHERE k LIKE 'sub:%'").all().map(r => ({ uid: +r.k.slice(4), ...J(r.v) })).filter(x => +x.customer === +p.CustomerID && ((p.RecurringCustomerItemIDs || []).length ? p.RecurringCustomerItemIDs.map(Number).includes(+x.item) : !p.ExternalIdentifier && Math.abs((+p.Amount || 0) - x.amount) <= 1));
+    for (const sub of subs) { const u = db.prepare('SELECT plan_until FROM users WHERE id=?').get(sub.uid); db.prepare("UPDATE users SET plan='annual', plan_until=? WHERE id=?").run(addMonth(u?.plan_until), sub.uid); db.prepare("INSERT INTO payments(user_id,kind,amount,status,ref,note,approved_at) VALUES(?,'monthly',?,'approved',?,'חידוש אוטומטי – SUMIT',datetime('now'))").run(sub.uid, Math.round(+p.Amount || sub.amount), 'SUMIT ' + p.ID); logEvent('billing.renew', { uid: sub.uid, msg: `חידוש מנוי ₪${p.Amount}` }); }
+    ids.add(p.ID);
+  }
+  setKV('billSeen', { ids: [...ids].slice(-2000) });
+}
+setInterval(() => billRenewals().catch(e => console.error('billRenewals', e.message)), 30 * 60e3).unref();
+app.get('/api/admin/billing', auth, adm, (_, res) => { const b = billCfg(); res.json({ companyId: b.companyId, apiKey: b.apiKey ? '••••' + b.apiKey.slice(-4) : '', docType: b.docType, months: b.months, fromEnv: !getKV('billing').apiKey && !!process.env.SUMIT_API_KEY, subs: db.prepare("SELECT k, v FROM kv WHERE k LIKE 'sub:%'").all().length }); });
+app.put('/api/admin/billing', auth, adm, (req, res) => { const cur = getKV('billing'); const x = req.body || {}; const next = { companyId: String(x.companyId ?? cur.companyId ?? '').replace(/\D/g, '').slice(0, 12), apiKey: x.apiKey && !String(x.apiKey).startsWith('••••') ? String(x.apiKey).trim().slice(0, 200) : cur.apiKey || '', docType: ['invoice', 'receipt'].includes(x.docType) ? x.docType : 'invoice', months: Math.max(0, Math.min(120, +x.months || 0)) }; setKV('billing', next); ev(req, 'admin.billing', { msg: `SUMIT חברה ${next.companyId}` }); res.json({ ok: true }); });
+app.post('/api/admin/billing/test', auth, adm, limit(10, 60000), async (_, res) => { try { await sumit.ping(billCfg()); res.json({ ok: true, msg: 'SUMIT אישר את המפתחות ✓' }); } catch (e) { res.json({ ok: false, msg: e.message }); } });
+
 // Nedarim Plus → our server. Trust model: the donation is matched by id+token, the amount must equal what the
 // donor asked for, Mosad (if sent) must be ours, a TransactionId is required, and when ApiPassword is set we
 // re-read the transaction from Nedarim's own history before counting it. Anything short of that is logged, not counted.
@@ -858,6 +954,10 @@ async function provTest(c, req) {
       const https = require('https'); const auth = Buffer.from(cfg.clientId + ':' + cfg.secret).toString('base64');
       const r = await new Promise((resolve, reject) => { const q = https.request({ hostname: host, path: '/v1/oauth2/token', method: 'POST', headers: { Authorization: 'Basic ' + auth, 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': 29 } }, rs => { let d = ''; rs.on('data', c => d += c); rs.on('end', () => resolve({ status: rs.statusCode, body: d })); }); q.on('error', reject); q.write('grant_type=client_credentials'); q.end(); });
       return res.json({ ok: r.status === 200, msg: r.status === 200 ? 'PayPal אישר את המפתחות.' : 'PayPal דחה את המפתחות (' + r.status + ')' });
+    }
+    if (t === 'sumit') {
+      if (!cfg.companyId || !cfg.apiKey) return res.json({ ok: false, msg: 'חסר מספר חברה או מפתח API' });
+      try { await sumit.ping(cfg); return res.json({ ok: true, msg: `SUMIT אישר את המפתחות (חברה ${cfg.companyId}). תרומות ייקלטו אוטומטית עם קבלה לתורם.` }); } catch (e) { return res.json({ ok: false, msg: e.message }); }
     }
     if (t === 'link') { const ok = /^https:\/\//.test(cfg.url || ''); return res.json({ ok, msg: ok ? 'הקישור תקין. זכרו: אישור התרומות ידני.' : 'הקישור חייב להתחיל ב-https://' }); }
     return { ok: false, msg: 'ספק לא מוכר' };
