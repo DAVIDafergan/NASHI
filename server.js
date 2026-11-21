@@ -45,6 +45,7 @@ const bad = (res, m, c = 400) => res.status(c).json({ error: m });
 db.exec("CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT DEFAULT (datetime('now')), type TEXT, level TEXT DEFAULT 'info', user_id INTEGER, campaign_id INTEGER, ip TEXT DEFAULT '', msg TEXT DEFAULT '', meta TEXT DEFAULT '{}')");
 db.exec("CREATE INDEX IF NOT EXISTS ev_type ON events(type, id)"); db.exec("CREATE INDEX IF NOT EXISTS ev_at ON events(at)");
 for (const col of ["blocked INTEGER DEFAULT 0", "block_note TEXT DEFAULT ''", "tv INTEGER DEFAULT 0", "last_seen TEXT DEFAULT ''", "last_ip TEXT DEFAULT ''", "logins INTEGER DEFAULT 0"]) { try { db.exec('ALTER TABLE users ADD COLUMN ' + col); } catch { } }
+try { db.exec('CREATE INDEX IF NOT EXISTS d_team ON donations(team_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS d_camp ON donations(campaign_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS t_camp ON teams(campaign_id)'); } catch { }
 const EVT = db.prepare('INSERT INTO events(type,level,user_id,campaign_id,ip,msg,meta) VALUES(?,?,?,?,?,?,?)');
 function logEvent(type, o = {}) { try { EVT.run(type, o.level || 'info', o.uid || null, o.cid || null, String(o.ip || '').slice(0, 64), String(o.msg || '').slice(0, 300), JSON.stringify(o.meta || {}).slice(0, 2000)); } catch { } }
 const ev = (req, type, o = {}) => logEvent(type, { uid: req.user?.imp ? req.user.imp : req.user?.id, ip: req.ip, ...o, meta: { ...(o.meta || {}), ...(req.user?.imp ? { as: req.user.id } : {}) } });
@@ -67,7 +68,10 @@ const own = (req, res, next) => {
 
 // SSE hub per campaign
 const subs = new Map(); const sseIp = new Map();
-const emit = (cid, ev, data) => { for (const r of subs.get(cid) || []) { try { r.write(`event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`); } catch { } } };
+const emit = (cid, ev, data) => { const set = subs.get(cid); if (!set || !set.size) return; const msg = `event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`; for (const r of set) { try { r.write(msg); } catch { } } };
+// the full ambassadors leaderboard is heavy: during a donation rush send it at most once every 2s per campaign
+const teamTimers = new Map();
+const emitTeams = (c, test) => { if (!subs.get(c.id)?.size || teamTimers.has(c.id)) return; teamTimers.set(c.id, setTimeout(() => { teamTimers.delete(c.id); try { const cc = db.prepare('SELECT * FROM campaigns WHERE id=?').get(c.id); if (cc) emit(c.id, 'refresh', { stats: stats(cc, test), teams: teamStats(cc, test) }); } catch { } }, 2000)); };
 
 function stats(c, test) {
   const t = test ? 1 : 0;
@@ -83,7 +87,7 @@ function markPaid(id, { ref = '', meta = {}, amount } = {}) {
   db.prepare("UPDATE donations SET status='paid', ref=?, meta=?, amount=COALESCE(?,amount), verified=?, paid_at=datetime('now') WHERE id=?").run(String(ref), JSON.stringify(meta).slice(0, 4000), amount || null, verified, id);
   const nd = db.prepare('SELECT * FROM donations WHERE id=?').get(id);
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id);
-  emit(c.id, 'donation', { donation: publicDonation(nd), stats: stats(c, nd.test), teams: teamStats(c, nd.test) });
+  emit(c.id, 'donation', { donation: publicDonation(nd), stats: stats(c, nd.test) }); emitTeams(c, nd.test);
   logEvent(nd.test ? 'donation.test' : 'donation.paid', { cid: c.id, msg: `${nd.anonymous ? 'אנונימי' : nd.name} · ₪${nd.amount}${nd.monthly ? ' (הו״ק)' : ''} · ${c.title}`, meta: { did: nd.id, provider: nd.provider } });
   thankMail(c, nd).catch(() => { });
   ambassadorFlow(c, nd).catch(e => logEvent('wa.error', { level: 'warn', cid: c.id, msg: String(e?.message || e).slice(0, 200) }));
@@ -408,7 +412,7 @@ app.post('/api/campaigns/:id/donations', auth, own, (req, res) => {
   const b = req.body || {}; const amt = Math.round(+b.amount || 0); if (amt <= 0) return bad(res, 'סכום');
   const r = db.prepare("INSERT INTO donations(campaign_id,team_id,amount,currency,name,phone,email,dedication,anonymous,status,test,provider,ref,installments,monthly,token,paid_at) VALUES(?,?,?,?,?,?,?,?,?,'paid',?,'manual',?,?,?,?,datetime('now'))").run(req.c.id, +b.team_id || null, amt, req.c.currency, String(b.name || 'תורם').slice(0, 80), String(b.phone || '').slice(0, 20), String(b.email || '').slice(0, 120), String(b.dedication || '').slice(0, 300), b.anonymous ? 1 : 0, isTest(req.c) ? 1 : 0, String(b.ref || '').slice(0, 80), +b.installments || 1, b.monthly ? 1 : 0, crypto.randomBytes(12).toString('hex'));
   const d = db.prepare('SELECT * FROM donations WHERE id=?').get(r.lastInsertRowid);
-  emit(req.c.id, 'donation', { donation: publicDonation(d), stats: stats(req.c, d.test), teams: teamStats(req.c, d.test) }); res.json({ id: d.id });
+  emit(req.c.id, 'donation', { donation: publicDonation(d), stats: stats(req.c, d.test) }); emitTeams(req.c, d.test); res.json({ id: d.id });
 });
 // "YYYY-MM-DD HH:MM[:SS]" in Israel local time → UTC "YYYY-MM-DD HH:MM:SS" (DST-aware)
 const ilToUtc = v => { const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/); if (!m) return null; const guess = Date.UTC(+m[1], m[2] - 1, +m[3], +(m[4] || 12), +(m[5] || 0), +(m[6] || 0)); const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Jerusalem', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(guess)).map(x => [x.type, x.value])); const asIL = Date.UTC(+p.year, p.month - 1, +p.day, +p.hour, +p.minute, +p.second); return new Date(guess - (asIL - guess)).toISOString().slice(0, 19).replace('T', ' '); };
@@ -969,10 +973,11 @@ app.use((req, res, next) => { if (req.method === 'GET' && (req.path === '/' || r
 app.use(express.static(pub(''), { maxAge: '1h', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.get('/c/:slug/screen', (_, res) => res.sendFile(pub('screen.html')));
 app.get('/c/:slug/widget', (_, res) => res.sendFile(pub('widget.html')));
+let cHtmlC = { m: 0, v: '' }; const cHtml = () => { const m = fs.statSync(pub('c.html')).mtimeMs; if (m !== cHtmlC.m) cHtmlC = { m, v: fs.readFileSync(pub('c.html'), 'utf8') }; return cHtmlC.v; };
 app.get(['/c/:slug', '/c/:slug/:team'], (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).sendFile(pub('404.html'));
   pageView(req, 'c:' + c.id);
-  let html = fs.readFileSync(pub('c.html'), 'utf8');
+  let html = cHtml();
   const esc = s => String(s || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   const sh = J(c.settings).share || c.cover; const img = sh ? (sh.startsWith('http') ? sh : base(req) + sh) : base(req) + '/icon.svg';
   const st = J(c.settings); const langs = st.langs && st.langs.length ? st.langs : [c.lang || 'he'];
@@ -1027,4 +1032,5 @@ process.on('uncaughtException', e => { logEvent('server.crash', { level: 'error'
     }
   } catch (e) { console.error('demo seed', e.message); }
 })();
-app.listen(process.env.PORT || 3000, () => { console.log('ttm up'); logEvent('server.start', { msg: (process.env.RAILWAY_GIT_COMMIT_SHA || 'local').slice(0, 7) }); });
+const server = app.listen(process.env.PORT || 3000, () => { console.log('ttm up'); logEvent('server.start', { msg: (process.env.RAILWAY_GIT_COMMIT_SHA || 'local').slice(0, 7) }); });
+server.keepAliveTimeout = 65000; server.headersTimeout = 66000;
