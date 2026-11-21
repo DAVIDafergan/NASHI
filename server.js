@@ -986,6 +986,7 @@ app.get('/', (req, res) => res.sendFile(pub('index.html')));
 app.get(['/terms', '/privacy', '/accessibility'], (_, res) => res.sendFile(pub('legal.html')));
 app.get('/sitemap.xml', (req, res) => { const b = base(req); const slugs = db.prepare("SELECT slug FROM campaigns WHERE status='live'").all().map(x => x.slug); res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + [...new Set(['', '/terms', '/privacy', '/accessibility', ...slugs.map(x => '/c/' + x)])].map(u => `<url><loc>${b}${u || "/"}</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod><changefreq>${u ? 'weekly' : 'daily'}</changefreq><priority>${u ? (u.startsWith('/c/') ? '0.8' : '0.3') : '1.0'}</priority></url>`).join('') + '</urlset>'); });
 app.get('/googlea5465d57b3c11b70.html', (_, res) => res.type('text/html').send('google-site-verification: googlea5465d57b3c11b70.html'));
+app.get('/googlee6bc6aded989c64d.html', (_, res) => res.type('text/html').send('google-site-verification: googlee6bc6aded989c64d.html'));
 app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\nSitemap: ' + base(req) + '/sitemap.xml\nDisallow: /app\nDisallow: /pay/\nDisallow: /api/\n'));
 app.use((err, req, res, next) => { // anything that throws inside a route lands here instead of crashing
   if (err && (err.code === 'LIMIT_FILE_SIZE' || err.name === 'MulterError')) return bad(res, err.code === 'LIMIT_FILE_SIZE' ? 'הקובץ גדול מדי' : 'שגיאה בהעלאת הקובץ');
