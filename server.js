@@ -45,6 +45,7 @@ const bad = (res, m, c = 400) => res.status(c).json({ error: m });
 db.exec("CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT DEFAULT (datetime('now')), type TEXT, level TEXT DEFAULT 'info', user_id INTEGER, campaign_id INTEGER, ip TEXT DEFAULT '', msg TEXT DEFAULT '', meta TEXT DEFAULT '{}')");
 db.exec("CREATE INDEX IF NOT EXISTS ev_type ON events(type, id)"); db.exec("CREATE INDEX IF NOT EXISTS ev_at ON events(at)");
 for (const col of ["blocked INTEGER DEFAULT 0", "block_note TEXT DEFAULT ''", "tv INTEGER DEFAULT 0", "last_seen TEXT DEFAULT ''", "last_ip TEXT DEFAULT ''", "logins INTEGER DEFAULT 0"]) { try { db.exec('ALTER TABLE users ADD COLUMN ' + col); } catch { } }
+try { db.exec('ALTER TABLE donations ADD COLUMN resumed_from INTEGER'); } catch { }
 try { db.exec('CREATE INDEX IF NOT EXISTS d_team ON donations(team_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS d_camp ON donations(campaign_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS t_camp ON teams(campaign_id)'); } catch { }
 const EVT = db.prepare('INSERT INTO events(type,level,user_id,campaign_id,ip,msg,meta) VALUES(?,?,?,?,?,?,?)');
 function logEvent(type, o = {}) { try { EVT.run(type, o.level || 'info', o.uid || null, o.cid || null, String(o.ip || '').slice(0, 64), String(o.msg || '').slice(0, 300), JSON.stringify(o.meta || {}).slice(0, 2000)); } catch { } }
@@ -89,6 +90,7 @@ function markPaid(id, { ref = '', meta = {}, amount } = {}) {
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id);
   emit(c.id, 'donation', { donation: publicDonation(nd), stats: stats(c, nd.test) }); emitTeams(c, nd.test);
   logEvent(nd.test ? 'donation.test' : 'donation.paid', { cid: c.id, msg: `${nd.anonymous ? 'אנונימי' : nd.name} · ₪${nd.amount}${nd.monthly ? ' (הו״ק)' : ''} · ${c.title}`, meta: { did: nd.id, provider: nd.provider } });
+  if (nd.resumed_from) { db.prepare("UPDATE donations SET status='recovered' WHERE id=? AND status IN ('pending','failed')").run(nd.resumed_from); logEvent('donation.recovered', { cid: c.id, msg: `${nd.name} · ₪${nd.amount} · ${c.title}`, meta: { did: nd.id, from: nd.resumed_from } }); }
   thankMail(c, nd).catch(() => { });
   ambassadorFlow(c, nd).catch(e => logEvent('wa.error', { level: 'warn', cid: c.id, msg: String(e?.message || e).slice(0, 200) }));
   return nd;
@@ -315,7 +317,11 @@ app.post('/api/campaigns', auth, (req, res) => {
   res.json(campaignOut(db.prepare('SELECT * FROM campaigns WHERE id=?').get(id)));
 });
 app.get('/api/campaigns/:id', auth, own, (req, res) => res.json({ ...campaignOut(req.c), stats: stats(req.c, isTest(req.c)), teamStats: teamStats(req.c, isTest(req.c)) }));
-const ADMIN_KEYS = ['providerOk', 'providerReview', 'adminPaused', 'adminNote'];
+const ADMIN_KEYS = ['providerOk', 'providerReview', 'adminPaused', 'adminNote', 'msg'];
+// which messaging services the super-admin opened for this campaign (connections are platform-level)
+const chAllowed = (c, ch) => { const m = J(c.settings).msg || {}; return ch === 'email' ? m.email !== false : !!m[ch]; };
+const chReady = ch => ch === 'email' ? mail.enabled() : !!((getKV('msg')[ch] || {}).type);
+const chOn = (c, ch) => chAllowed(c, ch) && chReady(ch);
 const provFp = cfg => { const o = { ...(cfg || {}) }; delete o._hasSecret; return crypto.createHash('sha256').update(JSON.stringify(Object.keys(o).sort().map(k => [k, o[k]]))).digest('hex').slice(0, 24); };
 const PROV_ID_KEYS = ['mosadId', 'apiValid', 'pageCode', 'userId', 'terminal', 'terminalName', 'clientId', 'email', 'url', 'link', 'phone', 'businessId'];
 const provSummary = cfg => Object.entries(cfg || {}).filter(([k, v]) => v && (PROV_ID_KEYS.includes(k) || k === 'type')).map(([k, v]) => k + ': ' + String(v).slice(0, 80)).join(' · ');
@@ -474,7 +480,7 @@ app.get('/api/providers', (_, res) => res.json(Object.entries(providers).map(([k
 const adm = (req, res, next) => req.user.role === 'admin' ? next() : bad(res, 'auth', 403);
 app.get('/api/admin/overview', auth, adm, (req, res) => res.json({
   users: db.prepare('SELECT id,email,name,org,org_number,org_name,org_verified,org_status,phone,role,created,role_title,address,city,website,s46,consent_at,marketing,email_verified,plan_until,blocked,block_note,last_seen,logins,(SELECT COUNT(*) FROM contracts WHERE user_id=users.id) contracts,(SELECT status FROM contracts WHERE user_id=users.id ORDER BY id DESC LIMIT 1) contract_status,(SELECT COUNT(*) FROM campaigns WHERE user_id=users.id) campaigns FROM users ORDER BY id DESC').all(),
-  campaigns: db.prepare("SELECT c.id,c.slug,c.title,c.status,c.paid,c.user_id,c.settings,(SELECT COALESCE(SUM(n),0) FROM pv WHERE k='c:'||c.id AND day>=date('now','-6 day')) views7,u.plan_until,c.goal,c.multiplier,c.end_at,c.created,u.email owner,u.org_name, (SELECT COUNT(*) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) n, (SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) raised FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC").all().map(c => { const st = J(c.settings); return { ...c, settings: undefined, paused: !!st.adminPaused, providerOk: !!st.providerOk }; }),
+  campaigns: db.prepare("SELECT c.id,c.slug,c.title,c.status,c.paid,c.user_id,c.settings,(SELECT COALESCE(SUM(n),0) FROM pv WHERE k='c:'||c.id AND day>=date('now','-6 day')) views7,u.plan_until,c.goal,c.multiplier,c.end_at,c.created,u.email owner,u.org_name, (SELECT COUNT(*) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) n, (SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) raised FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC").all().map(c => { const st = J(c.settings); return { ...c, settings: undefined, paused: !!st.adminPaused, providerOk: !!st.providerOk, msg: { email: (st.msg || {}).email !== false, wa: !!(st.msg || {}).wa, sms: !!(st.msg || {}).sms } }; }),
   totals: db.prepare("SELECT COUNT(*) donations, COALESCE(SUM(amount),0) raised FROM donations WHERE status='paid' AND test=0").get(),
   live: db.prepare("SELECT COUNT(*) c FROM campaigns WHERE status='live'").get().c,
   today: db.prepare("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE status='paid' AND test=0 AND date(paid_at)=date('now')").get(),
@@ -524,6 +530,7 @@ app.get('/api/admin/live', auth, adm, (req, res) => {
       signups: dayCount('user.signup'), logins: dayCount('auth.login'), failed: dayCount('auth.fail'), created: dayCount('campaign.create'),
       donations: q1("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE status='paid' AND test=0 AND paid_at>=datetime('now','start of day')"),
       pending: q1("SELECT COUNT(*) n FROM donations WHERE status='pending' AND test=0 AND created>=datetime('now','start of day')").n,
+      recovered: q1("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE status='paid' AND test=0 AND resumed_from IS NOT NULL AND paid_at>=datetime('now','start of day')"),
       failedPay: q1("SELECT COUNT(*) n FROM donations WHERE status='failed' AND test=0 AND created>=datetime('now','start of day')").n,
       views: db.prepare("SELECT k, n FROM pv WHERE day=date('now') ORDER BY n DESC").all(),
       errors: q1("SELECT COUNT(*) n FROM events WHERE level='error' AND at>=datetime('now','-1 day')").n,
@@ -581,6 +588,11 @@ app.post('/api/admin/users/:id/block', auth, adm, (req, res) => {
   const on = !!req.body?.blocked; const note = String(req.body?.note || '').slice(0, 300);
   db.prepare('UPDATE users SET blocked=?, block_note=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(on ? 1 : 0, note, id); // tv bump signs them out everywhere
   ev(req, on ? 'admin.block' : 'admin.unblock', { level: on ? 'warn' : 'info', msg: note, meta: { target: id } }); res.json({ ok: true });
+});
+app.post('/api/admin/campaigns/:id/channels', auth, adm, (req, res) => {
+  const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404);
+  const st = J(c.settings); const b = req.body || {}; st.msg = { email: b.email !== false, wa: !!b.wa, sms: !!b.sms }; db.prepare('UPDATE campaigns SET settings=? WHERE id=?').run(JSON.stringify(st), c.id);
+  ev(req, 'admin.channels', { cid: c.id, msg: `${c.title}: ${['email', 'wa', 'sms'].filter(k => st.msg[k]).join(', ') || 'הכול סגור'}` }); res.json({ ok: true, msg: st.msg });
 });
 app.post('/api/admin/campaigns/:id/pause', auth, adm, (req, res) => {
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404);
@@ -646,9 +658,11 @@ app.post('/api/c/:slug/donate', limit(600, 60000), async (req, res) => {
   if (level && level.monthly) { inst = Math.max(1, +level.months || 12); finalAmount = level.amount * inst; isMonthly = true; }
   else if (isMonthly) { inst = Math.min(Math.max(1, +b.months || 12), 120); finalAmount = amount * inst; }
   if (finalAmount > 20000000) return bad(res, 'סכום גבוה מדי');
+  const resumed = b.resume ? db.prepare("SELECT id FROM donations WHERE token=? AND campaign_id=? AND status IN ('pending','failed')").get(String(b.resume), c.id) : null;
   const token = crypto.randomBytes(16).toString('hex');
   if (s.idField === 'required') { const z = String(b.id_number || '').replace(/\D/g, ''); if (z.length < 8 || z.length > 9) return bad(res, 'נא להזין מספר תעודת זהות תקין'); }
   const r = db.prepare('INSERT INTO donations(campaign_id,team_id,level_id,amount,currency,name,phone,email,id_number,dedication,anonymous,status,test,provider,installments,monthly,token) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(c.id, team ? team.id : null, level ? level.id : null, finalAmount, c.currency, name, phone, email, String(b.id_number || '').replace(/\D/g, '').slice(0, 9), String(b.dedication || '').slice(0, 300), b.anonymous && s.allowAnon !== false ? 1 : 0, 'pending', isTest(c) ? 1 : 0, type, inst, isMonthly ? 1 : 0, token);
+  if (resumed) db.prepare('UPDATE donations SET resumed_from=? WHERE id=?').run(resumed.id, r.lastInsertRowid);
   const donation = db.prepare('SELECT * FROM donations WHERE id=?').get(r.lastInsertRowid);
   try {
     const out = await P.start({ base: base(req), donation, campaign: c, cfg, method });
@@ -689,7 +703,7 @@ const WA_T = {
 };
 const waTpl = (c, k) => { const t = J(c.settings).waT || {}; return (t[k] && String(t[k]).trim()) || WA_T[k]; };
 const waFill = (tpl, v) => String(tpl).replace(/\{(\w+)\}/g, (m, k) => v[k] ?? '');
-const waOn = c => J(c.settings).waFlow !== false;
+const waOn = c => J(c.settings).waFlow !== false && chAllowed(c, 'wa');
 async function waSend(c, phone, text, kind) {
   const cfg = getKV('msg').wa || {}; const p = String(phone || '').replace(/[^\d+]/g, '');
   if (!cfg.type || p.replace(/\D/g, '').length < 9) return false;
@@ -728,6 +742,16 @@ app.post('/api/d/:token/ambassador', limit(10, 600000), (req, res) => {
   const name = String(req.body?.name || d.name || '').trim().slice(0, 80); if (name.length < 2) return bad(res, 'נא להזין שם');
   if (!t) { t = newTeam(c, { name, phone: d.phone || '', email: d.email || '', goal: Math.max(0, +req.body?.goal || 0), fromDonation: d.id }); emit(c.id, 'refresh', { stats: stats(c, isTest(c)), teams: teamStats(c, isTest(c)) }); logEvent('team.join', { cid: c.id, ip: req.ip, msg: `${name} – תורם/ת שהפך/ה לשגריר/ה · ${c.title}` }); welcomeAmbassador(c, t).catch(() => { }); }
   res.json({ ok: true, slug: t.slug, key: teamKey(t), link: `/c/${c.slug}/${t.slug}`, area: `/a/${teamKey(t)}` });
+});
+app.get('/r/:token', (req, res) => {
+  const d = db.prepare('SELECT d.status, d.token, d.team_id, c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return res.redirect('/');
+  if (d.status === 'paid') return res.redirect(`/c/${d.slug}?thanks=${d.token}`);
+  const t = d.team_id ? db.prepare('SELECT slug FROM teams WHERE id=?').get(d.team_id) : null;
+  res.redirect(`/c/${d.slug}${t ? '/' + t.slug : ''}?resume=${d.token}`);
+});
+app.get('/api/resume/:token', (req, res) => {
+  const d = db.prepare('SELECT * FROM donations WHERE token=?').get(req.params.token); if (!d || d.status === 'paid') return bad(res, 'not found', 404);
+  res.json({ name: d.name, phone: d.phone, email: d.email, dedication: d.dedication, anonymous: !!d.anonymous, team_id: d.team_id, level_id: d.level_id, monthly: !!d.monthly, months: d.installments, amount: d.monthly && d.installments > 1 ? Math.round(d.amount / d.installments) : d.amount });
 });
 app.get(['/a/:key', '/j/:token'], (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Robots-Tag', 'noindex'); res.sendFile(pub('amb.html')); });
 const ambGet = key => { const t = key && db.prepare('SELECT * FROM teams WHERE key=?').get(String(key)); if (!t) return null; const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(t.campaign_id); return c ? { t, c } : null; };
@@ -867,11 +891,17 @@ app.post('/pay/iframe-done/:token', (req, res) => { // Nedarim Plus iframe repor
 });
 
 // ---------- messaging (SMS / WhatsApp lists) ----------
-const recipients = (c, audience, byEmail = false) => {
+const recipients = (c, audience, byEmail = false, opts = {}) => {
   const test = isTest(c) ? 1 : 0; const seen = new Set(); const out = [];
   const push = r => { const ph = String(r.phone || '').replace(/\D/g, ''); const em = String(r.email || '').trim().toLowerCase(); const k = byEmail ? em : ph; if (byEmail ? !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em) : ph.length < 9) return; if (seen.has(k)) return; seen.add(k); out.push({ name: r.name, phone: ph, email: em, amount: r.amount || 0, link: r.link || '' }); };
   if (audience === 'ambassadors') db.prepare('SELECT name,phone,email,slug FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id).forEach(t => push({ ...t, link: '/c/' + c.slug + '/' + t.slug }));
-  else if (audience === 'pending') db.prepare("SELECT name,phone,email,amount FROM donations WHERE campaign_id=? AND status='pending' AND test=? ORDER BY id DESC").all(c.id, test).forEach(push);
+  else if (audience === 'pending' || audience === 'unfinished' || audience === 'selected') {
+    const paid = new Set(db.prepare("SELECT phone,email FROM donations WHERE campaign_id=? AND status='paid' AND test=?").all(c.id, test).flatMap(d => [String(d.phone || '').replace(/\D/g, ''), String(d.email || '').toLowerCase()]).filter(x => x.length > 4));
+    const ids = audience === 'selected' ? String(opts.ids || '').split(',').map(Number).filter(Boolean) : null;
+    db.prepare(`SELECT id,name,phone,email,amount,monthly,installments,token,status FROM donations WHERE campaign_id=? AND test=? AND status IN ('pending','failed') ${ids ? `AND id IN (${ids.map(() => '?').join(',') || 'NULL'})` : ''} ORDER BY id DESC`).all(c.id, test, ...(ids || []))
+      .filter(d => ids || !(paid.has(String(d.phone || '').replace(/\D/g, '')) || paid.has(String(d.email || '').toLowerCase())))
+      .forEach(d => push({ ...d, amount: d.monthly && d.installments > 1 ? Math.round(d.amount / d.installments) : d.amount, link: '/r/' + d.token }));
+  }
   else db.prepare("SELECT name,phone,email,amount FROM donations WHERE campaign_id=? AND status='paid' AND test=? ORDER BY id DESC").all(c.id, test).forEach(push);
   return out;
 };
@@ -914,25 +944,33 @@ app.put('/api/admin/msg', auth, adm, (req, res) => { const cur = getKV('msg'); c
 // platform support contact (shown as a help button everywhere)
 app.get('/api/support', (_, res) => { const s = getKV('support'); if (!s.phone) s.phone = process.env.SUPPORT_PHONE || '0556674329'; const adm = s.phone ? null : db.prepare("SELECT phone FROM users WHERE role='admin' AND phone!='' ORDER BY id LIMIT 1").get(); res.json({ phone: s.phone || adm?.phone || '', email: s.email || process.env.ADMIN_EMAIL || '', text: s.text || 'שלום, אני צריך עזרה עם GiveIL' }); });
 app.put('/api/admin/support', auth, adm, (req, res) => { const b = req.body || {}; setKV('support', { phone: String(b.phone || '').replace(/[^\d+]/g, '').slice(0, 20), email: String(b.email || '').slice(0, 120), text: String(b.text || '').slice(0, 200) }); res.json({ ok: true }); });
+app.get('/api/campaigns/:id/unfinished', auth, own, (req, res) => {
+  const test = isTest(req.c) ? 1 : 0; const list = recipients(req.c, 'unfinished', false);
+  const all = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE campaign_id=? AND test=? AND status IN ('pending','failed')").get(req.c.id, test);
+  const rec = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE campaign_id=? AND test=? AND status='paid' AND resumed_from IS NOT NULL").get(req.c.id, test);
+  res.json({ n: all.n, sum: all.s, reachable: list.length, reachableSum: list.reduce((a, r) => a + (r.amount || 0), 0), recovered: rec });
+});
+app.get('/api/campaigns/:id/channels', auth, own, (req, res) => res.json(Object.fromEntries(['email', 'wa', 'sms'].map(ch => [ch, { allowed: chAllowed(req.c, ch), ready: chReady(ch) }]))));
 app.get('/api/msg-channels', auth, (_, res) => { const m = getKV('msg'); res.json({ sms: !!(m.sms && m.sms.type), wa: !!(m.wa && m.wa.type) }); });
 app.get('/api/me/sms', auth, (req, res) => { const u = db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id); const c = J(u.sms); res.json({ ...c, token: c.token ? '••••' : '' }); });
 app.put('/api/me/sms', auth, (req, res) => { const b = req.body || {}; const cur = J(db.prepare('SELECT sms FROM users WHERE id=?').get(req.user.id).sms); const next = { type: b.type || '', sid: b.sid || '', token: b.token && b.token !== '••••' ? b.token : cur.token || '', from: b.from || '', url: b.url || '', method: b.method || 'GET', intl: !!b.intl }; db.prepare('UPDATE users SET sms=? WHERE id=?').run(JSON.stringify(next), req.user.id); res.json({ ok: true }); });
-app.get('/api/campaigns/:id/recipients', auth, own, (req, res) => res.json(recipients(req.c, req.query.audience).map(r => ({ ...r, text: fill(req.query.text || '', r, req.c, base(req)) }))));
+app.get('/api/campaigns/:id/recipients', auth, own, (req, res) => res.json(recipients(req.c, req.query.audience, req.query.channel === 'email', { ids: req.query.ids }).map(r => ({ ...r, text: fill(req.query.text || '', r, req.c, base(req)) }))));
 app.get('/api/campaigns/:id/messages', auth, own, (req, res) => res.json(db.prepare('SELECT * FROM messages WHERE campaign_id=? ORDER BY id DESC LIMIT 50').all(req.c.id)));
 app.post('/api/campaigns/:id/messages', auth, own, async (req, res) => {
   const b = req.body || {}; const text = String(b.text || '').trim().slice(0, 600); if (!text && b.channel !== 'email') return bad(res, 'טקסט');
   if (b.channel === 'email') {
-    if (!mail.enabled()) return bad(res, 'שליחת מייל עדיין לא מופעלת במערכת');
-    const list = recipients(req.c, b.audience, true); if (!list.length) return bad(res, 'אין נמענים עם אימייל'); if (list.length > 2000) return bad(res, 'עד 2000 נמענים בשליחה אחת');
+    if (!chOn(req.c, 'email')) return bad(res, mail.enabled() ? 'שליחת מיילים לא פתוחה לקמפיין הזה – פנו אלינו' : 'שליחת מייל עדיין לא מופעלת במערכת');
+    const list = recipients(req.c, b.audience, true, { ids: b.ids }); if (!list.length) return bad(res, 'אין נמענים עם אימייל'); if (list.length > 2000) return bad(res, 'עד 2000 נמענים בשליחה אחת');
     const m = db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total) VALUES(?,?,?,?,?,?)').run(req.c.id, req.user.id, 'email', b.audience || 'donors', text, list.length);
     ev(req, 'message.send', { cid: req.c.id, msg: `אימייל ל-${list.length} נמענים · ${req.c.title}` });
     res.json({ ok: true, queued: list.length });
     let sent = 0, failed = 0; const owner = db.prepare('SELECT email FROM users WHERE id=?').get(req.user.id) || {};
-    for (const r of list) { try { const { subject, html } = renderMail(req.c, b.kind || 'update', r, base(req)); const o = await mail.send({ to: r.email, subject, html, replyTo: owner.email }); if (o.ok) sent++; else failed++; } catch { failed++; } await new Promise(x => setTimeout(x, 120)); }
+    const remind = ['unfinished', 'selected', 'pending'].includes(b.audience) && text;
+    for (const r of list) { try { const { subject, html } = remind ? { subject: `השלמת התרומה ל${req.c.title}`, html: mail.layout(`${(r.name || '').split(' ')[0] || 'שלום'}, נשאר רק עוד צעד קטן 💙`, `<p style="white-space:pre-line">${mail.esc(fill(text, r, req.c, base(req)).replace(base(req) + r.link, '').trim())}</p><p><a href="${base(req)}${r.link}" style="display:inline-block;background:#1c1917;color:#fff;padding:12px 22px;border-radius:12px;text-decoration:none;font-weight:700">להשלמת התרומה ←</a></p>`) } : renderMail(req.c, b.kind || 'update', r, base(req)); const o = await mail.send({ to: r.email, subject, html, replyTo: owner.email }); if (o.ok) sent++; else failed++; } catch { failed++; } await new Promise(x => setTimeout(x, 120)); }
     return db.prepare('UPDATE messages SET sent=?,failed=? WHERE id=?').run(sent, failed, m.lastInsertRowid);
   }
-  const list = recipients(req.c, b.audience); if (!list.length) return bad(res, 'אין נמענים');
-  const ch = b.channel === 'wa' ? 'wa' : 'sms'; const cfg = (getKV('msg')[ch]) || {}; if (!cfg.type) return bad(res, ch === 'wa' ? 'שליחת וואטסאפ אוטומטית עדיין לא הופעלה במערכת' : 'שליחת SMS עדיין לא הופעלה במערכת');
+  const list = recipients(req.c, b.audience, false, { ids: b.ids }); if (!list.length) return bad(res, 'אין נמענים');
+  const ch = b.channel === 'wa' ? 'wa' : 'sms'; const cfg = (getKV('msg')[ch]) || {}; if (!chAllowed(req.c, ch)) return bad(res, (ch === 'wa' ? 'וואטסאפ אוטומטי' : 'SMS') + ' לא פתוח לקמפיין הזה – פנו אלינו להפעלה'); if (!cfg.type) return bad(res, ch === 'wa' ? 'שליחת וואטסאפ אוטומטית עדיין לא הופעלה במערכת' : 'שליחת SMS עדיין לא הופעלה במערכת');
   if (list.length > 5000) return bad(res, 'עד 5000 נמענים בשליחה אחת');
   const m = db.prepare('INSERT INTO messages(campaign_id,user_id,channel,audience,text,total) VALUES(?,?,?,?,?,?)').run(req.c.id, req.user.id, ch, b.audience || 'donors', text, list.length);
   let sent = 0, failed = 0, firstErr = '';

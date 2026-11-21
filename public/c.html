@@ -487,7 +487,7 @@ async function load(){
   try{const u=JSON.parse(localStorage.getItem('gx_u')||'null');if(u){$('#fName').value=u.name||'';$('#fPhone').value=u.phone||'';$('#fEmail').value=u.email||''}}catch{}
   renderStats(D.stats);renderDonors(D.donations,true);renderTeams(D.teams);timer();setInterval(timer,1000);stream();setTimeout(()=>$('#loader').classList.add('off'),900);
   renderUpdates(D.campaign.updates||[]);const idm=(c.settings||{}).idField;$('#idWrap').hidden=!idm;if(idm){$('#idWrap span').textContent=T(idm==='required'?'idNum':'idNumOpt');$('#fId').required=idm==='required'}
-  const qs=new URLSearchParams(location.search);const th=qs.get('thanks');if(th)showThanks(th);
+  const qs=new URLSearchParams(location.search);const th=qs.get('thanks');if(th)showThanks(th);const rs=qs.get('resume');if(rs&&!D.campaign.closed)resumeDon(rs);
   const qa=+qs.get('amount');if(qa>0){sel=qa;selLevel=null;setTimeout(()=>{openDonate()},600)}else if(qs.get('donate'))setTimeout(()=>openDonate(),600);
   if(new URLSearchParams(location.search).get('cancel'))toast(T('cancelled'));
 }
@@ -526,6 +526,12 @@ function stream(){const es=new EventSource(`/api/c/${slug}/stream`);es.addEventL
 function showStep(n){['stepAmt','stepForm','stepPay','stepThx'].forEach((id,i)=>$('#'+id).hidden=i!==n);$('#mod').classList.add('on');document.body.style.overflow='hidden'}
 function go0(){showStep(0);$('#levelsCard').hidden=!D.levels.length}
 function go1(){if(!(sel>0)){go0();return}$('#mAmt').textContent=cur+fmt(sel);$('#err').textContent='';showStep(1);setTimeout(()=>$('#fName').focus(),300)}
+let RESUME=null;
+async function resumeDon(tok){const r=await fetch('/api/resume/'+tok).then(x=>x.ok?x.json():null).catch(()=>null);history.replaceState(null,'',location.pathname);if(!r)return;RESUME=tok;
+  sel=r.amount;selLevel=r.level_id||null;$$('.amts button,#amts button,#amtsM button').forEach(b=>b.classList.toggle('on',+b.dataset.a===sel));
+  $$('input[name=how]').forEach(x=>x.checked=x.value===(r.monthly?'monthly':'once'));if(r.monthly&&$('#monthlyWrap'))$('#monthlyWrap').hidden=false;
+  $('#fName').value=r.name||'';$('#fPhone').value=r.phone||'';$('#fEmail').value=r.email||'';$('#fDed').value=r.dedication||'';$('#fAnon').checked=!!r.anonymous;if(r.team_id&&$('#fTeam'))$('#fTeam').value=String(r.team_id);
+  go1()}
 function openDonate(){if(!D||D.campaign.closed)return;if(sel>0)go1();else go0()}
 $('#amtGo').onclick=()=>{if(!(sel>0)){toast(T('pickAmount'));return}go1()};
 function closeMod(){$('#mod').classList.remove('on');document.body.style.overflow='';$('#payArea').innerHTML='';if(location.search.includes('thanks'))history.replaceState(null,'',location.pathname)}
@@ -536,7 +542,7 @@ $('#jGo').onclick=async()=>{const b=$('#jGo');b.disabled=true;$('#jErr').textCon
   const u=`${location.origin}/c/${slug}/${j.slug}`;$('#jLink').textContent=u;$('#jWa').href=`https://wa.me/?text=${encodeURIComponent(T('joinMsg',{t:D.campaign.title,u}))}`;$('#jOpen').href=u;$('#jCopy').onclick=()=>{navigator.clipboard?.writeText(u);toast(T('copied'))};$('#jForm').hidden=true;$('#jDone').hidden=false;
   const ts=await fetch(`/api/c/${slug}`).then(r=>r.json());renderTeams(ts.teams);$('#navTeams').hidden=false;$('#teamsChip').hidden=false;$('#teamSelWrap').hidden=false;$('#fTeam').innerHTML=`<option value="">${T('none')}</option>`+ts.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}catch{$('#jErr').textContent=T('netErr')}finally{b.disabled=false}};
 $('#pay').onclick=async()=>{const b=$('#pay');b.disabled=true;$('#err').textContent='';
-  const how=(document.querySelector('input[name=how]:checked')||{}).value||'once';const body={method:payMethod,amount:sel,level_id:selLevel,name:$('#fName').value,phone:$('#fPhone').value,id_number:$('#fId').value,email:$('#fEmail').value,dedication:$('#fDed').value,team_id:$('#fTeam').value||null,installments:how==='split'?($('#fInst').value||1):1,monthly:how==='monthly',anonymous:$('#fAnon').checked};
+  const how=(document.querySelector('input[name=how]:checked')||{}).value||'once';const body={resume:RESUME||undefined,method:payMethod,amount:sel,level_id:selLevel,name:$('#fName').value,phone:$('#fPhone').value,id_number:$('#fId').value,email:$('#fEmail').value,dedication:$('#fDed').value,team_id:$('#fTeam').value||null,installments:how==='split'?($('#fInst').value||1):1,monthly:how==='monthly',anonymous:$('#fAnon').checked};
   try{localStorage.setItem('gx_u',JSON.stringify({name:body.name,phone:body.phone,email:body.email}))}catch{}
   try{const r=await fetch(`/api/c/${slug}/donate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok){$('#err').textContent=j.error||'שגיאה';return}startPay(j)}catch{$('#err').textContent=T('netErr')}finally{b.disabled=false}};
 let payMethod='card';
