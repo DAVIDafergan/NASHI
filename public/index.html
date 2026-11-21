@@ -201,6 +201,14 @@ html[data-theme=dark] .tile .ti{color:#a99bff}
 .phone .f1{top:90px;inset-inline-end:-190px}.phone .f2{bottom:120px;inset-inline-start:-200px;animation-delay:-2.5s}.phone .f3{top:300px;inset-inline-start:-170px;animation-delay:-1.2s}
 .phone-cap{text-align:center;color:var(--mut);font-size:13px;margin-top:14px}
 @media(max-width:760px){.phone .float{display:none}.phone{width:300px;height:614px;border-radius:46px}.phone .scr{border-radius:36px}.phone iframe{transform:scale(.7077)}}
+.plan{margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:18px;border:1px solid var(--line);border-radius:22px;background:var(--card);box-shadow:var(--shl);padding:24px}
+.pin{display:grid;gap:16px}.pin label{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 10px;font-size:14px;color:var(--mut)}.pin label b{color:var(--ink);font-size:20px;font-weight:800;letter-spacing:-.01em}.pin input{grid-column:1/-1;width:100%;accent-color:#5b3df5;margin:6px 0 0}
+.pm{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--mut)}.pm .chips{display:flex;gap:6px}.pm button{border:1px solid var(--line2);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font:600 14px var(--f);cursor:pointer}.pm button.on{background:var(--ink);color:var(--paper);border-color:transparent}
+.pout{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start}.po{border:1px solid var(--line);border-radius:16px;padding:14px 16px;background:var(--soft)}.po span{display:block;font-size:13px;color:var(--mut)}.po b{display:block;font-size:26px;font-weight:800;letter-spacing:-.02em;margin:2px 0}.po small{font-size:13px;color:var(--mut)}
+.po.big{grid-column:1/-1;background:var(--ink);border-color:transparent}.po.big span,.po.big small{color:#c9c9d6}.po.big b{font-size:44px;color:#fff;background:var(--gtxt);-webkit-background-clip:text;background-clip:text;color:transparent;filter:brightness(1.6)}
+.po.pr{grid-column:1/-1;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.po.pr b{font-size:22px;margin:0}.po.pr small{margin-inline-start:auto}.ptip{grid-column:1/-1;margin:4px 0 0;font-size:14px;line-height:1.55;padding:12px 14px;border-radius:14px;background:linear-gradient(120deg,rgba(124,92,255,.08),rgba(34,211,238,.08));border:1px solid rgba(124,92,255,.18)}
+.fth{text-align:center;font-size:20px;margin:44px 0 0}
+@media(max-width:820px){.plan{grid-template-columns:1fr;padding:18px}.po.big b{font-size:36px}.po b{font-size:21px}}
 </style>
 </head>
 <body><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -249,12 +257,24 @@ html[data-theme=dark] .tile .ti{color:#a99bff}
 </div></section>
 
 <section><div class="wrap">
-  <div data-r style="text-align:center"><span class="lbl">למה GiveIL</span><h2 style="margin-top:12px">כמה עולה לכם <span class="g">הקמפיין?</span></h2><p class="sub" style="margin-inline:auto">חשבון פשוט: עמלה באחוזים מכל תרומה, מול מחיר קבוע.</p></div>
-  <div class="calc" data-r><div class="top"><span>יעד הקמפיין</span><b id="cAmt">₪200,000</b></div>
-  <input type="range" id="cRng" min="20000" max="2000000" step="10000" value="200000" aria-label="יעד הקמפיין">
-  <div class="cc"><div><span>עמלה של 3%</span><b id="c3">₪6,000</b></div><div><span>עמלה של 6%</span><b id="c6">₪12,000</b></div><div class="us"><span>GiveIL – מחיר קבוע</span><b id="cUs">₪790</b></div></div>
-  <div class="save">נשאר בעמותה: עד <b id="cSave">₪11,210</b> יותר</div>
-  <div class="fn">האחוזים להמחשה. עמלת חברת האשראי קיימת בכל מקרה, גם אצלנו – והיא משולמת ישירות לספק הסליקה שלכם.</div></div>
+  <div data-r style="text-align:center"><span class="lbl">מתכננים יעד</span><h2 style="margin-top:12px">מה צריך כדי <span class="g">להגיע ליעד?</span></h2><p class="sub" style="margin-inline:auto">הזיזו את המספרים וקבלו תוכנית: כמה תורמים, כמה שגרירים, ואיזה קצב.</p></div>
+  <div class="plan" data-r>
+   <div class="pin">
+    <label><span>יעד הקמפיין</span><b id="pGv"></b><input type="range" id="pG" min="10000" max="3000000" step="10000" value="250000"></label>
+    <label><span>תרומה ממוצעת</span><b id="pAv"></b><input type="range" id="pA" min="18" max="1800" step="18" value="180"></label>
+    <label><span>שגרירים שיגייסו בשבילכם</span><b id="pSv"></b><input type="range" id="pS" min="0" max="300" step="1" value="40"></label>
+    <label><span>משך הקמפיין</span><b id="pDv"></b><input type="range" id="pD" min="1" max="30" step="1" value="2"></label>
+    <div class="pm"><span>תורם שותף מכפיל כל תרומה?</span><div class="chips" id="pM"><button data-m="1" class="on">בלי</button><button data-m="2">×2</button><button data-m="3">×3</button></div></div>
+   </div>
+   <div class="pout">
+    <div class="po big"><span>תורמים שצריך</span><b id="oN"></b><small id="oNs"></small></div>
+    <div class="po"><span>יעד לכל שגריר</span><b id="oS"></b><small id="oSs"></small></div>
+    <div class="po"><span>קצב גיוס</span><b id="oD"></b><small id="oDs"></small></div>
+    <div class="po pr"><span>המחיר ב-GiveIL</span><b id="oP"></b><small>קבוע – לא משנה כמה תגייסו</small></div>
+    <p class="ptip" id="oT"></p>
+   </div>
+  </div>
+  <h3 class="fth" data-r>GiveIL מול פלטפורמה מבוססת אחוזים</h3>
   <table class="ft" data-r><thead><tr><th></th><th>GiveIL</th><th>פלטפורמה מבוססת אחוזים</th></tr></thead><tbody>
   <tr><td>מחיר</td><td class="us">קבוע: ₪790 לקמפיין, או ₪440 לחודש במנוי שנתי</td><td class="ot">אחוז מכל תרומה – ככל שמגייסים יותר, משלמים יותר</td></tr>
   <tr><td>לאן נכנס הכסף</td><td class="us">ישירות לחשבון הסליקה של העמותה</td><td class="ot">בדרך כלל לחשבון של הפלטפורמה, ומשם בהעברה תקופתית לעמותה</td></tr>
@@ -306,7 +326,14 @@ html[data-theme=dark] .tile .ti{color:#a99bff}
 <script>try{if(localStorage.getItem('gx_theme')==='dark')document.documentElement.dataset.theme='dark'}catch{}document.getElementById('theme').onclick=()=>{const d=document.documentElement.dataset.theme==='dark'?'':'dark';document.documentElement.dataset.theme=d;try{localStorage.setItem('gx_theme',d)}catch{}};fetch('/api/public/campaigns').then(r=>r.json()).then(l=>{const g=document.getElementById('cg');if(!l.length){document.getElementById('live').hidden=true;return}const f=n=>Math.round(n).toLocaleString('he-IL');g.innerHTML=l.map(c=>{const cur=c.currency==='USD'?'$':'₪';const w=Math.min(100,c.pct);return `<a class="cgc${c.ended?' done':''}" href="/c/${c.slug}"><div class="im" style="${c.cover?`background-image:url('${c.cover.replace(/['"()\\]/g,'')}')`:''}">${c.demo?'<span>קמפיין לדוגמה</span>':''}${c.live?'<span class="lv">● באוויר</span>':''}${c.ended?'<span class="en">🏁 הסתיים</span>':''}</div><div class="bd"><h3>${c.title.replace(/</g,'&lt;')}</h3><div class="bar"><i style="width:${w}%"></i></div><div class="m"><span><b>${cur}${f(c.total)}</b> מתוך ${cur}${f(c.goal)}</span><span>${Math.round(c.pct)}%</span></div></div></a>`}).join('')}).catch(()=>{document.getElementById('live').hidden=true});document.getElementById('y').textContent=new Date().getFullYear();const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});document.querySelectorAll('[data-r]').forEach(el=>io.observe(el));</script>
 <script src="/a11y.js?v=3" defer></script>
 <script>
-(function(){const r=document.getElementById('cRng');if(!r)return;let P=790;const f=n=>'₪'+Math.round(n).toLocaleString('he-IL');const up=()=>{const v=+r.value;document.getElementById('cAmt').textContent=f(v);document.getElementById('c3').textContent=f(v*.03);document.getElementById('c6').textContent=f(v*.06);document.getElementById('cUs').textContent=f(P);document.getElementById('cSave').textContent=f(Math.max(0,v*.06-P))};r.oninput=up;fetch('/api/pricing').then(x=>x.json()).then(p=>{P=+p.campaign||P;up()}).catch(up);up()})();
+(function(){const $=i=>document.getElementById(i);if(!$('pG'))return;let P=790,M=1;const f=n=>'₪'+Math.round(n).toLocaleString('he-IL'),n0=n=>Math.round(n).toLocaleString('he-IL');
+const up=()=>{const g=+$('pG').value,a=+$('pA').value,s=+$('pS').value,d=+$('pD').value;$('pGv').textContent=f(g);$('pAv').textContent=f(a);$('pSv').textContent=s?n0(s):'בלי';$('pDv').textContent=d===1?'יום אחד':d===2?'יומיים':d+' ימים';
+ const eff=a*M,N=Math.ceil(g/eff);$('oN').textContent=n0(N);$('oNs').textContent=M>1?`כל תרומה של ${f(a)} נספרת כ-${f(eff)}`:`בתרומה ממוצעת של ${f(a)}`;
+ if(s){$('oS').textContent=f(g/s);$('oSs').textContent=`≈ ${n0(Math.ceil(N/s))} תורמים לכל שגריר`}else{$('oS').textContent='—';$('oSs').textContent='בלי שגרירים, כל התורמים מגיעים מכם'}
+ const hrs=d*14;$('oD').textContent=f(g/d)+' ליום';$('oDs').textContent=`≈ ${n0(Math.max(1,Math.round(N/hrs)))} תורמים בשעה (14 שעות פעילות ביום)`;$('oP').textContent=f(P);
+ const per=s?N/s:N;let t;if(s&&per>60)t=`💡 ${n0(Math.ceil(per))} תורמים לשגריר זה הרבה. עוד שגרירים יחלקו את העומס – כל שגריר מקבל קישור, יעד ודירוג משלו.`;else if(M===1&&g>=100000)t='💡 תורם שותף שמכפיל את התרומות מוריד את מספר התורמים הדרוש בחצי ונותן לאנשים סיבה לתרום עכשיו.';else if(d>7)t='💡 קמפיין קצר עם ספירה לאחור יוצר דחיפות. אפשר להשאיר את הדף פתוח לפני, ולרכז את הגיוס ב-24–48 שעות.';else t=`💡 ${f(P)} קבוע הם ${(P/g*100).toFixed(P/g<.01?2:1)}% מהיעד – וכל השאר נכנס לעמותה, ישירות לחשבון הסליקה שלכם.`;$('oT').textContent=t};
+['pG','pA','pS','pD'].forEach(i=>$(i).oninput=up);$('pM').onclick=e=>{const b=e.target.closest('button');if(!b)return;M=+b.dataset.m;[...$('pM').children].forEach(x=>x.classList.toggle('on',x===b));up()};
+fetch('/api/pricing').then(x=>x.json()).then(p=>{P=+p.campaign||P;up()}).catch(up);up()})();
 fetch('/api/me',{credentials:'same-origin'}).then(r=>r.json()).then(j=>{if(!j||!j.user)return;const a=document.querySelector('nav .acts');if(!a)return;a.querySelectorAll('a.btn').forEach(x=>x.remove());a.insertAdjacentHTML('beforeend','<a class="btn" href="/app"><span class="ar">←</span>לאזור האישי</a>');const h=document.querySelector('.hero .cta a.btn');if(h){h.href='/app';h.innerHTML='<span class="ar">←</span>לאזור האישי'}}).catch(()=>{});
 </script>
 <script>fetch('/api/pricing').then(r=>r.json()).then(p=>{document.querySelectorAll('[data-price]').forEach(e=>e.textContent='₪'+Number(p[e.dataset.price]).toLocaleString('he-IL'));const v=document.querySelector('[data-vat]');if(v)v.textContent=(p.vat==='plus'?'המחירים אינם כוללים מע״מ':'המחירים כוללים מע״מ')+' · 0% מהתרומות'}).catch(()=>{})</script>
