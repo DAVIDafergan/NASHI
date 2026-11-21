@@ -813,7 +813,7 @@ async function reconcileSumit() {
     } catch (e) { console.error('sumit reconcile', c.id, e.message); }
   }
 }
-setInterval(() => reconcileSumit().catch(() => { }), 10 * 60e3).unref();
+setInterval(() => reconcileSumit().catch(() => { }), 20 * 60e3).unref();
 
 // ---- platform billing through GiveIL's own SUMIT account (campaign fee / monthly plan, automatic invoice-receipt) ----
 const billCfg = () => { const k = getKV('billing'); return { companyId: k.companyId || process.env.SUMIT_COMPANY_ID || '', apiKey: k.apiKey || process.env.SUMIT_API_KEY || '', docType: k.docType || 'invoice', months: +(k.months ?? 12) }; };
@@ -857,6 +857,8 @@ app.get('/billing/sumit/return/:id', limit(60, 60000), async (req, res) => {
 // monthly plans: each renewal SUMIT charges by itself → extend plan_until when we see the payment
 async function billRenewals() {
   if (!billOn()) return; const b = billCfg();
+  const hasSubs = db.prepare("SELECT 1 FROM kv WHERE k LIKE 'sub:%' LIMIT 1").get(); const hasPend = db.prepare("SELECT 1 FROM payments WHERE ref='SUMIT' AND status='pending' AND created > datetime('now','-3 days') LIMIT 1").get();
+  if (!hasSubs && !hasPend) return; // nothing to look for – save API calls (SUMIT keys have a call quota)
   const from = new Date(Date.now() - 3 * 864e5).toISOString().slice(0, 19), to = new Date(Date.now() + 864e5).toISOString().slice(0, 19);
   const list = await sumit.listPayments(b, from, to); const seen = getKV('billSeen'); const ids = new Set(seen.ids || []);
   for (const p of list) {
@@ -868,7 +870,7 @@ async function billRenewals() {
   }
   setKV('billSeen', { ids: [...ids].slice(-2000) });
 }
-setInterval(() => billRenewals().catch(e => console.error('billRenewals', e.message)), 30 * 60e3).unref();
+setInterval(() => billRenewals().catch(e => console.error('billRenewals', e.message)), 3 * 3600e3).unref();
 app.get('/api/admin/billing', auth, adm, (_, res) => { const b = billCfg(); res.json({ companyId: b.companyId, apiKey: b.apiKey ? '••••' + b.apiKey.slice(-4) : '', docType: b.docType, months: b.months, fromEnv: !getKV('billing').apiKey && !!process.env.SUMIT_API_KEY, subs: db.prepare("SELECT k, v FROM kv WHERE k LIKE 'sub:%'").all().length }); });
 app.put('/api/admin/billing', auth, adm, (req, res) => { const cur = getKV('billing'); const x = req.body || {}; const next = { companyId: String(x.companyId ?? cur.companyId ?? '').replace(/\D/g, '').slice(0, 12), apiKey: x.apiKey && !String(x.apiKey).startsWith('••••') ? String(x.apiKey).trim().slice(0, 200) : cur.apiKey || '', docType: ['invoice', 'receipt'].includes(x.docType) ? x.docType : 'invoice', months: Math.max(0, Math.min(120, +x.months || 0)) }; setKV('billing', next); ev(req, 'admin.billing', { msg: `SUMIT חברה ${next.companyId}` }); res.json({ ok: true }); });
 app.post('/api/admin/billing/test', auth, adm, limit(10, 60000), async (_, res) => { try { await sumit.ping(billCfg()); res.json({ ok: true, msg: 'SUMIT אישר את המפתחות ✓' }); } catch (e) { res.json({ ok: false, msg: e.message }); } });
