@@ -499,6 +499,14 @@ const PV = db.prepare("INSERT INTO pv(day,k,n) VALUES(date('now'),?,1) ON CONFLI
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|curl|wget|python|headless|lighthouse/i;
 const pageView = (req, k) => { if (!BOT.test(req.get('user-agent') || '')) try { PV.run(k); } catch { } };
 const BOOT = Date.now();
+const BK_DIR = path.join(DATA_DIR, 'backups'); try { fs.mkdirSync(BK_DIR, { recursive: true }); } catch { }
+async function backupDb(kind) {
+  const f = path.join(BK_DIR, `${kind}-${new Date().toISOString().slice(0, kind === 'daily' ? 10 : 13).replace(/[:T]/g, '-')}.db`);
+  if (fs.existsSync(f)) return; const t0 = Date.now();
+  try { await db.backup(f); const keep = kind === 'daily' ? 30 : 48; const old = fs.readdirSync(BK_DIR).filter(x => x.startsWith(kind + '-')).sort(); for (const x of old.slice(0, Math.max(0, old.length - keep))) fs.unlinkSync(path.join(BK_DIR, x)); logEvent('backup', { msg: `${kind} · ${Math.round(fs.statSync(f).size / 1024)}KB · ${Date.now() - t0}ms` }); }
+  catch (e) { logEvent('backup.error', { level: 'error', msg: String(e.message).slice(0, 200) }); }
+}
+setTimeout(() => backupDb('hourly'), 60e3).unref(); setInterval(() => { backupDb('hourly'); backupDb('daily'); }, 30 * 60e3).unref();
 let sizeCache = { at: 0 };
 function dirSize(d) { let n = 0, f = 0; try { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) { const r = dirSize(p); n += r.n; f += r.f; } else { n += fs.statSync(p).size; f++; } } } catch { } return { n, f }; }
 function sizes() { if (Date.now() - sizeCache.at < 10 * 60e3) return sizeCache; const fsz = f => { try { return fs.statSync(f).size; } catch { return 0; } }; const db0 = path.join(DATA_DIR, 'givex.db'); sizeCache = { at: Date.now(), db: fsz(db0) + fsz(db0 + '-wal'), uploads: dirSize(path.join(DATA_DIR, 'uploads')), priv: dirSize(privDir) }; return sizeCache; }
@@ -511,7 +519,7 @@ app.get('/api/admin/live', auth, adm, (req, res) => {
   const dayCount = (type, mod = "'-0 day'") => q1(`SELECT COUNT(*) n FROM events WHERE type=? AND at>=datetime('now','start of day')`, type).n;
   res.json({
     now: new Date().toISOString(),
-    health: { uptime: Math.round((Date.now() - BOOT) / 1000), rss: m.rss, heap: m.heapUsed, node: process.version, db: z.db, uploads: z.uploads, priv: z.priv, commit: (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7), mail: mail.enabled(), sse: [...subs.values()].reduce((a, s) => a + s.size, 0) },
+    health: { uptime: Math.round((Date.now() - BOOT) / 1000), rss: m.rss, heap: m.heapUsed, node: process.version, db: z.db, uploads: z.uploads, priv: z.priv, commit: (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7), backups: (() => { try { const l = fs.readdirSync(BK_DIR).sort(); return { n: l.length, last: l.filter(x => x.startsWith('hourly')).pop() || '' }; } catch { return { n: 0, last: '' }; } })(), mail: mail.enabled(), sse: [...subs.values()].reduce((a, s) => a + s.size, 0) },
     today: {
       signups: dayCount('user.signup'), logins: dayCount('auth.login'), failed: dayCount('auth.fail'), created: dayCount('campaign.create'),
       donations: q1("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE status='paid' AND test=0 AND paid_at>=datetime('now','start of day')"),
@@ -609,13 +617,13 @@ app.get('/api/c/:slug', (req, res) => {
 app.get('/api/c/:slug/donations', (req, res) => { const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const off = +req.query.offset || 0; const team = +req.query.team || 0; const q = String(req.query.q || '').slice(0, 60); const p = [c.id, isTest(c) ? 1 : 0]; let w = ''; if (team) { w += ' AND team_id=?'; p.push(team); } if (q) { w += " AND anonymous=0 AND (name LIKE ? OR dedication LIKE ?)"; p.push('%' + q + '%', '%' + q + '%'); } p.push(off); res.json(db.prepare(`SELECT * FROM donations WHERE campaign_id=? AND status='paid' AND test=?${w} ORDER BY ${req.query.sort === 'top' ? 'amount DESC, id DESC' : 'paid_at DESC, id DESC'} LIMIT 60 OFFSET ?`).all(...p).map(publicDonation)); });
 app.get('/api/c/:slug/stream', (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).end();
-  const ipN = sseIp.get(req.ip) || 0; if (ipN >= 40) return res.status(429).end(); sseIp.set(req.ip, ipN + 1);
+  const ipN = sseIp.get(req.ip) || 0; if (ipN >= 1500) return res.status(429).end(); sseIp.set(req.ip, ipN + 1);
   res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' }); res.write(':ok\n\n');
   if (!subs.has(c.id)) subs.set(c.id, new Set()); subs.get(c.id).add(res);
   const ping = setInterval(() => { try { res.write(':p\n\n'); } catch { } }, 25000);
   req.on('close', () => { clearInterval(ping); subs.get(c.id)?.delete(res); const n = (sseIp.get(req.ip) || 1) - 1; if (n > 0) sseIp.set(req.ip, n); else sseIp.delete(req.ip); });
 });
-app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
+app.post('/api/c/:slug/donate', limit(600, 60000), async (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404);
   if (isEnded(c)) return bad(res, 'הקמפיין הסתיים – תודה לכל מי שתרם!');
   const s = J(c.settings); const b = req.body || {};
@@ -626,6 +634,7 @@ app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
   if (phone.replace(/\D/g, '').length < 9 && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad(res, 'נא להזין טלפון או אימייל');
   const level = b.level_id ? db.prepare('SELECT * FROM levels WHERE id=? AND campaign_id=?').get(b.level_id, c.id) : null;
   if (level && level.stock > 0) { const used = db.prepare("SELECT COUNT(*) n FROM donations WHERE level_id=? AND status='paid' AND test=?").get(level.id, isTest(c) ? 1 : 0).n; if (used >= level.stock) return bad(res, 'הרמה הזו אזלה'); }
+  if (level && !level.monthly && amount < level.amount) return bad(res, `הסכום ברמה הזו הוא לפחות ₪${level.amount}`);
   const team = b.team_id ? db.prepare('SELECT id FROM teams WHERE id=? AND campaign_id=?').get(b.team_id, c.id) : null;
   const prov = J(c.provider); const method = ['card', 'bit', 'paybox', 'applepay', 'googlepay'].includes(b.method) ? b.method : 'card';
   const type = isTest(c) ? 'test' : (prov.type || 'test'); const cfg = prov;
@@ -636,6 +645,7 @@ app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
   let finalAmount = amount, isMonthly = !!(b.monthly || (level && level.monthly)) && s.allowMonthly !== false;
   if (level && level.monthly) { inst = Math.max(1, +level.months || 12); finalAmount = level.amount * inst; isMonthly = true; }
   else if (isMonthly) { inst = Math.min(Math.max(1, +b.months || 12), 120); finalAmount = amount * inst; }
+  if (finalAmount > 20000000) return bad(res, 'סכום גבוה מדי');
   const token = crypto.randomBytes(16).toString('hex');
   if (s.idField === 'required') { const z = String(b.id_number || '').replace(/\D/g, ''); if (z.length < 8 || z.length > 9) return bad(res, 'נא להזין מספר תעודת זהות תקין'); }
   const r = db.prepare('INSERT INTO donations(campaign_id,team_id,level_id,amount,currency,name,phone,email,id_number,dedication,anonymous,status,test,provider,installments,monthly,token) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(c.id, team ? team.id : null, level ? level.id : null, finalAmount, c.currency, name, phone, email, String(b.id_number || '').replace(/\D/g, '').slice(0, 9), String(b.dedication || '').slice(0, 300), b.anonymous && s.allowAnon !== false ? 1 : 0, 'pending', isTest(c) ? 1 : 0, type, inst, isMonthly ? 1 : 0, token);
@@ -647,7 +657,7 @@ app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
     res.json({ ...out, donationId: donation.id, token, returnUrl: `${base(req)}/pay/return/${token}` });
   } catch (e) { db.prepare("UPDATE donations SET status='failed', meta=? WHERE id=?").run(JSON.stringify({ error: e.message }), donation.id); logEvent('payment.error', { level: 'error', cid: c.id, ip: req.ip, msg: `${c.title} · ${type}: ${e.message}`.slice(0, 300) }); bad(res, 'שגיאה בחיבור לספק הסליקה: ' + e.message, 502); }
 });
-app.post('/api/c/:slug/join', limit(5, 600000), (req, res) => {
+app.post('/api/c/:slug/join', limit(40, 600000), (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const s = J(c.settings); if (s.allowJoin === false || isEnded(c)) return bad(res, 'ההצטרפות סגורה');
   const b = req.body || {}; const name = String(b.name || '').trim().slice(0, 80); const phone = String(b.phone || '').replace(/[^\d+]/g, '').slice(0, 20);
   if (name.length < 2) return bad(res, 'נא להזין שם'); if (phone.replace(/\D/g, '').length < 9) return bad(res, 'נא להזין טלפון תקין');
