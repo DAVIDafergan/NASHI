@@ -99,6 +99,8 @@ function teamStats(c, test) {
   return db.prepare("SELECT t.id,t.slug,t.name,t.goal,t.photo,t.descr, COUNT(d.id) n, COALESCE(SUM(d.amount),0) s FROM teams t LEFT JOIN donations d ON d.team_id=t.id AND d.status='paid' AND d.test=? WHERE t.campaign_id=? GROUP BY t.id ORDER BY s DESC, t.pos, t.id").all(test ? 1 : 0, c.id).map(t => ({ ...t, total: Math.round(t.s) }));
 }
 const isTest = c => c.status !== 'live' && c.status !== 'ended';
+// a campaign is over when it was marked ended, or when a live campaign's end time (Israel time) has passed
+const isEnded = c => { if (c.status === 'ended') return true; if (c.status !== 'live' || !c.end_at) return false; const u = ilToUtc(c.end_at); return !!u && Date.parse(u.replace(' ', 'T') + 'Z') <= Date.now(); };
 // payment methods offered on the public page: main provider ("card") + optional app links (bit / paybox)
 function payMethods(c) {
   const p = J(c.provider); const mainType = isTest(c) ? 'test' : (p.type || 'test'); const out = [{ k: 'card' }];
@@ -592,7 +594,7 @@ app.get('/api/c/:slug', (req, res) => {
   const test = isTest(c); const s = J(c.settings); const paused = !!s.adminPaused; for (const k of ADMIN_KEYS) delete s[k];
   const t = req.query.team ? db.prepare('SELECT id,slug,name,goal,photo,descr FROM teams WHERE campaign_id=? AND slug=?').get(c.id, req.query.team) : null;
   res.json({
-    campaign: { closed: (!isTest(c) && (J(c.provider).type || 'test') === 'test') || paused, paused, payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test' },
+    campaign: { closed: (!isTest(c) && (J(c.provider).type || 'test') === 'test') || paused || isEnded(c), paused, ended: isEnded(c), payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test' },
     levels: db.prepare('SELECT id,name,amount,descr,stock,icon,monthly,months,(SELECT COUNT(*) FROM donations WHERE level_id=levels.id AND status=\'paid\' AND test=?) used FROM levels WHERE campaign_id=? ORDER BY pos,id').all(test ? 1 : 0, c.id),
     teams: teamStats(c, test), team: t, matchers: db.prepare('SELECT name,logo FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id),
     stats: stats(c, test),
@@ -610,7 +612,7 @@ app.get('/api/c/:slug/stream', (req, res) => {
 });
 app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404);
-  if (c.status === 'ended') return bad(res, 'הקמפיין הסתיים');
+  if (isEnded(c)) return bad(res, 'הקמפיין הסתיים – תודה לכל מי שתרם!');
   const s = J(c.settings); const b = req.body || {};
   if (s.adminPaused) return bad(res, 'התרומות בקמפיין מושהות זמנית');
   const amount = Math.round(+b.amount || 0); if (amount < (s.minAmount || 1)) return bad(res, `סכום מינימלי ₪${s.minAmount || 1}`); if (amount > 5000000) return bad(res, 'סכום גבוה מדי');
@@ -641,7 +643,7 @@ app.post('/api/c/:slug/donate', limit(20, 60000), async (req, res) => {
   } catch (e) { db.prepare("UPDATE donations SET status='failed', meta=? WHERE id=?").run(JSON.stringify({ error: e.message }), donation.id); logEvent('payment.error', { level: 'error', cid: c.id, ip: req.ip, msg: `${c.title} · ${type}: ${e.message}`.slice(0, 300) }); bad(res, 'שגיאה בחיבור לספק הסליקה: ' + e.message, 502); }
 });
 app.post('/api/c/:slug/join', limit(5, 600000), (req, res) => {
-  const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const s = J(c.settings); if (s.allowJoin === false || c.status === 'ended') return bad(res, 'ההצטרפות סגורה');
+  const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const s = J(c.settings); if (s.allowJoin === false || isEnded(c)) return bad(res, 'ההצטרפות סגורה');
   const b = req.body || {}; const name = String(b.name || '').trim().slice(0, 80); const phone = String(b.phone || '').replace(/[^\d+]/g, '').slice(0, 20);
   if (name.length < 2) return bad(res, 'נא להזין שם'); if (phone.replace(/\D/g, '').length < 9) return bad(res, 'נא להזין טלפון תקין');
   if (db.prepare('SELECT 1 FROM teams WHERE campaign_id=? AND phone=?').get(c.id, phone)) { const t = db.prepare('SELECT slug FROM teams WHERE campaign_id=? AND phone=?').get(c.id, phone); return res.json({ ok: true, slug: t.slug, existed: true }); }
@@ -652,8 +654,8 @@ app.post('/api/c/:slug/join', limit(5, 600000), (req, res) => {
   res.json({ ok: true, slug });
 });
 app.get('/api/public/campaigns', (_, res) => {
-  const rows = db.prepare("SELECT * FROM campaigns WHERE status='live' OR (status='test' AND settings LIKE '%\"demo\":true%') ORDER BY status='live' DESC, id DESC LIMIT 9").all();
-  res.json(rows.map(c => { const st = stats(c, isTest(c)); const s = J(c.settings); return { slug: c.slug, title: c.title, subtitle: c.subtitle, cover: c.cover || (s.media?.default?.desktop || [])[0] || '', currency: c.currency, goal: c.goal, total: st.total, pct: st.pct, count: st.count, end_at: c.end_at, demo: !!s.demo, live: c.status === 'live' }; }));
+  const rows = db.prepare("SELECT * FROM campaigns WHERE status IN ('live','ended') OR (status='test' AND settings LIKE '%\"demo\":true%') ORDER BY status='live' DESC, id DESC LIMIT 30").all().map(c => ({ c, e: isEnded(c) })).sort((a, b) => a.e - b.e).slice(0, 9).map(x => x.c);
+  res.json(rows.map(c => { const st = stats(c, isTest(c)); const s = J(c.settings); return { slug: c.slug, title: c.title, subtitle: c.subtitle, cover: c.cover || (s.media?.default?.desktop || [])[0] || '', currency: c.currency, goal: c.goal, total: st.total, pct: st.pct, count: st.count, end_at: c.end_at, demo: !!s.demo, ended: isEnded(c), live: c.status === 'live' && !isEnded(c) }; }));
 });
 app.get('/api/d/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slug, c.title, c.settings FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return bad(res, 'not found', 404); res.json({ id: d.id, status: d.status, amount: d.amount, currency: d.currency, name: d.name, slug: d.slug, title: d.title, thanks: J(d.settings).thanks, test: !!d.test, provider: d.provider }); });
 
