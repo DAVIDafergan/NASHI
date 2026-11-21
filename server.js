@@ -134,7 +134,7 @@ app.post('/api/register', limit(5, 600000), (req, res) => {
   if (!b.consent) return bad(res, 'יש לאשר את התקנון ומדיניות הפרטיות');
   const S = (v, n) => String(v || '').trim().slice(0, n);
   const r = db.prepare('INSERT INTO users(email,pass,name,phone,org,role,role_title,address,city,website,s46,consent_at,marketing,org_number) VALUES(?,?,?,?,?,?,?,?,?,?,?,datetime(\'now\'),?,?)').run(email.toLowerCase(), hashPw(password), S(name, 60), S(phone, 20), S(org, 80), role, S(b.role_title, 40), S(b.address, 120), S(b.city, 60), S(b.website, 160), S(b.s46, 10), b.marketing ? 1 : 0, S(b.org_number, 12).replace(/\D/g, ''));
-  const uid = r.lastInsertRowid; logEvent('user.signup', { uid, ip: req.ip, msg: `${email.toLowerCase()} · ${S(org, 80) || ''}`, meta: { org_number: S(b.org_number, 12) } });
+  const uid = r.lastInsertRowid; const src = String(req.cookies?.src || '').split(':')[0]; if (src === 'ads') pageView(req, 'ads:signup'); logEvent('user.signup', { uid, ip: req.ip, msg: `${email.toLowerCase()} · ${S(org, 80) || ''}${src === 'ads' ? ' · מגוגל' : ''}`, meta: { org_number: S(b.org_number, 12), src } });
   sendVerify(uid).catch(() => { });
   setSid(res, uid);
   res.json({ ok: true });
@@ -536,6 +536,7 @@ app.get('/api/admin/live', auth, adm, (req, res) => {
       errors: q1("SELECT COUNT(*) n FROM events WHERE level='error' AND at>=datetime('now','-1 day')").n,
       warns: q1("SELECT COUNT(*) n FROM events WHERE level='warn' AND at>=datetime('now','-1 day')").n
     },
+    ads: (() => { const since = '2026-11-21'; const pv = k => q1("SELECT COALESCE(SUM(n),0) n FROM pv WHERE k=? AND day>=?", k, since).n; const users = db.prepare("SELECT user_id FROM events WHERE type='user.signup' AND json_extract(meta,'$.src')='ads' AND at>=?").all(since).map(r => r.user_id).filter(Boolean); const inList = users.length ? users.join(',') : '0'; return { since, visits: pv('ads:visit'), signups: pv('ads:signup'), campaigns: q1(`SELECT COUNT(*) n FROM campaigns WHERE user_id IN (${inList})`).n, live: q1(`SELECT COUNT(*) n FROM campaigns WHERE status IN ('live','ended') AND user_id IN (${inList})`).n, list: db.prepare(`SELECT u.email, COALESCE(u.org_name,u.org) org, u.created FROM users u WHERE u.id IN (${inList}) ORDER BY u.id DESC LIMIT 20`).all() }; })(),
     views7: db.prepare("SELECT day, SUM(n) n FROM pv WHERE day>=date('now','-13 day') GROUP BY day ORDER BY day").all(),
     online: db.prepare("SELECT id,email,name,org_name,org,role,last_seen,last_ip FROM users WHERE last_seen>=datetime('now','-15 minute') ORDER BY last_seen DESC LIMIT 50").all(),
     viewers,
@@ -1006,7 +1007,9 @@ app.post('/api/assist', auth, limit(60, 60000), (req, res) => {
 
 // ---------- pages ----------
 const pub = f => path.join(__dirname, 'public', f);
-app.use((req, res, next) => { if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) pageView(req, 'home'); next(); });
+// visits from Google Ads (auto-tagging adds gclid) are remembered for 30 days so signups can be attributed
+const adSrc = q => q.gclid || q.gbraid || q.wbraid ? 'ads' : /^google$/i.test(q.utm_source || '') && /cpc|ppc|paid/i.test(q.utm_medium || '') ? 'ads' : '';
+app.use((req, res, next) => { if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html' || req.path === '/login.html' || req.path.startsWith('/c/'))) { const src = adSrc(req.query); if (src) { if (!req.cookies?.src) pageView(req, 'ads:visit'); res.cookie('src', src + ':' + new Date().toISOString().slice(0, 10), { maxAge: 30 * 864e5, httpOnly: true, sameSite: 'lax', secure: req.secure }); } if (req.path === '/' || req.path === '/index.html') pageView(req, 'home'); } next(); });
 app.use(express.static(pub(''), { maxAge: '1h', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.get('/c/:slug/screen', (_, res) => res.sendFile(pub('screen.html')));
 app.get('/c/:slug/widget', (_, res) => res.sendFile(pub('widget.html')));
