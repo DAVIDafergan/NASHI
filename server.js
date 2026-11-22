@@ -720,11 +720,11 @@ app.post('/api/c/:slug/join', limit(40, 600000), (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404); const s = J(c.settings); if (s.allowJoin === false || isEnded(c)) return bad(res, 'ההצטרפות סגורה');
   const b = req.body || {}; const name = String(b.name || '').trim().slice(0, 80); const phone = String(b.phone || '').replace(/[^\d+]/g, '').slice(0, 20);
   if (name.length < 2) return bad(res, 'נא להזין שם'); if (phone.replace(/\D/g, '').length < 9) return bad(res, 'נא להזין טלפון תקין');
-  if (db.prepare('SELECT 1 FROM teams WHERE campaign_id=? AND phone=?').get(c.id, phone)) { const t = db.prepare('SELECT * FROM teams WHERE campaign_id=? AND phone=?').get(c.id, phone); return res.json({ ok: true, slug: t.slug, existed: true, area: '/a/' + teamKey(t) }); }
+  if (db.prepare('SELECT 1 FROM teams WHERE campaign_id=? AND phone=?').get(c.id, phone)) { const t = db.prepare('SELECT * FROM teams WHERE campaign_id=? AND phone=?').get(c.id, phone); return res.json({ ok: true, slug: t.slug, existed: true, area: `/c/${c.slug}/${t.slug}` }); }
   const nt = newTeam(c, { name, phone, email: String(b.email || '').trim().slice(0, 120), goal: b.goal, descr: String(b.descr || '').slice(0, 300) }); const slug = nt.slug; welcomeAmbassador(c, nt).catch(() => { });
   const em = String(b.email || '').trim().toLowerCase(); if (mail.enabled() && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { try { const { subject, html } = renderMail(c, 'ambassador', { name, amount: 0, email: em, link: '/c/' + c.slug + '/' + slug }, base(req)); mail.send({ to: em, subject, html }).catch(() => { }); } catch { } }
   emit(c.id, 'refresh', { stats: stats(c, isTest(c)), teams: teamStats(c, isTest(c)) }); logEvent('team.join', { cid: c.id, ip: req.ip, msg: `${name} הצטרף/ה כשגריר/ה · ${c.title}` });
-  res.json({ ok: true, slug, area: '/a/' + nt.key });
+  res.json({ ok: true, slug, area: `/c/${c.slug}/${slug}` });
 });
 app.get('/api/public/campaigns', (_, res) => {
   const rows = db.prepare("SELECT * FROM campaigns WHERE status IN ('live','ended') OR (status='test' AND settings LIKE '%\"demo\":true%') ORDER BY status='live' DESC, id DESC LIMIT 30").all().map(c => ({ c, e: isEnded(c) })).sort((a, b) => a.e - b.e).slice(0, 9).map(x => x.c);
@@ -734,7 +734,7 @@ app.get('/api/d/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slu
 
 // ---------- WhatsApp ambassador network ----------
 // every donor is invited (WhatsApp + thank-you screen) to become an ambassador with one tap;
-// every ambassador gets a personal link, a personal area (/a/<key>) and a WhatsApp/email ping on each donation through them
+// every ambassador gets a personal campaign page (/c/<slug>/<team>) and a WhatsApp/email ping on each donation through them
 for (const col of ["key TEXT DEFAULT ''", "from_donation INTEGER", "created TEXT DEFAULT ''", "visits INTEGER DEFAULT 0"]) { try { db.exec('ALTER TABLE teams ADD COLUMN ' + col); } catch { } }
 try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS t_key ON teams(key) WHERE key!=''"); } catch { }
 const SITE = () => (process.env.BASE_URL || 'https://giveil.com').replace(/\/$/, '');
@@ -743,8 +743,8 @@ const first = n => String(n || '').trim().split(/\s+/)[0] || '';
 const nis = (n, c) => (c?.currency === 'USD' ? '$' : '₪') + Math.round(+n || 0).toLocaleString('he-IL');
 const WA_T = {
   thanks: '{name}, תודה רבה! 💙\nתרומתך בסך {amount} ל{campaign} התקבלה.\n\nרוצים לעזור לנו להגיע ליעד? הצטרפו למערך השגרירים – בלחיצה אחת מקבלים קישור אישי, וכל תרומה דרכו נזקפת לזכותכם:\n{join}',
-  welcome: 'ברוכים הבאים למערך השגרירים של {campaign} 🙌\n\nזה הקישור האישי שלכם – כל מי שתורם דרכו נספר לזכותכם:\n{link}\n\nבאזור האישי תמצאו את ההתקדמות, מי תרם דרככם, והודעה מוכנה לשליחה לחברים:\n{area}',
-  donation: '🎉 {donor} תרם/ה {amount} דרך הקישור שלכם!\nעד עכשיו גייסתם {raised}{ofgoal} מ-{count} תורמים.\n\nממשיכים? הקישור שלכם: {link}\nהאזור האישי: {area}'
+  welcome: 'ברוכים הבאים למערך השגרירים של {campaign} 🙌\n\nזה הקישור האישי שלכם – כל מי שתורם דרכו נספר לזכותכם:\n{link}\n\nבדף שלכם רואים את היעד, כמה גייסתם ומי תרם דרככם.',
+  donation: '🎉 {donor} תרם/ה {amount} דרך הקישור שלכם!\nעד עכשיו גייסתם {raised}{ofgoal} מ-{count} תורמים.\n\nממשיכים? הקישור שלכם: {link}'
 };
 const waTpl = (c, k) => { const t = J(c.settings).waT || {}; return (t[k] && String(t[k]).trim()) || WA_T[k]; };
 const waFill = (tpl, v) => String(tpl).replace(/\{(\w+)\}/g, (m, k) => v[k] ?? '');
@@ -763,13 +763,13 @@ async function ambassadorFlow(c, d) { // called after a donation is paid
     await waSend(c, d.phone, pre + waFill(waTpl(c, 'thanks'), { name: first(d.name), amount: nis(d.amount, c), campaign: c.title, join: `${SITE()}/j/${d.token}`, link: `${SITE()}/c/${c.slug}` }), 'תודה לתורם');
   if (d.team_id) {
     const t = db.prepare('SELECT * FROM teams WHERE id=?').get(d.team_id); if (!t) return;
-    const p = teamProgress(t, d.test); const v = { donor: d.anonymous ? 'תורם/ת אנונימי/ת' : first(d.name), amount: nis(d.amount, c), raised: nis(p.s, c), ofgoal: t.goal ? ` מתוך ${nis(t.goal, c)}` : '', count: p.n, link: `${SITE()}/c/${c.slug}/${t.slug}`, area: `${SITE()}/a/${teamKey(t)}`, name: first(t.name), campaign: c.title };
+    const p = teamProgress(t, d.test); const v = { donor: d.anonymous ? 'תורם/ת אנונימי/ת' : first(d.name), amount: nis(d.amount, c), raised: nis(p.s, c), ofgoal: t.goal ? ` מתוך ${nis(t.goal, c)}` : '', count: p.n, link: `${SITE()}/c/${c.slug}/${t.slug}`, area: `${SITE()}/c/${c.slug}/${t.slug}`, name: first(t.name), campaign: c.title };
     if (t.phone) await waSend(c, t.phone, pre + waFill(waTpl(c, 'donation'), v), 'עדכון לשגריר');
-    if (t.email && mail.enabled() && !d.test) mail.send({ to: t.email, subject: `🎉 ${v.donor} תרם/ה ${v.amount} דרככם – ${c.title}`, html: mail.layout(`${v.donor} תרם/ה ${v.amount} דרככם! 🎉`, `<p>עד עכשיו גייסתם <b>${v.raised}</b>${v.ofgoal} מ-${v.count} תורמים.</p><p><a href="${v.area}">לאזור האישי שלכם ←</a></p><p>הקישור לשיתוף: <a href="${v.link}">${v.link}</a></p>`) }).catch(() => { });
+    if (t.email && mail.enabled() && !d.test) mail.send({ to: t.email, subject: `🎉 ${v.donor} תרם/ה ${v.amount} דרככם – ${c.title}`, html: mail.layout(`${v.donor} תרם/ה ${v.amount} דרככם! 🎉`, `<p>עד עכשיו גייסתם <b>${v.raised}</b>${v.ofgoal} מ-${v.count} תורמים.</p><p>הדף שלכם בקמפיין: <a href="${v.link}">${v.link}</a></p>`) }).catch(() => { });
   }
 }
 async function welcomeAmbassador(c, t) {
-  const v = { name: first(t.name), campaign: c.title, link: `${SITE()}/c/${c.slug}/${t.slug}`, area: `${SITE()}/a/${teamKey(t)}` };
+  const v = { name: first(t.name), campaign: c.title, link: `${SITE()}/c/${c.slug}/${t.slug}`, area: `${SITE()}/c/${c.slug}/${t.slug}` };
   if (t.phone && waOn(c)) await waSend(c, t.phone, waFill(waTpl(c, 'welcome'), v), 'ברוכים הבאים לשגריר');
 }
 function newTeam(c, { name, phone, email = '', goal = 0, descr = '', fromDonation = null }) {
@@ -786,7 +786,7 @@ app.post('/api/d/:token/ambassador', limit(10, 600000), (req, res) => {
   let t = db.prepare('SELECT * FROM teams WHERE campaign_id=? AND (from_donation=? OR (phone!=\'\' AND phone=?))').get(c.id, d.id, d.phone || '#');
   const name = String(req.body?.name || d.name || '').trim().slice(0, 80); if (name.length < 2) return bad(res, 'נא להזין שם');
   if (!t) { t = newTeam(c, { name, phone: d.phone || '', email: d.email || '', goal: Math.max(0, +req.body?.goal || 0), fromDonation: d.id }); emit(c.id, 'refresh', { stats: stats(c, isTest(c)), teams: teamStats(c, isTest(c)) }); logEvent('team.join', { cid: c.id, ip: req.ip, msg: `${name} – תורם/ת שהפך/ה לשגריר/ה · ${c.title}` }); welcomeAmbassador(c, t).catch(() => { }); }
-  res.json({ ok: true, slug: t.slug, key: teamKey(t), link: `/c/${c.slug}/${t.slug}`, area: `/a/${teamKey(t)}` });
+  res.json({ ok: true, slug: t.slug, key: teamKey(t), link: `/c/${c.slug}/${t.slug}`, area: `/c/${c.slug}/${t.slug}` });
 });
 app.get('/r/:token', (req, res) => {
   const d = db.prepare('SELECT d.status, d.token, d.team_id, c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return res.redirect('/');
@@ -798,13 +798,14 @@ app.get('/api/resume/:token', (req, res) => {
   const d = db.prepare('SELECT * FROM donations WHERE token=?').get(req.params.token); if (!d || d.status === 'paid') return bad(res, 'not found', 404);
   res.json({ name: d.name, phone: d.phone, email: d.email, dedication: d.dedication, anonymous: !!d.anonymous, team_id: d.team_id, level_id: d.level_id, monthly: !!d.monthly, months: d.installments, amount: d.monthly && d.installments > 1 ? Math.round(d.amount / d.installments) : d.amount });
 });
-app.get(['/a/:key', '/j/:token'], (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Robots-Tag', 'noindex'); res.sendFile(pub('amb.html')); });
+app.get('/a/:key', (req, res) => { const x = ambGet(req.params.key); res.redirect(x ? `/c/${encodeURIComponent(x.c.slug)}/${encodeURIComponent(x.t.slug)}` : '/'); });
+app.get('/j/:token', (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Robots-Tag', 'noindex'); res.sendFile(pub('amb.html')); });
 const ambGet = key => { const t = key && db.prepare('SELECT * FROM teams WHERE key=?').get(String(key)); if (!t) return null; const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(t.campaign_id); return c ? { t, c } : null; };
 app.get('/api/amb/:key', (req, res) => {
   const x = ambGet(req.params.key); if (!x) return bad(res, 'not found', 404); const { t, c } = x; const test = isTest(c); const s = J(c.settings);
   const p = teamProgress(t, test); const all = teamStats(c, test); const rank = all.findIndex(a => a.id === t.id) + 1;
   const donors = db.prepare("SELECT name, anonymous, amount, dedication, paid_at FROM donations WHERE team_id=? AND status='paid' AND test=? ORDER BY id DESC LIMIT 200").all(t.id, test ? 1 : 0).map(d => ({ name: d.anonymous ? '' : d.name, amount: d.amount, dedication: d.dedication || '', at: d.paid_at }));
-  res.json({ team: { name: t.name, slug: t.slug, goal: t.goal, descr: t.descr, phone: t.phone ? t.phone.slice(0, 3) + '•••' + t.phone.slice(-3) : '' }, campaign: { title: c.title, slug: c.slug, goal: c.goal, currency: c.currency, end_at: c.end_at, cover: c.cover || (s.media?.default?.desktop || [])[0] || '', color: c.color, ended: isEnded(c), test, stats: stats(c, test) }, me: { raised: p.s, count: p.n, rank, of: all.length, visits: t.visits || 0 }, top: all.slice(0, 5).map(a => ({ name: a.name, s: a.s, me: a.id === t.id })), donors, link: `${SITE()}/c/${c.slug}/${t.slug}`, waAuto: !!(getKV('msg').wa || {}).type && waOn(c) });
+  res.json({ team: { name: t.name, slug: t.slug, goal: t.goal, descr: t.descr, phone: t.phone ? t.phone.slice(0, 3) + '•••' + t.phone.slice(-3) : '' }, campaign: { title: c.title, slug: c.slug, goal: c.goal, currency: c.currency, end_at: c.end_at, cover: c.cover || (s.media?.default?.desktop || [])[0] || '', color: c.color, ended: isEnded(c), test, stats: stats(c, test) }, me: { raised: p.s, count: p.n, rank, of: all.length }, top: all.slice(0, 5).map(a => ({ name: a.name, s: a.s, me: a.id === t.id })), donors, link: `${SITE()}/c/${c.slug}/${t.slug}`, waAuto: !!(getKV('msg').wa || {}).type && waOn(c) });
 });
 app.put('/api/amb/:key', limit(20, 600000), (req, res) => {
   const x = ambGet(req.params.key); if (!x) return bad(res, 'not found', 404); const b = req.body || {};
