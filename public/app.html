@@ -370,6 +370,24 @@ input[type=datetime-local],input[type=date],input[type=time]{width:100%;min-widt
 .mmadd{width:96px;height:64px;border-radius:10px;border:2px dashed var(--line2);display:grid;place-content:center;justify-items:center;font-size:12px;color:var(--mut);cursor:pointer}.mmp.mobile .mmadd{width:56px;height:70px;font-size:11px}.mmadd span{font-size:20px;line-height:1;color:var(--v)}
 .mmv{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}.mmvr{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}.mmvf{flex:1;min-width:240px}.mmvp{position:relative;width:200px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}.mmvp img,.mmvp video{width:100%;height:100%;object-fit:cover}.mmvp span{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:28px;text-shadow:0 2px 10px rgba(0,0,0,.6)}.mmup{cursor:pointer}
 .pk{display:flex!important;gap:10px;align-items:flex-start;margin:8px 0;font-size:14px;cursor:pointer;color:var(--ink)}.pk input{-webkit-appearance:auto!important;appearance:auto!important;padding:0!important;border:0!important;width:16px!important;height:16px;min-height:0!important;flex:0 0 auto;margin-top:3px;accent-color:var(--p);box-shadow:none!important}
+
+/* ---- UX polish ---- */
+.savebar{position:fixed;bottom:18px;left:50%;transform:translate(-50%,140%);z-index:40;display:flex;align-items:center;gap:12px;background:#0e0f14;color:#fff;padding:10px 12px 10px 18px;border-radius:16px;box-shadow:0 20px 50px -14px rgba(0,0,0,.55);transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .25s,visibility .35s;font-size:14px;max-width:calc(100vw - 24px);opacity:0;visibility:hidden}
+.savebar.on{transform:translate(-50%,0);opacity:1;visibility:visible}.savebar b{font-weight:700;white-space:nowrap}.savebar i{width:8px;height:8px;border-radius:50%;background:#f59e0b;flex:none;box-shadow:0 0 0 4px rgba(245,158,11,.2)}
+.savebar .b{height:38px;padding:0 16px;font-size:14px}.savebar .b.gh{background:transparent;color:#cbd5e1;border-color:#334155}
+@media(min-width:901px){.savebar{left:calc(50% + 125px)}}
+aside select.csw{width:100%;background:#1a1c24;color:#e2e8f0;border:1px solid #2a2d3a;border-radius:10px;padding:8px 10px;font-size:13px;margin:2px 0 6px;-webkit-appearance:auto;appearance:auto}
+@media(min-width:901px){.a11y-btn{inset-inline-start:auto!important;inset-inline-end:0!important;border-radius:0 14px 14px 0!important;top:auto!important;bottom:160px!important}}
+@media(max-width:700px){
+  #pgActs{flex-wrap:wrap!important;overflow:visible!important;margin:10px 0 0!important;padding:0!important}
+  .unf .ut{flex:1 1 calc(100% - 50px)}.unf .ua{width:100%}.unf .ua .b{flex:1}
+  .tbl.rsp{min-width:0!important}.tbl.rsp tr.hd{display:none}.tbl.rsp tr{display:block;padding:10px 4px;border-bottom:1px solid var(--line)}
+  .tbl.rsp td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0!important;padding:4px 14px!important;text-align:end;min-height:30px}
+  .tbl.rsp td::before{content:attr(data-l);color:var(--mut);font-size:12px;font-weight:700;text-align:start;flex:none}
+  .tbl.rsp td[data-l=""]::before{display:none}.tbl.rsp td[data-l=""]{justify-content:flex-start}
+  .tbl.rsp tr:hover td{background:none}
+  .savebar{bottom:12px;padding:8px 8px 8px 14px;gap:8px}.savebar b{font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -440,6 +458,7 @@ input[type=datetime-local],input[type=date],input[type=time]{width:100%;min-widt
 <main>
   <div class="mbar"><button class="ib" onclick="drawer(true)" aria-label="תפריט">☰</button><a class="lg" href="#/"><img src="/logo.svg" alt=""><span dir="ltr" class="wmk">Give<b style="color:#7cb4ff;font-weight:900">IL</b></span></a><span class="sp"></span><button class="ib ai" onclick="toggleGuide(true)" aria-label="המדריך">✦</button></div>
   <nav class="ctabs" id="ctabs" hidden></nav>
+  <div class="savebar" id="saveBar" role="status"><i></i><b>יש שינויים שלא נשמרו</b><button class="b gh" id="sbUndo">ביטול</button><button class="b p" id="sbSave">שמירה</button></div>
   <div class="top" id="topbar"><div style="display:flex;gap:10px;align-items:center"><button class="b s burger" onclick="drawer(true)">☰</button><h1 id="pgTitle"></h1></div><div class="acts" id="pgActs"></div></div>
   <div id="content" role="main"></div>
 </main>
@@ -463,7 +482,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=n=>Math.round(+n||0).toLocaleString('he-IL');const SYM={ILS:'₪',USD:'$'};
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2600)};
-const api=async(u,o={})=>{const r=await fetch('/api'+u,{headers:o.body&&!(o.body instanceof FormData)?{'Content-Type':'application/json'}:{},method:o.method||'GET',body:o.body instanceof FormData?o.body:o.body?JSON.stringify(o.body):undefined});const j=await r.json().catch(()=>({}));if(r.status===401){location.reload();throw 0}if(!r.ok){toast(j.error||'שגיאה');throw new Error(j.error||'err')}return j};
+const api=async(u,o={})=>{if(o.method&&o.method!=='GET'&&/^\/campaigns(\/\d+)?$/.test(u))CLIST=null;const r=await fetch('/api'+u,{headers:o.body&&!(o.body instanceof FormData)?{'Content-Type':'application/json'}:{},method:o.method||'GET',body:o.body instanceof FormData?o.body:o.body?JSON.stringify(o.body):undefined});const j=await r.json().catch(()=>({}));if(r.status===401){location.reload();throw 0}if(r.ok&&o.method==='PUT'&&/^\/campaigns\/\d+$/.test(u)&&!(o.body&&Object.keys(o.body).every(k=>k==='cover'||k==='settings')&&Object.keys(o.body.settings||{}).every(k=>k==='media')))setDirty(false);if(!r.ok){toast(j.error||'שגיאה');throw new Error(j.error||'err')}return j};
 const modal=(html,w)=>{$('#modC').style.width=w||'';$('#modC').innerHTML=html;$('#mod').classList.add('on')};const closeModal=()=>$('#mod').classList.remove('on');$('#mod').onclick=e=>{if(e.target.id==='mod')closeModal()};
 const dt=s=>{if(!s)return '';const d=new Date(s.includes('T')?s:s.replace(' ','T')+'Z');return d.toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})};
 const toLocal=s=>{if(!s)return '';const d=new Date(s);if(isNaN(d))return s.slice(0,16);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`};
@@ -512,13 +531,28 @@ async function loadSupport(){try{SUP=await api('/support')}catch{SUP={}}const h=
 loadSupport();
 async function boot(){const {user}=await api('/me');if(!user){$('#auth').style.display='';$('#shell').classList.remove('on');if(/#reset=/.test(location.hash))swap('reset');else if(location.hash==='#reg')swap('reg');return}U=user;$('#auth').style.display='none';$('#shell').classList.add('on');$('#gbtn').hidden=false;
   $('#uAv').textContent=(U.name||U.email)[0].toUpperCase();$('#uName').textContent=U.name||U.email;$('#uOrg').textContent=U.org_name||U.org||'';$('#adminNav').hidden=U.role!=='admin';$('#teamNav').hidden=!!U.sub;$$('#campNav a').forEach(x=>x.hidden=!tabOk(x.dataset.p.split('/')[1]));if(U.sub)$('#uOrg').textContent=(U.org_name||U.org||'')+' · צוות';if(U.imp&&!$('#impBar')){document.body.classList.add('imp');document.body.insertAdjacentHTML('afterbegin',`<div id="impBar">👀 אתם צופים במערכת בתור <b>${esc(U.email)}</b><button onclick="impStop()">חזרה לניהול-על</button></div>`)}PROVS=await api('/providers');route()}
-addEventListener('hashchange',route);
+
+// ---- UX: unsaved-changes bar, navigation guard, responsive tables, campaign switcher ----
+const DIRTY_PAGES=['basic','design','levels','settings','payment'];let DIRTY=false,CURP='',LASTHASH=location.hash;
+function setDirty(on){DIRTY=on;$('#saveBar').classList.toggle('on',on)}
+document.addEventListener('input',e=>{const t=e.target;if(!DIRTY_PAGES.includes(CURP)||!t.closest('#content')||t.closest('.mod')||t.type==='file'||t.type==='search'||t.id==='dq'||t.closest('[data-nodirty]'))return;setDirty(true)},true);
+document.addEventListener('change',e=>{const t=e.target;if(!DIRTY_PAGES.includes(CURP)||!t.closest('#content')||t.closest('.mod')||t.type==='file')return;if(t.matches('select,input[type=checkbox],input[type=radio],input[type=color],input[type=date],input[type=datetime-local]'))setDirty(true)},true);
+function findSave(){return [...$$('#pgActs button,#content button')].find(b=>/^(💾\s*)?שמירה|^שמירת הגדרות סליקה/.test(b.textContent.trim())&&!b.disabled&&b.offsetParent)}
+$('#sbSave').onclick=()=>{const b=findSave();if(b)b.click();else toast('לא נמצא כפתור שמירה בעמוד')};
+$('#sbUndo').onclick=()=>{setDirty(false);route()};
+addEventListener('beforeunload',e=>{if(DIRTY){e.preventDefault();e.returnValue=''}});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&DIRTY){e.preventDefault();$('#sbSave').click()}});
+function rspTables(root){(root||document).querySelectorAll('#content table.tbl:not(.rsp):not(#dtbl)').forEach(t=>{const rows=[...t.rows];if(!rows.length||!rows[0].querySelector('th'))return;const hs=[...rows[0].cells].map(c=>c.textContent.trim());rows[0].classList.add('hd');rows.slice(1).forEach(r=>[...r.cells].forEach((c,i)=>c.setAttribute('data-l',hs[i]&&hs[i]!=='#'?hs[i]:'')));t.classList.add('rsp')})}
+new MutationObserver(()=>rspTables()).observe(document.getElementById('content')||document.body,{childList:true,subtree:true});
+let CLIST=null;async function campSwitch(){if(U?.sub===undefined&&!U)return;try{if(!CLIST)CLIST=await api('/campaigns')}catch{return}const el=$('#campName');if(!C||CLIST.length<2){el.textContent=C?C.title:'';return}const cur=(location.hash.split('/')[3]||'overview').split('?')[0];
+  el.innerHTML=`<select class="csw" aria-label="מעבר בין קמפיינים">${CLIST.map(c=>`<option value="${c.id}" ${c.id===C.id?'selected':''}>${esc(c.title)}</option>`).join('')}</select>`;el.querySelector('select').onchange=e=>{location.hash=`#/c/${e.target.value}/${cur}`}}
+addEventListener('hashchange',()=>{if(DIRTY&&location.hash!==LASTHASH){if(!confirm('יש שינויים שלא נשמרו. לצאת בלי לשמור?')){history.replaceState(null,'',LASTHASH);return}setDirty(false)}LASTHASH=location.hash;route()});
 function drawer(on){$('#side').classList.toggle('open',on);$('#bk').classList.toggle('on',on)}
 const TABPERM={basic:'edit',design:'edit',levels:'edit',settings:'edit',donations:'donations',teams:'teams',messages:'messages',payment:'_owner'};
 const tabOk=k=>!U||!U.sub||!TABPERM[k]||!!U.sub[TABPERM[k]];
 const SHORT={overview:'סקירה',basic:'פרטים',design:'עיצוב',levels:'כפתורים',settings:'הגדרות',donations:'תרומות',teams:'שגרירים',payment:'סליקה',messages:'הודעות',share:'שיתוף'};
-async function route(){const h=(location.hash||'#/').slice(2);const [a,b,c]=h.split('?')[0].split('/');drawer(false);$$('aside a[data-p]').forEach(x=>x.classList.remove('on'));scrollTo(0,0);
-  if(a==='c'&&b){if(!C||C.id!=+b)C=await api('/campaigns/'+b);$('#campNav').hidden=false;$('#campName').textContent=C.title;$$('#campNav a').forEach(x=>{x.href=`#/c/${C.id}/${x.dataset.p.split('/')[1]}`;x.classList.toggle('on',x.dataset.p==='c/'+(c||'overview'))});
+async function route(){const h=(location.hash||'#/').slice(2);const [a,b,c]=h.split('?')[0].split('/');CURP=a==='c'?(c||'overview'):(a||'home');setDirty(false);LASTHASH=location.hash;drawer(false);$$('aside a[data-p]').forEach(x=>x.classList.remove('on'));scrollTo(0,0);
+  if(a==='c'&&b){if(!C||C.id!=+b)C=await api('/campaigns/'+b);$('#campNav').hidden=false;$('#campName').textContent=C.title;campSwitch();$$('#campNav a').forEach(x=>{x.href=`#/c/${C.id}/${x.dataset.p.split('/')[1]}`;x.classList.toggle('on',x.dataset.p==='c/'+(c||'overview'))});
     const cur=tabOk(c||'overview')?(c||'overview'):'overview';$('#ctabs').hidden=false;$('#ctabs').innerHTML=$$('#campNav a').filter(x=>!x.hidden).map(x=>{const k=x.dataset.p.split('/')[1];return `<a href="#/c/${C.id}/${k}" class="${k===cur?'on':''}">${x.querySelector('svg').outerHTML}${SHORT[k]||k}</a>`}).join('');const on=$('#ctabs a.on');if(on)on.scrollIntoView({inline:'center',block:'nearest'});
     return Promise.resolve((pages['c_'+cur]||pages.c_overview)()).then(()=>tourAuto(pages['c_'+cur]?cur:'overview'))}
   $('#ctabs').hidden=true;$('#campNav').hidden=true;C=null;if(es){es.close();es=null}const p=a||'home';$$(`aside a[data-p="${p}"]`).forEach(x=>x.classList.add('on'));Promise.resolve((pages[p]||pages.home)()).then(()=>tourAuto(pages[p]?p:'home'))}
@@ -639,7 +673,7 @@ pages.account=async()=>{if(U.sub)return subAccount();setTop('העמותה והח
       <div id="orgRes" class="vres">${U.org_name?`<div class="vorg"><b>${esc(U.org_name)}</b><span>${esc(U.org_status||'')}</span></div>`:''}</div>
       <div class="vsteps"><div><b>1</b>מזינים מספר</div><div><b>2</b>בודקים ברשם</div><div><b>3</b>פותחים קמפיין</div></div>
     </div></div>
-  <div class="card"><h3>פרטי החשבון</h3><div class="grid"><label>שם<input id="aName" value="${esc(U.name||'')}"></label><label>שם העמותה (לתצוגה)<input id="aOrg" value="${esc(U.org||'')}"></label><label>טלפון<input id="aPhone" value="${esc(U.phone||'')}" dir="ltr"></label><label>סיסמה חדשה (לא חובה)<input id="aPass" type="password"></label><button class="b p" id="aSave">שמירה</button></div></div></div>`;
+  <div class="card"><h3>פרטי החשבון</h3><div class="grid"><label>שם<input id="aName" value="${esc(U.name||'')}"></label><label>שם העמותה (לתצוגה)<input id="aOrg" value="${esc(U.org||'')}"></label><label>טלפון<input id="aPhone" value="${esc(U.phone||'')}" dir="ltr"></label><button class="b p" id="aSave">שמירה</button></div></div></div>`;
   const go=async()=>{const n=$('#orgNum').value.replace(/\D/g,'');if(n.length!==9||n[0]!=='5'){$('#orgRes').innerHTML='<div class="err">מספר עמותה הוא 9 ספרות ומתחיל ב-5 (למשל 580123456)</div>';return}
     const b=$('#orgGo');b.disabled=true;b.textContent='בודקים…';$('#orgRes').innerHTML='<div class="muted small vwait">מתחברים לרשם העמותות…</div>';
     try{const r=await api('/verify-org',{method:'POST',body:{number:n}});
@@ -647,7 +681,7 @@ pages.account=async()=>{if(U.sub)return subAccount();setTop('העמותה והח
       const {user}=await api('/me');U=user;$('#uOrg').textContent=U.org_name||U.org||'';if(r.verified)setTimeout(pages.account,2500)}
     catch(e){$('#orgRes').innerHTML=`<div class="err">${esc(e.message)}</div>`}finally{b.disabled=false;b.textContent='בדיקה ואימות'}};
   $('#orgGo').onclick=go;$('#orgNum').onkeydown=e=>{if(e.key==='Enter')go()};
-  $('#aSave').onclick=async()=>{await api('/me',{method:'PUT',body:{name:$('#aName').value,org:$('#aOrg').value,phone:$('#aPhone').value,password:$('#aPass').value}});toast('נשמר');boot()};
+  $('#aSave').onclick=async()=>{await api('/me',{method:'PUT',body:{name:$('#aName').value,org:$('#aOrg').value,phone:$('#aPhone').value}});toast('נשמר');boot()};
 };
 
 // ---- campaign: overview ----
@@ -832,7 +866,7 @@ async function editDon(id){const d=await api(`/campaigns/${C.id}/donations/${id}
 
 // ---- campaign: teams ----
 pages.c_teams=async()=>{C=await api('/campaigns/'+C.id);setTop('שגרירים',C.title,`<a class="b" href="/api/campaigns/${C.id}/teams.xlsx">⬇ ייצוא לאקסל</a><button class="b p" onclick="teamForm()">+ שגריר</button>`);const cur=SYM[C.currency];
-  $('#content').innerHTML=`<div class="card" style="margin-bottom:14px"><b>איך זה עובד</b><div class="small muted">לכל שגריר יש קישור אישי, יעד, דירוג ו<b>אזור אישי</b> (👤) שבו הוא רואה את ההתקדמות, מי תרם דרכו, והודעה מוכנה לשיתוף. כל תורם מוזמן להפוך לשגריר בלחיצה אחת במסך התודה, ושגרירים מקבלים עדכון על כל תרומה דרכם.</div></div>
+  $('#content').innerHTML=`<div class="card" style="margin-bottom:14px"><b>איך זה עובד</b><div class="small muted">לכל שגריר יש קישור אישי לדף משלו בקמפיין (👤), שבו רואים את היעד שלו, כמה גייס ומי תרם דרכו. עמודת <b>כניסות</b> מופיעה רק לכם. כל תורם מוזמן להפוך לשגריר בלחיצה אחת במסך התודה, ושגרירים מקבלים עדכון על כל תרומה דרכם.</div></div>
   ${C.teamStats.length?`<div class="tblwrap"><table class="tbl"><tr><th>#</th><th>שגריר</th><th>קישור אישי</th><th>כניסות</th><th>תרומות</th><th>סכום</th><th>יעד</th><th></th></tr>${C.teamStats.map((t,i)=>{const url=`${location.origin}/c/${C.slug}/${t.slug}`;const tm=C.teams.find(x=>x.id===t.id);return `<tr><td>${i+1}</td><td><b>${esc(t.name)}</b><div class="small muted">${esc(tm.phone||'')}</div></td><td><div class="copy" style="max-width:260px"><span>${url}</span><button class="b s" onclick="navigator.clipboard.writeText('${url}');toast('הועתק')">העתק</button></div></td><td>${(tm&&tm.visits)||0}</td><td>${t.n}</td><td class="amt">${cur}${fmt(t.total)}</td><td>${t.goal?cur+fmt(t.goal)+' · '+Math.round(t.total/t.goal*100)+'%':'—'}</td><td><div class="acts">${tm.phone?`<a class="b s g" target="_blank" href="https://wa.me/${tm.phone.replace(/\\D/g,'').replace(/^0/,'972')}?text=${encodeURIComponent('היי '+t.name.split(' ')[0]+' 🙌\\nזה הקישור האישי שלך לקמפיין "'+C.title+'" – כל תרומה דרכו נזקפת לזכותך:\\n'+url+'\\n\\nבדף רואים את היעד שלך, כמה גייסת ומי תרם דרכך.')}">וואטסאפ</a>`:''}<a class="b s" target="_blank" href="/c/${C.slug}/${t.slug}" title="דף השגריר בקמפיין">👤</a><button class="b s" onclick='teamForm(${JSON.stringify(tm).replace(/'/g,"&#39;")})'>✎</button><button class="b s r" onclick="delTeam(${t.id})">✕</button></div></td></tr>`}).join('')}</table></div>`:'<div class="card empty"><b>אין שגרירים עדיין</b>הוסיפו שגרירים כדי שכל אחד יגייס מהחברים שלו עם דף אישי.</div>'}`};
 function teamForm(t={}){modal(`<h3>${t.id?'עריכת שגריר':'שגריר חדש'}</h3><div class="grid"><label>שם<input id="tName" value="${esc(t.name||'')}"></label><div class="row"><label>יעד אישי (₪)<input id="tGoal" type="number" value="${t.goal||''}"></label><label>טלפון (לשליחת הקישור)<input id="tPhone" value="${esc(t.phone||'')}" dir="ltr"></label></div><label>אימייל (למיילים לשגרירים)<input id="tEmail" type="email" value="${esc(t.email||'')}" dir="ltr"></label><label>משפט אישי<input id="tDescr" value="${esc(t.descr||'')}" placeholder="למשל: עזרו לי להגיע ליעד לכבוד…"></label><label>תמונה<div class="up"><input type="file" accept="image/*" id="tPhotoF">${t.photo?`<img src="${esc(t.photo)}">`:'לחצו להעלאת תמונה'}</div><input type="hidden" id="tPhoto" value="${esc(t.photo||'')}"></label><div class="row"><button class="b p" id="tGo">שמירה</button><button class="b" onclick="closeModal()">ביטול</button></div></div>`);
   $('#tPhotoF').onchange=async e=>{const fd=new FormData();fd.append('file',e.target.files[0]);const r=await api('/upload',{method:'POST',body:fd});$('#tPhoto').value=r.url;toast('הועלה')};
