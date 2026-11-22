@@ -108,7 +108,7 @@ const user = req => {
 const PERM_KEYS = ['edit', 'donations', 'teams', 'messages'];
 const subPerms = s => { const o = J(s); return { camps: Array.isArray(o.camps) ? o.camps.map(Number).filter(Boolean) : 'all', ...Object.fromEntries(PERM_KEYS.map(k => [k, !!o[k]])) }; };
 const SUB_RULES = [
-  ['GET', /^\/api\/campaigns$/, ''], ['GET', /^\/api\/campaigns\/\d+$/, ''], ['PUT', /^\/api\/campaigns\/\d+$/, 'edit'],
+  ['GET', /^\/api\/campaigns$/, ''], ['GET', /^\/api\/home$/, ''], ['GET', /^\/api\/campaigns\/\d+$/, ''], ['PUT', /^\/api\/campaigns\/\d+$/, 'edit'],
   ['GET', /^\/api\/campaigns\/\d+\/(channels|updates)$/, ''],
   ['POST|DELETE', /^\/api\/campaigns\/\d+\/updates(\/\d+)?$/, 'messages'],
   ['GET', /^\/api\/campaigns\/\d+\/donations$/, ''],
@@ -409,6 +409,26 @@ app.use('/u', SANDBOX, express.static(path.join(DATA_DIR, 'uploads'), { maxAge: 
 
 // ---------- campaigns (owner) ----------
 const campaignOut = c => ({ ...c, settings: J(c.settings), provider: provMask(PV_(c.provider)), lastPaid: (db.prepare("SELECT paid_at FROM donations WHERE campaign_id=? AND status='paid' AND test=0 ORDER BY paid_at DESC LIMIT 1").get(c.id) || {}).paid_at || null, levels: db.prepare('SELECT * FROM levels WHERE campaign_id=? ORDER BY pos,id').all(c.id), teams: db.prepare('SELECT * FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id).map(t => ({ ...t, key: teamKey(t) })), matchers: db.prepare('SELECT * FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id) });
+// ---- NGO home: everything happening across all my campaigns, at a glance ----
+app.get('/api/home', auth, (req, res) => {
+  const camps = db.prepare('SELECT * FROM campaigns WHERE user_id=? ORDER BY id DESC').all(req.user.oid).filter(c => !req.user.sub || req.user.sub.camps === 'all' || req.user.sub.camps.includes(c.id));
+  const names = !req.user.sub || req.user.sub.donations; const now = Date.now();
+  const H = Array(24).fill(0); let hour = { n: 0, s: 0 }, day = { n: 0, s: 0 }, total = 0, donors = 0, pending = 0; const feed = []; const ending = [];
+  const out = camps.map(c => {
+    const test = isTest(c) ? 1 : 0; const st = stats(c, test); total += st.total; donors += st.count;
+    const rows = db.prepare("SELECT d.id,d.name,d.anonymous,d.amount,d.dedication,d.paid_at,d.created,d.monthly,t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.campaign_id=? AND d.status='paid' AND d.test=? AND COALESCE(d.paid_at,d.created) > datetime('now','-1 day') ORDER BY d.id DESC").all(c.id, test);
+    let cd = { n: 0, s: 0 }, ch = { n: 0, s: 0 };
+    for (const d of rows) { const t = Date.parse((d.paid_at || d.created).replace(' ', 'T') + 'Z'); const ago = now - t; cd.n++; cd.s += d.amount; if (ago < 36e5) { ch.n++; ch.s += d.amount; } const hi = 23 - Math.min(23, Math.floor(ago / 36e5)); H[hi] += d.amount; }
+    day.n += cd.n; day.s += cd.s; hour.n += ch.n; hour.s += ch.s;
+    for (const d of db.prepare("SELECT d.id,d.name,d.anonymous,d.amount,d.dedication,d.paid_at,d.created,d.monthly,t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.campaign_id=? AND d.status='paid' AND d.test=? ORDER BY COALESCE(d.paid_at,d.created) DESC LIMIT 12").all(c.id, test))
+      feed.push({ id: d.id, cid: c.id, ctitle: c.title, name: names ? (d.anonymous ? '' : d.name) : '', anonymous: !!d.anonymous, amount: d.amount, dedication: names ? (d.dedication || '') : '', team: d.team || '', monthly: !!d.monthly, at: d.paid_at || d.created, test: !!test });
+    if (c.status === 'live') { const p = db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='pending' AND test=0 AND created > datetime('now','-2 day') AND created < datetime('now','-10 minutes')").get(c.id).n; pending += p;
+      const end = c.end_at ? Date.parse((ilToUtc(c.end_at) || '').replace(' ', 'T') + 'Z') : 0; if (end && end > now && end - now < 48 * 36e5) ending.push({ id: c.id, title: c.title, hours: Math.round((end - now) / 36e5) }); }
+    return { id: c.id, slug: c.slug, title: c.title, status: c.status, goal: c.goal, cover: c.cover || ((J(c.settings).media?.default?.desktop || [])[0]) || '', end_at: c.end_at, currency: c.currency, test: !!test, stats: st, today: cd, hour: ch, ended: isEnded(c) };
+  });
+  feed.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  res.json({ campaigns: out, hour, day, total, donors, hourly: H, feed: feed.slice(0, 15), pending, ending, anyLive: camps.some(c => c.status === 'live'), names });
+});
 app.get('/api/campaigns', auth, (req, res) => {
   const rows = req.user.role === 'admin' && req.query.all ? db.prepare('SELECT c.*, u.email owner FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC').all() : db.prepare('SELECT * FROM campaigns WHERE user_id=? ORDER BY id DESC').all(req.user.oid).filter(c => !req.user.sub || req.user.sub.camps === 'all' || req.user.sub.camps.includes(c.id));
   res.json(rows.map(c => ({ id: c.id, slug: c.slug, title: c.title, status: c.status, goal: c.goal, multiplier: c.multiplier, end_at: c.end_at, cover: c.cover, owner: c.owner, stats: stats(c, isTest(c)) })));
