@@ -1250,6 +1250,17 @@ const pub = f => path.join(__dirname, 'public', f);
 // visits from Google Ads (auto-tagging adds gclid) are remembered for 30 days so signups can be attributed
 const adSrc = q => q.gclid || q.gbraid || q.wbraid ? 'ads' : /^google$/i.test(q.utm_source || '') && /cpc|ppc|paid/i.test(q.utm_medium || '') ? 'ads' : '';
 app.use((req, res, next) => { if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html' || req.path === '/login.html' || req.path.startsWith('/c/'))) { const src = adSrc(req.query); if (src) { if (!req.cookies?.src) pageView(req, 'ads:visit'); res.cookie('src', src + ':' + new Date().toISOString().slice(0, 10), { maxAge: 30 * 864e5, httpOnly: true, sameSite: 'lax', secure: req.secure }); } if (req.path === '/' || req.path === '/index.html') pageView(req, 'home'); } next(); });
+// share preview image for a campaign: its share/cover image cropped to 1200×630 JPEG (WhatsApp/Facebook need a small raster image)
+const ogVer = c => { const sh = J(c.settings).share || c.cover || ''; return require('crypto').createHash('md5').update(sh).digest('hex').slice(0, 8); };
+app.get('/og/c/:slug.jpg', async (req, res) => {
+  const c = getC(req.params.slug); if (!c) return res.sendFile(pub('og.jpg'));
+  const sh = J(c.settings).share || c.cover || ''; const local = /^\/u\/[\w.-]+$/.test(sh) ? path.join(DATA_DIR, 'uploads', path.basename(sh)) : null;
+  if (!local && /^https:\/\//.test(sh)) { let u = sh; try { const x = new URL(sh); if (x.hostname === 'images.unsplash.com') { for (const [k, v] of Object.entries({ w: '1200', h: '630', fit: 'crop', q: '80', fm: 'jpg' })) x.searchParams.set(k, v); x.searchParams.delete('crop'); u = x.toString(); } } catch { } return res.redirect(302, u); }
+  if (!local || !fs.existsSync(local)) return res.sendFile(pub('og.jpg'), { maxAge: '1h' });
+  const dir = path.join(DATA_DIR, 'og'); const out = path.join(dir, `${c.id}-${ogVer(c)}.jpg`);
+  try { if (!fs.existsSync(out)) { fs.mkdirSync(dir, { recursive: true }); await require('sharp')(local).rotate().resize(1200, 630, { fit: 'cover', position: 'attention' }).jpeg({ quality: 80, mozjpeg: true }).toFile(out); } res.setHeader('Cache-Control', 'public, max-age=86400'); res.type('jpg').sendFile(out); }
+  catch (e) { console.error('og', e.message); res.sendFile(pub('og.jpg')); }
+});
 app.use(express.static(pub(''), { maxAge: '1h', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.get('/c/:slug/screen', (_, res) => res.sendFile(pub('screen.html')));
 app.get('/c/:slug/widget', (_, res) => res.sendFile(pub('widget.html')));
@@ -1259,11 +1270,11 @@ app.get(['/c/:slug', '/c/:slug/:team'], (req, res) => {
   pageView(req, 'c:' + c.id);
   let html = cHtml();
   const esc = s => String(s || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  const sh = J(c.settings).share || c.cover; const img = sh ? (sh.startsWith('http') ? sh : base(req) + sh) : base(req) + '/icon.svg';
+  const img = `${base(req)}/og/c/${encodeURIComponent(c.slug)}.jpg?v=${ogVer(c)}`;
   const st = J(c.settings); const langs = st.langs && st.langs.length ? st.langs : [c.lang || 'he'];
   let auto = c.lang || 'he'; if (st.autoLang !== false) { const al = String(req.headers['accept-language'] || '').toLowerCase().split(',').map(x => x.split(';')[0].trim().slice(0, 2)); const hit = al.find(l => langs.includes(l)); if (hit) auto = hit; } if (!/^[a-z]{2}$/.test(auto)) auto = 'he';
   html = html.replace('<html lang="he" dir="rtl">', `<html lang="he" dir="rtl" data-auto-lang="${auto}">`);
-  html = html.replace('<!--META-->', `<title>${esc(c.title)}</title><meta name="description" content="${esc(c.subtitle)}"><meta property="og:title" content="${esc(c.title)}"><meta property="og:description" content="${esc(c.subtitle)}"><meta property="og:image" content="${esc(img)}"><meta property="og:type" content="website"><meta name="theme-color" content="${esc(c.color)}">`).replace('<html lang="he" dir="rtl">', `<html lang="${c.lang}" dir="${c.lang === 'en' ? 'ltr' : 'rtl'}" data-auto-lang="${auto}">`);
+  html = html.replace('<!--META-->', `<title>${esc(c.title)}</title><meta name="description" content="${esc(c.subtitle || 'הצטרפו לקמפיין – כל תרומה מקרבת אותנו ליעד')}"><meta property="og:title" content="${esc(c.title)}"><meta property="og:description" content="${esc(c.subtitle || 'הצטרפו לקמפיין – כל תרומה מקרבת אותנו ליעד')}"><meta property="og:image" content="${esc(img)}"><meta property="og:image:secure_url" content="${esc(img)}"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:url" content="${esc(base(req) + '/c/' + c.slug)}"><meta property="og:site_name" content="GiveIL"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(img)}"><meta property="og:type" content="website"><meta name="theme-color" content="${esc(c.color)}">`).replace('<html lang="he" dir="rtl">', `<html lang="${c.lang}" dir="${c.lang === 'en' ? 'ltr' : 'rtl'}" data-auto-lang="${auto}">`);
   res.setHeader('Cache-Control', 'no-cache'); res.send(html);
 });
 app.get(['/app', '/app/*'], (_, res) => res.sendFile(pub('app.html')));
