@@ -557,7 +557,9 @@ app.get('/api/admin/live', auth, adm, (req, res) => {
       warns: q1("SELECT COUNT(*) n FROM events WHERE level='warn' AND at>=datetime('now','-1 day')").n
     },
     ads: (() => { const since = '2026-11-21'; const pv = k => q1("SELECT COALESCE(SUM(n),0) n FROM pv WHERE k=? AND day>=?", k, since).n; const users = db.prepare("SELECT user_id FROM events WHERE type='user.signup' AND json_extract(meta,'$.src')='ads' AND at>=?").all(since).map(r => r.user_id).filter(Boolean); const inList = users.length ? users.join(',') : '0'; return { since, visits: pv('ads:visit'), signups: pv('ads:signup'), campaigns: q1(`SELECT COUNT(*) n FROM campaigns WHERE user_id IN (${inList})`).n, live: q1(`SELECT COUNT(*) n FROM campaigns WHERE status IN ('live','ended') AND user_id IN (${inList})`).n, list: db.prepare(`SELECT u.email, COALESCE(u.org_name,u.org) org, u.created FROM users u WHERE u.id IN (${inList}) ORDER BY u.id DESC LIMIT 20`).all() }; })(),
-    views7: db.prepare("SELECT day, SUM(n) n FROM pv WHERE day>=date('now','-13 day') GROUP BY day ORDER BY day").all(),
+    views7: db.prepare("SELECT day, SUM(n) n FROM pv WHERE day>=date('now','-13 day') AND k NOT LIKE 'src:%' AND k NOT LIKE 'ads:%' GROUP BY day ORDER BY day").all(),
+    sources: db.prepare("SELECT substr(k,5) src, SUM(n) n, SUM(CASE WHEN day=date('now') THEN n ELSE 0 END) today FROM pv WHERE k LIKE 'src:%' AND k!='src:internal' AND day>=date('now','-13 day') GROUP BY k ORDER BY n DESC LIMIT 15").all(),
+    homeToday: (db.prepare("SELECT COALESCE(SUM(n),0) n FROM pv WHERE k='home' AND day=date('now')").get() || {}).n,
     online: db.prepare("SELECT id,email,name,org_name,org,role,last_seen,last_ip FROM users WHERE last_seen>=datetime('now','-15 minute') ORDER BY last_seen DESC LIMIT 50").all(),
     viewers,
     todo: {
@@ -1247,9 +1249,17 @@ app.post('/api/assist', auth, limit(60, 60000), (req, res) => {
 
 // ---------- pages ----------
 const pub = f => path.join(__dirname, 'public', f);
+// where a visit came from (shown to the super-admin): ads / facebook / google / whatsapp / direct / other site
+function visitSource(req) {
+  const q = req.query || {}; if (adSrc(q)) return 'ads'; if (q.fbclid || /facebook|fb\b|instagram/i.test(q.utm_source || '')) return 'facebook'; if (/whatsapp/i.test(q.utm_source || '')) return 'whatsapp';
+  let h = ''; try { h = new URL(req.get('referer') || '').hostname.replace(/^www\./, ''); } catch { }
+  if (!h) return 'direct'; if (h === req.hostname || h.endsWith('giveil.com')) return 'internal';
+  if (/facebook|fb\.|instagram/.test(h)) return 'facebook'; if (/whatsapp|wa\.me/.test(h)) return 'whatsapp'; if (/google\./.test(h)) return 'google'; if (/bing|duckduckgo|yahoo/.test(h)) return 'search';
+  if (/linkedin|lnkd/.test(h)) return 'linkedin'; if (/t\.co$|twitter|x\.com/.test(h)) return 'twitter'; if (/t\.me|telegram/.test(h)) return 'telegram'; return 'site:' + h.slice(0, 40);
+}
 // visits from Google Ads (auto-tagging adds gclid) are remembered for 30 days so signups can be attributed
 const adSrc = q => q.gclid || q.gbraid || q.wbraid ? 'ads' : /^google$/i.test(q.utm_source || '') && /cpc|ppc|paid/i.test(q.utm_medium || '') ? 'ads' : '';
-app.use((req, res, next) => { if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html' || req.path === '/login.html' || req.path.startsWith('/c/'))) { const src = adSrc(req.query); if (src) { if (!req.cookies?.src) pageView(req, 'ads:visit'); res.cookie('src', src + ':' + new Date().toISOString().slice(0, 10), { maxAge: 30 * 864e5, httpOnly: true, sameSite: 'lax', secure: req.secure }); } if (req.path === '/' || req.path === '/index.html') pageView(req, 'home'); } next(); });
+app.use((req, res, next) => { if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html' || req.path === '/login.html' || req.path.startsWith('/c/'))) { const src = adSrc(req.query); if (src) { if (!req.cookies?.src) pageView(req, 'ads:visit'); res.cookie('src', src + ':' + new Date().toISOString().slice(0, 10), { maxAge: 30 * 864e5, httpOnly: true, sameSite: 'lax', secure: req.secure }); } if (req.path === '/' || req.path === '/index.html') pageView(req, 'home'); pageView(req, 'src:' + visitSource(req)); } next(); });
 // share preview image for a campaign: its share/cover image cropped to 1200×630 JPEG (WhatsApp/Facebook need a small raster image)
 const ogVer = c => { const sh = J(c.settings).share || c.cover || ''; return require('crypto').createHash('md5').update(sh).digest('hex').slice(0, 8); };
 app.get('/og/c/:slug.jpg', async (req, res) => {
