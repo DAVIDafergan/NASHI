@@ -20,7 +20,7 @@
 .kb .qt{font-family:Fredoka,sans-serif;font-weight:500;font-size:calc(10.5*var(--u));color:#d4b06a;text-align:center;line-height:1.35;padding:0 calc(6*var(--u))}
 .kb .slot{position:absolute;left:50%;top:50%;width:calc(100*var(--u));height:calc(13*var(--u));margin:calc(-6.5*var(--u)) 0 0 calc(-50*var(--u));border-radius:calc(4*var(--u));background:#03050f;box-shadow:inset 0 calc(3*var(--u)) calc(4*var(--u)) #000,0 0 0 calc(2*var(--u)) #c9a35c,0 0 0 calc(3.5*var(--u)) rgba(0,0,0,.4)}
 /* falling shekel – real 3D coin inside the box space, drops edge-first through the slot */
-.kb .cn3{position:absolute;left:50%;top:0;width:calc(54*var(--u));height:calc(54*var(--u));margin:calc(-27*var(--u)) 0 0 calc(-27*var(--u));transform-style:preserve-3d;animation:cdrop 4.6s infinite;pointer-events:none}
+.kb .cn3{position:absolute;left:50%;top:0;width:calc(64*var(--u));height:calc(64*var(--u));margin:calc(-32*var(--u)) 0 0 calc(-32*var(--u));transform-style:preserve-3d;animation:cdrop 4.6s infinite;pointer-events:none}
 .kb .cn3 i{position:absolute;inset:0;border-radius:50%;background:linear-gradient(90deg,#6f747b,#c9ced4 50%,#6f747b)}
 .kb .cn3 i:nth-child(1){transform:translateZ(calc(-3*var(--u)))}.kb .cn3 i:nth-child(2){transform:translateZ(calc(-1.5*var(--u)))}.kb .cn3 i:nth-child(3){transform:translateZ(0)}.kb .cn3 i:nth-child(4){transform:translateZ(calc(1.5*var(--u)))}.kb .cn3 i:nth-child(5){transform:translateZ(calc(3*var(--u)))}
 .kb .cn3 b{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;align-content:center;font-family:Fredoka,sans-serif;color:#5d6268;background:radial-gradient(circle at 34% 28%,#fbfcfd,#d3d7dc 38%,#a4a9b0 72%,#858a91);box-shadow:inset 0 0 0 calc(2.2*var(--u)) #9aa0a7,inset 0 0 0 calc(3.4*var(--u)) #e9ecef;backface-visibility:hidden}
@@ -36,3 +36,13 @@
 .jig{transform-style:preserve-3d;animation:jig 4.6s infinite}
 @keyframes jig{0%,74%,100%{transform:none}77%{transform:translateY(calc(3*var(--u,1px))) scale(1.012,.985)}81%{transform:translateY(calc(-1*var(--u,1px)))}85%{transform:none}}
 .kb .cn3 b.cf{background:url(/shekel-front.png) center/cover;box-shadow:none}.kb .cn3 b.cb{background:url(/shekel-back.png) center/cover;box-shadow:none}.kb .cn3 b *{display:none}
+
+/* ---- realism: light, sheen, gold foil ---- */
+.kb .fr::after,.kb .rt::after,.kb .lt::after,.kb .bk::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(100deg,rgba(255,255,255,.13) 0%,rgba(255,255,255,.04) 22%,transparent 45%,transparent 70%,rgba(0,0,0,.28) 100%),linear-gradient(180deg,rgba(255,255,255,.07),transparent 18%,transparent 78%,rgba(0,0,0,.35))}
+.kb .cs::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.07),transparent 18%,transparent 78%,rgba(0,0,0,.35))}
+.kb .tp::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.16),transparent 45%,rgba(0,0,0,.18))}
+.kb .lg{filter:drop-shadow(0 calc(-.6*var(--u)) 0 rgba(255,236,190,.45)) drop-shadow(0 calc(1.6*var(--u)) calc(1.2*var(--u)) rgba(0,0,0,.75)) drop-shadow(0 0 calc(10*var(--u)) rgba(212,176,106,.18))}
+.kb .nn{background:linear-gradient(180deg,#f7e4ad,#c99a4b 55%,#f1d690);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 calc(1*var(--u)) calc(.8*var(--u)) rgba(0,0,0,.7))}
+.kb .slot{background:linear-gradient(180deg,#000,#0a0f2a);box-shadow:inset 0 calc(3*var(--u)) calc(5*var(--u)) #000,0 0 0 calc(1.6*var(--u)) #f0d38f,0 0 0 calc(3*var(--u)) #9c7535,0 calc(1.5*var(--u)) calc(3*var(--u)) calc(3*var(--u)) rgba(0,0,0,.45)}
+/* a coin resting half-way into the slot (still images / posts) */
+.kb.still .cn3{animation:none;opacity:1;transform:translateY(calc(-20*var(--u)))}
