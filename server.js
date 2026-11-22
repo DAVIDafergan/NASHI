@@ -38,6 +38,21 @@ const verify = t => { if (!t || typeof t !== 'string') return null; const [p, s]
 const hashPw = pw => { const salt = crypto.randomBytes(16).toString('hex'); return salt + ':' + crypto.scryptSync(pw, salt, 32).toString('hex'); };
 const checkPw = (pw, h) => { const [salt, k] = (h || '').split(':'); if (!salt || !k || k.length !== 64) return false; try { return crypto.timingSafeEqual(Buffer.from(k, 'hex'), crypto.scryptSync(pw, salt, 32)); } catch { return false; } };
 const J = s => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
+// ---------- processor secrets: AES-256-GCM at rest, only last 4 chars ever leave the server ----------
+const DATA_KEYS = (() => { const ks = []; if (process.env.DATA_KEY) ks.push(crypto.createHash('sha256').update(process.env.DATA_KEY).digest()); const f = path.join(DATA_DIR, 'data.key'); let fk; try { fk = Buffer.from(fs.readFileSync(f, 'utf8').trim(), 'hex'); } catch { } if (!fk || fk.length !== 32) { fk = crypto.randomBytes(32); try { fs.writeFileSync(f, fk.toString('hex'), { mode: 0o600 }); } catch { } } ks.push(fk); return ks; })();
+const ENC = 'enc1:';
+const encS = v => { const iv = crypto.randomBytes(12), ci = crypto.createCipheriv('aes-256-gcm', DATA_KEYS[0], iv); const e = Buffer.concat([ci.update(String(v), 'utf8'), ci.final()]); return ENC + Buffer.concat([iv, ci.getAuthTag(), e]).toString('base64'); };
+const decS = v => { if (typeof v !== 'string' || !v.startsWith(ENC)) return v; const b = Buffer.from(v.slice(ENC.length), 'base64'); for (const k of DATA_KEYS) { try { const d = crypto.createDecipheriv('aes-256-gcm', k, b.subarray(0, 12)); d.setAuthTag(b.subarray(12, 28)); return Buffer.concat([d.update(b.subarray(28)), d.final()]).toString('utf8'); } catch { } } return ''; };
+const SECRET_KEYS = new Set(['apiPassword', 'apiKey', 'secretKey', 'secret', 'password', 'key', 'passp', 'token', 'sellerId', 'apiSecret', 'pw', ...Object.values(providers).flatMap(p => p.fields || []).filter(f => f.secret).map(f => f.k)]);
+const MASK = '••••';
+const isMasked = v => typeof v === 'string' && v.startsWith(MASK);
+// read: decrypted provider config (used everywhere the server talks to a processor)
+const PV_ = s => { const o = J(s); for (const k of Object.keys(o)) if (SECRET_KEYS.has(k)) o[k] = decS(o[k]); return o; };
+// write: encrypt secret fields
+const provEnc = o => { const r = { ...(o || {}) }; for (const k of Object.keys(r)) if (SECRET_KEYS.has(k) && r[k] && !String(r[k]).startsWith(ENC)) r[k] = encS(r[k]); return JSON.stringify(r); };
+// out: mask secrets for the browser
+const provMask = o => { const r = { ...(o || {}) }; for (const k of Object.keys(r)) if (SECRET_KEYS.has(k) && r[k]) { const s = String(r[k]); r[k] = MASK + (s.length > 6 ? s.slice(-4) : ''); } return r; };
+try { const up = db.prepare('UPDATE campaigns SET provider=? WHERE id=?'); let n = 0; for (const r of db.prepare("SELECT id, provider FROM campaigns WHERE provider IS NOT NULL AND provider!='' AND provider!='{}'").all()) { const o = J(r.provider); if (Object.keys(o).some(k => SECRET_KEYS.has(k) && o[k] && !String(o[k]).startsWith(ENC))) { up.run(provEnc(o), r.id); n++; } } if (n) console.log('encrypted processor secrets in', n, 'campaigns'); } catch (e) { console.error('secret migration', e.message); }
 const slugify = s => { const t = String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40); return t.length >= 2 ? t : 'p-' + crypto.randomBytes(2).toString('hex'); };
 const base = req => process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 const bad = (res, m, c = 400) => res.status(c).json({ error: m });
@@ -134,7 +149,7 @@ const isTest = c => c.status !== 'live' && c.status !== 'ended';
 const isEnded = c => { if (c.status === 'ended') return true; if (c.status !== 'live' || !c.end_at) return false; const u = ilToUtc(c.end_at); return !!u && Date.parse(u.replace(' ', 'T') + 'Z') <= Date.now(); };
 // payment methods offered on the public page: main provider ("card") + optional app links (bit / paybox)
 function payMethods(c) {
-  const p = J(c.provider); const mainType = isTest(c) ? 'test' : (p.type || 'test'); const out = [{ k: 'card' }];
+  const p = PV_(c.provider); const mainType = isTest(c) ? 'test' : (p.type || 'test'); const out = [{ k: 'card' }];
   const can = providers[mainType]?.wallets || []; const on = p.wallets || {};
   for (const k of can) if (on[k]) out.push({ k });
   return out;
@@ -251,8 +266,8 @@ app.post('/api/admin/payments/:id', auth, admOnly, (req, res) => {
   if (st === 'approved' && mail.enabled()) { const u = db.prepare('SELECT email,name FROM users WHERE id=?').get(pay.user_id); const B = process.env.BASE_URL || ''; if (u) mail.send({ to: u.email, subject: 'התשלום אושר – אפשר לעלות לאוויר 🚀', html: mail.layout('התשלום אושר ✓', `<p>שלום ${mail.esc(u.name || '')}, התשלום התקבל ואושר. אפשר להעלות את הקמפיין לאוויר: <a href="${B}/app${pay.campaign_id ? '#/c/' + pay.campaign_id + '/overview' : ''}">כניסה לחשבון</a>.</p>`) }).catch(() => { }); }
   res.json({ ok: true });
 });
-app.get('/api/admin/providers', auth, admOnly, (_, res) => { const rows = db.prepare("SELECT c.id,c.title,c.slug,c.status,c.provider,c.settings,u.email,u.org_name,u.org,u.org_number,u.phone FROM campaigns c LEFT JOIN users u ON u.id=c.user_id WHERE c.settings LIKE '%providerReview%' ORDER BY c.id DESC LIMIT 100").all(); res.json(rows.map(r => { const st = J(r.settings), cfg = J(r.provider); return { id: r.id, title: r.title, slug: r.slug, status: r.status, email: r.email, org: r.org_name || r.org, orgNumber: r.org_number, phone: r.phone, provider: provSummary(cfg), review: st.providerReview, approved: st.providerOk === provFp(cfg) }; })); });
-app.post('/api/admin/campaigns/:id/provider', auth, admOnly, (req, res) => { const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404); const st = J(c.settings), cfg = J(c.provider); const ok = req.body?.status !== 'rejected'; st.providerOk = ok ? provFp(cfg) : ''; st.providerReview = { ...(st.providerReview || {}), fp: provFp(cfg), status: ok ? 'approved' : 'rejected', note: String(req.body?.note || '').slice(0, 300), by: new Date().toISOString() }; db.prepare('UPDATE campaigns SET settings=? WHERE id=?').run(JSON.stringify(st), c.id); const u = db.prepare('SELECT email,name FROM users WHERE id=?').get(c.user_id); if (mail.enabled() && u) mail.send({ to: u.email, subject: ok ? 'פרטי הסליקה אושרו – אפשר לעלות לאוויר' : 'פרטי הסליקה לא אושרו', html: mail.layout(ok ? 'הסליקה אושרה ✓' : 'נדרש תיקון בסליקה', ok ? `<p>שלום ${mail.esc(u.name || '')}, חשבון הסליקה של "${mail.esc(c.title)}" אומת. אפשר להעלות את הקמפיין לאוויר.</p>` : `<p>שלום ${mail.esc(u.name || '')}, לא הצלחנו לאמת שחשבון הסליקה שייך לעמותה${st.providerReview.note ? ': ' + mail.esc(st.providerReview.note) : ''}. נא לבדוק את הפרטים או לפנות אלינו.</p>`) }).catch(() => { }); ev(req, 'admin.provider', { cid: c.id, msg: `${c.title}: ${ok ? 'אושר' : 'נדחה'}` }); res.json({ ok: true }); });
+app.get('/api/admin/providers', auth, admOnly, (_, res) => { const rows = db.prepare("SELECT c.id,c.title,c.slug,c.status,c.provider,c.settings,u.email,u.org_name,u.org,u.org_number,u.phone FROM campaigns c LEFT JOIN users u ON u.id=c.user_id WHERE c.settings LIKE '%providerReview%' ORDER BY c.id DESC LIMIT 100").all(); res.json(rows.map(r => { const st = J(r.settings), cfg = PV_(r.provider); return { id: r.id, title: r.title, slug: r.slug, status: r.status, email: r.email, org: r.org_name || r.org, orgNumber: r.org_number, phone: r.phone, provider: provSummary(cfg), review: st.providerReview, approved: st.providerOk === provFp(cfg) }; })); });
+app.post('/api/admin/campaigns/:id/provider', auth, admOnly, (req, res) => { const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404); const st = J(c.settings), cfg = PV_(c.provider); const ok = req.body?.status !== 'rejected'; st.providerOk = ok ? provFp(cfg) : ''; st.providerReview = { ...(st.providerReview || {}), fp: provFp(cfg), status: ok ? 'approved' : 'rejected', note: String(req.body?.note || '').slice(0, 300), by: new Date().toISOString() }; db.prepare('UPDATE campaigns SET settings=? WHERE id=?').run(JSON.stringify(st), c.id); const u = db.prepare('SELECT email,name FROM users WHERE id=?').get(c.user_id); if (mail.enabled() && u) mail.send({ to: u.email, subject: ok ? 'פרטי הסליקה אושרו – אפשר לעלות לאוויר' : 'פרטי הסליקה לא אושרו', html: mail.layout(ok ? 'הסליקה אושרה ✓' : 'נדרש תיקון בסליקה', ok ? `<p>שלום ${mail.esc(u.name || '')}, חשבון הסליקה של "${mail.esc(c.title)}" אומת. אפשר להעלות את הקמפיין לאוויר.</p>` : `<p>שלום ${mail.esc(u.name || '')}, לא הצלחנו לאמת שחשבון הסליקה שייך לעמותה${st.providerReview.note ? ': ' + mail.esc(st.providerReview.note) : ''}. נא לבדוק את הפרטים או לפנות אלינו.</p>`) }).catch(() => { }); ev(req, 'admin.provider', { cid: c.id, msg: `${c.title}: ${ok ? 'אושר' : 'נדחה'}` }); res.json({ ok: true }); });
 app.post('/api/admin/campaigns/:id/paid', auth, admOnly, (req, res) => { db.prepare('UPDATE campaigns SET paid=? WHERE id=?').run(req.body?.paid ? 1 : 0, req.params.id); res.json({ ok: true }); });
 app.post('/api/admin/users/:id/plan', auth, admOnly, (req, res) => { const until = String(req.body?.until || '').slice(0, 10); if (until && !/^\d{4}-\d{2}-\d{2}$/.test(until)) return bad(res, 'תאריך לא תקין'); db.prepare('UPDATE users SET plan=?, plan_until=? WHERE id=?').run(until ? 'annual' : '', until, req.params.id); res.json({ ok: true }); });
 app.get('/api/admin/pricing', auth, admOnly, (_, res) => res.json(pricing()));
@@ -324,7 +339,7 @@ app.post('/api/upload', auth, limit(60, 600000), upload.single('file'), (req, re
 app.use('/u', SANDBOX, express.static(path.join(DATA_DIR, 'uploads'), { maxAge: '30d', immutable: true }));
 
 // ---------- campaigns (owner) ----------
-const campaignOut = c => ({ ...c, settings: J(c.settings), provider: { ...J(c.provider), _hasSecret: undefined }, lastPaid: (db.prepare("SELECT paid_at FROM donations WHERE campaign_id=? AND status='paid' AND test=0 ORDER BY paid_at DESC LIMIT 1").get(c.id) || {}).paid_at || null, levels: db.prepare('SELECT * FROM levels WHERE campaign_id=? ORDER BY pos,id').all(c.id), teams: db.prepare('SELECT * FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id).map(t => ({ ...t, key: teamKey(t) })), matchers: db.prepare('SELECT * FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id) });
+const campaignOut = c => ({ ...c, settings: J(c.settings), provider: provMask(PV_(c.provider)), lastPaid: (db.prepare("SELECT paid_at FROM donations WHERE campaign_id=? AND status='paid' AND test=0 ORDER BY paid_at DESC LIMIT 1").get(c.id) || {}).paid_at || null, levels: db.prepare('SELECT * FROM levels WHERE campaign_id=? ORDER BY pos,id').all(c.id), teams: db.prepare('SELECT * FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id).map(t => ({ ...t, key: teamKey(t) })), matchers: db.prepare('SELECT * FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id) });
 app.get('/api/campaigns', auth, (req, res) => {
   const rows = req.user.role === 'admin' && req.query.all ? db.prepare('SELECT c.*, u.email owner FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC').all() : db.prepare('SELECT * FROM campaigns WHERE user_id=? ORDER BY id DESC').all(req.user.id);
   res.json(rows.map(c => ({ id: c.id, slug: c.slug, title: c.title, status: c.status, goal: c.goal, multiplier: c.multiplier, end_at: c.end_at, cover: c.cover, owner: c.owner, stats: stats(c, isTest(c)) })));
@@ -353,8 +368,9 @@ const provSummary = cfg => Object.entries(cfg || {}).filter(([k, v]) => v && (PR
 app.put('/api/campaigns/:id', auth, own, (req, res) => {
   const b = req.body || {}; const c = req.c;
   if (req.user.role !== 'admin' && b.settings && typeof b.settings === 'object') { for (const k of ADMIN_KEYS) delete b.settings[k]; }
+  if (b.provider && typeof b.provider === 'object') { for (const k of Object.keys(b.provider)) if (isMasked(b.provider[k])) delete b.provider[k]; }
   if (b.provider && req.user.role !== 'admin') {
-    const cur = J(c.provider), next = { ...cur, ...b.provider };
+    const cur = PV_(c.provider), next = { ...cur, ...b.provider };
     if (provFp(next) !== provFp(cur) && next.type !== 'test') {
       if (c.status === 'live') return bad(res, 'מטעמי אבטחה אי אפשר לשנות פרטי סליקה בקמפיין שבאוויר. פנו אלינו ונעדכן יחד.');
       ev(req, 'provider.change', { level: 'warn', cid: c.id, msg: `${c.title}: ${provSummary(next)}` });
@@ -367,7 +383,7 @@ app.put('/api/campaigns/:id', auth, own, (req, res) => {
     goal: +(b.goal ?? c.goal) || 0, bonus_goal: +(b.bonus_goal ?? c.bonus_goal) || 0, currency: (b.currency ?? c.currency) === 'USD' ? 'USD' : 'ILS', multiplier: 1,
     start_at: b.start_at ?? c.start_at, end_at: b.end_at ?? c.end_at, cover: safeUrl(b.cover ?? c.cover), logo: safeUrl(b.logo ?? c.logo), video: safeUrl(b.video ?? c.video),
     color: /^#[0-9a-f]{6}$/i.test(b.color || '') ? b.color : c.color, lang: b.lang === 'en' ? 'en' : 'he',
-    settings: JSON.stringify({ ...J(c.settings), ...(b.settings || {}) }), provider: b.provider ? JSON.stringify({ ...J(c.provider), ...b.provider }) : c.provider
+    settings: JSON.stringify({ ...J(c.settings), ...(b.settings || {}) }), provider: b.provider ? provEnc({ ...PV_(c.provider), ...b.provider }) : c.provider
   };
   if (b.slug && b.slug !== c.slug) { const s = slugify(b.slug); if (db.prepare('SELECT 1 FROM campaigns WHERE slug=? AND id!=?').get(s, c.id)) return bad(res, 'הכתובת תפוסה'); f.slug = s; } else f.slug = c.slug;
   db.prepare('UPDATE campaigns SET title=@title,subtitle=@subtitle,story=@story,goal=@goal,bonus_goal=@bonus_goal,currency=@currency,multiplier=@multiplier,start_at=@start_at,end_at=@end_at,cover=@cover,logo=@logo,video=@video,color=@color,lang=@lang,settings=@settings,provider=@provider,slug=@slug WHERE id=@id').run({ ...f, id: c.id });
@@ -380,10 +396,10 @@ const NO_PAY_OK = c => c.slug === 'nyalchun' || /נחלים\s*מהלכים/.test
 app.post('/api/campaigns/:id/status', auth, own, (req, res) => {
   const s = req.body?.status; if (!['draft', 'test', 'live', 'ended'].includes(s)) return bad(res, 'status');
   const force = req.user.role === 'admin' && req.body?.force === true && NO_PAY_OK(req.c); // one specific campaign may go live without payments (donations closed)
-  if (s === 'live' && !force && (J(req.c.provider).type || 'test') === 'test') return bad(res, 'כדי לעלות לאוויר צריך לחבר ספק סליקה אמיתי');
-  if (s === 'live' && !force && J(req.c.provider).type === 'nedarim' && !J(req.c.provider).apiPassword) return bad(res, 'נדרים פלוס: חובה להזין ApiPassword לפני העלייה לאוויר – בלעדיו אי אפשר לאמת תרומות');
+  if (s === 'live' && !force && (PV_(req.c.provider).type || 'test') === 'test') return bad(res, 'כדי לעלות לאוויר צריך לחבר ספק סליקה אמיתי');
+  if (s === 'live' && !force && PV_(req.c.provider).type === 'nedarim' && !PV_(req.c.provider).apiPassword) return bad(res, 'נדרים פלוס: חובה להזין ApiPassword לפני העלייה לאוויר – בלעדיו אי אפשר לאמת תרומות');
   if (s === 'live' && req.user.role !== 'admin') { const u = db.prepare('SELECT email_verified FROM users WHERE id=?').get(req.user.id); if (mail.enabled() && !u.email_verified) return bad(res, 'כדי לעלות לאוויר יש לאמת את כתובת האימייל (בדקו את תיבת הדואר)'); const ct = db.prepare('SELECT status FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id); if (!ct || ct.status === 'rejected') return bad(res, 'כדי לעלות לאוויר יש לחתום על הסכם השימוש'); if (ct.status !== 'approved') return bad(res, 'ההסכם והמסמכים בבדיקה אצלנו (בדרך כלל עד יום עסקים). נעדכן במייל כשאפשר לעלות לאוויר.'); const uu = db.prepare('SELECT plan_until FROM users WHERE id=?').get(req.user.id); if (!req.c.paid && !planActive(uu)) return res.status(402).json({ error: 'כדי לעלות לאוויר יש להסדיר תשלום עבור הקמפיין', code: 'billing' }); }
-  if (s === 'live' && req.user.role !== 'admin') { const st = J(req.c.settings); if (st.providerOk !== provFp(J(req.c.provider))) return res.status(409).json({ error: 'פרטי הסליקה בבדיקה אצלנו: מוודאים שחשבון הסליקה רשום על שם העמותה. בדרך כלל עד יום עסקים, ונעדכן במייל.', code: 'provider' }); }
+  if (s === 'live' && req.user.role !== 'admin') { const st = J(req.c.settings); if (st.providerOk !== provFp(PV_(req.c.provider))) return res.status(409).json({ error: 'פרטי הסליקה בבדיקה אצלנו: מוודאים שחשבון הסליקה רשום על שם העמותה. בדרך כלל עד יום עסקים, ונעדכן במייל.', code: 'provider' }); }
   if (s === 'live' && req.body?.clearTest) db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id);
   db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(s, req.c.id); if (s !== req.c.status) ev(req, 'campaign.status', { cid: req.c.id, msg: `${req.c.title}: ${req.c.status} → ${s}${force ? ' (בלי סליקה)' : ''}` }); res.json({ ok: true });
 });
@@ -647,7 +663,7 @@ app.get('/api/c/:slug', (req, res) => {
   const test = isTest(c); const s = J(c.settings); const paused = !!s.adminPaused; for (const k of ADMIN_KEYS) delete s[k];
   const t = req.query.team ? db.prepare('SELECT id,slug,name,goal,photo,descr FROM teams WHERE campaign_id=? AND slug=?').get(c.id, req.query.team) : null;
   res.json({
-    campaign: { closed: (!isTest(c) && (J(c.provider).type || 'test') === 'test') || paused || isEnded(c), paused, ended: isEnded(c), payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: J(c.provider).type || 'test', noMonthly: !isTest(c) && !!providers[J(c.provider).type || 'test']?.noMonthly },
+    campaign: { closed: (!isTest(c) && (PV_(c.provider).type || 'test') === 'test') || paused || isEnded(c), paused, ended: isEnded(c), payMethods: payMethods(c), updates: db.prepare('SELECT id,title,body,image,created FROM updates WHERE campaign_id=? ORDER BY id DESC LIMIT 20').all(c.id), id: c.id, slug: c.slug, title: c.title, subtitle: c.subtitle, story: c.story, goal: c.goal, bonus_goal: c.bonus_goal, currency: c.currency, multiplier: c.multiplier, start_at: c.start_at, end_at: c.end_at, status: c.status, cover: c.cover, logo: c.logo, video: c.video, color: c.color, lang: c.lang, settings: s, test, providerType: PV_(c.provider).type || 'test', noMonthly: !isTest(c) && !!providers[PV_(c.provider).type || 'test']?.noMonthly },
     levels: db.prepare('SELECT id,name,amount,descr,stock,icon,monthly,months,(SELECT COUNT(*) FROM donations WHERE level_id=levels.id AND status=\'paid\' AND test=?) used FROM levels WHERE campaign_id=? ORDER BY pos,id').all(test ? 1 : 0, c.id),
     teams: teamStats(c, test), team: t, matchers: db.prepare('SELECT name,logo FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id),
     stats: stats(c, test),
@@ -676,7 +692,7 @@ app.post('/api/c/:slug/donate', limit(600, 60000), async (req, res) => {
   if (level && level.stock > 0) { const used = db.prepare("SELECT COUNT(*) n FROM donations WHERE level_id=? AND status='paid' AND test=?").get(level.id, isTest(c) ? 1 : 0).n; if (used >= level.stock) return bad(res, 'הרמה הזו אזלה'); }
   if (level && !level.monthly && amount < level.amount) return bad(res, `הסכום ברמה הזו הוא לפחות ₪${level.amount}`);
   const team = b.team_id ? db.prepare('SELECT id FROM teams WHERE id=? AND campaign_id=?').get(b.team_id, c.id) : null;
-  const prov = J(c.provider); const method = ['card', 'bit', 'paybox', 'applepay', 'googlepay'].includes(b.method) ? b.method : 'card';
+  const prov = PV_(c.provider); const method = ['card', 'bit', 'paybox', 'applepay', 'googlepay'].includes(b.method) ? b.method : 'card';
   const type = isTest(c) ? 'test' : (prov.type || 'test'); const cfg = prov;
   if (!isTest(c) && type === 'test') return bad(res, 'התרומות בקמפיין זה סגורות');
   const P = providers[type]; if (!P) return bad(res, 'ספק סליקה לא מוגדר');
@@ -686,7 +702,7 @@ app.post('/api/c/:slug/donate', limit(600, 60000), async (req, res) => {
   if (level && level.monthly) { inst = Math.max(1, +level.months || 12); finalAmount = level.amount * inst; isMonthly = true; }
   else if (isMonthly) { inst = Math.min(Math.max(1, +b.months || 12), 120); finalAmount = amount * inst; }
   if (finalAmount > 20000000) return bad(res, 'סכום גבוה מדי');
-  if (isMonthly && !isTest(c) && providers[J(c.provider).type || 'test']?.noMonthly) return bad(res, 'הוראת קבע עדיין לא נתמכת בספק הסליקה של הקמפיין – אפשר לתרום חד-פעמי או בתשלומים');
+  if (isMonthly && !isTest(c) && providers[PV_(c.provider).type || 'test']?.noMonthly) return bad(res, 'הוראת קבע עדיין לא נתמכת בספק הסליקה של הקמפיין – אפשר לתרום חד-פעמי או בתשלומים');
   const resumed = b.resume ? db.prepare("SELECT id FROM donations WHERE token=? AND campaign_id=? AND status IN ('pending','failed')").get(String(b.resume), c.id) : null;
   const token = crypto.randomBytes(16).toString('hex');
   if (s.idField === 'required') { const z = String(b.id_number || '').replace(/\D/g, ''); if (z.length < 8 || z.length > 9) return bad(res, 'נא להזין מספר תעודת זהות תקין'); }
@@ -719,7 +735,7 @@ app.get('/api/d/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slu
 // ---------- WhatsApp ambassador network ----------
 // every donor is invited (WhatsApp + thank-you screen) to become an ambassador with one tap;
 // every ambassador gets a personal link, a personal area (/a/<key>) and a WhatsApp/email ping on each donation through them
-for (const col of ["key TEXT DEFAULT ''", "from_donation INTEGER", "created TEXT DEFAULT ''"]) { try { db.exec('ALTER TABLE teams ADD COLUMN ' + col); } catch { } }
+for (const col of ["key TEXT DEFAULT ''", "from_donation INTEGER", "created TEXT DEFAULT ''", "visits INTEGER DEFAULT 0"]) { try { db.exec('ALTER TABLE teams ADD COLUMN ' + col); } catch { } }
 try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS t_key ON teams(key) WHERE key!=''"); } catch { }
 const SITE = () => (process.env.BASE_URL || 'https://giveil.com').replace(/\/$/, '');
 const teamKey = t => { if (t.key) return t.key; const k = crypto.randomBytes(12).toString('base64url'); db.prepare('UPDATE teams SET key=? WHERE id=?').run(k, t.id); t.key = k; return k; };
@@ -788,7 +804,7 @@ app.get('/api/amb/:key', (req, res) => {
   const x = ambGet(req.params.key); if (!x) return bad(res, 'not found', 404); const { t, c } = x; const test = isTest(c); const s = J(c.settings);
   const p = teamProgress(t, test); const all = teamStats(c, test); const rank = all.findIndex(a => a.id === t.id) + 1;
   const donors = db.prepare("SELECT name, anonymous, amount, dedication, paid_at FROM donations WHERE team_id=? AND status='paid' AND test=? ORDER BY id DESC LIMIT 200").all(t.id, test ? 1 : 0).map(d => ({ name: d.anonymous ? '' : d.name, amount: d.amount, dedication: d.dedication || '', at: d.paid_at }));
-  res.json({ team: { name: t.name, slug: t.slug, goal: t.goal, descr: t.descr, phone: t.phone ? t.phone.slice(0, 3) + '•••' + t.phone.slice(-3) : '' }, campaign: { title: c.title, slug: c.slug, goal: c.goal, currency: c.currency, end_at: c.end_at, cover: c.cover || (s.media?.default?.desktop || [])[0] || '', color: c.color, ended: isEnded(c), test, stats: stats(c, test) }, me: { raised: p.s, count: p.n, rank, of: all.length }, top: all.slice(0, 5).map(a => ({ name: a.name, s: a.s, me: a.id === t.id })), donors, link: `${SITE()}/c/${c.slug}/${t.slug}`, waAuto: !!(getKV('msg').wa || {}).type && waOn(c) });
+  res.json({ team: { name: t.name, slug: t.slug, goal: t.goal, descr: t.descr, phone: t.phone ? t.phone.slice(0, 3) + '•••' + t.phone.slice(-3) : '' }, campaign: { title: c.title, slug: c.slug, goal: c.goal, currency: c.currency, end_at: c.end_at, cover: c.cover || (s.media?.default?.desktop || [])[0] || '', color: c.color, ended: isEnded(c), test, stats: stats(c, test) }, me: { raised: p.s, count: p.n, rank, of: all.length, visits: t.visits || 0 }, top: all.slice(0, 5).map(a => ({ name: a.name, s: a.s, me: a.id === t.id })), donors, link: `${SITE()}/c/${c.slug}/${t.slug}`, waAuto: !!(getKV('msg').wa || {}).type && waOn(c) });
 });
 app.put('/api/amb/:key', limit(20, 600000), (req, res) => {
   const x = ambGet(req.params.key); if (!x) return bad(res, 'not found', 404); const b = req.body || {};
@@ -807,7 +823,7 @@ app.post('/pay/test/:token', (req, res) => {
 app.get('/pay/return/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE d.token=?').get(req.params.token); if (!d) return res.redirect('/'); if (d.status === 'pending' && d.provider === 'link') { /* manual providers: keep pending, owner confirms */ } res.redirect(`/c/${d.slug}?thanks=${d.token}`); });
 // ---------- generic hosted-page processors (lib/gateways.js) ----------
 async function gwSettle(d, c, input, raw = '') {
-  const cfg = J(c.provider); const P = providers[cfg.type]; if (!P?.gateway || P !== providers[d.provider] || d.status === 'paid') return d.status === 'paid';
+  const cfg = PV_(c.provider); const P = providers[cfg.type]; if (!P?.gateway || P !== providers[d.provider] || d.status === 'paid') return d.status === 'paid';
   const r = await P.verify({ cfg, donation: d, input, rawQuery: raw });
   const note = n => n && db.prepare('UPDATE donations SET note=? WHERE id=?').run(String(n).slice(0, 300), d.id);
   if (r.state === 'failed') { db.prepare("UPDATE donations SET status='failed' WHERE id=? AND status='pending'").run(d.id); note(r.note); return false; }
@@ -840,7 +856,7 @@ setInterval(() => reconcileGateways().catch(() => { }), 15 * 60e3).unref();
 
 // SUMIT → donor comes back with OG-PaymentID. We re-read the payment from SUMIT (with the NGO's key) before counting it.
 async function sumitSettle(d, c, paymentId) {
-  const cfg = J(c.provider); if (cfg.type !== 'sumit' || !paymentId) return false;
+  const cfg = PV_(c.provider); if (cfg.type !== 'sumit' || !paymentId) return false;
   const p = await sumit.getPayment(cfg, paymentId); if (!sumit.isPaid(p)) { db.prepare("UPDATE donations SET note=? WHERE id=?").run('SUMIT: התשלום לא אושר' + (p?.StatusDescription ? ' – ' + p.StatusDescription : ''), d.id); return false; }
   if (p.ExternalIdentifier && p.ExternalIdentifier !== 'gx-d-' + d.id) { logEvent('pay.mismatch', { level: 'warn', cid: c.id, msg: `SUMIT: מזהה לא תואם לתרומה #${d.id}` }); return false; }
   const per = d.monthly && d.installments > 1 ? d.amount / d.installments : d.amount;
@@ -868,7 +884,7 @@ async function reconcileSumit() {
   for (const c of camps) {
     try {
       const from = new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 19), to = new Date(Date.now() + 864e5).toISOString().slice(0, 19);
-      const list = await sumit.listPayments(J(c.provider), from, to);
+      const list = await sumit.listPayments(PV_(c.provider), from, to);
       for (const p of list) { const m = /^gx-d-(\d+)$/.exec(p.ExternalIdentifier || ''); if (!m) continue; const d = db.prepare("SELECT * FROM donations WHERE id=? AND campaign_id=? AND status='pending'").get(+m[1], c.id); if (d) await sumitSettle(d, c, p.ID); }
     } catch (e) { console.error('sumit reconcile', c.id, e.message); }
   }
@@ -947,7 +963,7 @@ app.all('/pay/nedarim/callback', limit(120, 60000), async (req, res) => {
   if (!d) return res.status(404).send('no donation');
   res.send('OK'); // answer Nedarim immediately; the work below is idempotent
   if (d.status === 'paid') return;
-  const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id); const cfg = J(c.provider);
+  const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id); const cfg = PV_(c.provider);
   const log = (note, extra = {}) => db.prepare("UPDATE donations SET note=?, meta=? WHERE id=?").run(note, JSON.stringify({ ...r.meta, ...extra, at: new Date().toISOString() }).slice(0, 4000), d.id);
   if (!r.paid) { db.prepare("UPDATE donations SET status='failed' WHERE id=? AND status='pending'").run(d.id); return log('נדרים: העסקה נדחתה (' + String(b.Status || '') + ')'); }
   if (!r.ref) return log('⚠ התקבל אישור ללא מספר עסקה – לא נספר. בדקו בנדרים.');
@@ -979,7 +995,7 @@ app.all('/pay/nedarim/callback', limit(120, 60000), async (req, res) => {
 });
 // Reconcile: pull Nedarim history and match it against our donations (missed callbacks, unverified rows)
 async function reconcileNedarim(c) {
-  const cfg = J(c.provider); if (cfg.type !== 'nedarim' || !cfg.apiPassword) throw new Error('סנכרון דורש נדרים פלוס עם ApiPassword');
+  const cfg = PV_(c.provider); if (cfg.type !== 'nedarim' || !cfg.apiPassword) throw new Error('סנכרון דורש נדרים פלוס עם ApiPassword');
   {
     const rows = await providers.nedarim.fetchHistory({ cfg, max: 300 });
     const byRef = new Map(rows.map(x => [String(x.TransactionId), x]));
@@ -1000,7 +1016,7 @@ async function reconcileNedarim(c) {
 }
 async function provTest(c, req) {
   const res = { json: o => o };
-  const cfg = J(c.provider); const t = cfg.type || 'test';
+  const cfg = PV_(c.provider); const t = cfg.type || 'test';
   try {
     if (t === 'test') return res.json({ ok: true, msg: 'מצב בדיקה – אין ספק אמיתי' });
     if (t === 'nedarim') {
@@ -1035,7 +1051,7 @@ app.post('/api/campaigns/:id/provider/test', auth, own, limit(10, 60000), async 
 const selfGet = pth => new Promise(resolve => { const t0 = Date.now(); const q = require('http').get({ host: '127.0.0.1', port: process.env.PORT || 3000, path: pth, headers: { 'User-Agent': 'GiveIL-health' } }, r => { let n = 0; r.on('data', d => n += d.length); r.on('end', () => resolve({ status: r.statusCode, ms: Date.now() - t0, bytes: n })); }); q.on('error', e => resolve({ status: 0, ms: Date.now() - t0, err: e.message })); q.setTimeout(8000, () => q.destroy(new Error('timeout'))); });
 app.get('/api/admin/campaigns/:id/health', auth, adm, async (req, res) => {
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404);
-  const q1 = (sql, ...p) => db.prepare(sql).get(...p); const st = J(c.settings), prov = J(c.provider), type = prov.type || 'test';
+  const q1 = (sql, ...p) => db.prepare(sql).get(...p); const st = J(c.settings), prov = PV_(c.provider), type = prov.type || 'test';
   const u = q1('SELECT id,email,name,phone,org_name,org,org_verified,email_verified,plan_until,blocked,last_seen FROM users WHERE id=?', c.user_id) || {};
   const ct = q1('SELECT id,status,created FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1', c.user_id);
   const test = isTest(c), live = c.status === 'live' && !isEnded(c), ended = isEnded(c);
@@ -1132,7 +1148,7 @@ app.all('/pay/meshulam/webhook', (req, res) => {
 app.post('/pay/paypal/capture', async (req, res) => {
   const { token, orderId } = req.body || {}; const d = db.prepare('SELECT * FROM donations WHERE token=?').get(token); if (!d) return bad(res, 'not found', 404);
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id);
-  try { const r = await providers.paypal.capture({ cfg: J(c.provider), orderId }); if (!r.paid) return bad(res, 'התשלום לא הושלם'); markPaid(d.id, { ref: r.ref, meta: { orderId, captured: r.ref }, amount: r.amount ? Math.round(r.amount) : undefined }); res.json({ ok: true }); } catch (e) { bad(res, e.message, 502); }
+  try { const r = await providers.paypal.capture({ cfg: PV_(c.provider), orderId }); if (!r.paid) return bad(res, 'התשלום לא הושלם'); markPaid(d.id, { ref: r.ref, meta: { orderId, captured: r.ref }, amount: r.amount ? Math.round(r.amount) : undefined }); res.json({ ok: true }); } catch (e) { bad(res, e.message, 502); }
 });
 app.post('/pay/iframe-done/:token', (req, res) => { // Nedarim Plus iframe reports success via postMessage; server trusts callback, this only acknowledges
   const d = db.prepare('SELECT status FROM donations WHERE token=?').get(req.params.token); res.json({ status: d?.status || 'unknown' });
@@ -1235,7 +1251,7 @@ const guide = require('./lib/guide');
 function guideCtx(uid, cid, req) {
   const adminU = db.prepare('SELECT role FROM users WHERE id=?').get(uid)?.role === 'admin'; const c = cid ? (adminU ? db.prepare('SELECT * FROM campaigns WHERE id=?').get(cid) : db.prepare('SELECT * FROM campaigns WHERE id=? AND user_id=?').get(cid, uid)) : null; if (!c) return null; uid = c.user_id;
   const st = stats(c, isTest(c)); const u = db.prepare('SELECT org_name,org,email_verified,plan_until FROM users WHERE id=?').get(uid) || {};
-  const prov = J(c.provider), sett = J(c.settings); const ct = db.prepare('SELECT status FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(uid);
+  const prov = PV_(c.provider), sett = J(c.settings); const ct = db.prepare('SELECT status FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(uid);
   const top = db.prepare("SELECT t.name FROM teams t JOIN donations d ON d.team_id=t.id AND d.status='paid' WHERE t.campaign_id=? GROUP BY t.id ORDER BY SUM(d.amount) DESC LIMIT 1").get(c.id);
   let unfinished = 0; try { unfinished = recipients(c, 'unfinished', false).length; } catch { }
   const levels = db.prepare('SELECT COUNT(*) n FROM levels WHERE campaign_id=?').get(c.id).n;
@@ -1325,6 +1341,11 @@ let cHtmlC = { m: 0, v: '' }; const cHtml = () => { const m = fs.statSync(pub('c
 app.get(['/c/:slug', '/c/:slug/:team'], (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).sendFile(pub('404.html'));
   pageView(req, 'c:' + c.id);
+  if (req.params.team && !BOT.test(req.get('user-agent') || '')) try { // ambassador link: count each visitor once (per browser)
+    const t = db.prepare('SELECT id FROM teams WHERE campaign_id=? AND slug=?').get(c.id, String(req.params.team));
+    const seen = String(req.cookies?.tv || '').split('.').filter(Boolean);
+    if (t && !seen.includes(String(t.id))) { db.prepare('UPDATE teams SET visits=COALESCE(visits,0)+1 WHERE id=?').run(t.id); res.cookie('tv', [...seen.slice(-40), t.id].join('.'), { maxAge: 365 * 864e5, httpOnly: true, sameSite: 'lax', secure: req.secure }); }
+  } catch { }
   let html = cHtml();
   const esc = s => String(s || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   const img = `${base(req)}/og/c/${encodeURIComponent(c.slug)}.jpg?v=${ogVer(c)}`;

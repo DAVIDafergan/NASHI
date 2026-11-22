@@ -63,7 +63,7 @@ async function load(){
   const pct=t.goal?Math.min(100,Math.round(m.raised/t.goal*100)):0;const isNew=location.search.includes('new=1');
   $('#app').innerHTML=`<div class="hero" style="${c.cover?`background-image:url('${esc(c.cover).replace(/[()]/g,'')}')`:''}"><div class="t"><small>האזור האישי של השגריר/ה</small><h1>${esc(c.title)}</h1></div></div>
   <div class="card me"><div class="hi">${isNew?'ברוכים הבאים 🙌':'שלום'}<b>${esc(t.name)}</b></div>
-   <div class="big"><div class="v">${f(m.raised)}<br><small>גייסתם מ-${m.count} תורמים</small></div>${m.of>1&&m.raised?`<div class="rank">מקום<b>${m.rank}</b>מתוך ${m.of}</div>`:''}</div>
+   <div class="big"><div class="v">${f(m.raised)}<br><small>גייסתם מ-${m.count} תורמים · ${m.visits||0} כניסות לקישור שלכם</small></div>${m.of>1&&m.raised?`<div class="rank">מקום<b>${m.rank}</b>מתוך ${m.of}</div>`:''}</div>
    ${t.goal?`<div class="bar"><i style="width:${pct}%"></i></div><div class="goal"><span>${pct}% מהיעד האישי</span><span>יעד: ${f(t.goal)}</span></div>`:`<div class="tip">💡 הציבו יעד אישי – אנשים תורמים יותר כשהם רואים לאן מתקדמים. <a href="#edit">הצבת יעד ↓</a></div>`}
    ${c.ended?'<div class="ended">🏁 הקמפיין הסתיים. תודה על כל מה שעשיתם!</div>':''}${c.test?'<div class="tip">🧪 הקמפיין עדיין במצב בדיקה – התרומות כאן הן תרומות בדיקה.</div>':''}</div>
   ${c.ended?'':`<div class="card"><h2>📣 הקישור האישי שלכם</h2><div class="link"><span>${esc(D.link)}</span><button class="btn s o" id="cp">העתקה</button></div>
