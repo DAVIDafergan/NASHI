@@ -363,5 +363,9 @@ fetch('/api/pricing').then(x=>x.json()).then(p=>{P=+p.campaign||P;up()}).catch(u
 fetch('/api/me',{credentials:'same-origin'}).then(r=>r.json()).then(j=>{if(!j||!j.user)return;const a=document.querySelector('nav .acts');if(!a)return;a.querySelectorAll('a.btn').forEach(x=>x.remove());a.insertAdjacentHTML('beforeend','<a class="btn" href="/app"><span class="ar">←</span>לאזור האישי</a>');const h=document.querySelector('.hero .cta a.btn');if(h){h.href='/app';h.innerHTML='<span class="ar">←</span>לאזור האישי'}}).catch(()=>{});
 </script>
 <script>fetch('/api/pricing').then(r=>r.json()).then(p=>{document.querySelectorAll('[data-price]').forEach(e=>e.textContent='₪'+Number(p[e.dataset.price]).toLocaleString('he-IL'));const v=document.querySelector('[data-vat]');if(v)v.textContent=(p.vat==='plus'?'המחירים אינם כוללים מע״מ':'המחירים כוללים מע״מ')+' · 0% מהתרומות'}).catch(()=>{})</script>
+<script>(()=>{const T=(t,l)=>{try{navigator.sendBeacon('/api/t',new Blob([JSON.stringify({t,l:String(l||'').slice(0,120),p:location.pathname+location.hash})],{type:'application/json'}))}catch{}};window.gvT=T;
+document.addEventListener('click',e=>{const a=e.target.closest('a,button');if(!a)return;const l=(a.getAttribute('aria-label')||a.textContent||'').replace(/\s+/g,' ').trim().slice(0,60);if(l)T('click',l)},{capture:true,passive:true});
+let d=0;addEventListener('scroll',()=>{const p=(scrollY+innerHeight)/document.documentElement.scrollHeight;const k=p>.9?90:p>.5?50:0;if(k>d){d=k;T('scroll',k+'%')}},{passive:true});
+let pu=0;document.addEventListener('input',e=>{if(!pu&&e.target.matches('input')){pu=1;T('plan.use','מחשבון יעד')}},{passive:true});})()</script>
 </body>
 </html>

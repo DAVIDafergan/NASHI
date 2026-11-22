@@ -44,6 +44,10 @@ const bad = (res, m, c = 400) => res.status(c).json({ error: m });
 
 // ---------- activity log (everything that moves on the site) ----------
 db.exec("CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT DEFAULT (datetime('now')), type TEXT, level TEXT DEFAULT 'info', user_id INTEGER, campaign_id INTEGER, ip TEXT DEFAULT '', msg TEXT DEFAULT '', meta TEXT DEFAULT '{}')");
+db.exec("CREATE TABLE IF NOT EXISTS visitors(vid TEXT PRIMARY KEY, first_at TEXT DEFAULT (datetime('now')), last_at TEXT DEFAULT (datetime('now')), src TEXT DEFAULT '', landing TEXT DEFAULT '', ref TEXT DEFAULT '', device TEXT DEFAULT '', ua TEXT DEFAULT '', ip TEXT DEFAULT '', uid INTEGER, stage INTEGER DEFAULT 1, pages INTEGER DEFAULT 0, acts INTEGER DEFAULT 0)");
+db.exec("CREATE INDEX IF NOT EXISTS vis_last ON visitors(last_at)"); db.exec("CREATE INDEX IF NOT EXISTS vis_uid ON visitors(uid)");
+db.exec("CREATE TABLE IF NOT EXISTS vev(id INTEGER PRIMARY KEY AUTOINCREMENT, vid TEXT, at TEXT DEFAULT (datetime('now')), type TEXT, label TEXT DEFAULT '', path TEXT DEFAULT '')");
+db.exec("CREATE INDEX IF NOT EXISTS vev_vid ON vev(vid, id)");
 db.exec("CREATE INDEX IF NOT EXISTS ev_type ON events(type, id)"); db.exec("CREATE INDEX IF NOT EXISTS ev_at ON events(at)");
 for (const col of ["blocked INTEGER DEFAULT 0", "block_note TEXT DEFAULT ''", "tv INTEGER DEFAULT 0", "last_seen TEXT DEFAULT ''", "last_ip TEXT DEFAULT ''", "logins INTEGER DEFAULT 0"]) { try { db.exec('ALTER TABLE users ADD COLUMN ' + col); } catch { } }
 try { db.exec('ALTER TABLE donations ADD COLUMN resumed_from INTEGER'); } catch { }
@@ -69,8 +73,8 @@ async function adminNotify(type, o) {
   const org = u ? (u.org_name || u.org || u.email) : ''; const subject = `${NOTIFY_T[type]} – ${c ? c.title + (org ? ' · ' + org : '') : org}`;
   return mail.send({ to: list, subject, html: mail.layout(NOTIFY_T[type], body, 'קיבלת את ההודעה כי את/ה מנהל/ת GiveIL. אפשר לשנות בניהול-על ← הגדרות ← עדכונים למייל.') });
 }
-const ev = (req, type, o = {}) => logEvent(type, { uid: req.user?.imp ? req.user.imp : req.user?.id, ip: req.ip, ...o, meta: { ...(o.meta || {}), ...(req.user?.imp ? { as: req.user.id } : {}) } });
-setInterval(() => { try { db.prepare("DELETE FROM events WHERE at < datetime('now','-120 day')").run(); } catch { } }, 6 * 3600e3).unref();
+const ev = (req, type, o = {}) => { if (!req.user?.imp) { vLink(req, req.user?.id); const vt = type === 'campaign.status' && /→ live/.test(o.msg || '') ? 'campaign.live' : type === 'campaign.create' ? type : null; if (vt) vEvent(req.cookies?.gv, vt, o.msg || ''); } return logEvent(type, { uid: req.user?.imp ? req.user.imp : req.user?.id, ip: req.ip, ...o, meta: { ...(o.meta || {}), ...(req.user?.imp ? { as: req.user.id } : {}) } }); };
+setInterval(() => { try { db.prepare("DELETE FROM events WHERE at < datetime('now','-120 day')").run(); db.prepare("DELETE FROM vev WHERE at < datetime('now','-60 day')").run(); db.prepare("DELETE FROM visitors WHERE last_at < datetime('now','-60 day') AND uid IS NULL").run(); } catch { } }, 6 * 3600e3).unref();
 const setSid = (res, uid, extra = {}) => { const tv = (db.prepare('SELECT tv FROM users WHERE id=?').get(uid) || {}).tv || 0; res.cookie('sid', sign({ uid, tv, exp: Date.now() + 90 * 864e5, ...extra }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); };
 const seen = new Map();
 const user = req => {
@@ -154,7 +158,7 @@ app.post('/api/register', limit(5, 600000), (req, res) => {
   if (!b.consent) return bad(res, 'יש לאשר את התקנון ומדיניות הפרטיות');
   const S = (v, n) => String(v || '').trim().slice(0, n);
   const r = db.prepare('INSERT INTO users(email,pass,name,phone,org,role,role_title,address,city,website,s46,consent_at,marketing,org_number) VALUES(?,?,?,?,?,?,?,?,?,?,?,datetime(\'now\'),?,?)').run(email.toLowerCase(), hashPw(password), S(name, 60), S(phone, 20), S(org, 80), role, S(b.role_title, 40), S(b.address, 120), S(b.city, 60), S(b.website, 160), S(b.s46, 10), b.marketing ? 1 : 0, S(b.org_number, 12).replace(/\D/g, ''));
-  const uid = r.lastInsertRowid; const src = String(req.cookies?.src || '').split(':')[0]; if (src === 'ads') pageView(req, 'ads:signup'); logEvent('user.signup', { uid, ip: req.ip, msg: `${email.toLowerCase()} · ${S(org, 80) || ''}${src === 'ads' ? ' · מגוגל' : ''}`, meta: { org_number: S(b.org_number, 12), src } });
+  const uid = r.lastInsertRowid; vLink(req, uid); vEvent(req.cookies?.gv, 'reg.done', email, '', false, uid); const src = String(req.cookies?.src || '').split(':')[0]; if (src === 'ads') pageView(req, 'ads:signup'); logEvent('user.signup', { uid, ip: req.ip, msg: `${email.toLowerCase()} · ${S(org, 80) || ''}${src === 'ads' ? ' · מגוגל' : ''}`, meta: { org_number: S(b.org_number, 12), src } });
   sendVerify(uid).catch(() => { });
   setSid(res, uid);
   res.json({ ok: true });
@@ -264,6 +268,7 @@ app.post('/api/login', limit(10, 60000), (req, res) => {
   if (!u || !checkPw(String(req.body?.password || ''), u.pass)) { fails.push(now); hits.set(fk, { a: fails, win: 900000 }); logEvent('auth.fail', { level: 'warn', uid: u?.id, ip: req.ip, msg: email + (u ? '' : ' (לא קיים)') }); return bad(res, 'אימייל או סיסמה שגויים', 401); }
   if (u.blocked) { logEvent('auth.blocked', { level: 'warn', uid: u.id, ip: req.ip, msg: email }); return bad(res, 'החשבון מושעה. לפרטים פנו לתמיכה.', 403); }
   hits.delete(fk); db.prepare('UPDATE users SET logins=COALESCE(logins,0)+1 WHERE id=?').run(u.id);
+  vLink(req, u.id); vEvent(req.cookies?.gv, 'login.ok', '', '', false, u.id);
   logEvent('auth.login', { uid: u.id, ip: req.ip, msg: email, meta: { ua: String(req.get('user-agent') || '').slice(0, 160) } });
   setSid(res, u.id);
   res.json({ ok: true });
@@ -1259,6 +1264,48 @@ function visitSource(req) {
 }
 // visits from Google Ads (auto-tagging adds gclid) are remembered for 30 days so signups can be attributed
 const adSrc = q => q.gclid || q.gbraid || q.wbraid ? 'ads' : /^google$/i.test(q.utm_source || '') && /cpc|ppc|paid/i.test(q.utm_medium || '') ? 'ads' : '';
+// ---------- visitor journeys (super-admin → "מבקרים"): every visitor of the main site, how far they got in signing up, and what they did ----------
+// stages: 1 entered · 2 opened signup · 3 started filling · 4 step 2 · 5 step 3 · 6 step 4 · 7 sent the form · 8 registered · 9 opened a campaign · 10 campaign live
+const VSTAGE = { 'reg.open': 2, 'reg.start': 3, 'reg.step2': 4, 'reg.step3': 5, 'reg.step4': 6, 'reg.submit': 7, 'reg.done': 8, 'campaign.create': 9, 'campaign.live': 10 };
+const deviceOf = ua => /iphone|android.+mobile|mobile/i.test(ua) ? 'נייד' : /ipad|tablet|android/i.test(ua) ? 'טאבלט' : 'מחשב';
+const VUP = db.prepare("UPDATE visitors SET last_at=datetime('now'), stage=MAX(stage,?), pages=pages+?, acts=acts+?, uid=COALESCE(?,uid) WHERE vid=?");
+const VEV = db.prepare('INSERT INTO vev(vid,type,label,path) VALUES(?,?,?,?)');
+function vEvent(vid, type, label = '', path = '', isPage = false, uid = null) { if (!vid) return; try { VUP.run(VSTAGE[type] || 1, isPage ? 1 : 0, isPage ? 0 : 1, uid, vid); VEV.run(vid, type, String(label).slice(0, 160), String(path).slice(0, 160)); } catch { } }
+function vLink(req, uid) { const vid = req.cookies?.gv; if (!vid || !uid) return; try { db.prepare('UPDATE visitors SET uid=? WHERE vid=? AND (uid IS NULL OR uid!=?)').run(uid, vid, uid); } catch { } }
+const vValid = v => /^[a-f0-9]{24}$/.test(String(v || ''));
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || !/^\/(index\.html|app|terms|privacy|accessibility)?$/.test(req.path) || BOT.test(req.get('user-agent') || '')) return next();
+  let vid = req.cookies?.gv; if (!vValid(vid)) { vid = require('crypto').randomBytes(12).toString('hex'); res.cookie('gv', vid, { maxAge: 365 * 864e5, httpOnly: false, sameSite: 'lax', secure: req.secure }); }
+  try {
+    const ua = String(req.get('user-agent') || '').slice(0, 200); let ref = ''; try { ref = new URL(req.get('referer') || '').hostname; } catch { }
+    db.prepare("INSERT OR IGNORE INTO visitors(vid,src,landing,ref,device,ua,ip) VALUES(?,?,?,?,?,?,?)").run(vid, visitSource(req), req.originalUrl.slice(0, 160), ref.slice(0, 80), deviceOf(ua), ua, req.ip);
+    vEvent(vid, 'page', '', req.path === '/index.html' ? '/' : req.path, true, null);
+  } catch { }
+  next();
+});
+// actions from the browser (no field values are ever sent – only which step/field/button)
+const VT = new Set(['reg.open', 'reg.start', 'reg.step2', 'reg.step3', 'reg.step4', 'reg.submit', 'reg.error', 'reg.back', 'login.open', 'login.try', 'login.error', 'forgot', 'click', 'plan.use', 'scroll', 'leave']);
+app.post('/api/t', limit(120, 60000), (req, res) => {
+  const vid = req.cookies?.gv; const b = typeof req.body === 'object' ? req.body : {}; const t = String(b.t || '');
+  if (vValid(vid) && VT.has(t) && !BOT.test(req.get('user-agent') || '')) { if (!db.prepare('SELECT 1 FROM visitors WHERE vid=?').get(vid)) db.prepare("INSERT OR IGNORE INTO visitors(vid,src,device,ua,ip) VALUES(?,?,?,?,?)").run(vid, 'direct', deviceOf(req.get('user-agent') || ''), String(req.get('user-agent') || '').slice(0, 200), req.ip); vEvent(vid, t, b.l || '', b.p || ''); }
+  res.status(204).end();
+});
+// admin: list + funnel
+app.get('/api/admin/visitors', auth, adm, (req, res) => {
+  const days = Math.min(60, Math.max(1, +req.query.days || 1)); const since = `-${days} day`; const st = +req.query.stage || 0;
+  const funnel = db.prepare(`SELECT SUM(stage>=1) s1, SUM(stage>=2) s2, SUM(stage>=3) s3, SUM(stage>=4) s4, SUM(stage>=5) s5, SUM(stage>=6) s6, SUM(stage>=7) s7, SUM(stage>=8) s8, SUM(stage>=9) s9, SUM(stage>=10) s10 FROM visitors WHERE last_at >= datetime('now',?)`).get(since);
+  const rows = db.prepare(`SELECT v.vid, v.first_at, v.last_at, v.src, v.landing, v.device, v.stage, v.pages, v.acts, v.uid, u.email, COALESCE(u.org_name,u.org) org, u.name,
+     (SELECT label FROM vev WHERE vid=v.vid AND type='reg.error' ORDER BY id DESC LIMIT 1) lastErr,
+     (SELECT COUNT(*) FROM visitors w WHERE w.ip=v.ip AND w.vid!=v.vid) sameIp
+     FROM visitors v LEFT JOIN users u ON u.id=v.uid WHERE v.last_at >= datetime('now',?) ${st ? 'AND v.stage = ' + st : ''} ORDER BY v.last_at DESC LIMIT 400`).all(since);
+  res.json({ funnel, rows, live: db.prepare("SELECT COUNT(*) n FROM visitors WHERE last_at >= datetime('now','-5 minutes')").get().n });
+});
+app.get('/api/admin/visitors/:vid', auth, adm, (req, res) => {
+  const v = db.prepare('SELECT v.*, u.email, COALESCE(u.org_name,u.org) org, u.name, u.phone FROM visitors v LEFT JOIN users u ON u.id=v.uid WHERE vid=?').get(req.params.vid); if (!v) return bad(res, 'not found', 404);
+  const a = db.prepare('SELECT at, type, label, path FROM vev WHERE vid=? ORDER BY id DESC LIMIT 400').all(v.vid).map(x => ({ ...x, k: 'v' }));
+  const b = v.uid ? db.prepare('SELECT at, type, msg label, campaign_id FROM events WHERE user_id=? ORDER BY id DESC LIMIT 300').all(v.uid).map(x => ({ ...x, k: 'e' })) : [];
+  res.json({ v, tl: [...a, ...b].sort((x, y) => (x.at < y.at ? 1 : x.at > y.at ? -1 : 0)).slice(0, 600) });
+});
 app.use((req, res, next) => { if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html' || req.path === '/login.html' || req.path.startsWith('/c/'))) { const src = adSrc(req.query); if (src) { if (!req.cookies?.src) pageView(req, 'ads:visit'); res.cookie('src', src + ':' + new Date().toISOString().slice(0, 10), { maxAge: 30 * 864e5, httpOnly: true, sameSite: 'lax', secure: req.secure }); } if (req.path === '/' || req.path === '/index.html') pageView(req, 'home'); pageView(req, 'src:' + visitSource(req)); } next(); });
 // share preview image for a campaign: its share/cover image cropped to 1200×630 JPEG (WhatsApp/Facebook need a small raster image)
 const ogVer = c => { const sh = J(c.settings).share || c.cover || ''; return require('crypto').createHash('md5').update(sh).digest('hex').slice(0, 8); };
