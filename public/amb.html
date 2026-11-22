@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{--ink:#1c1917;--paper:#f6f5f3;--card:#fff;--mut:#6b6762;--line:#e9e6e2;--soft:#f5f4f1;--p:#5b3df5;--ok:#0f9d6e;--wa:#25D366;--grad:linear-gradient(120deg,#7c5cff,#22d3ee 55%,#a3ff6f);--f:"Rubik",system-ui,sans-serif}
-*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--f);-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}body{margin:0;overflow-x:hidden;background:var(--paper);color:var(--ink);font:16px/1.5 var(--f);-webkit-font-smoothing:antialiased}
 a{color:inherit}.w{max-width:560px;margin:0 auto;padding:0 16px 40px}
 .hero{position:relative;height:190px;background:#1c1917 center/cover;border-radius:0 0 26px 26px;overflow:hidden;margin:0 -16px}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.72))}
@@ -35,6 +35,12 @@ label{display:block;font-size:13px;color:var(--mut);margin-top:10px}
 .ended{background:#1c1917;color:#fff;border-radius:14px;padding:12px 14px;margin-top:12px;font-size:14px}
 .join{text-align:center}.join .emo{font-size:46px}.join h1{font-size:24px;margin:6px 0}.join p{color:var(--mut);margin:0 0 6px}
 .steps{display:grid;gap:8px;text-align:start;margin:14px 0 4px}.steps div{display:flex;gap:10px;align-items:flex-start;font-size:14px}.steps i{font-style:normal;flex:0 0 26px;height:26px;border-radius:50%;background:#f5f3ff;color:var(--p);display:grid;place-items:center;font-weight:800;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}.kpi{background:var(--soft);border-radius:14px;padding:12px 10px;text-align:center}.kpi b{display:block;font-size:22px;font-weight:800;line-height:1.1}.kpi span{font-size:12px;color:var(--mut)}.kpi.hl{background:#f5f3ff;color:var(--p)}.kpi.hl span{color:var(--p)}
+.grid{display:grid;gap:0}.col{min-width:0}
+@media(max-width:520px){.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:900px){.w{max-width:1120px;padding:0 32px 56px}.hero{height:280px;margin:0 calc(50% - 50vw);border-radius:0}.hero .t{inset-inline:max(40px,calc(50vw - 528px));bottom:80px}.hero h1{font-size:32px}.hero small{font-size:15px}
+ .me{margin-top:-46px;padding:26px 30px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:8px 40px;align-items:center}.me .kpis{margin-top:0}.me .full{grid-column:1/-1}
+ .big .v{font-size:52px}.grid{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start;margin-top:6px}.card{padding:22px 24px;margin-top:20px}}
 </style>
 </head>
 <body>
@@ -62,18 +68,22 @@ async function load(){
   D=await r.json();const c=D.campaign,t=D.team,m=D.me;cur=c.currency==='USD'?'$':'₪';document.title=`${t.name} · ${c.title}`;
   const pct=t.goal?Math.min(100,Math.round(m.raised/t.goal*100)):0;const isNew=location.search.includes('new=1');
   $('#app').innerHTML=`<div class="hero" style="${c.cover?`background-image:url('${esc(c.cover).replace(/[()]/g,'')}')`:''}"><div class="t"><small>האזור האישי של השגריר/ה</small><h1>${esc(c.title)}</h1></div></div>
-  <div class="card me"><div class="hi">${isNew?'ברוכים הבאים 🙌':'שלום'}<b>${esc(t.name)}</b></div>
-   <div class="big"><div class="v">${f(m.raised)}<br><small>גייסתם מ-${m.count} תורמים · ${m.visits||0} כניסות לקישור שלכם</small></div>${m.of>1&&m.raised?`<div class="rank">מקום<b>${m.rank}</b>מתוך ${m.of}</div>`:''}</div>
-   ${t.goal?`<div class="bar"><i style="width:${pct}%"></i></div><div class="goal"><span>${pct}% מהיעד האישי</span><span>יעד: ${f(t.goal)}</span></div>`:`<div class="tip">💡 הציבו יעד אישי – אנשים תורמים יותר כשהם רואים לאן מתקדמים. <a href="#edit">הצבת יעד ↓</a></div>`}
-   ${c.ended?'<div class="ended">🏁 הקמפיין הסתיים. תודה על כל מה שעשיתם!</div>':''}${c.test?'<div class="tip">🧪 הקמפיין עדיין במצב בדיקה – התרומות כאן הן תרומות בדיקה.</div>':''}</div>
+  <div class="card me"><div><div class="hi">${isNew?'ברוכים הבאים 🙌':'שלום'}<b>${esc(t.name)}</b></div>
+   <div class="big"><div class="v">${f(m.raised)}<br><small>גויסו דרככם</small></div></div></div>
+   <div class="kpis"><div class="kpi"><b>${m.visits||0}</b><span>כניסות לקישור</span></div><div class="kpi"><b>${m.count}</b><span>תורמים</span></div><div class="kpi"><b>${m.visits&&m.visits>=m.count?Math.round(m.count/m.visits*100)+'%':'–'}</b><span>מהנכנסים תרמו</span></div><div class="kpi hl"><b>${m.of>1&&m.raised?m.rank:'–'}</b><span>${m.of>1?'מקום מתוך '+m.of:'מקום'}</span></div></div>
+   <div class="full">${t.goal?`<div class="bar"><i style="width:${pct}%"></i></div><div class="goal"><span>${pct}% מהיעד האישי</span><span>יעד: ${f(t.goal)}</span></div>`:`<div class="tip">💡 הציבו יעד אישי – אנשים תורמים יותר כשהם רואים לאן מתקדמים. <a href="#edit">הצבת יעד ↓</a></div>`}
+   ${c.ended?'<div class="ended">🏁 הקמפיין הסתיים. תודה על כל מה שעשיתם!</div>':''}${c.test?'<div class="tip">🧪 הקמפיין עדיין במצב בדיקה – התרומות כאן הן תרומות בדיקה.</div>':''}</div></div>
+  <div class="grid"><div class="col">
   ${c.ended?'':`<div class="card"><h2>📣 הקישור האישי שלכם</h2><div class="link"><span>${esc(D.link)}</span><button class="btn s o" id="cp">העתקה</button></div>
    <label>הודעה מוכנה לשליחה (אפשר לערוך)</label><textarea id="msg">${esc(msgFor())}</textarea>
    <a class="btn wa" id="wa" target="_blank" rel="noopener">שליחה בוואטסאפ</a>${navigator.share?'<button class="btn o" id="sh">שיתוף בדרכים נוספות</button>':''}
    <div class="tip">💡 הכי עובד: הודעה אישית לכל אחד בנפרד, ואחר כך לקבוצות ולסטטוס. כשמישהו תורם דרככם – ${D.waAuto?'תקבלו על זה הודעה בוואטסאפ':'זה יופיע כאן'}.</div></div>`}
   <div class="card"><h2>💙 מי תרם דרככם (${m.count})</h2>${D.donors.length?D.donors.map(d=>`<div class="d"><div>${d.name?esc(d.name):'תורם/ת אנונימי/ת'}${d.dedication?`<small>${esc(d.dedication)}</small>`:''}<small>${ago(d.at)}</small></div><div class="a">${f(d.amount)}</div></div>`).join(''):'<div class="empty">עוד אין תרומות דרך הקישור שלכם. שלחו אותו לחמישה אנשים קרובים – זו ההתחלה הכי טובה.</div>'}</div>
+  </div><div class="col">
   ${D.top.length>1?`<div class="card top"><h2>🏆 השגרירים המובילים</h2>${D.top.map((a,i)=>`<div class="d ${a.me?'me2':''}"><div>${i+1}. ${esc(a.name)}${a.me?' (אתם)':''}</div><div class="a">${f(a.s)}</div></div>`).join('')}</div>`:''}
   <div class="card" id="edit"><h2>✏️ הפרטים שלכם</h2><label>השם בדף השגרירים<input id="en" value="${esc(t.name)}"></label><label>יעד אישי<input id="eg" type="number" inputmode="numeric" value="${t.goal||''}" placeholder="למשל 1800"></label><label>משפט אישי (מופיע בדף שלכם)<input id="ed" value="${esc(t.descr||'')}" placeholder="למשל: עזרו לי להגיע ליעד לכבוד…"></label><button class="btn o" id="es">שמירה</button></div>
   <div class="card" style="text-align:center"><a href="/c/${esc(c.slug)}/${esc(t.slug)}" target="_blank" style="font-weight:600">לדף השגריר שלכם בקמפיין ↗</a><div class="hi" style="margin-top:6px">שמרו את הקישור לאזור האישי – הוא אישי רק לכם.</div></div>
+  </div></div>
   <div class="foot">מופעל ע״י <b dir="ltr">Give<i>IL</i></b></div>`;
   if(!c.ended){const upd=()=>$('#wa').href='https://wa.me/?text='+encodeURIComponent($('#msg').value);$('#msg').oninput=upd;upd();
    $('#cp').onclick=()=>{navigator.clipboard.writeText(D.link);toast('הקישור הועתק')};if($('#sh'))$('#sh').onclick=()=>navigator.share({text:$('#msg').value}).catch(()=>{})}
