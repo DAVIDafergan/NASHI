@@ -49,7 +49,26 @@ for (const col of ["blocked INTEGER DEFAULT 0", "block_note TEXT DEFAULT ''", "t
 try { db.exec('ALTER TABLE donations ADD COLUMN resumed_from INTEGER'); } catch { }
 try { db.exec('CREATE INDEX IF NOT EXISTS d_team ON donations(team_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS d_camp ON donations(campaign_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS t_camp ON teams(campaign_id)'); } catch { }
 const EVT = db.prepare('INSERT INTO events(type,level,user_id,campaign_id,ip,msg,meta) VALUES(?,?,?,?,?,?,?)');
-function logEvent(type, o = {}) { try { EVT.run(type, o.level || 'info', o.uid || null, o.cid || null, String(o.ip || '').slice(0, 64), String(o.msg || '').slice(0, 300), JSON.stringify(o.meta || {}).slice(0, 2000)); } catch { } }
+function logEvent(type, o = {}) { try { EVT.run(type, o.level || 'info', o.uid || null, o.cid || null, String(o.ip || '').slice(0, 64), String(o.msg || '').slice(0, 300), JSON.stringify(o.meta || {}).slice(0, 2000)); } catch { } if (NOTIFY_T[type]) setImmediate(() => adminNotify(type, o).catch(e => console.error('notify', e.message))); }
+// ---- email to the platform owner on important events (super-admin → הגדרות → "עדכונים למייל") ----
+const NOTIFY_T = { 'user.signup': '🆕 נרשמה עמותה חדשה', 'campaign.create': '📣 נפתח קמפיין חדש', 'campaign.status': '🔄 שינוי סטטוס קמפיין', 'contract.sign': '✍️ נחתם הסכם', 'billing.claim': '💰 עמותה דיווחה על תשלום', 'billing.paid': '💳 התקבל תשלום בכרטיס', 'billing.renew': '🔁 חידוש מנוי' };
+const NOTIFY_DEF = { 'user.signup': true, 'campaign.create': true, 'campaign.status': true, 'contract.sign': true, 'billing.claim': true, 'billing.paid': true, 'billing.renew': false };
+async function adminNotify(type, o) {
+  if (!mail.enabled()) return; const cfg = getKV('notify'); const on = { ...NOTIFY_DEF, ...(cfg.types || {}) };
+  if (cfg.off || !on[type]) return; if (type === 'campaign.status' && !/→ (live|ended)/.test(o.msg || '')) return; // only going live / ending
+  const to = String(cfg.email || '').split(/[,\s;]+/).filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+  const list = to.length ? to : db.prepare("SELECT email FROM users WHERE role='admin' AND blocked=0").all().map(r => r.email);
+  if (!list.length) return null;
+  const u = o.uid ? db.prepare('SELECT id,name,email,phone,org_name,org,org_number FROM users WHERE id=?').get(o.uid) : null;
+  const c = o.cid ? db.prepare('SELECT id,title,slug,goal,status FROM campaigns WHERE id=?').get(o.cid) : null;
+  const site = process.env.PUBLIC_URL || 'https://giveil.com'; const e = mail.esc;
+  const msg = String(o.msg || '').replace(/: test → live/, ': עלה לאוויר 🟢').replace(/: live → ended/, ': הסתיים').replace(/: (\w+) → (\w+)/, ': $1 ← $2');
+  const rows = [['מה קרה', msg], u && ['עמותה', u.org_name || u.org || '—'], u?.org_number && ['מספר עמותה', u.org_number], u && ['איש קשר', `${u.name || ''} · ${u.email}${u.phone ? ' · ' + u.phone : ''}`], c && ['קמפיין', `${c.title} · יעד ₪${(+c.goal || 0).toLocaleString('he-IL')}`]].filter(Boolean);
+  const body = `<table style="width:100%;border-collapse:collapse;font-size:15px">${rows.map(([k, v]) => `<tr><td style="padding:8px 0;color:#64748b;width:110px;vertical-align:top">${e(k)}</td><td style="padding:8px 0"><b>${e(v)}</b></td></tr>`).join('')}</table>
+  <p style="margin-top:18px">${c ? `<a href="${site}/c/${encodeURIComponent(c.slug)}" style="margin-left:14px">לדף הקמפיין</a> <a href="${site}/app#/admin/camp/${c.id}" style="margin-left:14px">בדיקת תקינות</a>` : ''}${u ? `<a href="${site}/app#/admin/users">למשתמשים בניהול</a>` : ''}</p>`;
+  const org = u ? (u.org_name || u.org || u.email) : ''; const subject = `${NOTIFY_T[type]} – ${c ? c.title + (org ? ' · ' + org : '') : org}`;
+  return mail.send({ to: list, subject, html: mail.layout(NOTIFY_T[type], body, 'קיבלת את ההודעה כי את/ה מנהל/ת GiveIL. אפשר לשנות בניהול-על ← הגדרות ← עדכונים למייל.') });
+}
 const ev = (req, type, o = {}) => logEvent(type, { uid: req.user?.imp ? req.user.imp : req.user?.id, ip: req.ip, ...o, meta: { ...(o.meta || {}), ...(req.user?.imp ? { as: req.user.id } : {}) } });
 setInterval(() => { try { db.prepare("DELETE FROM events WHERE at < datetime('now','-120 day')").run(); } catch { } }, 6 * 3600e3).unref();
 const setSid = (res, uid, extra = {}) => { const tv = (db.prepare('SELECT tv FROM users WHERE id=?').get(uid) || {}).tv || 0; res.cookie('sid', sign({ uid, tv, exp: Date.now() + 90 * 864e5, ...extra }), { httpOnly: true, sameSite: 'lax', maxAge: 90 * 864e5, secure: !!process.env.RAILWAY_ENVIRONMENT }); };
@@ -905,6 +924,9 @@ async function billRenewals() {
   setKV('billSeen', { ids: [...ids].slice(-2000) });
 }
 setInterval(() => billRenewals().catch(e => console.error('billRenewals', e.message)), 3 * 3600e3).unref();
+app.get('/api/admin/notify', auth, adm, (_, res) => { const k = getKV('notify'); res.json({ email: k.email || '', off: !!k.off, types: { ...NOTIFY_DEF, ...(k.types || {}) }, labels: NOTIFY_T, admins: db.prepare("SELECT email FROM users WHERE role='admin' AND blocked=0").all().map(r => r.email), mail: mail.enabled() }); });
+app.put('/api/admin/notify', auth, adm, (req, res) => { const x = req.body || {}; const types = {}; for (const k of Object.keys(NOTIFY_T)) types[k] = !!x.types?.[k]; setKV('notify', { email: String(x.email || '').slice(0, 300), off: !!x.off, types }); ev(req, 'admin.notify', { msg: x.off ? 'כובה' : String(x.email || 'למנהלים') }); res.json({ ok: true }); });
+app.post('/api/admin/notify/test', auth, adm, limit(5, 60000), async (req, res) => { try { if (!mail.enabled()) return res.json({ ok: false, msg: 'שליחת מיילים לא מחוברת בשרת' }); const k = getKV('notify'); if (k.off) return res.json({ ok: false, msg: 'העדכונים כבויים' }); const r = await adminNotify('user.signup', { uid: req.user.id, msg: 'זו הודעת בדיקה – ככה ייראה עדכון על נרשם חדש' }); res.json(r?.ok ? { ok: true } : { ok: false, msg: r ? 'Resend: ' + (r.body || r.status) : 'העדכון על נרשמים כבוי בהגדרות' }); } catch (e) { res.json({ ok: false, msg: e.message }); } });
 app.get('/api/admin/billing', auth, adm, (_, res) => { const b = billCfg(); res.json({ companyId: b.companyId, apiKey: b.apiKey ? '••••' + b.apiKey.slice(-4) : '', docType: b.docType, months: b.months, fromEnv: !getKV('billing').apiKey && !!process.env.SUMIT_API_KEY, subs: db.prepare("SELECT k, v FROM kv WHERE k LIKE 'sub:%'").all().length }); });
 app.put('/api/admin/billing', auth, adm, (req, res) => { const cur = getKV('billing'); const x = req.body || {}; const next = { companyId: String(x.companyId ?? cur.companyId ?? '').replace(/\D/g, '').slice(0, 12), apiKey: x.apiKey && !String(x.apiKey).startsWith('••••') ? String(x.apiKey).trim().slice(0, 200) : cur.apiKey || '', docType: ['invoice', 'receipt'].includes(x.docType) ? x.docType : 'invoice', months: Math.max(0, Math.min(120, +x.months || 0)) }; setKV('billing', next); ev(req, 'admin.billing', { msg: `SUMIT חברה ${next.companyId}` }); res.json({ ok: true }); });
 app.post('/api/admin/billing/test', auth, adm, limit(10, 60000), async (_, res) => { try { await sumit.ping(billCfg()); res.json({ ok: true, msg: 'SUMIT אישר את המפתחות ✓' }); } catch (e) { res.json({ ok: false, msg: e.message }); } });
