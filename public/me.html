@@ -6,7 +6,7 @@
 <link rel="icon" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bona+Nova:wght@700&family=Heebo:wght@200;800&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=5"><script src="/i18n.js?v=1"></script>
+<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=6"><script src="/kbox.js?v=1" defer></script><script src="/i18n.js?v=1"></script>
 <style>
 body{min-height:100svh;--a11y-b:92px}
 .app{width:min(520px,100%);margin:0 auto;min-height:100svh;padding:0 18px calc(96px + env(safe-area-inset-bottom));position:relative}
@@ -18,8 +18,8 @@ body{min-height:100svh;--a11y-b:92px}
 .scr{display:none;animation:in .45s cubic-bezier(.2,.9,.25,1)}.scr.on{display:block}@keyframes in{from{opacity:0;transform:translateY(12px)}}
 .hero{position:relative;margin-top:14px;border-radius:28px;border:1px solid var(--line);background:rgba(9,13,32,.45);padding:20px 18px 18px;overflow:hidden;text-align:center}
 .hero::before{content:"";position:absolute;inset:-30% -10% auto;height:70%;background:radial-gradient(closest-side,rgba(217,174,91,.14),transparent);pointer-events:none}
-.stage{height:190px;display:grid;place-items:center;perspective:900px;position:relative}
-.kbm{--s:.44;transform:rotateX(-15deg) rotateY(-28deg);animation:swm 10s ease-in-out infinite}@keyframes swm{50%{transform:rotateX(-10deg) rotateY(18deg)}}
+.stage{height:215px;display:grid;place-items:center;perspective:900px;position:relative}
+.kbm{--s:.42;transform:rotateX(-15deg) rotateY(-28deg);animation:swm 10s ease-in-out infinite}@keyframes swm{50%{transform:rotateX(-10deg) rotateY(18deg)}}
 .kbm .cn3{animation:none;opacity:0}.kbm .cn3.go{animation:cdrop 1.5s 1 forwards}
 .bal{font-family:var(--fs);font-weight:700;font-size:58px;line-height:1;margin-top:6px}.bals{color:var(--mut);font-size:14px;margin-top:6px}
 .chk{margin-top:16px;width:100%;min-height:62px;font-size:18px}
@@ -142,7 +142,7 @@ svg.li *{animation:none!important;stroke-dasharray:none!important;stroke-dashoff
 
 <div class="sh" id="sh" role="dialog" aria-modal="true"><div class="pn" id="pn"></div></div>
 <div class="toast" id="toast"></div><datalist id="cityList"></datalist>
-<script src="/cities.js?v=5"></script><script src="/share.js?v=6"></script>
+<script src="/cities.js?v=5"></script><script src="/share.js?v=7"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const fmt=n=>Math.round(+n||0).toLocaleString('he-IL');const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

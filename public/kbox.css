@@ -1,20 +1,24 @@
 /* the tzedakah box – one clean matte colour, logo centred, QR on the side */
-.kb{--w:calc(300px*var(--s,1));--h:calc(300px*var(--s,1));--d:calc(300px*var(--s,1));--u:calc(1px*var(--s,1));width:var(--w);height:var(--h);position:relative;transform-style:preserve-3d}
-.kb .f{position:absolute;backface-visibility:hidden;background:#141c4a url(/stone.jpg);background-size:calc(300px*var(--s,1));overflow:hidden;box-shadow:inset 0 0 0 calc(1.2*var(--u)) rgba(212,176,106,.35)}
-.kb .f::before{content:"";position:absolute;inset:0;background:url(/grain.jpg);background-size:calc(240px*var(--s,1));opacity:0}
-.kb .fr,.kb .bk{width:var(--w);height:var(--h)}
-.kb .fr{transform:translateZ(calc(var(--d)/2));display:grid;place-items:center;align-content:center;gap:calc(14*var(--u));box-shadow:inset 0 0 calc(50*var(--u)) rgba(0,0,0,.35)}
-.kb .bk{transform:rotateY(180deg) translateZ(calc(var(--d)/2))}
-.kb .lt,.kb .rt{width:var(--d);height:var(--h);left:calc((var(--w) - var(--d))/2);display:grid;place-items:center;align-content:center;gap:calc(14*var(--u))}
+/* the tzedakah box – a tall tin box (65×45×95 mm) with rounded vertical corners, like the real one.
+   faces: fr (logo) · rt/lt (QR) · tp (slot). The rounded corners are thin strips added by /kbox.js */
+.kb{--u:calc(1px*var(--s,1));--w:calc(246*var(--u));--d:calc(170*var(--u));--h:calc(360*var(--u));--r:calc(26*var(--u));width:var(--w);height:var(--h);position:relative;transform-style:preserve-3d}
+.kb .f,.kb .cs{position:absolute;backface-visibility:hidden;background-color:#141c4a;background-image:linear-gradient(180deg,#d4b06a 0,#d4b06a calc(1.6*var(--u)),rgba(0,0,0,.35) calc(1.6*var(--u)),transparent calc(6*var(--u)),transparent calc(100% - 6*var(--u)),rgba(0,0,0,.4) calc(100% - 1.6*var(--u)),#d4b06a calc(100% - 1.6*var(--u))),linear-gradient(180deg,transparent calc(26*var(--u)),rgba(212,176,106,.55) calc(26*var(--u)),rgba(212,176,106,.55) calc(27.4*var(--u)),rgba(0,0,0,.28) calc(27.4*var(--u)),transparent calc(30*var(--u))),url(/stone.jpg);background-size:auto,auto,calc(300*var(--u));overflow:hidden}
+.kb .f::before{content:none}
+.kb .f,.kb .cs{box-sizing:border-box}
+.kb .fr,.kb .bk{width:calc(var(--w) - 2*var(--r));height:var(--h);left:var(--r)}
+.kb .fr{transform:translateZ(calc(var(--d)/2));display:grid;place-items:center;align-content:center;gap:calc(16*var(--u));padding-top:calc(30*var(--u))}
+.kb .bk{transform:rotateY(180deg) translateZ(calc(var(--d)/2));filter:brightness(.7)}
+.kb .lt,.kb .rt{width:calc(var(--d) - 2*var(--r));height:var(--h);left:calc((var(--w) - var(--d))/2 + var(--r));display:grid;place-items:center;align-content:center;gap:calc(12*var(--u));padding-top:calc(30*var(--u))}
 .kb .rt{transform:rotateY(90deg) translateZ(calc(var(--w)/2));filter:brightness(.78)}.kb .lt{transform:rotateY(-90deg) translateZ(calc(var(--w)/2));filter:brightness(.6)}
-.kb .tp,.kb .bt{width:var(--w);height:var(--d);top:calc((var(--h) - var(--d))/2)}
+.kb .tp,.kb .bt{width:var(--w);height:var(--d);top:calc((var(--h) - var(--d))/2);border-radius:var(--r);background-image:radial-gradient(ellipse at 50% 50%,rgba(255,255,255,.06),transparent 70%),url(/stone.jpg);background-size:auto,calc(300*var(--u));box-shadow:inset 0 0 0 calc(2*var(--u)) #c9a35c,inset 0 0 0 calc(7*var(--u)) rgba(0,0,0,.35),inset 0 0 0 calc(8.4*var(--u)) rgba(212,176,106,.45)}
 .kb .tp{transform:rotateX(90deg) translateZ(calc(var(--h)/2));filter:brightness(1.18)}.kb .bt{transform:rotateX(-90deg) translateZ(calc(var(--h)/2));filter:brightness(.45)}
-.kb .lg{width:72%;filter:drop-shadow(0 calc(3*var(--u)) calc(5*var(--u)) rgba(0,0,0,.45))}
-.kb .nn{font-family:Fredoka,sans-serif;font-weight:500;font-size:calc(13.5*var(--u));letter-spacing:.16em;color:#d4b06a;white-space:nowrap}
-.kb .qr{width:56%;aspect-ratio:1;padding:calc(9*var(--u));border-radius:calc(10*var(--u));background:#e6d3a6;box-shadow:0 0 0 calc(1.5*var(--u)) #d4b06a}
+.kb .cs{top:0;height:var(--h)}
+.kb .lg{width:80%;filter:drop-shadow(0 calc(3*var(--u)) calc(5*var(--u)) rgba(0,0,0,.45))}
+.kb .nn{font-family:Fredoka,sans-serif;font-weight:500;font-size:calc(11.5*var(--u));letter-spacing:.08em;color:#d4b06a;white-space:nowrap}
+.kb .qr{width:80%;aspect-ratio:1;padding:calc(7*var(--u));border-radius:calc(8*var(--u));background:#e6d3a6;box-shadow:0 0 0 calc(1.5*var(--u)) #d4b06a}
 .kb .qr img{width:100%;height:100%;display:block}
-.kb .qt{font-family:Fredoka,sans-serif;font-weight:500;font-size:calc(11*var(--u));color:#d4b06a;text-align:center;line-height:1.35;padding:0 calc(10*var(--u))}
-.kb .slot{position:absolute;left:50%;top:50%;width:calc(110*var(--u));height:calc(12*var(--u));margin:calc(-6*var(--u)) 0 0 calc(-55*var(--u));border-radius:99px;background:#03050f;box-shadow:inset 0 calc(3*var(--u)) calc(4*var(--u)) #000,0 0 0 calc(2*var(--u)) #c9a35c}
+.kb .qt{font-family:Fredoka,sans-serif;font-weight:500;font-size:calc(10.5*var(--u));color:#d4b06a;text-align:center;line-height:1.35;padding:0 calc(6*var(--u))}
+.kb .slot{position:absolute;left:50%;top:50%;width:calc(100*var(--u));height:calc(13*var(--u));margin:calc(-6.5*var(--u)) 0 0 calc(-50*var(--u));border-radius:calc(4*var(--u));background:#03050f;box-shadow:inset 0 calc(3*var(--u)) calc(4*var(--u)) #000,0 0 0 calc(2*var(--u)) #c9a35c,0 0 0 calc(3.5*var(--u)) rgba(0,0,0,.4)}
 /* falling shekel – real 3D coin inside the box space, drops edge-first through the slot */
 .kb .cn3{position:absolute;left:50%;top:0;width:calc(54*var(--u));height:calc(54*var(--u));margin:calc(-27*var(--u)) 0 0 calc(-27*var(--u));transform-style:preserve-3d;animation:cdrop 4.6s infinite;pointer-events:none}
 .kb .cn3 i{position:absolute;inset:0;border-radius:50%;background:linear-gradient(90deg,#6f747b,#c9ced4 50%,#6f747b)}

@@ -8,7 +8,7 @@
 <link rel="icon" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://images.unsplash.com">
 <link href="https://fonts.googleapis.com/css2?family=Bona+Nova:wght@700&family=Heebo:wght@200;800&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=5"><script src="/i18n.js?v=1"></script>
+<link rel="stylesheet" href="/base.css?v=6"><link rel="stylesheet" href="/kbox.css?v=6"><script src="/kbox.js?v=1" defer></script><script src="/i18n.js?v=1"></script>
 <style>
 .wrap{width:min(1200px,100% - 40px);margin-inline:auto}
 h1,h2,h3,.f{font-family:var(--fs)}
@@ -42,7 +42,7 @@ nav .logo img.lgo{height:64px}nav.s .logo img.lgo{height:50px}nav .logo img{tran
 .arch .cap{position:absolute;bottom:26px;inset-inline:26px;color:var(--ink);z-index:2}.arch .cap small{display:block;color:var(--gold2);font-weight:600;letter-spacing:.1em;font-size:13px}.arch .cap b{font-size:22px;font-weight:600}
 /* 3D box */
 .b3w{position:absolute;bottom:-34px;inset-inline-end:-50px;perspective:900px;z-index:3;transform:translateY(var(--by,0))}
-.kbs{--s:.56;transform:rotateX(-15deg) rotateY(-30deg);animation:sway2 10s ease-in-out infinite}@keyframes sway2{50%{transform:rotateX(-10deg) rotateY(18deg)}}.b3{--w:150px;--h:200px;--d:92px;width:var(--w);height:var(--h);position:relative;transform-style:preserve-3d;animation:sway 10s ease-in-out infinite;transform:rotateX(-10deg) rotateY(-30deg)}
+.kbs{--s:.62;transform:rotateX(-15deg) rotateY(-30deg);animation:sway2 10s ease-in-out infinite}@keyframes sway2{50%{transform:rotateX(-10deg) rotateY(18deg)}}.b3{--w:150px;--h:200px;--d:92px;width:var(--w);height:var(--h);position:relative;transform-style:preserve-3d;animation:sway 10s ease-in-out infinite;transform:rotateX(-10deg) rotateY(-30deg)}
 @keyframes sway{50%{transform:rotateX(-6deg) rotateY(20deg)}}
 .b3 .f{position:absolute;backface-visibility:hidden;background:#141b45 url(/stone.jpg);background-size:300px;border:1px solid rgba(217,174,91,.55)}
 .b3 .fr,.b3 .bk{width:var(--w);height:var(--h)}.b3 .fr{transform:translateZ(calc(var(--d)/2));display:grid;place-items:center;align-content:center;gap:8px;text-align:center;box-shadow:inset 0 0 0 6px rgba(9,13,32,.4),inset 0 0 0 7px rgba(217,174,91,.6)}
@@ -316,7 +316,7 @@ footer{border-top:1px solid rgba(246,239,224,.1);padding:40px 0 calc(90px + env(
 </form></div>
 <canvas id="share" width="1080" height="1350" style="display:none"></canvas>
 <div class="toast" id="toast"></div><div class="jt" id="jt" aria-live="polite"></div>
-<script src="/cities.js?v=5"></script><script src="/share.js?v=6"></script>
+<script src="/cities.js?v=5"></script><script src="/share.js?v=7"></script>
 <script src="/ilmap.js?v=5"></script>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];

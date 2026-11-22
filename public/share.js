@@ -17,7 +17,7 @@ window.rbCard=async function({boxNo,ref,streak,first,url}){
   x.fillStyle='#d4b06a';x.font='500 30px Fredoka, sans-serif';x.letterSpacing='10px';x.fillText(t('נ נח נחמ נחמן מאומן'),540,130);x.letterSpacing='0px';
   x.fillStyle='#f3ead7';fit(t('שקל אחד ביום'),960,'200 124px Heebo, sans-serif');x.fillText(t('שקל אחד ביום'),540,300);
   g=x.createLinearGradient(0,330,0,470);g.addColorStop(0,'#f1d697');g.addColorStop(.55,'#d2ab62');g.addColorStop(1,'#a97f39');x.fillStyle=g;fit(t('לרבינו'),960,'800 188px Heebo, sans-serif');x.fillText(t('לרבינו'),540,462);
-  if(bx){const sh=x.createRadialGradient(540,1435,10,540,1435,330);sh.addColorStop(0,'rgba(0,0,0,.7)');sh.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=sh;x.beginPath();x.ellipse(540,1435,330,60,0,0,7);x.fill();const w=720,h=w*bx.height/bx.width;x.drawImage(bx,540-w/2,1450-h,w,h)}
+  if(bx){const sh=x.createRadialGradient(540,1435,10,540,1435,330);sh.addColorStop(0,'rgba(0,0,0,.7)');sh.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=sh;x.beginPath();x.ellipse(540,1435,330,60,0,0,7);x.fill();const h=760,w=h*bx.width/bx.height;x.drawImage(bx,540-w/2,1450-h,w,h)}
   g=x.createLinearGradient(0,1500,0,1580);g.addColorStop(0,'#f1d697');g.addColorStop(1,'#b98d43');x.fillStyle=g;{const s1=(first?first+' · ':'')+t('קופה מס׳')+' '+String(boxNo).padStart(4,'0');fit(s1,960,'200 70px Heebo, sans-serif');x.fillText(s1,540,1565)}
   x.fillStyle='#cfc6b3';{const s2=streak>1?t(`${streak} בקרים ברצף · בזכותי עוד יהודי באומן`):t('בזכותי עוד יהודי באומן');fit(s2,960,'500 36px Fredoka, sans-serif');x.fillText(s2,540,1625)}
   // bottom: QR + call to action
