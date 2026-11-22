@@ -457,6 +457,7 @@ const provSummary = cfg => Object.entries(cfg || {}).filter(([k, v]) => v && (PR
 app.put('/api/campaigns/:id', auth, own, (req, res) => {
   const b = req.body || {}; const c = req.c; if (req.user.sub) delete b.provider;
   if (req.user.role !== 'admin' && b.settings && typeof b.settings === 'object') { for (const k of ADMIN_KEYS) delete b.settings[k]; }
+  if (b.settings && typeof b.settings === 'object' && 'fbPixel' in b.settings) { const px = String(b.settings.fbPixel || '').replace(/\D/g, ''); if (px && (px.length < 10 || px.length > 20)) return bad(res, 'מזהה הפיקסל צריך להיות מספר של 10–20 ספרות (מ-Events Manager)'); b.settings.fbPixel = px; }
   if (b.provider && typeof b.provider === 'object') { for (const k of Object.keys(b.provider)) if (isMasked(b.provider[k])) delete b.provider[k]; }
   if (b.provider && req.user.role !== 'admin') {
     const cur = PV_(c.provider), next = { ...cur, ...b.provider };
