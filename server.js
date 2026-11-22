@@ -94,15 +94,36 @@ const setSid = (res, uid, extra = {}) => { const tv = (db.prepare('SELECT tv FRO
 const seen = new Map();
 const user = req => {
   const s = verify(req.cookies.sid); if (!s) return null;
-  const u = db.prepare('SELECT id,email,name,phone,org,role,org_verified,blocked,tv FROM users WHERE id=?').get(s.uid);
+  const u = db.prepare('SELECT id,email,name,phone,org,role,org_verified,blocked,tv,parent_id,perms FROM users WHERE id=?').get(s.uid);
   if (!u || u.blocked || (u.tv || 0) !== (s.tv || 0)) return null; // blocked users and sessions from before a password change are out
+  if (u.parent_id) { // team member: acts inside the owner's account, limited by perms
+    const o = db.prepare('SELECT id,blocked,org_verified,org,role FROM users WHERE id=?').get(u.parent_id); if (!o || o.blocked) return null;
+    u.oid = o.id; u.org_verified = o.org_verified; u.org = o.org; u.role = 'user'; u.sub = subPerms(u.perms);
+  } else u.oid = u.id;
+  delete u.parent_id; delete u.perms;
   const now = Date.now(); if (!(seen.get(u.id) > now - 60000)) { seen.set(u.id, now); try { db.prepare("UPDATE users SET last_seen=datetime('now'), last_ip=? WHERE id=?").run(String(req.ip || '').slice(0, 64), u.id); } catch { } }
   delete u.blocked; delete u.tv; if (s.imp) u.imp = s.imp; return u;
 };
-const auth = (req, res, next) => { req.user = user(req); if (!req.user) return bad(res, 'auth', 401); next(); };
+// ---- team members: which permission each authenticated API needs ('' = any member, missing = owner only) ----
+const PERM_KEYS = ['edit', 'donations', 'teams', 'messages'];
+const subPerms = s => { const o = J(s); return { camps: Array.isArray(o.camps) ? o.camps.map(Number).filter(Boolean) : 'all', ...Object.fromEntries(PERM_KEYS.map(k => [k, !!o[k]])) }; };
+const SUB_RULES = [
+  ['GET', /^\/api\/campaigns$/, ''], ['GET', /^\/api\/campaigns\/\d+$/, ''], ['PUT', /^\/api\/campaigns\/\d+$/, 'edit'],
+  ['GET', /^\/api\/campaigns\/\d+\/(channels|updates)$/, ''],
+  ['POST|DELETE', /^\/api\/campaigns\/\d+\/updates(\/\d+)?$/, 'messages'],
+  ['GET', /^\/api\/campaigns\/\d+\/donations$/, ''],
+  ['GET|POST|PATCH|DELETE', /^\/api\/campaigns\/\d+\/(donations(\.xlsx|\.csv|\/import|\/bulk|\/\d+)?|unfinished|clear-test|reconcile)$/, 'donations'],
+  ['GET|POST|PUT|DELETE', /^\/api\/campaigns\/\d+\/teams(\.xlsx|\/\d+)?$/, 'teams'],
+  ['GET|POST', /^\/api\/campaigns\/\d+\/(recipients|messages|messages\/log|mail-preview|mail-test)$/, 'messages'], ['GET', /^\/api\/msg-channels$/, 'messages'],
+  ['POST', /^\/api\/upload$/, 'edit|messages'], ['POST', /^\/api\/assist$/, ''], ['POST', /^\/api\/me\/password$/, '']
+];
+const subAllowed = (u, method, p) => { const r = SUB_RULES.find(([m, re]) => m.split('|').includes(method) && re.test(p)); if (!r) return false; return !r[2] || r[2].split('|').some(k => u.sub[k]); };
+const auth = (req, res, next) => { req.user = user(req); if (!req.user) return bad(res, 'auth', 401); if (req.user.sub && !subAllowed(req.user, req.method, req.path)) return bad(res, 'אין לך הרשאה לפעולה הזו. פנו למנהל החשבון בעמותה.', 403); next(); };
+const subOut = (req, o) => { if (!req.user.sub || !o) return o; o.provider = { type: o.provider?.type || 'test' }; if (!req.user.sub.teams && Array.isArray(o.teams)) o.teams = o.teams.map(t => ({ ...t, phone: '', email: '', key: '' })); return o; };
 const own = (req, res, next) => {
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id);
-  if (!c || (c.user_id !== req.user.id && req.user.role !== 'admin')) return bad(res, 'not found', 404);
+  if (!c || (c.user_id !== req.user.oid && req.user.role !== 'admin')) return bad(res, 'not found', 404);
+  if (req.user.sub && req.user.sub.camps !== 'all' && !req.user.sub.camps.includes(c.id)) return bad(res, 'not found', 404);
   req.c = c; next();
 };
 
@@ -174,9 +195,8 @@ app.post('/api/register', limit(5, 600000), (req, res) => {
   const S = (v, n) => String(v || '').trim().slice(0, n);
   const r = db.prepare('INSERT INTO users(email,pass,name,phone,org,role,role_title,address,city,website,s46,consent_at,marketing,org_number) VALUES(?,?,?,?,?,?,?,?,?,?,?,datetime(\'now\'),?,?)').run(email.toLowerCase(), hashPw(password), S(name, 60), S(phone, 20), S(org, 80), role, S(b.role_title, 40), S(b.address, 120), S(b.city, 60), S(b.website, 160), S(b.s46, 10), b.marketing ? 1 : 0, S(b.org_number, 12).replace(/\D/g, ''));
   const uid = r.lastInsertRowid; vLink(req, uid); vEvent(req.cookies?.gv, 'reg.done', email, '', false, uid); const src = String(req.cookies?.src || '').split(':')[0]; if (src === 'ads') pageView(req, 'ads:signup'); logEvent('user.signup', { uid, ip: req.ip, msg: `${email.toLowerCase()} · ${S(org, 80) || ''}${src === 'ads' ? ' · מגוגל' : ''}`, meta: { org_number: S(b.org_number, 12), src } });
-  sendVerify(uid).catch(() => { });
-  setSid(res, uid);
-  res.json({ ok: true });
+  if (mail.enabled()) { sendCode(uid).catch(() => { }); res.json({ ok: true, verify: true, email: email.toLowerCase() }); }
+  else { setSid(res, uid); res.json({ ok: true }); }
   // verify the NGO number in the background so the account is ready when they land in the dashboard
   if (b.org_number) lookupOrg(b.org_number).then(o => {
     if (!o) return db.prepare("UPDATE users SET org_verified=2, org_status='לא נמצא ברשם העמותות' WHERE id=?").run(uid);
@@ -184,6 +204,29 @@ app.post('/api/register', limit(5, 600000), (req, res) => {
     db.prepare('UPDATE users SET org_name=?, org_verified=?, org_status=?, org_data=?, org=COALESCE(NULLIF(org,\'\'),?) WHERE id=?').run(o.name, active ? 1 : 2, o.status, JSON.stringify(o).slice(0, 6000), o.name, uid);
   }).catch(() => db.prepare("UPDATE users SET org_verified=2, org_status='ממתין לאימות ידני' WHERE id=? AND org_verified!=1").run(uid));
 });
+// ---- email verification by 6-digit code (signup, and login of an account that was never verified) ----
+const codeHash = (uid, code) => crypto.createHmac('sha256', SECRET).update(uid + ':' + code).digest('hex');
+async function sendCode(uid) {
+  const u = db.prepare('SELECT id,email,name,email_verified FROM users WHERE id=?').get(uid); if (!u || u.email_verified) return false;
+  const code = String(crypto.randomInt(0, 1e6)).padStart(6, '0');
+  db.prepare('UPDATE users SET vcode=?, vcode_exp=?, vcode_tries=0 WHERE id=?').run(codeHash(uid, code), Date.now() + 15 * 60e3, uid);
+  const r = await mail.send({ to: u.email, subject: `קוד האימות שלך ב-GiveIL: ${code}`, html: mail.layout('אימות כתובת המייל', `<p>שלום ${mail.esc(u.name || '')},</p><p>זה קוד האימות שלך:</p><p style="font-size:34px;font-weight:800;letter-spacing:8px;direction:ltr;text-align:center;background:#f5f4f1;border-radius:14px;padding:14px 0;margin:10px 0">${code}</p><p style="color:#6b6762;font-size:13px">הקוד בתוקף ל-15 דקות. אם לא ביקשתם – התעלמו מהמייל.</p>`) });
+  return r.ok;
+}
+const needsCode = u => mail.enabled() && u && !u.email_verified && !u.parent_id && u.role !== 'admin';
+app.post('/api/verify-code', limit(10, 600000), (req, res) => {
+  const email = String(req.body?.email || '').toLowerCase().trim(); const code = String(req.body?.code || '').replace(/\D/g, '');
+  const u = db.prepare('SELECT * FROM users WHERE email=?').get(email); if (!u) return bad(res, 'הקוד שגוי');
+  if (u.email_verified) { setSid(res, u.id); return res.json({ ok: true }); }
+  if (!u.vcode || u.vcode_exp < Date.now()) return bad(res, 'תוקף הקוד פג. שלחו קוד חדש.');
+  if (u.vcode_tries >= 6) return bad(res, 'יותר מדי ניסיונות. שלחו קוד חדש.');
+  const ok = code.length === 6 && crypto.timingSafeEqual(Buffer.from(codeHash(u.id, code)), Buffer.from(u.vcode));
+  if (!ok) { db.prepare('UPDATE users SET vcode_tries=vcode_tries+1 WHERE id=?').run(u.id); return bad(res, 'הקוד שגוי, נסו שוב'); }
+  db.prepare("UPDATE users SET email_verified=1, vcode='', vcode_exp=0, verify_token='' WHERE id=?").run(u.id);
+  logEvent('user.verified', { uid: u.id, ip: req.ip, msg: u.email }); vEvent(req.cookies?.gv, 'reg.verified', u.email, '', false, u.id);
+  setSid(res, u.id); res.json({ ok: true });
+});
+app.post('/api/verify-code/resend', limit(4, 600000), async (req, res) => { const u = db.prepare('SELECT id,email_verified FROM users WHERE email=?').get(String(req.body?.email || '').toLowerCase().trim()); if (u && !u.email_verified) await sendCode(u.id).catch(() => { }); res.json({ ok: true }); });
 async function sendVerify(uid) {
   const u = db.prepare('SELECT id,email,name,email_verified FROM users WHERE id=?').get(uid); if (!u || u.email_verified || !mail.enabled()) return false;
   const token = crypto.randomBytes(20).toString('hex'); db.prepare('UPDATE users SET verify_token=? WHERE id=?').run(token, uid);
@@ -282,7 +325,9 @@ app.post('/api/login', limit(10, 60000), (req, res) => {
   const u = db.prepare('SELECT * FROM users WHERE email=?').get(email);
   if (!u || !checkPw(String(req.body?.password || ''), u.pass)) { fails.push(now); hits.set(fk, { a: fails, win: 900000 }); logEvent('auth.fail', { level: 'warn', uid: u?.id, ip: req.ip, msg: email + (u ? '' : ' (לא קיים)') }); return bad(res, 'אימייל או סיסמה שגויים', 401); }
   if (u.blocked) { logEvent('auth.blocked', { level: 'warn', uid: u.id, ip: req.ip, msg: email }); return bad(res, 'החשבון מושעה. לפרטים פנו לתמיכה.', 403); }
-  hits.delete(fk); db.prepare('UPDATE users SET logins=COALESCE(logins,0)+1 WHERE id=?').run(u.id);
+  hits.delete(fk);
+  if (needsCode(u)) { if (!(u.vcode && u.vcode_exp - 14 * 60e3 > Date.now())) sendCode(u.id).catch(() => { }); return res.json({ ok: true, verify: true, email: u.email }); }
+  db.prepare('UPDATE users SET logins=COALESCE(logins,0)+1 WHERE id=?').run(u.id);
   vLink(req, u.id); vEvent(req.cookies?.gv, 'login.ok', '', '', false, u.id);
   logEvent('auth.login', { uid: u.id, ip: req.ip, msg: email, meta: { ua: String(req.get('user-agent') || '').slice(0, 160) } });
   setSid(res, u.id);
@@ -324,11 +369,35 @@ app.post('/api/forgot', limit(5, 600000), async (req, res) => {
 app.post('/api/reset', limit(10, 600000), (req, res) => {
   const r = db.prepare('SELECT * FROM resets WHERE token=?').get(String(req.body?.token || '')); if (!r || r.exp < Date.now()) return bad(res, 'הקישור פג תוקף. בקשו איפוס חדש.');
   if (String(req.body?.password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים');
-  db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(req.body.password), r.user_id); db.prepare('DELETE FROM resets WHERE user_id=?').run(r.user_id); logEvent('auth.reset', { uid: r.user_id, ip: req.ip });
+  db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1, email_verified=1 WHERE id=?').run(hashPw(req.body.password), r.user_id); db.prepare('DELETE FROM resets WHERE user_id=?').run(r.user_id); logEvent('auth.reset', { uid: r.user_id, ip: req.ip });
   setSid(res, r.user_id); res.json({ ok: true });
 });
 app.post('/api/me/password', auth, (req, res) => { const u = db.prepare('SELECT pass FROM users WHERE id=?').get(req.user.id); if (!checkPw(String(req.body?.current || ''), u.pass)) return bad(res, 'הסיסמה הנוכחית שגויה'); if (String(req.body?.password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים'); db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(req.body.password), req.user.id); setSid(res, req.user.id); ev(req, 'auth.password'); res.json({ ok: true }); });
-app.get('/api/me', (req, res) => { const u = user(req); if (!u) return res.json({ user: null }); const x = db.prepare('SELECT org_number,org_name,org_verified,org_status,email_verified,phone,role_title,org FROM users WHERE id=?').get(u.id); const ct = db.prepare('SELECT id,created,status,review_note,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(u.id); res.json({ user: { ...u, ...x, contract: ct || null, mailEnabled: mail.enabled() } }); });
+app.get('/api/me', (req, res) => { const u = user(req); if (!u) return res.json({ user: null }); const x = db.prepare('SELECT org_number,org_name,org_verified,org_status,phone,role_title,org FROM users WHERE id=?').get(u.oid); x.email_verified = db.prepare('SELECT email_verified FROM users WHERE id=?').get(u.id).email_verified; if (u.sub) { delete x.phone; delete x.role_title; const o = db.prepare('SELECT name,email FROM users WHERE id=?').get(u.oid); x.owner = { name: o.name, email: o.email }; x.email_verified = 1; } const ct = db.prepare('SELECT id,created,status,review_note,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(u.oid); res.json({ user: { ...u, ...x, contract: ct || null, mailEnabled: mail.enabled() } }); });
+// ---- team members: the NGO owner gives colleagues their own login with chosen permissions ----
+const ownerOnly = (req, res, next) => req.user.sub ? bad(res, 'רק מנהל החשבון יכול לנהל הרשאות', 403) : next();
+const memberOut = m => ({ id: m.id, email: m.email, name: m.name, perms: subPerms(m.perms), created: m.created, last_seen: m.last_seen || '', blocked: !!m.blocked });
+const cleanPerms = (b, oid) => { const p = {}; for (const k of PERM_KEYS) p[k] = !!b?.[k]; const mine = db.prepare('SELECT id FROM campaigns WHERE user_id=?').all(oid).map(r => r.id); p.camps = Array.isArray(b?.camps) ? b.camps.map(Number).filter(id => mine.includes(id)) : 'all'; return JSON.stringify(p); };
+app.get('/api/members', auth, ownerOnly, (req, res) => res.json(db.prepare('SELECT * FROM users WHERE parent_id=? ORDER BY id').all(req.user.id).map(memberOut)));
+app.post('/api/members', auth, ownerOnly, limit(20, 600000), (req, res) => {
+  const b = req.body || {}; const email = String(b.email || '').toLowerCase().trim().slice(0, 160); const name = String(b.name || '').trim().slice(0, 60);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad(res, 'אימייל לא תקין'); if (name.length < 2) return bad(res, 'נא להזין שם');
+  if (String(b.password || '').length < 8) return bad(res, 'סיסמה: לפחות 8 תווים');
+  if (db.prepare('SELECT 1 FROM users WHERE email=?').get(email)) return bad(res, 'האימייל הזה כבר רשום במערכת. בחרו אימייל אחר.');
+  const r = db.prepare("INSERT INTO users(email,pass,name,role,parent_id,perms,email_verified,consent_at) VALUES(?,?,?,'user',?,?,1,datetime('now'))").run(email, hashPw(String(b.password)), name, req.user.id, cleanPerms(b.perms, req.user.id));
+  ev(req, 'member.add', { msg: email });
+  if (mail.enabled()) { const o = db.prepare('SELECT name,org_name,org FROM users WHERE id=?').get(req.user.id) || {}; mail.send({ to: email, subject: `קיבלת גישה לניהול הקמפיינים של ${o.org_name || o.org || 'העמותה'}`, html: mail.layout('קיבלת גישה ל-GiveIL', `<p>שלום ${mail.esc(name)},</p><p>${mail.esc(o.name || '')} פתח/ה לך גישה לניהול הקמפיינים של <b>${mail.esc(o.org_name || o.org || '')}</b> ב-GiveIL.</p><p>נכנסים עם כתובת המייל הזו והסיסמה שקיבלת ממנו/ממנה.</p><p><a href="${SITE()}/app" style="background:#1c1917;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;display:inline-block;font-weight:600">כניסה למערכת</a></p>`) }).catch(() => { }); }
+  res.json(memberOut(db.prepare('SELECT * FROM users WHERE id=?').get(r.lastInsertRowid)));
+});
+app.put('/api/members/:mid', auth, ownerOnly, (req, res) => {
+  const m = db.prepare('SELECT * FROM users WHERE id=? AND parent_id=?').get(req.params.mid, req.user.id); if (!m) return bad(res, 'not found', 404); const b = req.body || {};
+  if (b.password !== undefined && b.password !== '') { if (String(b.password).length < 8) return bad(res, 'סיסמה: לפחות 8 תווים'); db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(String(b.password)), m.id); }
+  if (b.perms) db.prepare('UPDATE users SET perms=?, tv=COALESCE(tv,0)+? WHERE id=?').run(cleanPerms(b.perms, req.user.id), 0, m.id);
+  if (b.name) db.prepare('UPDATE users SET name=? WHERE id=?').run(String(b.name).trim().slice(0, 60), m.id);
+  if (b.blocked !== undefined) db.prepare('UPDATE users SET blocked=? WHERE id=?').run(b.blocked ? 1 : 0, m.id);
+  ev(req, 'member.update', { msg: m.email }); res.json(memberOut(db.prepare('SELECT * FROM users WHERE id=?').get(m.id)));
+});
+app.delete('/api/members/:mid', auth, ownerOnly, (req, res) => { const m = db.prepare('SELECT id,email FROM users WHERE id=? AND parent_id=?').get(req.params.mid, req.user.id); if (!m) return bad(res, 'not found', 404); db.prepare('DELETE FROM users WHERE id=?').run(m.id); ev(req, 'member.remove', { msg: m.email }); res.json({ ok: true }); });
 app.put('/api/me', auth, (req, res) => { const b = req.body || {}; db.prepare('UPDATE users SET name=?,phone=?,org=? WHERE id=?').run(String(b.name || '').slice(0, 60), String(b.phone || '').slice(0, 20), String(b.org || '').slice(0, 80), req.user.id); if (b.password && String(b.password).length >= 6) { db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(String(b.password)), req.user.id); setSid(res, req.user.id); ev(req, 'auth.password'); } res.json({ ok: true }); });
 
 // ---------- uploads ----------
@@ -341,7 +410,7 @@ app.use('/u', SANDBOX, express.static(path.join(DATA_DIR, 'uploads'), { maxAge: 
 // ---------- campaigns (owner) ----------
 const campaignOut = c => ({ ...c, settings: J(c.settings), provider: provMask(PV_(c.provider)), lastPaid: (db.prepare("SELECT paid_at FROM donations WHERE campaign_id=? AND status='paid' AND test=0 ORDER BY paid_at DESC LIMIT 1").get(c.id) || {}).paid_at || null, levels: db.prepare('SELECT * FROM levels WHERE campaign_id=? ORDER BY pos,id').all(c.id), teams: db.prepare('SELECT * FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id).map(t => ({ ...t, key: teamKey(t) })), matchers: db.prepare('SELECT * FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id) });
 app.get('/api/campaigns', auth, (req, res) => {
-  const rows = req.user.role === 'admin' && req.query.all ? db.prepare('SELECT c.*, u.email owner FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC').all() : db.prepare('SELECT * FROM campaigns WHERE user_id=? ORDER BY id DESC').all(req.user.id);
+  const rows = req.user.role === 'admin' && req.query.all ? db.prepare('SELECT c.*, u.email owner FROM campaigns c JOIN users u ON u.id=c.user_id ORDER BY c.id DESC').all() : db.prepare('SELECT * FROM campaigns WHERE user_id=? ORDER BY id DESC').all(req.user.oid).filter(c => !req.user.sub || req.user.sub.camps === 'all' || req.user.sub.camps.includes(c.id));
   res.json(rows.map(c => ({ id: c.id, slug: c.slug, title: c.title, status: c.status, goal: c.goal, multiplier: c.multiplier, end_at: c.end_at, cover: c.cover, owner: c.owner, stats: stats(c, isTest(c)) })));
 });
 app.post('/api/campaigns', auth, (req, res) => {
@@ -356,7 +425,7 @@ app.post('/api/campaigns', auth, (req, res) => {
   [[180, 'ידיד'], [500, 'שותף'], [1000, 'תומך'], [1800, 'מייסד']].forEach(([a, n], i) => db.prepare('INSERT INTO levels(campaign_id,name,amount,pos) VALUES(?,?,?,?)').run(id, n, a, i));
   res.json(campaignOut(db.prepare('SELECT * FROM campaigns WHERE id=?').get(id)));
 });
-app.get('/api/campaigns/:id', auth, own, (req, res) => res.json({ ...campaignOut(req.c), stats: stats(req.c, isTest(req.c)), teamStats: teamStats(req.c, isTest(req.c)) }));
+app.get('/api/campaigns/:id', auth, own, (req, res) => res.json(subOut(req, { ...campaignOut(req.c), stats: stats(req.c, isTest(req.c)), teamStats: teamStats(req.c, isTest(req.c)) })));
 const ADMIN_KEYS = ['providerOk', 'providerReview', 'adminPaused', 'adminNote', 'msg'];
 // which messaging services the super-admin opened for this campaign (connections are platform-level)
 const chAllowed = (c, ch) => { const m = J(c.settings).msg || {}; return ch === 'email' ? m.email !== false : !!m[ch]; };
@@ -366,7 +435,7 @@ const provFp = cfg => { const o = { ...(cfg || {}) }; delete o._hasSecret; retur
 const PROV_ID_KEYS = ['companyId', 'mosadId', 'apiValid', 'pageCode', 'userId', 'terminal', 'terminalName', 'clientId', 'email', 'url', 'link', 'phone', 'businessId'];
 const provSummary = cfg => Object.entries(cfg || {}).filter(([k, v]) => v && (PROV_ID_KEYS.includes(k) || k === 'type')).map(([k, v]) => k + ': ' + String(v).slice(0, 80)).join(' · ');
 app.put('/api/campaigns/:id', auth, own, (req, res) => {
-  const b = req.body || {}; const c = req.c;
+  const b = req.body || {}; const c = req.c; if (req.user.sub) delete b.provider;
   if (req.user.role !== 'admin' && b.settings && typeof b.settings === 'object') { for (const k of ADMIN_KEYS) delete b.settings[k]; }
   if (b.provider && typeof b.provider === 'object') { for (const k of Object.keys(b.provider)) if (isMasked(b.provider[k])) delete b.provider[k]; }
   if (b.provider && req.user.role !== 'admin') {
@@ -389,7 +458,7 @@ app.put('/api/campaigns/:id', auth, own, (req, res) => {
   db.prepare('UPDATE campaigns SET title=@title,subtitle=@subtitle,story=@story,goal=@goal,bonus_goal=@bonus_goal,currency=@currency,multiplier=@multiplier,start_at=@start_at,end_at=@end_at,cover=@cover,logo=@logo,video=@video,color=@color,lang=@lang,settings=@settings,provider=@provider,slug=@slug WHERE id=@id').run({ ...f, id: c.id });
   if (Array.isArray(b.levels)) { db.prepare('DELETE FROM levels WHERE campaign_id=?').run(c.id); b.levels.forEach((l, i) => db.prepare('INSERT INTO levels(id,campaign_id,name,amount,descr,stock,pos,icon,monthly,months) VALUES(?,?,?,?,?,?,?,?,?,?)').run(l.id || null, c.id, String(l.name || '').slice(0, 60), +l.amount || 0, String(l.descr || '').slice(0, 200), +l.stock || 0, i, String(l.icon || '').slice(0, 8), l.monthly ? 1 : 0, Math.min(120, Math.max(1, +l.months || 12)))); }
   if (Array.isArray(b.matchers)) { db.prepare('DELETE FROM matchers WHERE campaign_id=?').run(c.id); b.matchers.forEach((m, i) => db.prepare('INSERT INTO matchers(campaign_id,name,logo,pos) VALUES(?,?,?,?)').run(c.id, String(m.name || '').slice(0, 80), String(m.logo || '').slice(0, 300), i)); }
-  res.json(campaignOut(db.prepare('SELECT * FROM campaigns WHERE id=?').get(c.id)));
+  res.json(subOut(req, campaignOut(db.prepare('SELECT * FROM campaigns WHERE id=?').get(c.id))));
 });
 const safeUrl = v => { const u = String(v || '').trim().slice(0, 500); return /^(https?:\/\/|\/u\/)[^\s"'<>`\\]*$/i.test(u) ? u : ''; };
 const NO_PAY_OK = c => c.slug === 'nyalchun' || /נחלים\s*מהלכים/.test(String(c.title || ''));
@@ -425,7 +494,8 @@ app.get('/api/campaigns/:id/donations', auth, own, (req, res) => {
   if (status) { sql += ' AND d.status=?'; p.push(status); }
   if (test !== undefined && test !== '') { sql += ' AND d.test=?'; p.push(test === '1' ? 1 : 0); }
   if (q) { sql += ' AND (d.name LIKE ? OR d.phone LIKE ? OR d.email LIKE ? OR d.dedication LIKE ?)'; p.push(...Array(4).fill('%' + q + '%')); }
-  sql += ' ORDER BY d.id DESC LIMIT 2000'; res.json(db.prepare(sql).all(...p).map(d => ({ ...d, meta: undefined })));
+  sql += ' ORDER BY d.id DESC LIMIT 2000'; const lite = req.user.sub && !req.user.sub.donations; // members without donor access get amounts & times only (for the live charts)
+  res.json(db.prepare(sql).all(...p).map(d => lite ? { id: d.id, amount: d.amount, status: d.status, test: d.test, created: d.created, paid_at: d.paid_at, monthly: d.monthly, team_id: d.team_id } : ({ ...d, meta: undefined })));
 });
 const XLSX = require('./lib/xlsx');
 const ST_HE = { paid: 'שולם', pending: 'ממתין', failed: 'נכשל', refunded: 'הוחזר', cancelled: 'בוטל' };
@@ -1261,7 +1331,7 @@ function guideCtx(uid, cid, req) {
   return { c, stats: st, org: u.org_name || u.org, link: base(req) + '/c/' + c.slug, teams: db.prepare('SELECT COUNT(*) n FROM teams WHERE campaign_id=?').get(c.id).n, topTeam: top?.name, unfinished, checklist, lastHour: db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='paid' AND paid_at>=datetime('now','-1 hour')").get(c.id).n };
 }
 app.post('/api/assist', auth, limit(60, 60000), (req, res) => {
-  let cx = null; try { cx = guideCtx(req.user.id, +req.body?.campaignId || 0, req); } catch (e) { console.error('guide ctx', e.message); }
+  let cx = null; try { cx = guideCtx(req.user.oid, +req.body?.campaignId || 0, req); } catch (e) { console.error('guide ctx', e.message); }
   if (req.body?.kind) { const t = guide.write(String(req.body.kind), cx, String(req.body.text || '').slice(0, 8000)); return t ? res.json({ reply: t, ai: true }) : bad(res, 'kind'); }
   const msgs = (req.body?.messages || []).slice(-12); if (!msgs.length) return bad(res, 'messages');
   const q = String(msgs[msgs.length - 1].content || '').slice(0, 3000);
