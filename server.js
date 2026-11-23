@@ -249,6 +249,7 @@ app.get('/api/contract/preview', auth, (req, res) => { const u = db.prepare('SEL
 app.post('/api/contract', auth, limit(8, 600000), async (req, res) => {
   const b = req.body || {}; const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
   const name = String(b.name || '').trim().slice(0, 80), idn = String(b.idNumber || '').replace(/\D/g, ''), role = String(b.role || u.role_title || '').trim().slice(0, 60); const method = b.method === 'manual' ? 'manual' : 'digital'; const sig = String(b.signature || '');
+  { const ou = db.prepare('SELECT org_number FROM users WHERE id=?').get(req.user.id); if (String(ou?.org_number || '').replace(/\D/g, '').length < 8) return bad(res, 'לפני החתימה צריך להשלים את מספר העמותה / ח.פ. – בעמוד "העמותה והחשבון"'); }
   if (name.length < 2) return bad(res, 'נא להזין שם מלא של החותם'); if (idn.length < 8 || idn.length > 9) return bad(res, 'מספר ת.ז. לא תקין'); if (role.length < 2) return bad(res, 'נא לציין את תפקיד החותם בעמותה');
   if (!b.agree) return bad(res, 'יש לאשר את ההסכם');
   const docs = { id: b.docs?.id, auth: b.docs?.auth };
