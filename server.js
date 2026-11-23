@@ -9,6 +9,10 @@ const providers = require('./lib/providers');
 
 const app = express();
 app.set('trust proxy', 1);
+// ---- one public address: everything on giveil.com, never the raw railway.app host ----
+const CANON = (() => { const b = (process.env.PUBLIC_URL || process.env.BASE_URL || '').replace(/\/$/, ''); return !b || /\.up\.railway\.app/i.test(b) ? 'https://giveil.com' : b; })();
+const isRailHost = h => /\.up\.railway\.app$/i.test(String(h || '').split(':')[0]);
+app.use((req, res, next) => { if (isRailHost(req.get('host')) && (req.method === 'GET' || req.method === 'HEAD') && process.env.RAILWAY_ENVIRONMENT) return res.redirect(301, CANON + req.originalUrl); next(); });
 app.disable('x-powered-by');
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin'); res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
@@ -54,7 +58,7 @@ const provEnc = o => { const r = { ...(o || {}) }; for (const k of Object.keys(r
 const provMask = o => { const r = { ...(o || {}) }; for (const k of Object.keys(r)) if (SECRET_KEYS.has(k) && r[k]) { const s = String(r[k]); r[k] = MASK + (s.length > 6 ? s.slice(-4) : ''); } return r; };
 try { const up = db.prepare('UPDATE campaigns SET provider=? WHERE id=?'); let n = 0; for (const r of db.prepare("SELECT id, provider FROM campaigns WHERE provider IS NOT NULL AND provider!='' AND provider!='{}'").all()) { const o = J(r.provider); if (Object.keys(o).some(k => SECRET_KEYS.has(k) && o[k] && !String(o[k]).startsWith(ENC))) { up.run(provEnc(o), r.id); n++; } } if (n) console.log('encrypted processor secrets in', n, 'campaigns'); } catch (e) { console.error('secret migration', e.message); }
 const slugify = s => { const t = String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40); return t.length >= 2 ? t : 'p-' + crypto.randomBytes(2).toString('hex'); };
-const base = req => process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+const base = req => (process.env.RAILWAY_ENVIRONMENT || process.env.BASE_URL || process.env.PUBLIC_URL) ? CANON : `${req.protocol}://${req.get('host')}`;
 const bad = (res, m, c = 400) => res.status(c).json({ error: m });
 
 // ---------- activity log (everything that moves on the site) ----------
@@ -80,7 +84,7 @@ async function adminNotify(type, o) {
   if (!list.length) return null;
   const u = o.uid ? db.prepare('SELECT id,name,email,phone,org_name,org,org_number FROM users WHERE id=?').get(o.uid) : null;
   const c = o.cid ? db.prepare('SELECT id,title,slug,goal,status FROM campaigns WHERE id=?').get(o.cid) : null;
-  const site = process.env.PUBLIC_URL || 'https://giveil.com'; const e = mail.esc;
+  const site = CANON; const e = mail.esc;
   const msg = String(o.msg || '').replace(/: test → live/, ': עלה לאוויר 🟢').replace(/: live → ended/, ': הסתיים').replace(/: (\w+) → (\w+)/, ': $1 ← $2');
   const rows = [['מה קרה', msg], u && ['עמותה', u.org_name || u.org || '—'], u?.org_number && ['מספר עמותה', u.org_number], u && ['איש קשר', `${u.name || ''} · ${u.email}${u.phone ? ' · ' + u.phone : ''}`], c && ['קמפיין', `${c.title} · יעד ₪${(+c.goal || 0).toLocaleString('he-IL')}`]].filter(Boolean);
   const body = `<table style="width:100%;border-collapse:collapse;font-size:15px">${rows.map(([k, v]) => `<tr><td style="padding:8px 0;color:#64748b;width:110px;vertical-align:top">${e(k)}</td><td style="padding:8px 0"><b>${e(v)}</b></td></tr>`).join('')}</table>
@@ -876,7 +880,7 @@ app.get('/api/d/:token', (req, res) => { const d = db.prepare('SELECT d.*, c.slu
 // every ambassador gets a personal campaign page (/c/<slug>/<team>) and a WhatsApp/email ping on each donation through them
 for (const col of ["key TEXT DEFAULT ''", "from_donation INTEGER", "created TEXT DEFAULT ''", "visits INTEGER DEFAULT 0"]) { try { db.exec('ALTER TABLE teams ADD COLUMN ' + col); } catch { } }
 try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS t_key ON teams(key) WHERE key!=''"); } catch { }
-const SITE = () => (process.env.BASE_URL || 'https://giveil.com').replace(/\/$/, '');
+const SITE = () => CANON;
 const teamKey = t => { if (t.key) return t.key; const k = crypto.randomBytes(12).toString('base64url'); db.prepare('UPDATE teams SET key=? WHERE id=?').run(k, t.id); t.key = k; return k; };
 const first = n => String(n || '').trim().split(/\s+/)[0] || '';
 const nis = (n, c) => (c?.currency === 'USD' ? '$' : '₪') + Math.round(+n || 0).toLocaleString('he-IL');
