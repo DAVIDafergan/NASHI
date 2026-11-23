@@ -331,6 +331,19 @@ html.embed{scrollbar-width:none}html.embed::-webkit-scrollbar{display:none}
 .langs .lsel{display:none}@media(max-width:640px){.langs{padding:0;background:none}.langs button{display:none}.langs .lsel{display:block;appearance:none;-webkit-appearance:none;border:1px solid var(--line,#e7e5e4);background:var(--soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2378716c' fill='none' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat left 10px center;color:var(--ink);font:inherit;font-weight:700;font-size:13px;border-radius:999px;padding:7px 12px 7px 26px;max-width:112px}}
 @media(max-width:640px){header .wrap{gap:8px}.brand{flex:1 1 auto;overflow:hidden}.brand .wm{white-space:nowrap}.hacts{flex:0 0 auto;gap:6px}}
 .tm.me{background:rgba(124,92,255,.08)!important;border-color:rgba(124,92,255,.4)!important}
+
+/* desktop: one reading column – about full width, then ambassadors, then donors as a grid */
+@media(min-width:901px){
+  .layout{grid-template-columns:minmax(0,1fr)!important;gap:22px}
+  #about .story,#about .video,#updates .ul{max-width:820px;margin-inline:auto}
+  #about .hd,#updates .hd{max-width:820px;margin-inline:auto}
+  #teams .tl{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #donors .dl{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  #donors .dn{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--cardS)}
+  #donors .srch{max-width:420px}
+  #donors .more{display:block;margin-inline:auto}
+}
+@media(min-width:901px) and (max-width:1150px){#teams .tl,#donors .dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
