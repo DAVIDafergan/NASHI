@@ -367,8 +367,9 @@ html{scroll-behavior:smooth}
   .cover.img #slides{position:relative;width:100%;aspect-ratio:var(--ir,1);overflow:hidden;background:#0c1330}
   .cover.img .fr .bg{transform:none}
   .cover.img .fr .ov{position:static;background:none;color:var(--ink);padding:18px 18px 46px}
-  .cover.img .lbl{position:static;display:inline-block;margin:16px 18px 0;background:var(--soft);box-shadow:none;font-size:12.5px;padding:5px 12px}.cover.img .lbl+.ov{padding-top:10px}
-  .cover.img h1{font-size:25px}.cover.img p{color:var(--mut);opacity:1;margin-top:6px}
+  .cover.img .lbl{display:none}
+  .cover.img .fr .ov{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  body:has(.cover.img) .pcard{margin-top:-10px!important}
   header{background:var(--paper);backdrop-filter:none;-webkit-backdrop-filter:none}
 }
 </style>
