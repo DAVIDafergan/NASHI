@@ -361,6 +361,7 @@ html{scroll-behavior:smooth}
 .ajoin .btn{flex:none}
 @media(max-width:640px){.ajoin{flex-wrap:wrap;padding:18px;gap:12px}.ajoin .btn{flex-basis:100%}}
 #teams.solo .hd{display:none}#teams.solo{background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+@media(min-width:641px){.cover.notitle .fr .ov{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
 /* mobile: banner shown whole, title below it (never on top of the image) */
 @media(max-width:640px){
   .cover.img .fr{height:auto;background:transparent;box-shadow:none;overflow:visible}
@@ -486,7 +487,7 @@ let LANG='he';const T=(k,v={})=>Object.entries(v).reduce((s,[a,b])=>s.replace('{
 let slTimer;function initBanner(c){const m=(c.settings&&c.settings.media)||{};const def=m.default||{};const own=LANG!==(c.lang||'he')&&m[LANG]?m[LANG]:null;const uniq=a=>[...new Set(a.filter(Boolean))];
   const desk=own&&(own.desktop||[]).length?own.desktop:uniq([c.cover,...(def.desktop||[])]);const mob=own&&(own.mobile||[]).length?own.mobile:(def.mobile||[]);const lm={video:(own&&own.video)||def.video||''};
   const mobile=innerWidth<700;let imgs=mobile&&mob.length?mob:desk;
-  const sl=$('#slides');const cv=document.querySelector('.cover');cv.classList.toggle('img',!!imgs.length);if(imgs.length){const im=new Image();im.onload=()=>{if(im.naturalWidth)cv.style.setProperty('--ir',im.naturalWidth+'/'+im.naturalHeight)};im.src=imgs[0]}sl.innerHTML=imgs.map((u,i)=>`<div class="bg ${i===0?'on':''}" style="background-image:url('${esc(String(u).replace(/['()\\]/g,c=>'%'+c.charCodeAt(0).toString(16)))}')"></div>`).join('');$('#heroBg').style.display=imgs.length?'none':'';
+  const sl=$('#slides');const cv=document.querySelector('.cover');const noT=!!(c.settings&&c.settings.showTitle===false)&&!!imgs.length;cv.classList.toggle('img',noT);cv.classList.toggle('notitle',noT);if(imgs.length){const im=new Image();im.onload=()=>{if(im.naturalWidth)cv.style.setProperty('--ir',im.naturalWidth+'/'+im.naturalHeight)};im.src=imgs[0]}sl.innerHTML=imgs.map((u,i)=>`<div class="bg ${i===0?'on':''}" style="background-image:url('${esc(String(u).replace(/['()\\]/g,c=>'%'+c.charCodeAt(0).toString(16)))}')"></div>`).join('');$('#heroBg').style.display=imgs.length?'none':'';
   $('#dots').innerHTML=imgs.length>1?imgs.map((_,i)=>`<i class="${i===0?'on':''}"></i>`).join(''):'';clearInterval(slTimer);let k=0;if(imgs.length>1)slTimer=setInterval(()=>{k=(k+1)%imgs.length;$$('#slides .bg').forEach((e,i)=>e.classList.toggle('on',i===k));$$('#dots i').forEach((e,i)=>e.classList.toggle('on',i===k))},5000);
   const vid=lm.video||c.video||'';$('#play').hidden=!vid;$('#play').onclick=()=>openVideo(vid)}
 function openVideo(v){const m=v.match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/);$('#vb').innerHTML=m?`<iframe src="https://www.youtube.com/embed/${m[1]}?autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`:`<video src="${esc(v)}" controls autoplay playsinline></video>`;$('#vmod').classList.add('on');document.body.style.overflow='hidden'}
