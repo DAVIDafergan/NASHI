@@ -115,7 +115,7 @@ const SUB_RULES = [
   ['GET|POST|PATCH|DELETE', /^\/api\/campaigns\/\d+\/(donations(\.xlsx|\.csv|\/import|\/bulk|\/\d+)?|unfinished|clear-test|reconcile)$/, 'donations'],
   ['GET|POST|PUT|DELETE', /^\/api\/campaigns\/\d+\/teams(\.xlsx|\/\d+)?$/, 'teams'],
   ['GET|POST', /^\/api\/campaigns\/\d+\/(recipients|messages|messages\/log|mail-preview|mail-test)$/, 'messages'], ['GET', /^\/api\/msg-channels$/, 'messages'],
-  ['POST', /^\/api\/upload$/, 'edit|messages'], ['POST', /^\/api\/assist$/, ''], ['POST', /^\/api\/me\/password$/, '']
+  ['POST', /^\/api\/assist$/, ''], ['POST', /^\/api\/me\/password$/, ''], ['POST', /^\/api\/me\/logout-all$/, ''], ['PUT', /^\/api\/me$/, ''], ['POST', /^\/api\/upload$/, '']
 ];
 const subAllowed = (u, method, p) => { const r = SUB_RULES.find(([m, re]) => m.split('|').includes(method) && re.test(p)); if (!r) return false; return !r[2] || r[2].split('|').some(k => u.sub[k]); };
 const auth = (req, res, next) => { req.user = user(req); if (!req.user) return bad(res, 'auth', 401); if (req.user.sub && !subAllowed(req.user, req.method, req.path)) return bad(res, 'אין לך הרשאה לפעולה הזו. פנו למנהל החשבון בעמותה.', 403); next(); };
@@ -249,7 +249,7 @@ app.get('/api/contract/preview', auth, (req, res) => { const u = db.prepare('SEL
 app.post('/api/contract', auth, limit(8, 600000), async (req, res) => {
   const b = req.body || {}; const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
   const name = String(b.name || '').trim().slice(0, 80), idn = String(b.idNumber || '').replace(/\D/g, ''), role = String(b.role || u.role_title || '').trim().slice(0, 60); const method = b.method === 'manual' ? 'manual' : 'digital'; const sig = String(b.signature || '');
-  { const ou = db.prepare('SELECT org_number FROM users WHERE id=?').get(req.user.id); if (String(ou?.org_number || '').replace(/\D/g, '').length < 8) return bad(res, 'לפני החתימה צריך להשלים את מספר העמותה / ח.פ. – בעמוד "העמותה והחשבון"'); }
+  { const ou = db.prepare('SELECT org_number FROM users WHERE id=?').get(req.user.id); if (String(ou?.org_number || '').replace(/\D/g, '').length < 8) return bad(res, 'לפני החתימה צריך להשלים את מספר העמותה / ח.פ. – ב"החשבון שלי" ← העמותה ואימות'); }
   if (name.length < 2) return bad(res, 'נא להזין שם מלא של החותם'); if (idn.length < 8 || idn.length > 9) return bad(res, 'מספר ת.ז. לא תקין'); if (role.length < 2) return bad(res, 'נא לציין את תפקיד החותם בעמותה');
   if (!b.agree) return bad(res, 'יש לאשר את ההסכם');
   const docs = { id: b.docs?.id, auth: b.docs?.auth };
@@ -374,7 +374,7 @@ app.post('/api/reset', limit(10, 600000), (req, res) => {
   setSid(res, r.user_id); res.json({ ok: true });
 });
 app.post('/api/me/password', auth, (req, res) => { const u = db.prepare('SELECT pass FROM users WHERE id=?').get(req.user.id); if (!checkPw(String(req.body?.current || ''), u.pass)) return bad(res, 'הסיסמה הנוכחית שגויה'); if (String(req.body?.password || '').length < 6) return bad(res, 'סיסמה: לפחות 6 תווים'); db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(req.body.password), req.user.id); setSid(res, req.user.id); ev(req, 'auth.password'); res.json({ ok: true }); });
-app.get('/api/me', (req, res) => { const u = user(req); if (!u) return res.json({ user: null }); const x = db.prepare('SELECT org_number,org_name,org_verified,org_status,phone,role_title,org FROM users WHERE id=?').get(u.oid); x.email_verified = db.prepare('SELECT email_verified FROM users WHERE id=?').get(u.id).email_verified; if (u.sub) { delete x.phone; delete x.role_title; const o = db.prepare('SELECT name,email FROM users WHERE id=?').get(u.oid); x.owner = { name: o.name, email: o.email }; x.email_verified = 1; } const ct = db.prepare('SELECT id,created,status,review_note,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(u.oid); res.json({ user: { ...u, ...x, contract: ct || null, mailEnabled: mail.enabled() } }); });
+app.get('/api/me', (req, res) => { const u = user(req); if (!u) return res.json({ user: null }); const x = db.prepare('SELECT org_number,org_name,org_verified,org_status,phone,role_title,org,avatar,website,s46,address,city,marketing,created,plan,plan_until FROM users WHERE id=?').get(u.oid); { const me = db.prepare('SELECT email_verified,avatar FROM users WHERE id=?').get(u.id); x.email_verified = me.email_verified; x.avatar = me.avatar || ''; } if (u.sub) { delete x.phone; delete x.role_title; const o = db.prepare('SELECT name,email FROM users WHERE id=?').get(u.oid); x.owner = { name: o.name, email: o.email }; x.email_verified = 1; } const ct = db.prepare('SELECT id,created,status,review_note,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(u.oid); res.json({ user: { ...u, ...x, contract: ct || null, mailEnabled: mail.enabled() } }); });
 // ---- team members: the NGO owner gives colleagues their own login with chosen permissions ----
 const ownerOnly = (req, res, next) => req.user.sub ? bad(res, 'רק מנהל החשבון יכול לנהל הרשאות', 403) : next();
 const memberOut = m => ({ id: m.id, email: m.email, name: m.name, perms: subPerms(m.perms), created: m.created, last_seen: m.last_seen || '', blocked: !!m.blocked });
@@ -399,7 +399,28 @@ app.put('/api/members/:mid', auth, ownerOnly, (req, res) => {
   ev(req, 'member.update', { msg: m.email }); res.json(memberOut(db.prepare('SELECT * FROM users WHERE id=?').get(m.id)));
 });
 app.delete('/api/members/:mid', auth, ownerOnly, (req, res) => { const m = db.prepare('SELECT id,email FROM users WHERE id=? AND parent_id=?').get(req.params.mid, req.user.id); if (!m) return bad(res, 'not found', 404); db.prepare('DELETE FROM users WHERE id=?').run(m.id); ev(req, 'member.remove', { msg: m.email }); res.json({ ok: true }); });
-app.put('/api/me', auth, (req, res) => { const b = req.body || {}; db.prepare('UPDATE users SET name=?,phone=?,org=? WHERE id=?').run(String(b.name || '').slice(0, 60), String(b.phone || '').slice(0, 20), String(b.org || '').slice(0, 80), req.user.id); if (b.password && String(b.password).length >= 6) { db.prepare('UPDATE users SET pass=?, tv=COALESCE(tv,0)+1 WHERE id=?').run(hashPw(String(b.password)), req.user.id); setSid(res, req.user.id); ev(req, 'auth.password'); } res.json({ ok: true }); });
+app.put('/api/me', auth, (req, res) => {
+  const b = req.body || {}; const S = (v, n) => String(v ?? '').trim().slice(0, n); const cur = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
+  if (b.name !== undefined && S(b.name, 60).length < 2) return bad(res, 'נא להזין שם מלא');
+  const av = b.avatar === undefined ? cur.avatar : (b.avatar === '' ? '' : (/^\/u\/[\w.-]+$/.test(String(b.avatar)) ? String(b.avatar) : cur.avatar));
+  db.prepare('UPDATE users SET name=?,phone=?,avatar=?,role_title=?,marketing=? WHERE id=?').run(b.name !== undefined ? S(b.name, 60) : cur.name, b.phone !== undefined ? S(b.phone, 20) : cur.phone, av, b.role_title !== undefined ? S(b.role_title, 40) : cur.role_title, b.marketing !== undefined ? (b.marketing ? 1 : 0) : cur.marketing, req.user.id);
+  if (!req.user.sub) db.prepare('UPDATE users SET org=?,website=?,s46=?,address=?,city=? WHERE id=?').run(b.org !== undefined ? S(b.org, 80) : cur.org, b.website !== undefined ? S(b.website, 160) : cur.website, b.s46 !== undefined ? S(b.s46, 10) : cur.s46, b.address !== undefined ? S(b.address, 120) : cur.address, b.city !== undefined ? S(b.city, 60) : cur.city, req.user.id);
+  res.json({ ok: true });
+});
+// sign out everywhere: bump the session version so every other device is logged out
+app.post('/api/me/logout-all', auth, (req, res) => { db.prepare('UPDATE users SET tv=COALESCE(tv,0)+1 WHERE id=?').run(req.user.id); ev(req, 'user.logout_all', {}); res.clearCookie('sid'); res.json({ ok: true }); });
+// delete account: password + typed confirmation; blocked while a campaign is live. Personal details are wiped; donation records stay with the campaigns for the NGO's legal bookkeeping.
+app.post('/api/me/delete', auth, limit(5, 600000), (req, res) => {
+  const b = req.body || {}; const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
+  if (!checkPw(String(b.password || ''), u.pass)) return bad(res, 'הסיסמה שגויה');
+  if (String(b.confirm || '').trim() !== 'מחיקה') return bad(res, 'כדי לאשר, הקלידו את המילה "מחיקה"');
+  if (u.role === 'admin') return bad(res, 'אי אפשר למחוק חשבון מנהל');
+  if (!req.user.sub && db.prepare("SELECT 1 FROM campaigns WHERE user_id=? AND status='live'").get(u.id)) return bad(res, 'יש קמפיין באוויר. סיימו או עצרו אותו לפני מחיקת החשבון.');
+  if (!req.user.sub) { db.prepare("UPDATE campaigns SET status='draft' WHERE user_id=?").run(u.id); db.prepare('DELETE FROM users WHERE parent_id=?').run(u.id); }
+  db.prepare("UPDATE users SET email=?, name='חשבון שנמחק', phone='', avatar='', pass=?, blocked=1, tv=COALESCE(tv,0)+1, marketing=0 WHERE id=?").run(`deleted-${u.id}-${Date.now()}@deleted.giveil`, hashPw(crypto.randomBytes(24).toString('hex')), u.id);
+  logEvent('user.deleted', { uid: u.id, ip: req.ip, level: 'warn', msg: `${u.email} · ${u.org_name || u.org || ''}` });
+  res.clearCookie('sid'); res.json({ ok: true });
+});
 
 // ---------- uploads ----------
 const UP_EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif', 'image/svg+xml': '.svg', 'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov' };
@@ -441,7 +462,6 @@ app.get('/api/campaigns', auth, (req, res) => {
 });
 app.post('/api/campaigns', auth, (req, res) => {
   if (req.user.role !== 'admin' && !db.prepare("SELECT 1 FROM contracts WHERE user_id=? AND status!='rejected'").get(req.user.id)) return res.status(403).json({ error: 'לפני פתיחת קמפיין יש לחתום על הסכם השימוש', code: 'contract' });
-  if (req.user.role !== 'admin' && req.user.org_verified !== 1) return bad(res, 'כדי לפתוח קמפיין צריך עמותה מאומתת. אמתו את מספר העמותה בהגדרות החשבון.', 403);
   const b = req.body || {}; const title = String(b.title || 'קמפיין חדש').slice(0, 120);
   let slug = slugify(b.slug || title); while (db.prepare('SELECT 1 FROM campaigns WHERE slug=?').get(slug)) slug = slug + '-' + crypto.randomBytes(2).toString('hex');
   const end = b.end_at || new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 16);
@@ -499,6 +519,7 @@ app.post('/api/campaigns/:id/status', auth, own, (req, res) => {
   if (s === 'live' && !force && (PV_(req.c.provider).type || 'test') === 'test') return bad(res, 'כדי לעלות לאוויר צריך לחבר ספק סליקה אמיתי');
   if (s === 'live' && !force && NO_MANUAL.includes(PV_(req.c.provider).type)) return bad(res, 'דף תשלום חיצוני עם אישור ידני כבר לא נתמך. חברו ספק סליקה עם API (בטאב סליקה), ותרומות במזומן הוסיפו מהניהול.');
   if (s === 'live' && !force && PV_(req.c.provider).type === 'nedarim' && !PV_(req.c.provider).apiPassword) return bad(res, 'נדרים פלוס: חובה להזין ApiPassword לפני העלייה לאוויר – בלעדיו אי אפשר לאמת תרומות');
+  if (s === 'live' && req.user.role !== 'admin' && db.prepare('SELECT org_verified FROM users WHERE id=?').get(req.user.oid)?.org_verified !== 1) return res.status(409).json({ error: 'כדי לעלות לאוויר צריך לאמת את העמותה – ב"החשבון שלי" ← העמותה ואימות. בניית הקמפיין והבדיקות פתוחות גם בלי.', code: 'org' });
   if (s === 'live' && req.user.role !== 'admin') { const u = db.prepare('SELECT email_verified FROM users WHERE id=?').get(req.user.id); if (mail.enabled() && !u.email_verified) return bad(res, 'כדי לעלות לאוויר יש לאמת את כתובת האימייל (בדקו את תיבת הדואר)'); const ct = db.prepare('SELECT status FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id); if (!ct || ct.status === 'rejected') return bad(res, 'כדי לעלות לאוויר יש לחתום על הסכם השימוש'); if (ct.status !== 'approved') return bad(res, 'ההסכם והמסמכים בבדיקה אצלנו (בדרך כלל עד יום עסקים). נעדכן במייל כשאפשר לעלות לאוויר.'); const uu = db.prepare('SELECT plan_until FROM users WHERE id=?').get(req.user.id); if (!req.c.paid && !planActive(uu)) return res.status(402).json({ error: 'כדי לעלות לאוויר יש להסדיר תשלום עבור הקמפיין', code: 'billing' }); }
   if (s === 'live' && req.user.role !== 'admin') { const st = J(req.c.settings); if (st.providerOk !== provFp(PV_(req.c.provider))) return res.status(409).json({ error: 'פרטי הסליקה בבדיקה אצלנו: מוודאים שחשבון הסליקה רשום על שם העמותה. בדרך כלל עד יום עסקים, ונעדכן במייל.', code: 'provider' }); }
   if (s === 'live' && req.body?.clearTest) db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id);
