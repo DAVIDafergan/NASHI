@@ -997,7 +997,7 @@ async function reconcileSumit() {
 setInterval(() => reconcileSumit().catch(() => { }), 20 * 60e3).unref();
 
 // ---- platform billing through GiveIL's own SUMIT account (campaign fee / monthly plan, automatic invoice-receipt) ----
-const billCfg = () => { const k = getKV('billing'); return { companyId: k.companyId || process.env.SUMIT_COMPANY_ID || '', apiKey: k.apiKey || process.env.SUMIT_API_KEY || '', docType: k.docType || 'invoice', months: +(k.months ?? 12) }; };
+const billCfg = () => { const k = getKV('billing'); return { companyId: k.companyId || process.env.SUMIT_COMPANY_ID || '', apiKey: k.apiKey || process.env.SUMIT_API_KEY || '', docType: k.docType || 'receipt', months: +(k.months ?? 12) }; };
 const billOn = () => { const b = billCfg(); return !!(b.companyId && b.apiKey); };
 app.post('/api/billing/pay', auth, limit(10, 600000), async (req, res) => {
   if (!billOn()) return bad(res, 'תשלום בכרטיס עדיין לא מחובר');
