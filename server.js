@@ -408,7 +408,12 @@ app.post('/api/upload', auth, limit(60, 600000), upload.single('file'), (req, re
 app.use('/u', SANDBOX, express.static(path.join(DATA_DIR, 'uploads'), { maxAge: '30d', immutable: true }));
 
 // ---------- campaigns (owner) ----------
-const campaignOut = c => ({ ...c, settings: J(c.settings), provider: provMask(PV_(c.provider)), lastPaid: (db.prepare("SELECT paid_at FROM donations WHERE campaign_id=? AND status='paid' AND test=0 ORDER BY paid_at DESC LIMIT 1").get(c.id) || {}).paid_at || null, levels: db.prepare('SELECT * FROM levels WHERE campaign_id=? ORDER BY pos,id').all(c.id), teams: db.prepare('SELECT * FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id).map(t => ({ ...t, key: teamKey(t) })), matchers: db.prepare('SELECT * FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id) });
+// ---- one-time campaign plan: up to 45 days live; an active subscription (or admin) has no limit ----
+const CAMP_DAYS = 45;
+const ilLocal = ms => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Jerusalem', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(ms)).map(x => [x.type, x.value])); return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`; };
+const campLimit = c => { const u = db.prepare('SELECT role,plan_until FROM users WHERE id=?').get(c.user_id) || {}; if (u.role === 'admin' || planActive(u)) return null; const from = c.live_at ? Date.parse(c.live_at.replace(' ', 'T') + (c.live_at.endsWith('Z') ? '' : 'Z')) : Date.now(); return { days: CAMP_DAYS, maxEnd: ilLocal(from + CAMP_DAYS * 864e5), live: !!c.live_at }; };
+try { db.prepare("UPDATE campaigns SET live_at=datetime('now') WHERE status IN ('live','ended') AND (live_at IS NULL OR live_at='')").run(); } catch { }
+const campaignOut = c => ({ ...c, limit: campLimit(c), settings: J(c.settings), provider: provMask(PV_(c.provider)), lastPaid: (db.prepare("SELECT paid_at FROM donations WHERE campaign_id=? AND status='paid' AND test=0 ORDER BY paid_at DESC LIMIT 1").get(c.id) || {}).paid_at || null, levels: db.prepare('SELECT * FROM levels WHERE campaign_id=? ORDER BY pos,id').all(c.id), teams: db.prepare('SELECT * FROM teams WHERE campaign_id=? ORDER BY pos,id').all(c.id).map(t => ({ ...t, key: teamKey(t) })), matchers: db.prepare('SELECT * FROM matchers WHERE campaign_id=? ORDER BY pos,id').all(c.id) });
 // ---- NGO home: everything happening across all my campaigns, at a glance ----
 app.get('/api/home', auth, (req, res) => {
   const camps = db.prepare('SELECT * FROM campaigns WHERE user_id=? ORDER BY id DESC').all(req.user.oid).filter(c => !req.user.sub || req.user.sub.camps === 'all' || req.user.sub.camps.includes(c.id));
@@ -452,10 +457,14 @@ const chAllowed = (c, ch) => { const m = J(c.settings).msg || {}; return ch === 
 const chReady = ch => ch === 'email' ? mail.enabled() : !!((getKV('msg')[ch] || {}).type);
 const chOn = (c, ch) => chAllowed(c, ch) && chReady(ch);
 const provFp = cfg => { const o = { ...(cfg || {}) }; delete o._hasSecret; return crypto.createHash('sha256').update(JSON.stringify(Object.keys(o).sort().map(k => [k, o[k]]))).digest('hex').slice(0, 24); };
+// only API-verified processors: no external/manual-confirmation payment page (cash is added by the NGO from the dashboard)
+const NO_MANUAL = ['link'];
 const PROV_ID_KEYS = ['companyId', 'mosadId', 'apiValid', 'pageCode', 'userId', 'terminal', 'terminalName', 'clientId', 'email', 'url', 'link', 'phone', 'businessId'];
 const provSummary = cfg => Object.entries(cfg || {}).filter(([k, v]) => v && (PROV_ID_KEYS.includes(k) || k === 'type')).map(([k, v]) => k + ': ' + String(v).slice(0, 80)).join(' · ');
 app.put('/api/campaigns/:id', auth, own, (req, res) => {
   const b = req.body || {}; const c = req.c; if (req.user.sub) delete b.provider;
+  if (b.provider && NO_MANUAL.includes(b.provider.type)) return bad(res, 'אפשר לחבר רק ספק סליקה עם חיבור API מאומת. תרומות במזומן מוסיפים מהניהול (תרומות ← הוספת תרומה).');
+  if (b.end_at && c.live_at && (c.status === 'live')) { const L = campLimit(c); if (L && String(b.end_at).slice(0, 16) > L.maxEnd) return bad(res, `בתוכנית קמפיין חד-פעמי הקמפיין יכול להיות באוויר עד ${CAMP_DAYS} יום – כלומר עד ${L.maxEnd.slice(8, 10)}.${L.maxEnd.slice(5, 7)}.${L.maxEnd.slice(0, 4)}. במנוי שנתי אין הגבלה.`); }
   if (req.user.role !== 'admin' && b.settings && typeof b.settings === 'object') { for (const k of ADMIN_KEYS) delete b.settings[k]; }
   if (b.settings && typeof b.settings === 'object' && 'fbPixel' in b.settings) { const px = String(b.settings.fbPixel || '').replace(/\D/g, ''); if (px && (px.length < 10 || px.length > 20)) return bad(res, 'מזהה הפיקסל צריך להיות מספר של 10–20 ספרות (מ-Events Manager)'); b.settings.fbPixel = px; }
   if (b.provider && typeof b.provider === 'object') { for (const k of Object.keys(b.provider)) if (isMasked(b.provider[k])) delete b.provider[k]; }
@@ -487,11 +496,15 @@ app.post('/api/campaigns/:id/status', auth, own, (req, res) => {
   const s = req.body?.status; if (!['draft', 'test', 'live', 'ended'].includes(s)) return bad(res, 'status');
   const force = req.user.role === 'admin' && req.body?.force === true && NO_PAY_OK(req.c); // one specific campaign may go live without payments (donations closed)
   if (s === 'live' && !force && (PV_(req.c.provider).type || 'test') === 'test') return bad(res, 'כדי לעלות לאוויר צריך לחבר ספק סליקה אמיתי');
+  if (s === 'live' && !force && NO_MANUAL.includes(PV_(req.c.provider).type)) return bad(res, 'דף תשלום חיצוני עם אישור ידני כבר לא נתמך. חברו ספק סליקה עם API (בטאב סליקה), ותרומות במזומן הוסיפו מהניהול.');
   if (s === 'live' && !force && PV_(req.c.provider).type === 'nedarim' && !PV_(req.c.provider).apiPassword) return bad(res, 'נדרים פלוס: חובה להזין ApiPassword לפני העלייה לאוויר – בלעדיו אי אפשר לאמת תרומות');
   if (s === 'live' && req.user.role !== 'admin') { const u = db.prepare('SELECT email_verified FROM users WHERE id=?').get(req.user.id); if (mail.enabled() && !u.email_verified) return bad(res, 'כדי לעלות לאוויר יש לאמת את כתובת האימייל (בדקו את תיבת הדואר)'); const ct = db.prepare('SELECT status FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id); if (!ct || ct.status === 'rejected') return bad(res, 'כדי לעלות לאוויר יש לחתום על הסכם השימוש'); if (ct.status !== 'approved') return bad(res, 'ההסכם והמסמכים בבדיקה אצלנו (בדרך כלל עד יום עסקים). נעדכן במייל כשאפשר לעלות לאוויר.'); const uu = db.prepare('SELECT plan_until FROM users WHERE id=?').get(req.user.id); if (!req.c.paid && !planActive(uu)) return res.status(402).json({ error: 'כדי לעלות לאוויר יש להסדיר תשלום עבור הקמפיין', code: 'billing' }); }
   if (s === 'live' && req.user.role !== 'admin') { const st = J(req.c.settings); if (st.providerOk !== provFp(PV_(req.c.provider))) return res.status(409).json({ error: 'פרטי הסליקה בבדיקה אצלנו: מוודאים שחשבון הסליקה רשום על שם העמותה. בדרך כלל עד יום עסקים, ונעדכן במייל.', code: 'provider' }); }
   if (s === 'live' && req.body?.clearTest) db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id);
-  db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(s, req.c.id); if (s !== req.c.status) ev(req, 'campaign.status', { cid: req.c.id, msg: `${req.c.title}: ${req.c.status} → ${s}${force ? ' (בלי סליקה)' : ''}` }); res.json({ ok: true });
+  let clamped = '';
+  if (s === 'live') { if (!req.c.live_at) { req.c.live_at = new Date().toISOString().slice(0, 19).replace('T', ' '); db.prepare('UPDATE campaigns SET live_at=? WHERE id=?').run(req.c.live_at, req.c.id); }
+    const L = campLimit(req.c); if (L && (!req.c.end_at || String(req.c.end_at).slice(0, 16) > L.maxEnd)) { db.prepare('UPDATE campaigns SET end_at=? WHERE id=?').run(L.maxEnd, req.c.id); clamped = L.maxEnd; } }
+  db.prepare('UPDATE campaigns SET status=? WHERE id=?').run(s, req.c.id); if (s !== req.c.status) ev(req, 'campaign.status', { cid: req.c.id, msg: `${req.c.title}: ${req.c.status} → ${s}${force ? ' (בלי סליקה)' : ''}` }); res.json({ ok: true, clamped });
 });
 app.delete('/api/campaigns/:id', auth, own, (req, res) => { const real = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(amount),0) s FROM donations WHERE campaign_id=? AND test=0 AND status='paid'").get(req.c.id); if (real.n && req.user.role !== 'admin') return bad(res, `בקמפיין יש ${real.n} תרומות אמיתיות, ולכן אי אפשר למחוק אותו. אפשר לסיים אותו, או לפנות אלינו.`); db.prepare('DELETE FROM campaigns WHERE id=?').run(req.c.id); ev(req, 'campaign.delete', { level: real.n ? 'warn' : 'info', cid: req.c.id, msg: `${req.c.title}${real.n ? ` (${real.n} תרומות, ₪${real.s})` : ''}` }); res.json({ ok: true }); });
 app.post('/api/campaigns/:id/duplicate', auth, own, (req, res) => {
@@ -606,7 +619,7 @@ app.post('/api/campaigns/:id/donations/bulk', auth, own, (req, res) => {
 
 app.delete('/api/campaigns/:id/donations/:did', auth, own, (req, res) => { const d = db.prepare('SELECT test FROM donations WHERE id=? AND campaign_id=?').get(req.params.did, req.c.id); db.prepare('DELETE FROM donations WHERE id=? AND campaign_id=?').run(req.params.did, req.c.id); if (d) emit(req.c.id, 'refresh', { stats: stats(req.c, d.test), teams: teamStats(req.c, d.test) }); res.json({ ok: true }); });
 app.post('/api/campaigns/:id/clear-test', auth, own, (req, res) => { db.prepare('DELETE FROM donations WHERE campaign_id=? AND test=1').run(req.c.id); emit(req.c.id, 'refresh', { stats: stats(req.c, true), teams: teamStats(req.c, true) }); res.json({ ok: true }); });
-app.get('/api/providers', (_, res) => res.json(Object.entries(providers).map(([k, v]) => ({ type: k, label: v.label, fields: v.fields, manual: !!v.manual, wallets: v.wallets || [], noMonthly: !!v.noMonthly, unverified: ['tranzila', 'morning'].includes(k) }))));
+app.get('/api/providers', (_, res) => res.json(Object.entries(providers).filter(([k]) => !NO_MANUAL.includes(k)).map(([k, v]) => ({ type: k, label: v.label, fields: v.fields, manual: !!v.manual, wallets: v.wallets || [], noMonthly: !!v.noMonthly, unverified: ['tranzila', 'morning'].includes(k) }))));
 
 // ---------- superadmin ----------
 const adm = (req, res, next) => req.user.role === 'admin' ? next() : bad(res, 'auth', 403);
