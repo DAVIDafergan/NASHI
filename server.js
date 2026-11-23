@@ -239,6 +239,8 @@ app.post('/api/me/resend-verify', auth, limit(3, 600000), async (req, res) => { 
 // ---- service agreement (signed before the first campaign) ----
 const PRICING_DEF = { campaign: 790, monthly: 440, vat: 'incl', payCampaignUrl: '', payMonthlyUrl: '' };
 const pricing = () => ({ ...PRICING_DEF, ...getKV('pricing') });
+// per-organization price set by the superadmin (null = regular price; 0 = free)
+const pricingFor = uid => { const p = pricing(); const u = uid ? db.prepare('SELECT price_campaign,price_monthly FROM users WHERE id=?').get(uid) : null; if (u?.price_campaign != null) p.campaign = u.price_campaign; if (u?.price_monthly != null) p.monthly = u.price_monthly; p.custom = u?.price_campaign != null || u?.price_monthly != null; return p; };
 app.get('/api/pricing', (_, res) => { const p = pricing(); res.json({ campaign: p.campaign, monthly: p.monthly, vat: p.vat }); });
 const privDir = path.join(DATA_DIR, 'private');
 const privUpload = multer({ storage: multer.diskStorage({ destination: privDir, filename: (req, f, cb) => cb(null, req.user.id + '-' + Date.now() + '-' + crypto.randomBytes(6).toString('hex') + ({ 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/heic': '.heic', 'image/heif': '.heif', 'application/pdf': '.pdf' }[f.mimetype] || '.bin')) }), limits: { fileSize: 15e6 }, fileFilter: (_, f, cb) => cb(null, /image\/(jpeg|png|webp|heic|heif)|application\/pdf/.test(f.mimetype)) });
@@ -283,14 +285,14 @@ app.post('/api/admin/contracts/:id/review', auth, (req, res, next) => req.user.r
 // ---- billing: campaign fee / annual plan (paid to the operator, separate from donations) ----
 const planActive = u => !!(u.plan_until && u.plan_until >= new Date().toISOString().slice(0, 10));
 app.get('/api/billing', auth, (req, res) => {
-  const u = db.prepare('SELECT plan,plan_until FROM users WHERE id=?').get(req.user.id); const p = pricing(); const cid = +req.query.campaignId || 0;
+  const u = db.prepare('SELECT plan,plan_until FROM users WHERE id=?').get(req.user.id); const p = pricingFor(req.user.id); const cid = +req.query.campaignId || 0;
   const c = cid ? db.prepare('SELECT id,title,paid,user_id FROM campaigns WHERE id=?').get(cid) : null; if (c && c.user_id !== req.user.id && req.user.role !== 'admin') return bad(res, 'not found', 404);
   const ct = db.prepare('SELECT id,status,review_note,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id);
   const fill = (url, amount) => String(url || '').replace(/\{(amount|campaign|org|email)\}/g, (_, k) => encodeURIComponent(k === 'amount' ? amount : k === 'campaign' ? (c?.title || '') : k === 'org' ? (req.user.org || '') : req.user.email));
-  res.json({ card: billOn(), pricing: { campaign: p.campaign, monthly: p.monthly, vat: p.vat }, links: { campaign: fill(p.payCampaignUrl, p.campaign), monthly: fill(p.payMonthlyUrl, p.monthly) }, plan: u.plan, planUntil: u.plan_until, planActive: planActive(u), campaignPaid: !!c?.paid, contract: ct || null, pending: db.prepare("SELECT id,kind,amount,campaign_id,created FROM payments WHERE user_id=? AND status='pending' AND ref!='SUMIT' ORDER BY id DESC").all(req.user.id) });
+  res.json({ card: billOn(), pricing: { campaign: p.campaign, monthly: p.monthly, vat: p.vat, custom: p.custom }, links: { campaign: fill(p.payCampaignUrl, p.campaign), monthly: fill(p.payMonthlyUrl, p.monthly) }, plan: u.plan, planUntil: u.plan_until, planActive: planActive(u), campaignPaid: !!c?.paid || p.campaign === 0, contract: ct || null, pending: db.prepare("SELECT id,kind,amount,campaign_id,created FROM payments WHERE user_id=? AND status='pending' AND ref!='SUMIT' ORDER BY id DESC").all(req.user.id) });
 });
 app.post('/api/billing/claim', auth, limit(10, 600000), async (req, res) => {
-  const kind = req.body?.kind === 'monthly' ? 'monthly' : 'campaign'; const cid = +req.body?.campaignId || null; const p = pricing();
+  const kind = req.body?.kind === 'monthly' ? 'monthly' : 'campaign'; const cid = +req.body?.campaignId || null; const p = pricingFor(req.user.id);
   if (kind === 'campaign') { const c = cid && db.prepare('SELECT user_id FROM campaigns WHERE id=?').get(cid); if (!c || c.user_id !== req.user.id) return bad(res, 'קמפיין לא נמצא'); }
   if (db.prepare("SELECT 1 FROM payments WHERE user_id=? AND kind=? AND IFNULL(campaign_id,0)=IFNULL(?,0) AND status='pending'").get(req.user.id, kind, cid)) return res.json({ ok: true, dup: true });
   const amount = kind === 'monthly' ? p.monthly : p.campaign; const ref = String(req.body?.ref || '').slice(0, 120);
@@ -312,6 +314,18 @@ app.post('/api/admin/payments/:id', auth, admOnly, (req, res) => {
 });
 app.get('/api/admin/providers', auth, admOnly, (_, res) => { const rows = db.prepare("SELECT c.id,c.title,c.slug,c.status,c.provider,c.settings,u.email,u.org_name,u.org,u.org_number,u.phone FROM campaigns c LEFT JOIN users u ON u.id=c.user_id WHERE c.settings LIKE '%providerReview%' ORDER BY c.id DESC LIMIT 100").all(); res.json(rows.map(r => { const st = J(r.settings), cfg = PV_(r.provider); return { id: r.id, title: r.title, slug: r.slug, status: r.status, email: r.email, org: r.org_name || r.org, orgNumber: r.org_number, phone: r.phone, provider: provSummary(cfg), review: st.providerReview, approved: st.providerOk === provFp(cfg) }; })); });
 app.post('/api/admin/campaigns/:id/provider', auth, admOnly, (req, res) => { const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404); const st = J(c.settings), cfg = PV_(c.provider); const ok = req.body?.status !== 'rejected'; st.providerOk = ok ? provFp(cfg) : ''; st.providerReview = { ...(st.providerReview || {}), fp: provFp(cfg), status: ok ? 'approved' : 'rejected', note: String(req.body?.note || '').slice(0, 300), by: new Date().toISOString() }; db.prepare('UPDATE campaigns SET settings=? WHERE id=?').run(JSON.stringify(st), c.id); const u = db.prepare('SELECT email,name FROM users WHERE id=?').get(c.user_id); if (mail.enabled() && u) mail.send({ to: u.email, subject: ok ? 'פרטי הסליקה אושרו – אפשר לעלות לאוויר' : 'פרטי הסליקה לא אושרו', html: mail.layout(ok ? 'הסליקה אושרה ✓' : 'נדרש תיקון בסליקה', ok ? `<p>שלום ${mail.esc(u.name || '')}, חשבון הסליקה של "${mail.esc(c.title)}" אומת. אפשר להעלות את הקמפיין לאוויר.</p>` : `<p>שלום ${mail.esc(u.name || '')}, לא הצלחנו לאמת שחשבון הסליקה שייך לעמותה${st.providerReview.note ? ': ' + mail.esc(st.providerReview.note) : ''}. נא לבדוק את הפרטים או לפנות אלינו.</p>`) }).catch(() => { }); ev(req, 'admin.provider', { cid: c.id, msg: `${c.title}: ${ok ? 'אושר' : 'נדחה'}` }); res.json({ ok: true }); });
+app.post('/api/admin/users/:id/pricing', auth, admOnly, (req, res) => {
+  const num = v => (v === '' || v === null || v === undefined) ? null : Math.max(0, Math.round(+v || 0));
+  const pc = num(req.body?.campaign), pm = num(req.body?.monthly);
+  db.prepare('UPDATE users SET price_campaign=?, price_monthly=? WHERE id=?').run(pc, pm, req.params.id);
+  ev(req, 'admin.pricing', { msg: `#${req.params.id} · קמפיין ${pc ?? 'רגיל'} · מנוי ${pm ?? 'רגיל'}` }); res.json({ ok: true });
+});
+app.post('/api/admin/campaigns/:id/free', auth, admOnly, (req, res) => {
+  const c = db.prepare('SELECT id,user_id,title,paid FROM campaigns WHERE id=?').get(req.params.id); if (!c) return bad(res, 'not found', 404);
+  const on = req.body?.free !== false; db.prepare('UPDATE campaigns SET paid=? WHERE id=?').run(on ? 1 : 0, c.id);
+  if (on) db.prepare("INSERT INTO payments(user_id,campaign_id,kind,amount,status,ref,note,approved_at) VALUES(?,?,'campaign',0,'approved','admin','שוחרר בחינם על ידי מנהל',datetime('now'))").run(c.user_id, c.id);
+  ev(req, 'admin.free_campaign', { cid: c.id, msg: `${c.title} · ${on ? 'שוחרר בחינם' : 'בוטל השחרור'}` }); res.json({ ok: true });
+});
 app.post('/api/admin/campaigns/:id/paid', auth, admOnly, (req, res) => { db.prepare('UPDATE campaigns SET paid=? WHERE id=?').run(req.body?.paid ? 1 : 0, req.params.id); res.json({ ok: true }); });
 app.post('/api/admin/users/:id/plan', auth, admOnly, (req, res) => { const until = String(req.body?.until || '').slice(0, 10); if (until && !/^\d{4}-\d{2}-\d{2}$/.test(until)) return bad(res, 'תאריך לא תקין'); db.prepare('UPDATE users SET plan=?, plan_until=? WHERE id=?').run(until ? 'annual' : '', until, req.params.id); res.json({ ok: true }); });
 app.get('/api/admin/pricing', auth, admOnly, (_, res) => res.json(pricing()));
@@ -750,8 +764,8 @@ app.get('/api/admin/donations', auth, adm, (req, res) => {
   res.json(db.prepare(`SELECT d.id,d.campaign_id,d.name,d.amount,d.status,d.test,d.phone,d.email,d.ref,d.provider,d.created,d.paid_at,d.monthly,d.installments,d.anonymous,d.meta,c.title,c.slug FROM donations d JOIN campaigns c ON c.id=d.campaign_id WHERE ${w.join(' AND ')} ORDER BY d.id DESC LIMIT ?`).all(...p, Math.min(300, +Q.limit || 100)).map(d => ({ ...d, error: J(d.meta).error || '', meta: undefined })));
 });
 app.get('/api/admin/users/:id', auth, adm, (req, res) => {
-  const u = db.prepare('SELECT id,email,name,phone,org,org_name,org_number,org_verified,org_status,role,role_title,city,website,created,email_verified,plan_until,blocked,block_note,last_seen,last_ip,logins FROM users WHERE id=?').get(req.params.id); if (!u) return bad(res, 'not found', 404);
-  res.json({ user: u, campaigns: db.prepare("SELECT c.id,c.title,c.slug,c.status,c.paid,(SELECT COUNT(*) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) n,(SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) raised FROM campaigns c WHERE c.user_id=? ORDER BY c.id DESC").all(u.id), payments: db.prepare('SELECT id,kind,amount,status,created FROM payments WHERE user_id=? ORDER BY id DESC LIMIT 20').all(u.id), contracts: db.prepare('SELECT id,status,created,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 5').all(u.id), events: evRows('WHERE e.user_id=?', [u.id], 60) });
+  const u = db.prepare('SELECT id,email,name,phone,org,org_name,org_number,org_verified,org_status,role,role_title,city,website,created,email_verified,plan_until,blocked,block_note,last_seen,last_ip,logins,price_campaign,price_monthly FROM users WHERE id=?').get(req.params.id); if (!u) return bad(res, 'not found', 404);
+  res.json({ user: u, base: pricing(), campaigns: db.prepare("SELECT c.id,c.title,c.slug,c.status,c.paid,(SELECT COUNT(*) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) n,(SELECT COALESCE(SUM(amount),0) FROM donations d WHERE d.campaign_id=c.id AND d.status='paid' AND d.test=0) raised FROM campaigns c WHERE c.user_id=? ORDER BY c.id DESC").all(u.id), payments: db.prepare('SELECT id,kind,amount,status,created FROM payments WHERE user_id=? ORDER BY id DESC LIMIT 20').all(u.id), contracts: db.prepare('SELECT id,status,created,method FROM contracts WHERE user_id=? ORDER BY id DESC LIMIT 5').all(u.id), events: evRows('WHERE e.user_id=?', [u.id], 60) });
 });
 app.post('/api/admin/users/:id/block', auth, adm, (req, res) => {
   const id = +req.params.id; if (id === req.user.id) return bad(res, 'אי אפשר להשעות את עצמכם');
@@ -1023,7 +1037,7 @@ const billCfg = () => { const k = getKV('billing'); return { companyId: k.compan
 const billOn = () => { const b = billCfg(); return !!(b.companyId && b.apiKey); };
 app.post('/api/billing/pay', auth, limit(10, 600000), async (req, res) => {
   if (!billOn()) return bad(res, 'תשלום בכרטיס עדיין לא מחובר');
-  const kind = req.body?.kind === 'monthly' ? 'monthly' : 'campaign'; const cid = +req.body?.campaignId || null; const p = pricing(); const b = billCfg();
+  const kind = req.body?.kind === 'monthly' ? 'monthly' : 'campaign'; const cid = +req.body?.campaignId || null; const p = pricingFor(req.user.id); const b = billCfg();
   let c = null; if (kind === 'campaign') { c = cid && db.prepare('SELECT id,title,user_id,paid FROM campaigns WHERE id=?').get(cid); if (!c || c.user_id !== req.user.id) return bad(res, 'קמפיין לא נמצא'); if (c.paid) return bad(res, 'הקמפיין כבר שולם'); }
   const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id); const amount = kind === 'monthly' ? p.monthly : p.campaign;
   const gross = p.vat === 'plus' ? Math.round(amount * 1.18 * 100) / 100 : amount;
