@@ -335,8 +335,14 @@ html.embed{scrollbar-width:none}html.embed::-webkit-scrollbar{display:none}
 /* desktop: one reading column – about full width, then ambassadors, then donors as a grid */
 @media(min-width:901px){
   .layout{grid-template-columns:minmax(0,1fr)!important;gap:22px}
-  #about .story,#about .video,#updates .ul{max-width:820px;margin-inline:auto}
-  #about .hd,#updates .hd{max-width:820px;margin-inline:auto}
+  #updates .ul{max-width:none}
+  #about{padding:34px 40px}
+  #about.hasv{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);column-gap:36px;align-items:start}
+  #about.hasv .hd{grid-column:1/-1}
+  #about.hasv .video{position:sticky;top:90px;margin:0}
+  #about .story{font-size:17.5px;line-height:1.95;column-gap:44px}
+  #about:not(.hasv) .story.long{columns:2;column-rule:1px solid var(--line)}
+  #about .story p{break-inside:avoid}
   #teams .tl{grid-template-columns:repeat(3,minmax(0,1fr))}
   #donors .dl{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
   #donors .dn{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--cardS)}
@@ -344,6 +350,17 @@ html.embed{scrollbar-width:none}html.embed::-webkit-scrollbar{display:none}
   #donors .more{display:block;margin-inline:auto}
 }
 @media(min-width:901px) and (max-width:1150px){#teams .tl,#donors .dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+html{scroll-behavior:smooth}
+#about .story p:first-child{font-size:1.12em;font-weight:600;color:var(--ink)}
+#about .story p{opacity:0;transform:translateY(14px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+#about .story p.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}[data-r],#about .story p{opacity:1!important;transform:none!important;transition:none!important}}
+.ajoin{display:flex;align-items:center;gap:18px;padding:22px 24px;border-radius:18px;background:linear-gradient(120deg,rgba(124,92,255,.10),rgba(34,211,238,.10));border:1px solid rgba(124,92,255,.22)}
+.ajoin .ai{flex:none;width:56px;height:56px;border-radius:16px;display:grid;place-items:center;font-size:28px;background:#fff;box-shadow:0 8px 20px -10px rgba(76,47,208,.45)}
+.ajoin .at{flex:1;min-width:0}.ajoin .at b{display:block;font-size:19px;font-weight:800;margin-bottom:3px}.ajoin .at span{font-size:14.5px;color:var(--mut);line-height:1.6}
+.ajoin .btn{flex:none}
+@media(max-width:640px){.ajoin{flex-wrap:wrap;padding:18px;gap:12px}.ajoin .btn{flex-basis:100%}}
+#teams.solo .hd{display:none}#teams.solo{background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
 </style>
 </head>
 <body>
@@ -482,7 +499,7 @@ async function load(){
   $('#lbl').innerHTML=c.multiplier>1?T('multLbl',{m:c.multiplier}):(c.ended?T('ended'):T('active'));
   $('#provName').textContent={test:T('testProv'),nedarim:'Nedarim Plus',meshulam:'Grow',paypal:'PayPal',sumit:'SUMIT',cardcom:'Cardcom',payplus:'PayPlus',hyp:'Hyp',pelecard:'Pelecard',icredit:'iCredit',payme:'PayMe',zcredit:'Z-Credit',morning:'Morning',tranzila:'Tranzila',link:'SSL',bit:'Bit',paybox:'PayBox'}[c.providerType]||'';renderPM();
   
-  $('#story').innerHTML=c.story?c.story.split(/\n{2,}/).map(p=>`<p>${esc(p).replace(/\n/g,'<br>')}</p>`).join(''):'';if(!c.story&&!c.video)$('#about').hidden=true;
+  $('#story').innerHTML=c.story?c.story.split(/\n{2,}/).map(p=>`<p>${esc(p).replace(/\n/g,'<br>')}</p>`).join(''):'';if(!c.story&&!c.video)$('#about').hidden=true;$('#story').classList.toggle('long',(c.story||'').length>900);$('#about').classList.toggle('hasv',!!c.video&&!!c.story);{const po=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');po.unobserve(e.target)}}),{threshold:.15,rootMargin:'0px 0px -6% 0px'});$$('#story p').forEach((p,i)=>{p.style.transitionDelay=Math.min(i,4)*70+'ms';po.observe(p)})}
   // amounts
   const s=c.settings||{};const presets=(s.presets||[100,180,360,500,1000,1800]).slice(0,6);
   if(c.settings&&c.settings.ctaText){$$('[data-i=donateNow]').forEach(e=>e.textContent=c.settings.ctaText)}if(c.settings&&c.settings.goalText)$$('[data-i=ofGoal]').forEach(e=>e.textContent=c.settings.goalText);if(c.settings&&c.settings.showTimer===false)$('#timer').hidden=true;if(c.settings&&c.settings.hideGoal){$('.pcard .bar').hidden=true;$('.pcard .of').hidden=true;$('.pcard .pct').hidden=true}if(c.settings&&c.settings.dedicationOn===false)$('#fDed').parentElement.hidden=true;
@@ -535,7 +552,7 @@ function ago(s){if(!s)return '';const t=new Date(s.includes('T')?s:s.replace(' '
 function donorRow(d){const name=d.anonymous||!d.name?T('anonDonor'):d.name;const t=d.team_id&&D.teams.find(x=>x.id===d.team_id);return `<div class="dn"><div class="av">${esc(name[0])}</div><div class="i"><b>${esc(name)}</b><small>${ago(d.created)}</small>${t?`<span class="tg">${T('forT')} ${esc(t.name)}</span>`:''}</div><div class="a">${D.campaign.settings.hideAmounts?'❤':cur+fmt(d.amount)}${D.campaign.multiplier>1&&!D.campaign.settings.hideAmounts?`<small>= ${cur}${fmt(d.amount*D.campaign.multiplier)}</small>`:''}${d.monthly?`<small>${T('monthlyTag')}</small>`:''}</div>${d.dedication?`<div class="ded">“${esc(d.dedication)}”</div>`:''}</div>`}
 let pendingRows=[];function renderDonors(list,reset){const el=$('#donorsList');if(reset){el.innerHTML='';pendingRows=[]}if(!list.length&&reset){el.innerHTML=`<div class="empty">${T('first')}</div>`;$('#more').hidden=true;return}const all=pendingRows.concat(list);const show=all.slice(0,12);pendingRows=all.slice(12);el.insertAdjacentHTML('beforeend',show.map(donorRow).join(''));$('#more').hidden=!(pendingRows.length||list.length>=60)}
 $('#more').onclick=async()=>{if(pendingRows.length){const el=$('#donorsList');const show=pendingRows.slice(0,12);pendingRows=pendingRows.slice(12);el.insertAdjacentHTML('beforeend',show.map(donorRow).join(''));$('#more').hidden=!pendingRows.length;return}const l=await fetch(`/api/c/${slug}/donations?offset=${offset}&sort=${dTab}&q=${encodeURIComponent(dQ)}${D.team?'&team='+D.team.id:''}`).then(r=>r.json());offset+=60;renderDonors(l,false)};
-function renderTeams(ts){D.teams=ts;$('#tCount').textContent=ts.length;$('#teamsList').innerHTML=ts.map((t,i)=>`<a class="tm ${D.team&&D.team.id===t.id?'me':''}" href="/c/${slug}/${t.slug}"><div class="rk ${i===0?'g':''}">${i+1}</div>${t.photo?`<img src="${esc(t.photo)}" alt="">`:`<div class="av">${esc(t.name[0])}</div>`}<div class="i"><b>${esc(t.name)}</b>${t.goal?`<div class="bar"><i style="width:${Math.min(100,t.total/t.goal*100)}%"></i></div>`:''}</div><div class="s"><b>${cur}${fmt(t.total)}</b><small>${t.n} ${T('donors')}${t.goal?' · '+Math.round(t.total/t.goal*100)+'%':''}</small></div></a>`).join('')||`<div class="empty">${T('noTeams')}</div>`;
+function renderTeams(ts){D.teams=ts;$('#tCount').textContent=ts.length||'';const canJoin=!$('#joinBtn').hidden;$('#teams').classList.toggle('solo',!ts.length);if(!ts.length){$('#teamsList').style.display='block';$('#teamsList').innerHTML=canJoin?`<div class="ajoin"><div class="ai">🙌</div><div class="at"><b>${T('ambCta')}</b><span>${T('ambSub')}</span></div><button class="btn grad" type="button" onclick="document.getElementById('joinBtn').click()">${T('join')}</button></div>`:'';if(!canJoin)$('#teams').hidden=true;return}$('#teamsList').style.display='';$('#teamsList').innerHTML=ts.map((t,i)=>`<a class="tm ${D.team&&D.team.id===t.id?'me':''}" href="/c/${slug}/${t.slug}"><div class="rk ${i===0?'g':''}">${i+1}</div>${t.photo?`<img src="${esc(t.photo)}" alt="">`:`<div class="av">${esc(t.name[0])}</div>`}<div class="i"><b>${esc(t.name)}</b>${t.goal?`<div class="bar"><i style="width:${Math.min(100,t.total/t.goal*100)}%"></i></div>`:''}</div><div class="s"><b>${cur}${fmt(t.total)}</b><small>${t.n} ${T('donors')}${t.goal?' · '+Math.round(t.total/t.goal*100)+'%':''}</small></div></a>`).join('')||`<div class="empty">${T('noTeams')}</div>`;
   if(D.team){const t=ts.find(x=>x.id===D.team.id);if(t)updTeamCard(t)}}
 function updTeamCard(t){$('#tRaised').textContent=cur+fmt(t.total);$('#tGoal').textContent=t.goal?T('outOf',{g:cur+fmt(t.goal)}):'';$('#tCnt').textContent=t.n?`${t.n} ${T('donors')}`:'';const dh=$('#donors .hd h2 span');if(dh){dh.removeAttribute('data-i');dh.textContent=T('viaT',{n:t.name})}$('#dCount').textContent=t.n?`(${t.n})`:'';$('#tBar').style.width=t.goal?Math.min(100,t.total/t.goal*100)+'%':'0'}
 let dTab='recent',dQ='';
