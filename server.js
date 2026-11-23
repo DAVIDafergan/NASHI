@@ -475,7 +475,6 @@ app.get('/api/campaigns', auth, (req, res) => {
   res.json(rows.map(c => ({ id: c.id, slug: c.slug, title: c.title, status: c.status, goal: c.goal, multiplier: c.multiplier, end_at: c.end_at, cover: c.cover, owner: c.owner, stats: stats(c, isTest(c)) })));
 });
 app.post('/api/campaigns', auth, (req, res) => {
-  if (req.user.role !== 'admin' && !db.prepare("SELECT 1 FROM contracts WHERE user_id=? AND status!='rejected'").get(req.user.id)) return res.status(403).json({ error: 'לפני פתיחת קמפיין יש לחתום על הסכם השימוש', code: 'contract' });
   const b = req.body || {}; const title = String(b.title || 'קמפיין חדש').slice(0, 120);
   let slug = slugify(b.slug || title); while (db.prepare('SELECT 1 FROM campaigns WHERE slug=?').get(slug)) slug = slug + '-' + crypto.randomBytes(2).toString('hex');
   const end = b.end_at || new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 16);
