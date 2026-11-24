@@ -31,6 +31,10 @@ body{background:var(--cream)}
 .poster .pt b{color:var(--wine)}
 .poster .pf{margin-top:auto;font:500 13px Fredoka;background:var(--night);color:#fff;border-radius:999px;padding:7px 14px}
 .sec{padding:100px 0}
+.proof{position:relative;z-index:2;margin-top:100px;display:grid;grid-template-columns:repeat(3,1fr);background:var(--card);border-radius:28px;box-shadow:0 30px 60px -30px rgba(120,60,20,.55);border:1px solid #fff;overflow:hidden}
+.proof div{padding:26px 22px;text-align:center}.proof div+div{border-inline-start:1px solid var(--line)}
+.proof b{display:block;font:700 48px Fredoka;color:var(--wine);line-height:1.1}.proof span{color:var(--ink2);font-size:15px}
+@media(max-width:700px){.proof{grid-template-columns:1fr;margin-top:80px}.proof div+div{border-inline-start:0;border-top:1px solid var(--line)}}
 .vals{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .val{background:var(--card);border-radius:26px;padding:30px 26px;box-shadow:var(--sh);border:1px solid #fff}
 .val .n{font:700 44px Fredoka;color:var(--wine);line-height:1}
@@ -81,11 +85,16 @@ body{background:var(--cream)}
 
 <main id="main">
 <div class="wrap">
-  <section class="sec" style="padding-top:130px">
+  <div class="proof">
+    <div><b>3,000</b><span>תושבי רעננה מחוברים לקבוצות של רעננה NEWS</span></div>
+    <div><b>35</b><span>בעלי עסקים השתתפו בפעילות הקודמת שלנו</span></div>
+    <div><b>2,000+</b><span>תושבים לקחו חלק בפעילות הקודמת</span></div>
+  </div>
+  <section class="sec" style="padding-top:90px">
     <div class="sh c"><span class="eyebrow">מה מקבלים</span><h2>שותפים ב<span class="wine-t">רעננים</span></h2><p>כל מה שעסק שכונתי צריך כדי שיבואו אליו, בלי לשנות שום דבר בדרך שאתם עובדים.</p></div>
     <div class="vals">
       <div class="val"><div class="n">פוסטר</div><h3>שלט "שותפים ברעננים"</h3><p>נתלה אצלכם בעסק פוסטר מעוצב עם הלוגו שלכם, שמבליט שאתם שותפים רשמיים. כל מי שעובר בחנות יודע שקנייה אצלכם מזכה בכרטיסים.</p></div>
-      <div class="val"><div class="n">חשיפה</div><h3>הלוגו שלכם באתר</h3><p>מקום קבוע ברשימת העסקים השותפים באתר המבצע, והכרזה על הצטרפותכם בערוץ "רעננה NEWS".</p></div>
+      <div class="val"><div class="n">חשיפה</div><h3>הלוגו שלכם באתר</h3><p>מקום קבוע ברשימת העסקים השותפים באתר המבצע, והכרזה על הצטרפותכם בקבוצות של "רעננה NEWS", שמגיעות ל-3,000 תושבים.</p></div>
       <div class="val"><div class="n">לקוחות</div><h3>סיבה לבחור בכם</h3><p>תושבים מגיעים במיוחד לעסקים השותפים כדי לצבור כרטיסים, וחוזרים שוב. כל קנייה אצלכם מקרבת אותם לזכייה.</p></div>
       <div class="val"><div class="n">0%</div><h3>בלי עמלות</h3><p>תשלום חודשי אחד וזהו. בלי אחוזים מהמכירות ובלי התחייבות להמשך.</p></div>
       <div class="val"><div class="n">דוח</div><h3>רואים תוצאות</h3><p>כמה קניות, כמה לקוחות ואיזה סכום הגיע אליכם דרך המבצע.</p></div>
