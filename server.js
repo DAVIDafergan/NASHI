@@ -10,7 +10,7 @@ const stateUrl = () => `${String(GREEN_API_URL || 'https://api.green-api.com').r
 http.createServer((req, res) => {
   const send = (c, o) => { res.writeHead(c, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); };
   if (req.method === 'GET' && req.url === '/health') return send(200, { ok: true });
-  if (req.method === 'POST' && req.url === '/state' && ok(String(req.headers['x-key'] || ''))) return fetch(stateUrl()).then(r => r.json().then(j => send(r.status, j))).catch(e => send(500, { error: e.message }));
+  if (req.method === 'POST' && req.url === '/state' && ok(String(req.headers['x-key'] || ''))) return fetch(stateUrl()).then(r => r.text().then(t => send(200, { status: r.status, body: t.slice(0, 300) }))).catch(e => send(500, { error: e.message }));
   if (req.method !== 'POST' || req.url !== '/notify') return send(404, { error: 'not found' });
   if (!ok(String(req.headers['x-key'] || ''))) return send(401, { error: 'unauthorized' });
   let body = ''; req.on('data', d => { body += d; if (body.length > 20000) req.destroy(); });
