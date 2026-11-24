@@ -102,7 +102,7 @@ const totalTickets = () =>
 const kvGet = k => { try { return JSON.parse(db.prepare('SELECT v FROM kv WHERE k=?').get(k)?.v); } catch { return null; } };
 const kvSet = (k, v) => db.prepare('INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').run(k, JSON.stringify(v));
 const { sendSms, ready: smsReady, config: smsConfig } = createSms(() => kvGet('sms'));
-const BRAND = 'קנית·זכית';
+const BRAND = 'רעננים';
 const REF_BONUS = 5; // כרטיסים לממליץ, אחרי הקבלה המאושרת הראשונה של החבר
 const refCode = () => crypto.randomBytes(4).toString('base64url').replace(/[-_]/g, 'x').slice(0, 6);
 const ensureRef = u => { if (u.ref_code) return u.ref_code; const c = refCode(); db.prepare('UPDATE users SET ref_code=? WHERE id=?').run(c, u.id); return c; };

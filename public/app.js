@@ -127,7 +127,7 @@ async function loadMe() {
     <span class="badge b-${r.status}">${st[r.status]}${r.status === 'approved' ? ` · +${r.points} כרטיסים` : ''}${r.note ? ` · ${esc(r.note)}` : ''}</span></div>`).join('')
     : '<div class="note">עוד לא צילמת קבלות. קנייה ראשונה בעסק שותף, ואת/ה בפנים.</div>';
 }
-const shareText = () => `מכיר/ה את "קנית·זכית"? כל קנייה בעסקים של רעננה היא כרטיס להגרלה, והפרס הגדול הוא טיסה זוגית לאירופה. נרשמים כאן: ${refUrl()}`;
+const shareText = () => `מכיר/ה את "רעננים"? כל קנייה בעסקים של רעננה היא כרטיס להגרלה, והפרס הגדול הוא טיסה זוגית לאירופה. נרשמים כאן: ${refUrl()}`;
 $('#waShare').onclick = () => open('https://wa.me/?text=' + encodeURIComponent(shareText()), '_blank');
 $('#copyRef').onclick = async () => { try { await navigator.clipboard.writeText(refUrl()); toast('הקישור הועתק'); } catch { prompt('העתיקו את הקישור', refUrl()); } };
 $('#inviteBtn').onclick = () => needLogin(() => { scrollTo('#me'); });

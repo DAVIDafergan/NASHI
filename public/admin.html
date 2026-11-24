@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ניהול | קנית·זכית</title><link rel="icon" href="/logo.svg"><link rel="stylesheet" href="/style.css">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ניהול | רעננים</title><link rel="icon" href="/logo.svg"><link rel="stylesheet" href="/style.css">
 <style>
 body{background:var(--paper)}header{position:static}main{padding:24px 20px 80px}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:22px 0;background:var(--paper2);padding:4px;border-radius:999px;width:max-content;max-width:100%}
 .tabs button{border:0;background:none;font:600 14px Sans;color:var(--ink2);padding:9px 16px;border-radius:999px;cursor:pointer}.tabs button.on{background:var(--card);color:var(--ink);box-shadow:0 2px 8px -4px rgba(0,0,0,.25)}
@@ -15,7 +15,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:10px;bord
 .pr{display:flex;gap:14px;align-items:center}.pr .th{width:64px;height:48px;border-radius:8px;background:var(--paper2) center/cover;flex:none}
 </style></head>
 <body>
-<header class="solid"><div class="bar"><a class="logo" href="/"><img src="/logo.svg" alt="" width="40" height="40"><span>קנית<i>·</i><b>זכית</b></span></a><nav><a class="l" href="/">לאתר</a></nav></div></header>
+<header class="solid"><div class="bar"><a class="logo" href="/"><img src="/logo.svg" alt="" width="40" height="40"><span>רעננ<b>ים</b></span></a><nav><a class="l" href="/">לאתר</a></nav></div></header>
 <main class="wrap">
   <div id="login" class="me" style="max-width:380px;margin:40px auto">
     <h3 style="font-size:28px">כניסת מנהל</h3>
@@ -49,7 +49,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:10px;bord
     <div id="t-sms" class="hide"><div class="card" style="max-width:620px">
       <b style="font-size:18px">ספק SMS</b><div class="note" style="margin-top:4px">כל עוד אין ספק, האתר עובד במצב הדגמה: קוד הכניסה מוצג על המסך במקום להישלח. מומלץ לחבר ספק לפני ההשקה.</div>
       <label>ספק</label><select id="sm_type"><option value="none">ללא (מצב הדגמה)</option><option value="inforu">InforU</option><option value="019">019 SMS</option><option value="twilio">Twilio</option></select>
-      <div id="sm_il"><div class="two"><div><label>שם משתמש</label><input id="sm_user" autocomplete="off"></div><div><label>שם שולח (עד 11 תווים באנגלית)</label><input id="sm_sender" placeholder="KanitZachit" maxlength="11"></div></div></div>
+      <div id="sm_il"><div class="two"><div><label>שם משתמש</label><input id="sm_user" autocomplete="off"></div><div><label>שם שולח (עד 11 תווים באנגלית)</label><input id="sm_sender" placeholder="Raananim" maxlength="11"></div></div></div>
       <div id="sm_tw" class="hide"><div class="two"><div><label>Account SID</label><input id="sm_sid" autocomplete="off"></div><div><label>מספר שולח</label><input id="sm_from" placeholder="+1..."></div></div></div>
       <label>API Token</label><input id="sm_token" type="password" autocomplete="new-password" placeholder="השאירו ריק כדי לא לשנות">
       <button class="btn full" id="sm_save">שמירה</button>
