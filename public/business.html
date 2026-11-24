@@ -174,7 +174,7 @@ footer{max-width:1120px;margin:0 auto;padding:40px 24px 60px;display:flex;justif
         <label class="chk"><input type="checkbox" id="b_agree"> קראתי ואני מסכים/ה ל<a href="/business-terms.html" target="_blank">תנאי ההשתתפות לעסקים</a> ול<a href="/privacy.html" target="_blank">מדיניות הפרטיות</a>.</label>
         <button class="btn" id="bSend">הרשמה</button><div class="err" id="bErr" role="alert"></div>
       </div>
-      <div id="bDone" class="done hide"><img src="/logo.svg" alt="" style="width:64px;margin:0 auto"><h3>ההרשמה התקבלה, תודה.</h3><p class="note">עכשיו נפתח וואטסאפ עם כל הפרטים. שלחו את ההודעה ונחזור אליכם עם קישור לתשלום.</p><a id="bWa" class="hide" href="#" style="display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:#25D366;color:#fff;font-weight:700;padding:13px 22px;border-radius:10px;text-decoration:none">שליחת הפרטים בוואטסאפ</a></div>
+      <div id="bDone" class="done hide"><img src="/logo.svg" alt="" style="width:64px;margin:0 auto"><h3>ההרשמה התקבלה, תודה.</h3><p class="note">נציג שלנו יחזור אליכם בהקדם עם כל הפרטים וקישור לתשלום.</p></div>
       <div id="bPaid" class="done hide"><img src="/logo.svg" alt="" style="width:64px;margin:0 auto"><h3>התשלום התקבל. ברוכים הבאים לרעננים.</h3><p class="note">קבלה נשלחה אליכם. נחזור אליכם לתיאום הפוסטר והפעלת העסק.</p></div>
     </div>
   </section>
@@ -201,7 +201,6 @@ $('#bSend').onclick = async () => {
     const r = await fetch('/api/biz/checkout', { method: 'POST', body: fd }); const j = await r.json();
     if (!r.ok) throw new Error(j.error || 'שגיאה');
     $('#bizForm').classList.add('hide'); $('#bDone').classList.remove('hide'); $('#form').scrollIntoView({ behavior: 'smooth' });
-    if (j.wa) { $('#bWa').href = j.wa; $('#bWa').classList.remove('hide'); setTimeout(() => location.href = j.wa, 700); }
   } catch (e) { $('#bErr').textContent = e.message; }
   b.disabled = false; b.textContent = 'הרשמה';
 };
