@@ -301,7 +301,8 @@ const logoUp = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 *
 app.post('/api/biz/checkout', logoUp.single('logo'), async (req, res) => {
   let logo = null;
   if (req.file) { try { logo = '/media/logo-' + crypto.randomUUID() + '.png'; await require('sharp')(req.file.buffer).rotate().resize(600, 600, { fit: 'inside', withoutEnlargement: true }).png().toFile(path.join(MEDIA, path.basename(logo))); } catch { return res.status(400).json({ error: 'קובץ הלוגו לא תקין' }); } }
-  if (!logo) return res.status(400).json({ error: 'נא להעלות את הלוגו של העסק' });
+  const callback = req.body.mode === 'callback';
+  if (!logo && !callback) return res.status(400).json({ error: 'נא להעלות את הלוגו של העסק' });
   const agree = req.body.agree === 'true' || req.body.agree === true;
   const { business, contact, phone, category, notes, email, company_no } = req.body || {};
   const ph = normPhone(phone);
@@ -311,6 +312,11 @@ app.post('/api/biz/checkout', logoUp.single('logo'), async (req, res) => {
     .run(String(business).slice(0, 80), String(contact).slice(0, 60), ph, String(category || '').slice(0, 40), String(notes || '').slice(0, 500), String(email || '').slice(0, 80), String(company_no || '').replace(/\D/g, '').slice(0, 12)).lastInsertRowid;
   const ref = 'kz-biz-' + id;
   db.prepare('UPDATE applications SET pay_ref=?, logo=? WHERE id=?').run(ref, logo, id);
+  if (callback) {
+    db.prepare("UPDATE applications SET status='callback' WHERE id=?").run(id);
+    if (process.env.ADMIN_PHONE) sendSms(process.env.ADMIN_PHONE, `עסק ביקש שנחזור אליו (${BRAND}): ${business} ${ph}`).catch(() => {});
+    return res.json({ ok: true, callback: true });
+  }
   const base = PUBLIC() || (req.protocol + '://' + req.get('host'));
   try {
     const r = await bridge('/api/ext/sumit/begin', { amount: BIZ_PRICE, itemName: `${BRAND} – עסק שותף לחודש: ${String(business).slice(0, 60)}`, name: String(business).slice(0, 80), phone: ph, email: email || null, customerRef: 'kz-' + ph, ref, returnUrl: `${base}/biz/return/${id}`, cancelUrl: `${base}/business.html?cancel=1#form` });

@@ -69,6 +69,7 @@ body{background:var(--cream)}
 .logoup:hover{border-color:var(--wine)}
 .logoup .pv{width:72px;height:72px;border-radius:16px;background:#fff center/contain no-repeat;border:1px solid var(--line);flex:none;display:grid;place-items:center;color:var(--mute);font-size:28px}
 .logoup b{font:600 17px Fredoka;display:block}
+.paychoice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.pc{background:var(--peach2);border-radius:16px;padding:14px 16px}.pc b{display:block;font:600 16px Fredoka}.pc span{font-size:14px;color:var(--ink2)}@media(max-width:560px){.paychoice{grid-template-columns:1fr}}
 .secure{display:flex;gap:8px;align-items:center;justify-content:center;color:var(--mute);font-size:13px;margin-top:10px;text-align:center}
 .steps3{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .s3{background:var(--card);border-radius:22px;padding:24px;box-shadow:var(--sh);border:1px solid #fff}
@@ -113,7 +114,7 @@ body{background:var(--cream)}
       <div class="val"><div class="n">פוסטר</div><h3>שלט "שותפים ברעננים"</h3><p>נתלה אצלכם בעסק פוסטר מעוצב עם הלוגו שלכם, שמבליט שאתם שותפים רשמיים. כל מי שעובר בחנות יודע שקנייה אצלכם מזכה בכרטיסים.</p></div>
       <div class="val"><div class="n">חשיפה</div><h3>הלוגו שלכם באתר</h3><p>מקום קבוע ברשימת העסקים השותפים באתר המבצע, והכרזה על הצטרפותכם בקבוצות של "רעננה NEWS", שמגיעות ל-3,000 תושבים.</p></div>
       <div class="val"><div class="n">לקוחות</div><h3>סיבה לבחור בכם</h3><p>תושבים מגיעים במיוחד לעסקים השותפים כדי לצבור כרטיסים, וחוזרים שוב. כל קנייה אצלכם מקרבת אותם לזכייה.</p></div>
-      <div class="val"><div class="n">0%</div><h3>בלי עמלות</h3><p>תשלום חודשי אחד וזהו. בלי אחוזים מהמכירות ובלי התחייבות להמשך.</p></div>
+      <div class="val"><div class="n">0%</div><h3>בלי עמלות</h3><p>450 ₪ לחודש וזהו. בלי אחוזים מהמכירות ובלי התחייבות להמשך.</p></div>
       <div class="val"><div class="n">דוח</div><h3>רואים תוצאות</h3><p>כמה קניות, כמה לקוחות ואיזה סכום הגיע אליכם דרך המבצע.</p></div>
       <div class="val"><div class="n">1</div><h3>בלעדיות בתחום</h3><p>מספר העסקים בכל תחום מוגבל. מי שמצטרף ראשון, תופס את המקום.</p></div>
     </div>
@@ -130,7 +131,7 @@ body{background:var(--cream)}
     <div class="sh c"><span class="eyebrow">פשוט</span><h2>מצטרפים בארבעה צעדים</h2></div>
     <div class="steps3">
       <div class="s3"><i>1</i><h3>ממלאים פרטים</h3><p>שם העסק, איש קשר ולוגו.</p></div>
-      <div class="s3"><i>2</i><h3>משלמים אונליין</h3><p>בעמוד סליקה מאובטח, עם קבלה למייל.</p></div>
+      <div class="s3"><i>2</i><h3>משלמים</h3><p>באתר בעמוד מאובטח, או בטלפון מולנו. איך שנוח לכם.</p></div>
       <div class="s3"><i>3</i><h3>מקבלים פוסטר</h3><p>אנחנו מעצבים ותולים אצלכם פוסטר שותפים.</p></div>
       <div class="s3"><i>4</i><h3>הלקוחות מגיעים</h3><p>העסק עולה לאתר, והלקוחות מתחילים לצבור אצלכם.</p></div>
     </div>
@@ -138,23 +139,27 @@ body{background:var(--cream)}
 
   <section class="sec" id="form" style="padding-top:0">
     <div class="formbox">
-      <h2 style="font-size:42px;text-align:center">הצטרפות כעסק שותף</h2><p class="note" style="text-align:center">שתי דקות, ואתם בפנים</p>
+      <h2 style="font-size:42px;text-align:center">הצטרפות כעסק שותף</h2><p class="note" style="text-align:center">משלמים עכשיו באתר, או משאירים פרטים ואנחנו חוזרים אליכם</p>
       <div id="bizForm">
         <label for="b_business">שם העסק *</label><input id="b_business" autocomplete="organization">
         <div class="two"><div><label for="b_category">תחום *</label><input id="b_category" placeholder="בית קפה, מספרה…"></div><div><label for="b_company_no">ח.פ / מספר עוסק</label><input id="b_company_no" inputmode="numeric"></div></div>
         <div class="two"><div><label for="b_contact">איש קשר *</label><input id="b_contact" autocomplete="name"></div><div><label for="b_phone">טלפון נייד *</label><input id="b_phone" inputmode="tel" autocomplete="tel"></div></div>
         <label for="b_email">אימייל (לקבלה)</label><input id="b_email" type="email" autocomplete="email">
-        <label>הלוגו של העסק *</label>
-        <label class="logoup" for="b_logo"><span class="pv" id="logoPv">+</span><span><b>העלאת לוגו</b><span class="note" style="margin:0">PNG או JPG. ייכנס לפוסטר ולאתר</span></span></label>
+        <label>הלוגו של העסק</label>
+        <label class="logoup" for="b_logo"><span class="pv" id="logoPv">+</span><span><b>העלאת לוגו</b><span class="note" style="margin:0">PNG או JPG. ייכנס לפוסטר ולאתר. אפשר גם לשלוח אחר כך</span></span></label>
         <input type="file" id="b_logo" accept="image/*" class="hide">
         <label for="b_notes">משהו שחשוב לנו לדעת? (לא חובה)</label><textarea id="b_notes" rows="2"></textarea>
-        <div class="price"><div><span>דמי השתתפות</span><br><b><em id="bPrice" style="font-style:normal">450</em> ₪ <small>/ חודש אחד</small></b></div><span>חיוב חד-פעמי לחודש אחד · בלי התחדשות אוטומטית · קבלה כדין</span></div>
+        <div class="price"><div><span>עלות ההשתתפות</span><br><b><em id="bPrice" style="font-style:normal">450</em> ₪ <small>לחודש אחד</small></b></div><span>תשלום אחד לחודש אחד בלבד · בלי התחדשות אוטומטית ובלי התחייבות · קבלה כדין</span></div>
+        <div class="paychoice">
+          <div class="pc"><b>מעדיפים לשלם עכשיו?</b><span>בעמוד תשלום מאובטח של SUMIT, ומקבלים קבלה למייל מיד.</span></div>
+          <div class="pc"><b>מעדיפים שנדבר קודם?</b><span>השאירו פרטים, נחזור אליכם בטלפון, נענה על כל שאלה ונסדר את התשלום יחד.</span></div>
+        </div>
         <label class="chk"><input type="checkbox" id="b_agree"> קראתי ואני מסכים/ה ל<a href="/business-terms.html" target="_blank">תנאי ההשתתפות לעסקים</a> ול<a href="/privacy.html" target="_blank">מדיניות הפרטיות</a>.</label>
-        <button class="btn full huge" id="bSend">למעבר לתשלום מאובטח</button><div class="err" id="bErr" role="alert"></div>
+        <div class="two" style="margin-top:18px"><button class="btn huge" id="bSend" style="width:100%">לתשלום מאובטח</button><button class="btn huge ghost" id="bCall" style="width:100%">השאירו פרטים, נחזור אליכם</button></div><div class="err" id="bErr" role="alert"></div>
         <div class="secure">התשלום מתבצע בעמוד הסליקה של SUMIT. פרטי האשראי לא נשמרים אצלנו.</div>
       </div>
       <div id="bDone" class="hide" style="text-align:center;padding:30px 0"><img src="/logo.svg" alt="" style="width:90px;margin:0 auto 10px"><h3 style="font-size:32px">התשלום התקבל. ברוכים הבאים לרעננים!</h3><p class="note">קבלה נשלחה אליכם. נחזור תוך יום עסקים לתיאום הפוסטר והפעלת העסק.</p></div>
-      <div id="bLater" class="hide" style="text-align:center;padding:30px 0"><h3 style="font-size:30px">קיבלנו את הפרטים.</h3><p class="note">נחזור אליכם בקרוב עם קישור לתשלום.</p></div>
+      <div id="bLater" class="hide" style="text-align:center;padding:30px 0"><img src="/logo.svg" alt="" style="width:80px;margin:0 auto 10px"><h3 style="font-size:30px">קיבלנו, תודה!</h3><p class="note">נחזור אליכם בטלפון בהקדם, נענה על כל שאלה ונסדר יחד את התשלום. שום חיוב לא בוצע.</p></div>
     </div>
   </section>
 </div>
@@ -169,15 +174,15 @@ if (q.get('paid')) { $('#bizForm').classList.add('hide'); $('#bDone').classList.
 if (q.get('cancel')) $('#bErr').textContent = 'התשלום לא הושלם. אפשר לנסות שוב.';
 $('#b_logo').onchange = () => { const f = $('#b_logo').files[0]; if (!f) return; const u = URL.createObjectURL(f);
   $('#logoPv').style.backgroundImage = `url('${u}')`; $('#logoPv').textContent = ''; $('#posterLogo').innerHTML = `<img src="${u}" alt="">`; };
-$('#bSend').onclick = async () => {
+async function submit(mode) {
   $('#bErr').textContent = '';
   const need = [['business', 'שם העסק'], ['category', 'תחום'], ['contact', 'איש קשר'], ['phone', 'טלפון']].find(([k]) => !$('#b_' + k).value.trim());
   if (need) return $('#bErr').textContent = 'נא למלא ' + need[1];
-  if (!$('#b_logo').files[0]) return $('#bErr').textContent = 'נא להעלות את הלוגו של העסק';
+  if (mode === 'pay' && !$('#b_logo').files[0]) return $('#bErr').textContent = 'לתשלום עכשיו נא להעלות לוגו (או לבחור "חזרו אליי")';
   if (!$('#b_agree').checked) return $('#bErr').textContent = 'יש לאשר את תנאי ההשתתפות';
   const fd = new FormData(); ['business', 'category', 'contact', 'phone', 'notes', 'email', 'company_no'].forEach(k => fd.append(k, $('#b_' + k).value));
-  fd.append('agree', 'true'); fd.append('logo', $('#b_logo').files[0]);
-  const b = $('#bSend'); b.disabled = true; b.textContent = 'רגע…';
+  fd.append('agree', 'true'); fd.append('mode', mode === 'call' ? 'callback' : 'pay'); if ($('#b_logo').files[0]) fd.append('logo', $('#b_logo').files[0]);
+  const b = mode === 'call' ? $('#bCall') : $('#bSend'), t = b.textContent; b.disabled = true; b.textContent = 'רגע…';
   try {
     const r = await fetch('/api/biz/checkout', { method: 'POST', body: fd });
     const j = await r.json();
@@ -185,8 +190,10 @@ $('#bSend').onclick = async () => {
     if (j.url) return location.href = j.url;
     $('#bizForm').classList.add('hide'); $('#bLater').classList.remove('hide');
   } catch (e) { $('#bErr').textContent = e.message; }
-  b.disabled = false; b.textContent = 'למעבר לתשלום מאובטח';
-};
+  b.disabled = false; b.textContent = t;
+}
+$('#bSend').onclick = () => submit('pay');
+$('#bCall').onclick = () => submit('call');
 </script>
 </body>
 </html>
