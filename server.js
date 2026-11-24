@@ -124,6 +124,25 @@ app.use(cookieParser());
 // האתר הכללי סגור עד ההשקה: רואים אותו רק מנהל או מי שקיבל קישור תצוגה מקדימה
 const PREVIEW_KEY = hash('preview').slice(0, 10);
 const siteOpen = () => { try { return JSON.parse(db.prepare("SELECT v FROM kv WHERE k='site_open'").get()?.v || 'false'); } catch { return false; } };
+// ספירת כניסות: עסקים (דף ההרשמה) ולקוחות (האתר הכללי), בלי מנהל ובלי בוטים של תצוגה מקדימה
+db.exec('CREATE TABLE IF NOT EXISTS visits (page TEXT, day TEXT, vid TEXT, n INTEGER DEFAULT 1, PRIMARY KEY(page, day, vid))');
+const BOT = /bot|crawl|spider|whatsapp|facebookexternalhit|preview|slurp|curl|wget|headless|python|node-fetch|axios/i;
+app.get(['/', '/index.html', '/business', '/business.html'], (req, res, next) => {
+  try {
+    if (unsign(req.cookies.adm) === 'admin' || BOT.test(req.get('user-agent') || '')) return next();
+    let vid = req.cookies.vid;
+    if (!vid || !/^[\w-]{8,40}$/.test(vid)) { vid = crypto.randomUUID(); res.cookie('vid', vid, { maxAge: 365 * 864e5, httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' }); }
+    const page = /business/.test(req.path) ? 'biz' : 'site';
+    const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+    db.prepare('INSERT INTO visits(page,day,vid) VALUES(?,?,?) ON CONFLICT DO UPDATE SET n=n+1').run(page, day, vid);
+  } catch (e) { console.error('visit', e.message); }
+  next();
+});
+const visitStats = () => {
+  const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+  const q = pg => db.prepare('SELECT COUNT(DISTINCT vid) u, COALESCE(SUM(n),0) v, COUNT(DISTINCT CASE WHEN day=? THEN vid END) t FROM visits WHERE page=?').get(day, pg);
+  return { biz: q('biz'), site: q('site') };
+};
 app.get(['/', '/index.html'], (req, res, next) => {
   if (req.query.preview && req.query.preview === PREVIEW_KEY) { setCookie(res, 'pv', '1'); return res.redirect('/'); }
   if (siteOpen() || unsign(req.cookies.adm) === 'admin' || unsign(req.cookies.pv) === '1') return next();
@@ -397,7 +416,7 @@ app.get('/api/admin/overview', needAdmin, (req, res) => res.json({
   raffles: db.prepare('SELECT r.*, u.phone wphone, u.name wname FROM raffles r LEFT JOIN users u ON u.id=r.winner_user_id ORDER BY draw_date').all(),
   applications: db.prepare('SELECT * FROM applications ORDER BY id DESC').all(),
   users: db.prepare('SELECT COUNT(*) c FROM users').get().c,
-  sms: smsConfig().type, siteOpen: siteOpen(), previewUrl: (PUBLIC() || '') + '/?preview=' + PREVIEW_KEY,
+  sms: smsConfig().type, siteOpen: siteOpen(), visits: visitStats(), previewUrl: (PUBLIC() || '') + '/?preview=' + PREVIEW_KEY,
   smsCfg: (c => ({ type: c.type, user: c.user || '', sender: c.sender || '', sid: c.sid || '', from: c.from || '', hasToken: !!c.token }))(smsConfig()),
 }));
 // הגדרת ספק SMS מהפאנל. טוקן ריק = משאירים את הקיים
