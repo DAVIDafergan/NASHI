@@ -1105,6 +1105,10 @@ app.post('/api/ext/sumit/begin', extAuth, limit(60, 60000), async (req, res) => 
   try { const r = await sumit.beginRedirect(b, { name: String(o.name || 'לקוח').slice(0, 80), phone: o.phone || null, email: o.email || null, customerRef: o.customerRef ? String(o.customerRef).slice(0, 60) : null, amount, itemName: String(o.itemName || 'תשלום').slice(0, 120), docType: { receipt: sumit.DOC.receipt }[b.docType] ?? sumit.DOC.invoiceReceipt, ref: String(o.ref || '').slice(0, 60), returnUrl: o.returnUrl, cancelUrl: o.cancelUrl || null });
     logEvent('ext.sumit.begin', { msg: String(o.ref || '') + ' ' + amount }); res.json({ url: r.url }); } catch (e) { res.status(502).json({ error: e.message }); }
 });
+app.post('/api/ext/notify', extAuth, limit(30, 60000), async (req, res) => {
+  const to = process.env.ADMIN_EMAIL || 'da@101.org.il'; const subj = String(req.body.subject || 'הודעה').slice(0, 150); const text = String(req.body.text || '').slice(0, 5000);
+  try { await mail.send({ to, subject: subj, html: mail.template({ title: subj, body: text, btnText: req.body.btnText || '', btnUrl: req.body.btnUrl || '' }) }); res.json({ ok: true }); } catch (e) { res.status(502).json({ error: e.message }); }
+});
 app.post('/api/ext/sumit/verify', extAuth, limit(60, 60000), async (req, res) => {
   const b = billCfg(); try { const p = await sumit.getPayment(b, +req.body.paymentId); const ok = sumit.isPaid(p) && (!req.body.ref || p.ExternalIdentifier === req.body.ref);
     res.json({ paid: ok, amount: p ? p.Amount : null, ref: p ? p.ExternalIdentifier : null }); } catch (e) { res.status(502).json({ error: e.message }); }
