@@ -66,7 +66,10 @@ async function loadPublic() {
   const credits = [...new Set(raffles.map(r => r.credit).filter(c => c && c !== 'Unsplash'))];
   $('#credits').textContent = credits.length ? 'צילומי הפרסים להמחשה בלבד. צלמים: ' + credits.join(', ') + ' / Unsplash' : '';
 
-  $('#storeGrid').innerHTML = stores.map((s, i) => `<div class="store rv d${i % 3}">${s.logo ? `<img class="e" src="${esc(s.logo)}" alt="" style="object-fit:contain;background:#fff;padding:4px">` : `<div class="e" aria-hidden="true">${esc(s.emoji || s.name.trim()[0] || '')}</div>`}<div><b>${esc(s.name)}</b><small>${esc(s.category)}${s.address ? ' · ' + esc(s.address) : ''}</small></div></div>`).join('') +
+  const waze = s => 'https://waze.com/ul?q=' + encodeURIComponent((s.address || '') + (/רעננה/.test(s.address || '') ? '' : ' רעננה') + ' ' + s.name) + '&navigate=yes';
+  $('#storeGrid').innerHTML = stores.map((s, i) => `<div class="store rv d${i % 3}">
+      <div class="st-top">${s.logo ? `<img class="e" src="${esc(s.logo)}" alt="" style="object-fit:contain;background:#fff;padding:4px">` : `<div class="e" aria-hidden="true">${esc(s.name.trim()[0] || '')}</div>`}<div><b>${esc(s.name)}</b><small>${esc(s.category)}${s.address ? ' · ' + esc(s.address) : ''}</small></div></div>
+      <div class="st-acts"><a href="${waze(s)}" target="_blank" rel="noopener" aria-label="ניווט אל ${esc(s.name)}">ניווט</a>${s.phone ? `<a href="tel:${esc(s.phone)}" aria-label="התקשרות אל ${esc(s.name)}">התקשרות</a>` : ''}</div></div>`).join('') +
     '<a class="store join rv" href="/business.html">+ העסק שלכם כאן?</a>';
   $('#store').innerHTML = '<option value="">בחרו עסק</option>' + stores.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
   loadLeaders();

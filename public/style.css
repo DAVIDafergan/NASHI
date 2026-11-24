@@ -228,7 +228,8 @@ section{padding:110px 0}
 .store .e{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--peach2);font:700 20px Fredoka;color:var(--wine);flex:none}
 .store b{display:block;font:600 17px Fredoka}
 .store small{color:var(--mute);font-size:13px}
-.store.join{justify-content:center;border:2px dashed var(--gold);color:var(--wine);font:600 17px Fredoka;background:transparent;box-shadow:none}
+.store{flex-direction:column;align-items:stretch}.st-top{display:flex;align-items:center;gap:14px}.st-acts{display:flex;gap:6px;margin-top:12px}.st-acts a{flex:1;text-align:center;text-decoration:none;font:600 14px Fredoka;padding:8px;border-radius:12px;background:var(--peach2);color:var(--wine)}.st-acts a:first-child{background:#33CCFF;color:#062B3A}
+.store.join{flex-direction:row;align-items:center;justify-content:center;border:2px dashed var(--gold);color:var(--wine);font:600 17px Fredoka;background:transparent;box-shadow:none}
 @media(max-width:900px){.stores{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.stores{grid-template-columns:1fr}}
 

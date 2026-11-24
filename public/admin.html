@@ -34,7 +34,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:10px;bord
     <div id="t-pending"></div>
     <div id="t-stores" class="hide">
       <div class="card"><b>הוספת עסק</b><div class="inline" style="margin-top:10px">
-        <input id="s_name" placeholder="שם העסק"><input id="s_category" placeholder="תחום"><input id="s_address" placeholder="כתובת">
+        <input id="s_name" placeholder="שם העסק"><input id="s_category" placeholder="תחום"><input id="s_address" placeholder="כתובת (לניווט)"><input id="s_phone" placeholder="טלפון העסק">
         <button class="btn small" id="addStore">הוספה</button></div></div>
       <div class="card"><table id="storesT"></table></div>
     </div>
@@ -102,7 +102,7 @@ async function load() {
   RAFFLES = d.raffles;
   $('#appsT').innerHTML = `<tr><td colspan="7"><div class="inline">תשלום עסקים (SUMIT דרך GiveIL): <b>${d.pay ? 'מחובר' : 'לא מחובר'}</b> · מחיר: ${d.bizPrice} ₪ <button class="btn small ghost" onclick="payTest()">בדיקת חיבור</button><span id="payMsg"></span></div></td></tr>` +
     '<tr><th>עסק</th><th>תחום</th><th>איש קשר</th><th>טלפון</th><th>סטטוס</th><th>הערות</th><th>תאריך</th></tr>' + d.applications.map(a =>
-    `<tr><td>${a.logo ? `<img src="${a.logo}" alt="" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--line);float:right;margin-left:8px">` : ''}${a.business}${a.company_no ? '<br><small>' + a.company_no + '</small>' : ''}</td><td>${a.category}</td><td>${a.contact}${a.email ? '<br><small>' + a.email + '</small>' : ''}</td><td><a href="https://wa.me/972${a.phone.slice(1)}">${a.phone}</a></td><td>${{ paid: '<b style="color:var(--ok)">שילם</b>', pending_payment: 'לא השלים תשלום', callback: '<b style="color:var(--wine)">לחזור אליו לתשלום</b>', new: 'חדש' }[a.status] || a.status}</td><td>${a.notes}</td><td>${a.created_at.slice(0, 10)}</td></tr>`).join('');
+    `<tr><td>${a.logo ? `<img src="${a.logo}" alt="" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--line);float:right;margin-left:8px">` : ''}${a.business}${a.company_no ? '<br><small>' + a.company_no + '</small>' : ''}</td><td>${a.category}</td><td>${a.contact}${a.email ? '<br><small>' + a.email + '</small>' : ''}</td><td><a href="https://wa.me/972${a.phone.slice(1)}">${a.phone}</a></td><td>${{ paid: '<b style="color:var(--ok)">שילם</b>', pending_payment: 'לא השלים תשלום', callback: '<b style="color:var(--wine)">ממתין לקישור תשלום</b>', link_sent: 'נשלח קישור', new: 'חדש' }[a.status] || a.status}${a.status !== 'paid' && a.status !== 'new' ? `<br><button class="btn small" onclick="payLink(${a.id})">קישור תשלום</button>` : ''}</td><td>${a.notes}</td><td>${a.created_at.slice(0, 10)}</td></tr>`).join('');
 }
 async function act(id, action) { await post('/api/admin/receipts/' + id, { action, amount: v('a' + id), note: v('n' + id) }); load(); }
 async function ban(id) { if (confirm('לחסום את המשתמש? כל הקבלות והכרטיסים שלו יבוטלו.')) { await post(`/api/admin/users/${id}/ban`); load(); } }
@@ -114,7 +114,7 @@ async function draw(id) {
   try { const r = await post(`/api/admin/raffles/${id}/draw`); alert(`הזוכה: ${r.winner.name || ''} ${r.winner.phone}\n${r.winner.tickets} כרטיסים מתוך ${r.winner.total}`); load(); }
   catch (e) { alert(e.message); }
 }
-$('#addStore').onclick = async () => { try { await post('/api/admin/stores', { name: v('s_name'), category: v('s_category'), address: v('s_address') }); load(); } catch (e) { alert(e.message); } };
+$('#addStore').onclick = async () => { try { await post('/api/admin/stores', { name: v('s_name'), category: v('s_category'), address: v('s_address'), phone: v('s_phone') }); load(); } catch (e) { alert(e.message); } };
 let RAFFLES = [];
 const rFields = ['kind', 'rank', 'title', 'prize', 'blurb', 'value', 'image'];
 function editR(id) {
@@ -136,6 +136,7 @@ document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
   ['pending', 'stores', 'raffles', 'apps', 'sms'].forEach(t => $('#t-' + t).classList.toggle('hide', t !== b.dataset.t));
 });
 async function siteToggle(open) { if (open && !confirm('לפתוח את האתר הכללי לכל הציבור?')) return; await post('/api/admin/site', { open }); load(); }
+async function payLink(id) { try { const r = await post(`/api/admin/applications/${id}/paylink`); const w = window.open(r.wa, '_blank'); if (!w) prompt('העתיקו את קישור התשלום ושלחו לעסק:', r.url); load(); } catch (e) { alert(e.message); } }
 async function payTest() { $('#payMsg').textContent = ' בודק…'; const r = await post('/api/admin/pay/test'); $('#payMsg').textContent = r.ok ? ' SUMIT מחובר ותקין' : ' ' + (r.msg || 'לא מחובר'); }
 function smToggle() { const t = $('#sm_type').value; $('#sm_il').classList.toggle('hide', !['inforu', '019'].includes(t)); $('#sm_tw').classList.toggle('hide', t !== 'twilio'); }
 $('#sm_type').onchange = smToggle;

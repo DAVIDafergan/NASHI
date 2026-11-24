@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS applications (id INTEGER PRIMARY KEY, business TEXT, 
 `);
 // עמודות שנוספו בגרסה 2
 for (const [t, c] of [['receipts', 'file_hash TEXT'], ['receipts', 'vhash TEXT'], ['receipts', 'risk INTEGER DEFAULT 0'], ['receipts', 'flags TEXT'],
-  ['receipts', 'ai TEXT'], ['receipts', 'ip TEXT'], ['users', 'banned INTEGER DEFAULT 0'], ['raffles', 'image TEXT'], ['users', 'ref_code TEXT'], ['users', 'referred_by INTEGER'], ['raffles', 'blurb TEXT'], ['raffles', 'credit TEXT'], ['raffles', "kind TEXT DEFAULT 'raffle'"], ['raffles', 'rank INTEGER'], ['applications', "status TEXT DEFAULT 'new'"], ['applications', 'pay_ref TEXT'], ['applications', 'paid_at TEXT'], ['applications', 'email TEXT'], ['applications', 'company_no TEXT'], ['applications', 'logo TEXT'], ['stores', 'logo TEXT'], ['users', 'last_name TEXT'], ['users', 'age INTEGER']])
+  ['receipts', 'ai TEXT'], ['receipts', 'ip TEXT'], ['users', 'banned INTEGER DEFAULT 0'], ['raffles', 'image TEXT'], ['users', 'ref_code TEXT'], ['users', 'referred_by INTEGER'], ['raffles', 'blurb TEXT'], ['raffles', 'credit TEXT'], ['raffles', "kind TEXT DEFAULT 'raffle'"], ['raffles', 'rank INTEGER'], ['applications', "status TEXT DEFAULT 'new'"], ['applications', 'pay_ref TEXT'], ['applications', 'paid_at TEXT'], ['applications', 'email TEXT'], ['applications', 'company_no TEXT'], ['applications', 'logo TEXT'], ['stores', 'logo TEXT'], ['stores', 'phone TEXT'], ['applications', 'address TEXT'], ['users', 'last_name TEXT'], ['users', 'age INTEGER']])
   try { db.exec(`ALTER TABLE ${t} ADD COLUMN ${c}`); } catch {}
 
 
@@ -216,7 +216,7 @@ app.get('/api/me', (req, res) => {
 });
 
 // ---------- נתונים ציבוריים ----------
-app.get('/api/stores', (req, res) => res.json(db.prepare('SELECT id, name, category, address, emoji, logo FROM stores WHERE active=1 ORDER BY name').all()));
+app.get('/api/stores', (req, res) => res.json(db.prepare('SELECT id, name, category, address, emoji, logo, phone FROM stores WHERE active=1 ORDER BY name').all()));
 app.get('/api/raffles', (req, res) => {
   const rows = db.prepare(`SELECT r.*, u.name wname, u.phone wphone FROM raffles r LEFT JOIN users u ON u.id=r.winner_user_id ORDER BY is_grand DESC, draw_date`).all();
   res.json(rows.map(r => ({ id: r.id, title: r.title, prize: r.prize, blurb: r.blurb, credit: r.credit, image: r.image, draw_date: r.draw_date, is_grand: !!r.is_grand, kind: r.kind || 'raffle', rank: r.rank,
@@ -288,6 +288,12 @@ app.post('/api/free-entry', needUser, (req, res) => {
   res.json({ ok: true });
 });
 
+// התראה בוואטסאפ למנהל (דרך ממסר Green API). שקט אם לא מוגדר
+async function waNotify(text) {
+  if (!process.env.WA_RELAY_URL || !process.env.WA_RELAY_KEY) return false;
+  try { const r = await fetch(process.env.WA_RELAY_URL.replace(/\/$/, '') + '/notify', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': process.env.WA_RELAY_KEY }, body: JSON.stringify({ text }), signal: AbortSignal.timeout(15000) }); return r.ok; }
+  catch (e) { console.error('wa', e.message); return false; }
+}
 // ---------- הצטרפות עסק + תשלום (SUMIT דרך הגשר של GiveIL) ----------
 const BIZ_PRICE = +(process.env.BIZ_PRICE || 450);
 const PUBLIC = () => (process.env.PUBLIC_URL || '').replace(/\/$/, '');
@@ -304,17 +310,21 @@ app.post('/api/biz/checkout', logoUp.single('logo'), async (req, res) => {
   const callback = req.body.mode === 'callback';
   if (!logo && !callback) return res.status(400).json({ error: 'נא להעלות את הלוגו של העסק' });
   const agree = req.body.agree === 'true' || req.body.agree === true;
-  const { business, contact, phone, category, notes, email, company_no } = req.body || {};
+  const { business, contact, phone, category, notes, email, company_no, address } = req.body || {};
   const ph = normPhone(phone);
   if (!business || !ph || !contact) return res.status(400).json({ error: 'נא למלא שם עסק, איש קשר וטלפון נייד תקין' });
   if (!agree) return res.status(400).json({ error: 'יש לאשר את תנאי ההצטרפות לעסקים' });
   const id = db.prepare("INSERT INTO applications (business, contact, phone, category, notes, email, company_no, status) VALUES (?,?,?,?,?,?,?, 'pending_payment')")
     .run(String(business).slice(0, 80), String(contact).slice(0, 60), ph, String(category || '').slice(0, 40), String(notes || '').slice(0, 500), String(email || '').slice(0, 80), String(company_no || '').replace(/\D/g, '').slice(0, 12)).lastInsertRowid;
   const ref = 'kz-biz-' + id;
-  db.prepare('UPDATE applications SET pay_ref=?, logo=? WHERE id=?').run(ref, logo, id);
+  db.prepare('UPDATE applications SET pay_ref=?, logo=?, address=? WHERE id=?').run(ref, logo, String(address || '').slice(0, 100), id);
   if (callback) {
     db.prepare("UPDATE applications SET status='callback' WHERE id=?").run(id);
-    if (process.env.ADMIN_PHONE) sendSms(process.env.ADMIN_PHONE, `עסק ביקש שנחזור אליו (${BRAND}): ${business} ${ph}`).catch(() => {});
+    const base0 = PUBLIC() || (req.protocol + '://' + req.get('host'));
+    const msg = [`*עסק חדש נרשם ל${BRAND}* 🎟️`, '', `*עסק:* ${business}`, `*תחום:* ${category || '-'}`, address ? `*כתובת:* ${address}` : '', `*איש קשר:* ${contact}`, `*טלפון:* ${ph}`, email ? `*אימייל:* ${email}` : '', company_no ? `*ח.פ/עוסק:* ${company_no}` : '', notes ? `*הערות:* ${String(notes).slice(0, 300)}` : '',
+      logo ? `*לוגו:* ${base0}${logo}` : '*לוגו:* לא הועלה', '', `לשליחת קישור תשלום (${BIZ_PRICE} ₪): ${base0}/admin.html`, `וואטסאפ לעסק: https://wa.me/972${ph.slice(1)}`].filter(Boolean).join('\n');
+    const sent = await waNotify(msg);
+    if (!sent && process.env.ADMIN_PHONE) sendSms(process.env.ADMIN_PHONE, `עסק חדש נרשם ל${BRAND}: ${business} ${ph}`).catch(() => {});
     return res.json({ ok: true, callback: true });
   }
   const base = PUBLIC() || (req.protocol + '://' + req.get('host'));
@@ -336,11 +346,22 @@ app.get('/biz/return/:id', async (req, res) => {
     const v = pid ? await bridge('/api/ext/sumit/verify', { paymentId: pid, ref: a.pay_ref }) : { paid: false };
     if (!v.paid) return res.redirect('/business.html?cancel=1#form');
     db.prepare("UPDATE applications SET status='paid', paid_at=datetime('now') WHERE id=?").run(a.id);
-    db.prepare('INSERT INTO stores (name, category, address, emoji, active, paid, logo) VALUES (?,?,?,?,0,1,?)').run(a.business, a.category || '', 'רעננה', '', a.logo || null);
+    db.prepare('INSERT INTO stores (name, category, address, emoji, active, paid, logo, phone) VALUES (?,?,?,?,0,1,?,?)').run(a.business, a.category || '', a.address || 'רעננה', '', a.logo || null, a.phone);
     if (process.env.ADMIN_PHONE) sendSms(process.env.ADMIN_PHONE, `עסק שילם והצטרף ל${BRAND}: ${a.business} ${a.phone}. להפעלה בפאנל הניהול.`).catch(() => {});
     sendSms(a.phone, `תודה! ${a.business} נרשם ל${BRAND}. נחזור אליכם תוך יום עסקים להפעלה.`).catch(() => {});
     res.redirect('/business.html?paid=1');
   } catch (e) { console.error('verify', e.message); res.redirect('/business.html?cancel=1#form'); }
+});
+app.post('/api/admin/applications/:id/paylink', needAdmin, async (req, res) => {
+  const a = db.prepare('SELECT * FROM applications WHERE id=?').get(req.params.id);
+  if (!a) return res.status(404).json({ error: 'לא נמצא' });
+  const base = PUBLIC() || (req.protocol + '://' + req.get('host'));
+  try {
+    const r = await bridge('/api/ext/sumit/begin', { amount: BIZ_PRICE, itemName: `${BRAND} – עסק שותף לחודש: ${a.business.slice(0, 60)}`, name: a.business, phone: a.phone, email: a.email || null, customerRef: 'kz-' + a.phone, ref: a.pay_ref, returnUrl: `${base}/biz/return/${a.id}`, cancelUrl: `${base}/business.html` });
+    db.prepare("UPDATE applications SET status='link_sent' WHERE id=? AND status<>'paid'").run(a.id);
+    const text = `שלום ${a.contact}, תודה שנרשמתם ל${BRAND}! 🎟️\nזה הקישור לתשלום דמי ההשתתפות (${BIZ_PRICE} ₪ לחודש אחד, בלי התחדשות אוטומטית):\n${r.url}\nהקישור בתוקף ל-24 שעות. לכל שאלה אנחנו כאן.`;
+    res.json({ url: r.url, wa: `https://wa.me/972${a.phone.slice(1)}?text=${encodeURIComponent(text)}` });
+  } catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post('/api/admin/pay/test', needAdmin, async (req, res) => { try { const r = await bridge('/api/ext/sumit/ping', {}); res.json(r); } catch (e) { res.json({ ok: false, msg: e.message }); } });
 
@@ -408,9 +429,9 @@ app.post('/api/admin/users/:id/ban', needAdmin, (req, res) => {
   res.json({ ok: true });
 });
 app.post('/api/admin/stores', needAdmin, (req, res) => {
-  const { name, category, address, emoji } = req.body;
+  const { name, category, address, phone } = req.body;
   if (!name) return res.status(400).json({ error: 'חסר שם' });
-  db.prepare('INSERT INTO stores (name, category, address, emoji) VALUES (?,?,?,?)').run(name, category || '', address || '', emoji || '🏪');
+  db.prepare('INSERT INTO stores (name, category, address, emoji, phone) VALUES (?,?,?,?,?)').run(name, category || '', address || '', '', String(phone || '').replace(/[^\d+]/g, '').slice(0, 15));
   res.json({ ok: true });
 });
 app.post('/api/admin/stores/:id', needAdmin, (req, res) => {
