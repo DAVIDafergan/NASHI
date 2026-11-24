@@ -323,11 +323,14 @@ app.post('/api/biz/checkout', logoUp.single('logo'), async (req, res) => {
     const base0 = PUBLIC() || (req.protocol + '://' + req.get('host'));
     const msg = [`*עסק חדש נרשם ל${BRAND}* 🎟️`, '', `*עסק:* ${business}`, `*תחום:* ${category || '-'}`, address ? `*כתובת:* ${address}` : '', `*איש קשר:* ${contact}`, `*טלפון:* ${ph}`, email ? `*אימייל:* ${email}` : '', company_no ? `*ח.פ/עוסק:* ${company_no}` : '', notes ? `*הערות:* ${String(notes).slice(0, 300)}` : '',
       logo ? `*לוגו:* ${base0}${logo}` : '*לוגו:* לא הועלה', '', `לשליחת קישור תשלום (${BIZ_PRICE} ₪): ${base0}/admin.html`, `וואטסאפ לעסק: https://wa.me/972${ph.slice(1)}`].filter(Boolean).join('\n');
-    const sent = await waNotify(msg);
-    // גיבוי: מייל למנהל דרך GiveIL, ו-SMS אם הוואטסאפ לא עבד
+    waNotify(msg).catch(() => {});
+    // גיבוי: מייל למנהל דרך GiveIL
     bridge('/api/ext/notify', { subject: `עסק חדש נרשם ל${BRAND}: ${business}`, text: msg.replace(/\*/g, ''), btnText: 'לניהול ולשליחת קישור תשלום', btnUrl: base0 + '/admin.html' }).catch(e => console.error('notify', e.message));
-    if (!sent && process.env.ADMIN_PHONE) sendSms(process.env.ADMIN_PHONE, `עסק חדש נרשם ל${BRAND}: ${business} ${ph}`).catch(() => {});
-    return res.json({ ok: true, callback: true });
+    // הודעה מוכנה שהעסק שולח בוואטסאפ ישירות למנהל (בלי API)
+    const adm = normPhone(process.env.ADMIN_PHONE || '0556674329');
+    const txt = [`שלום, נרשמתי ל${BRAND} 👋`, '', `*עסק:* ${business}`, `*תחום:* ${category || '-'}`, address ? `*כתובת:* ${address}` : '', `*איש קשר:* ${contact}`, `*טלפון:* ${ph}`, email ? `*אימייל:* ${email}` : '', company_no ? `*ח.פ/עוסק:* ${company_no}` : '', notes ? `*הערות:* ${String(notes).slice(0, 300)}` : '',
+      logo ? `*לוגו:* ${base0}${logo}` : '', '', `אשמח לקבל קישור לתשלום (${BIZ_PRICE} ₪ לחודש). מספר הרשמה: ${id}`].filter(Boolean).join('\n');
+    return res.json({ ok: true, callback: true, wa: `https://wa.me/972${adm.slice(1)}?text=${encodeURIComponent(txt)}` });
   }
   const base = PUBLIC() || (req.protocol + '://' + req.get('host'));
   try {
