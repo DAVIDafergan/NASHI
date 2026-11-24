@@ -178,7 +178,8 @@
     <button class="btn full" id="sendCode">שליחת קוד</button></div>
   <div id="stepCode" class="hide">
     <label for="code">הקוד שקיבלת</label><input id="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="letter-spacing:12px;text-align:center;font:700 30px Fredoka">
-    <label for="name">שם פרטי</label><input id="name" placeholder="איך קוראים לך?" autocomplete="given-name">
+    <div id="nameFields"><div class="two"><div><label for="name">שם פרטי *</label><input id="name" autocomplete="given-name" required aria-required="true"></div><div><label for="lname">שם משפחה *</label><input id="lname" autocomplete="family-name" required aria-required="true"></div></div>
+    <label for="age">גיל (לא חובה)</label><input id="age" type="number" inputmode="numeric" min="18" max="120" placeholder="18+"></div>
     <button class="btn full" id="verify">כניסה</button>
     <div class="note"><a href="#" id="resend">לא הגיע? שליחה מחדש</a></div>
   </div>

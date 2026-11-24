@@ -78,11 +78,12 @@ async function load() {
   $('#login').classList.add('hide'); $('#panel').classList.remove('hide');
   const paid = d.stores.filter(s => s.paid).length;
   $('#kpi').innerHTML = `<div><b>${d.pending.length}</b>קבלות ממתינות</div><div><b>${d.users}</b>משתתפים</div><div><b>${d.stores.length}</b>עסקים (${paid} שילמו)</div><div><b>${paid * 250} ₪</b>הכנסות מהצטרפות</div><div><b>${d.sms === 'none' ? 'הדגמה' : d.sms}</b>ספק SMS</div><div><b>${d.ai ? 'פעיל' : 'כבוי'}</b>בדיקת AI</div>` + (d.sms === 'none' ? '<div class="warn" style="grid-column:1/-1">שירות ה-SMS עדיין לא מחובר, וקוד הכניסה מוצג למשתמשים על המסך. אפשר לחבר ספק בלשונית "הגדרות SMS".</div>' : '');
+  $('#kpi').insertAdjacentHTML('beforeend', `<div class="warn" style="grid-column:1/-1;background:${d.siteOpen ? '#DFF1E6' : 'var(--gold3)'}"><b>האתר הכללי: ${d.siteOpen ? 'פתוח לציבור' : 'סגור (מוצג "בקרוב")'}</b> · <button class="btn small ghost" onclick="siteToggle(${!d.siteOpen})">${d.siteOpen ? 'לסגור' : 'לפתוח לציבור'}</button><br><small>קישור תצוגה מקדימה (רק למי שתשלח): <code style="direction:ltr;display:inline-block">${d.previewUrl}</code> · דף העסקים פתוח תמיד</small></div>`);
   const c = d.smsCfg; $('#sm_type').value = c.type; $('#sm_user').value = c.user; $('#sm_sender').value = c.sender; $('#sm_sid').value = c.sid; $('#sm_from').value = c.from; $('#sm_token').placeholder = c.hasToken ? 'שמור. השאירו ריק כדי לא לשנות' : 'הדביקו כאן את הטוקן'; smToggle();
   $('#t-pending').innerHTML = d.pending.length ? d.pending.map(p => `<div class="card rc">
     <img src="/api/admin/image/${p.image}" onclick="open(this.src)">
     <div><span class="risk" style="background:${p.risk >= 50 ? '#F6E3DE' : p.risk >= 20 ? 'var(--gold3)' : '#E3F0E8'}">סיכון ${p.risk}</span>
-    <b style="font-size:18px"> ${p.store}</b> · ${p.amount} ₪ · קבלה ${p.receipt_no}<br>${p.uname || ''} ${p.phone} · ${p.receipt_date}${p.rejected_before ? ` · <b style="color:#d5321a">${p.rejected_before} קבלות נדחו בעבר</b>` : ''}
+    <b style="font-size:18px"> ${p.store}</b> · ${p.amount} ₪ · קבלה ${p.receipt_no}<br>${p.uname || ''}${p.uage ? ' (' + p.uage + ')' : ''} ${p.phone} · ${p.receipt_date}${p.rejected_before ? ` · <b style="color:#d5321a">${p.rejected_before} קבלות נדחו בעבר</b>` : ''}
     <ul class="flags">${(JSON.parse(p.flags || '[]')).map(f => `<li>${f}</li>`).join('')}</ul>
     ${p.ai ? (a => `<div class="note">AI קרא בקבלה: ${a.business_name || '?'} · ${a.total ?? '?'} ₪ · ${a.date || '?'} · מס׳ ${a.receipt_number || '?'}</div>`)(JSON.parse(p.ai)) : ''}
     <div class="inline" style="margin-top:10px"><input id="a${p.id}" type="number" value="${p.amount}" style="max-width:130px"> ₪
@@ -101,7 +102,7 @@ async function load() {
   RAFFLES = d.raffles;
   $('#appsT').innerHTML = `<tr><td colspan="7"><div class="inline">תשלום עסקים (SUMIT דרך GiveIL): <b>${d.pay ? 'מחובר' : 'לא מחובר'}</b> · מחיר: ${d.bizPrice} ₪ <button class="btn small ghost" onclick="payTest()">בדיקת חיבור</button><span id="payMsg"></span></div></td></tr>` +
     '<tr><th>עסק</th><th>תחום</th><th>איש קשר</th><th>טלפון</th><th>סטטוס</th><th>הערות</th><th>תאריך</th></tr>' + d.applications.map(a =>
-    `<tr><td>${a.business}${a.company_no ? '<br><small>' + a.company_no + '</small>' : ''}</td><td>${a.category}</td><td>${a.contact}${a.email ? '<br><small>' + a.email + '</small>' : ''}</td><td><a href="https://wa.me/972${a.phone.slice(1)}">${a.phone}</a></td><td>${{ paid: '<b style="color:var(--ok)">שילם</b>', pending_payment: 'לא השלים תשלום', new: 'חדש' }[a.status] || a.status}</td><td>${a.notes}</td><td>${a.created_at.slice(0, 10)}</td></tr>`).join('');
+    `<tr><td>${a.logo ? `<img src="${a.logo}" alt="" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--line);float:right;margin-left:8px">` : ''}${a.business}${a.company_no ? '<br><small>' + a.company_no + '</small>' : ''}</td><td>${a.category}</td><td>${a.contact}${a.email ? '<br><small>' + a.email + '</small>' : ''}</td><td><a href="https://wa.me/972${a.phone.slice(1)}">${a.phone}</a></td><td>${{ paid: '<b style="color:var(--ok)">שילם</b>', pending_payment: 'לא השלים תשלום', new: 'חדש' }[a.status] || a.status}</td><td>${a.notes}</td><td>${a.created_at.slice(0, 10)}</td></tr>`).join('');
 }
 async function act(id, action) { await post('/api/admin/receipts/' + id, { action, amount: v('a' + id), note: v('n' + id) }); load(); }
 async function ban(id) { if (confirm('לחסום את המשתמש? כל הקבלות והכרטיסים שלו יבוטלו.')) { await post(`/api/admin/users/${id}/ban`); load(); } }
@@ -134,6 +135,7 @@ document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
   document.querySelectorAll('[data-t]').forEach(x => x.classList.toggle('on', x === b));
   ['pending', 'stores', 'raffles', 'apps', 'sms'].forEach(t => $('#t-' + t).classList.toggle('hide', t !== b.dataset.t));
 });
+async function siteToggle(open) { if (open && !confirm('לפתוח את האתר הכללי לכל הציבור?')) return; await post('/api/admin/site', { open }); load(); }
 async function payTest() { $('#payMsg').textContent = ' בודק…'; const r = await post('/api/admin/pay/test'); $('#payMsg').textContent = r.ok ? ' SUMIT מחובר ותקין' : ' ' + (r.msg || 'לא מחובר'); }
 function smToggle() { const t = $('#sm_type').value; $('#sm_il').classList.toggle('hide', !['inforu', '019'].includes(t)); $('#sm_tw').classList.toggle('hide', t !== 'twilio'); }
 $('#sm_type').onchange = smToggle;

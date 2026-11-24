@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS applications (id INTEGER PRIMARY KEY, business TEXT, 
 `);
 // עמודות שנוספו בגרסה 2
 for (const [t, c] of [['receipts', 'file_hash TEXT'], ['receipts', 'vhash TEXT'], ['receipts', 'risk INTEGER DEFAULT 0'], ['receipts', 'flags TEXT'],
-  ['receipts', 'ai TEXT'], ['receipts', 'ip TEXT'], ['users', 'banned INTEGER DEFAULT 0'], ['raffles', 'image TEXT'], ['users', 'ref_code TEXT'], ['users', 'referred_by INTEGER'], ['raffles', 'blurb TEXT'], ['raffles', 'credit TEXT'], ['raffles', "kind TEXT DEFAULT 'raffle'"], ['raffles', 'rank INTEGER'], ['applications', "status TEXT DEFAULT 'new'"], ['applications', 'pay_ref TEXT'], ['applications', 'paid_at TEXT'], ['applications', 'email TEXT'], ['applications', 'company_no TEXT']])
+  ['receipts', 'ai TEXT'], ['receipts', 'ip TEXT'], ['users', 'banned INTEGER DEFAULT 0'], ['raffles', 'image TEXT'], ['users', 'ref_code TEXT'], ['users', 'referred_by INTEGER'], ['raffles', 'blurb TEXT'], ['raffles', 'credit TEXT'], ['raffles', "kind TEXT DEFAULT 'raffle'"], ['raffles', 'rank INTEGER'], ['applications', "status TEXT DEFAULT 'new'"], ['applications', 'pay_ref TEXT'], ['applications', 'paid_at TEXT'], ['applications', 'email TEXT'], ['applications', 'company_no TEXT'], ['applications', 'logo TEXT'], ['stores', 'logo TEXT'], ['users', 'last_name TEXT'], ['users', 'age INTEGER']])
   try { db.exec(`ALTER TABLE ${t} ADD COLUMN ${c}`); } catch {}
 
 
@@ -121,7 +121,15 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+// האתר הכללי סגור עד ההשקה: רואים אותו רק מנהל או מי שקיבל קישור תצוגה מקדימה
+const PREVIEW_KEY = hash('preview').slice(0, 10);
+const siteOpen = () => { try { return JSON.parse(db.prepare("SELECT v FROM kv WHERE k='site_open'").get()?.v || 'false'); } catch { return false; } };
+app.get(['/', '/index.html'], (req, res, next) => {
+  if (req.query.preview && req.query.preview === PREVIEW_KEY) { setCookie(res, 'pv', '1'); return res.redirect('/'); }
+  if (siteOpen() || unsign(req.cookies.adm) === 'admin' || unsign(req.cookies.pv) === '1') return next();
+  res.sendFile(path.join(__dirname, 'public', 'soon.html'));
+});
+app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use('/media', express.static(MEDIA, { maxAge: '30d' }));
 
 const userOf = req => { const id = unsign(req.cookies.sid); return id ? db.prepare('SELECT * FROM users WHERE id=?').get(id) : null; };
@@ -152,6 +160,7 @@ app.post('/api/otp/send', async (req, res) => {
   }
 });
 
+app.post('/api/otp/known', (req, res) => { const ph = normPhone(req.body.phone); const u = ph && db.prepare('SELECT name, last_name FROM users WHERE phone=?').get(ph); res.json({ known: !!(u && u.name && u.last_name) }); });
 app.post('/api/otp/verify', (req, res) => {
   const phone = normPhone(req.body.phone);
   const row = phone && db.prepare('SELECT * FROM otps WHERE phone=?').get(phone);
@@ -161,6 +170,12 @@ app.post('/api/otp/verify', (req, res) => {
     db.prepare('UPDATE otps SET attempts=attempts+1 WHERE phone=?').run(phone);
     return res.status(400).json({ error: 'קוד שגוי' });
   }
+  // שם פרטי + שם משפחה חובה (גיל רשות). בודקים לפני שהקוד נמחק, כדי שאפשר יהיה לתקן ולנסות שוב
+  const ex = db.prepare('SELECT * FROM users WHERE phone=?').get(phone);
+  const first = String(req.body.name || '').trim().slice(0, 30), last = String(req.body.last_name || '').trim().slice(0, 30);
+  const age = parseInt(req.body.age, 10);
+  if (!(ex && ex.name && ex.last_name) && (first.length < 2 || last.length < 2)) return res.status(400).json({ error: 'נא למלא שם פרטי ושם משפחה' });
+  if (req.body.age && !(age >= 18 && age <= 120)) return res.status(400).json({ error: 'ההשתתפות מגיל 18. נא לבדוק את הגיל' });
   db.prepare('DELETE FROM otps WHERE phone=?').run(phone);
   const isNew = !db.prepare('SELECT 1 FROM users WHERE phone=?').get(phone);
   db.prepare('INSERT OR IGNORE INTO users (phone) VALUES (?)').run(phone);
@@ -172,10 +187,10 @@ app.post('/api/otp/verify', (req, res) => {
     if (by) db.prepare('UPDATE users SET referred_by=? WHERE id=?').run(by.id, user.id);
   }
   if (user.banned) return res.status(403).json({ error: 'החשבון חסום. לבירור פנו אלינו' });
-  const name = String(req.body.name || '').trim().slice(0, 40);
-  if (name && !user.name) db.prepare('UPDATE users SET name=? WHERE id=?').run(name, user.id);
+  if (first && last && !(user.name && user.last_name)) db.prepare('UPDATE users SET name=?, last_name=? WHERE id=?').run(first, last, user.id);
+  if (age >= 18 && age <= 120) db.prepare('UPDATE users SET age=? WHERE id=?').run(age, user.id);
   setCookie(res, 'sid', String(user.id));
-  res.json({ ok: true, needName: !user.name && !name });
+  res.json({ ok: true });
 });
 
 app.post('/api/logout', (req, res) => { res.clearCookie('sid'); res.json({ ok: true }); });
@@ -201,7 +216,7 @@ app.get('/api/me', (req, res) => {
 });
 
 // ---------- נתונים ציבוריים ----------
-app.get('/api/stores', (req, res) => res.json(db.prepare('SELECT id, name, category, address, emoji FROM stores WHERE active=1 ORDER BY name').all()));
+app.get('/api/stores', (req, res) => res.json(db.prepare('SELECT id, name, category, address, emoji, logo FROM stores WHERE active=1 ORDER BY name').all()));
 app.get('/api/raffles', (req, res) => {
   const rows = db.prepare(`SELECT r.*, u.name wname, u.phone wphone FROM raffles r LEFT JOIN users u ON u.id=r.winner_user_id ORDER BY is_grand DESC, draw_date`).all();
   res.json(rows.map(r => ({ id: r.id, title: r.title, prize: r.prize, blurb: r.blurb, credit: r.credit, image: r.image, draw_date: r.draw_date, is_grand: !!r.is_grand, kind: r.kind || 'raffle', rank: r.rank,
@@ -274,7 +289,7 @@ app.post('/api/free-entry', needUser, (req, res) => {
 });
 
 // ---------- הצטרפות עסק + תשלום (SUMIT דרך הגשר של GiveIL) ----------
-const BIZ_PRICE = +(process.env.BIZ_PRICE || 250);
+const BIZ_PRICE = +(process.env.BIZ_PRICE || 450);
 const PUBLIC = () => (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 const bridge = async (path, body) => {
   if (!process.env.PAY_BRIDGE_URL || !process.env.PAY_BRIDGE_KEY) throw new Error('התשלום עדיין לא מחובר');
@@ -282,18 +297,23 @@ const bridge = async (path, body) => {
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'שגיאת תשלום'); return j;
 };
 app.get('/api/biz/price', (req, res) => res.json({ price: BIZ_PRICE }));
-app.post('/api/biz/checkout', async (req, res) => {
-  const { business, contact, phone, category, notes, email, company_no, agree } = req.body || {};
+const logoUp = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 }, fileFilter: (q, f, cb) => cb(null, /^image\//.test(f.mimetype)) });
+app.post('/api/biz/checkout', logoUp.single('logo'), async (req, res) => {
+  let logo = null;
+  if (req.file) { try { logo = '/media/logo-' + crypto.randomUUID() + '.png'; await require('sharp')(req.file.buffer).rotate().resize(600, 600, { fit: 'inside', withoutEnlargement: true }).png().toFile(path.join(MEDIA, path.basename(logo))); } catch { return res.status(400).json({ error: 'קובץ הלוגו לא תקין' }); } }
+  if (!logo) return res.status(400).json({ error: 'נא להעלות את הלוגו של העסק' });
+  const agree = req.body.agree === 'true' || req.body.agree === true;
+  const { business, contact, phone, category, notes, email, company_no } = req.body || {};
   const ph = normPhone(phone);
   if (!business || !ph || !contact) return res.status(400).json({ error: 'נא למלא שם עסק, איש קשר וטלפון נייד תקין' });
   if (!agree) return res.status(400).json({ error: 'יש לאשר את תנאי ההצטרפות לעסקים' });
   const id = db.prepare("INSERT INTO applications (business, contact, phone, category, notes, email, company_no, status) VALUES (?,?,?,?,?,?,?, 'pending_payment')")
     .run(String(business).slice(0, 80), String(contact).slice(0, 60), ph, String(category || '').slice(0, 40), String(notes || '').slice(0, 500), String(email || '').slice(0, 80), String(company_no || '').replace(/\D/g, '').slice(0, 12)).lastInsertRowid;
   const ref = 'kz-biz-' + id;
-  db.prepare('UPDATE applications SET pay_ref=? WHERE id=?').run(ref, id);
+  db.prepare('UPDATE applications SET pay_ref=?, logo=? WHERE id=?').run(ref, logo, id);
   const base = PUBLIC() || (req.protocol + '://' + req.get('host'));
   try {
-    const r = await bridge('/api/ext/sumit/begin', { amount: BIZ_PRICE, itemName: `${BRAND} – הצטרפות עסק: ${String(business).slice(0, 60)}`, name: String(business).slice(0, 80), phone: ph, email: email || null, customerRef: 'kz-' + ph, ref, returnUrl: `${base}/biz/return/${id}`, cancelUrl: `${base}/business.html?cancel=1#form` });
+    const r = await bridge('/api/ext/sumit/begin', { amount: BIZ_PRICE, itemName: `${BRAND} – עסק שותף לחודש: ${String(business).slice(0, 60)}`, name: String(business).slice(0, 80), phone: ph, email: email || null, customerRef: 'kz-' + ph, ref, returnUrl: `${base}/biz/return/${id}`, cancelUrl: `${base}/business.html?cancel=1#form` });
     res.json({ url: r.url });
   } catch (e) {
     console.error('checkout', e.message);
@@ -310,7 +330,7 @@ app.get('/biz/return/:id', async (req, res) => {
     const v = pid ? await bridge('/api/ext/sumit/verify', { paymentId: pid, ref: a.pay_ref }) : { paid: false };
     if (!v.paid) return res.redirect('/business.html?cancel=1#form');
     db.prepare("UPDATE applications SET status='paid', paid_at=datetime('now') WHERE id=?").run(a.id);
-    db.prepare('INSERT INTO stores (name, category, address, emoji, active, paid) VALUES (?,?,?,?,0,1)').run(a.business, a.category || '', 'רעננה', '');
+    db.prepare('INSERT INTO stores (name, category, address, emoji, active, paid, logo) VALUES (?,?,?,?,0,1,?)').run(a.business, a.category || '', 'רעננה', '', a.logo || null);
     if (process.env.ADMIN_PHONE) sendSms(process.env.ADMIN_PHONE, `עסק שילם והצטרף ל${BRAND}: ${a.business} ${a.phone}. להפעלה בפאנל הניהול.`).catch(() => {});
     sendSms(a.phone, `תודה! ${a.business} נרשם ל${BRAND}. נחזור אליכם תוך יום עסקים להפעלה.`).catch(() => {});
     res.redirect('/business.html?paid=1');
@@ -334,7 +354,7 @@ app.post('/api/admin/login', (req, res) => {
   setCookie(res, 'adm', 'admin'); res.json({ ok: true });
 });
 app.get('/api/admin/overview', needAdmin, (req, res) => res.json({
-  pending: db.prepare(`SELECT r.*, s.name store, u.phone, u.name uname, u.id uid,
+  pending: db.prepare(`SELECT r.*, s.name store, u.phone, (COALESCE(u.name,'') || ' ' || COALESCE(u.last_name,'')) uname, u.age uage, u.id uid,
     (SELECT COUNT(*) FROM receipts x WHERE x.user_id=u.id AND x.status='rejected') rejected_before
     FROM receipts r JOIN stores s ON s.id=r.store_id JOIN users u ON u.id=r.user_id WHERE r.status='pending' ORDER BY r.risk DESC, r.id`).all(),
   ai: !!process.env.ANTHROPIC_API_KEY,
@@ -345,10 +365,11 @@ app.get('/api/admin/overview', needAdmin, (req, res) => res.json({
   raffles: db.prepare('SELECT r.*, u.phone wphone, u.name wname FROM raffles r LEFT JOIN users u ON u.id=r.winner_user_id ORDER BY draw_date').all(),
   applications: db.prepare('SELECT * FROM applications ORDER BY id DESC').all(),
   users: db.prepare('SELECT COUNT(*) c FROM users').get().c,
-  sms: smsConfig().type,
+  sms: smsConfig().type, siteOpen: siteOpen(), previewUrl: (PUBLIC() || '') + '/?preview=' + PREVIEW_KEY,
   smsCfg: (c => ({ type: c.type, user: c.user || '', sender: c.sender || '', sid: c.sid || '', from: c.from || '', hasToken: !!c.token }))(smsConfig()),
 }));
 // הגדרת ספק SMS מהפאנל. טוקן ריק = משאירים את הקיים
+app.post('/api/admin/site', needAdmin, (req, res) => { db.prepare("INSERT INTO kv(k,v) VALUES('site_open',?) ON CONFLICT(k) DO UPDATE SET v=excluded.v").run(JSON.stringify(!!req.body.open)); res.json({ ok: true }); });
 app.post('/api/admin/sms', needAdmin, (req, res) => {
   const b = req.body || {}, old = kvGet('sms') || {};
   const type = ['inforu', '019', 'twilio', 'none'].includes(b.type) ? b.type : 'none';

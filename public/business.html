@@ -2,90 +2,164 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>לעסקים | רעננים</title>
-<meta name="description" content="הצטרפות עסקים למבצע רעננים ברעננה: לקוחות חדשים, חשיפה ודוח תוצאות. הרשמה ותשלום אונליין.">
+<title>הצטרפות עסקים | רעננים</title>
+<meta name="description" content="הצטרפו לרעננים: כל קנייה אצלכם שווה ללקוח כרטיס להגרלה על טיסה זוגית לאירופה. פוסטר שותפים, חשיפה ודוח לקוחות.">
 <meta name="theme-color" content="#161A2C">
+<meta name="robots" content="noindex">
 <link rel="icon" href="/logo.svg">
 <link rel="stylesheet" href="/style.css">
 <style>
-.perks{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.perk{background:var(--card);border-radius:24px;padding:28px 24px;box-shadow:var(--sh);border:1px solid #fff}.perk b{display:block;font:700 36px Fredoka;color:var(--wine);margin-bottom:6px}.perk h3{font-size:22px;margin-bottom:6px}.perk p{color:var(--mute);font-size:15px}
-@media(max-width:860px){.perks{grid-template-columns:1fr 1fr}}
-.formbox{max-width:640px;margin:0 auto;background:var(--card);border-radius:32px;padding:40px;box-shadow:var(--sh);border:1px solid #fff}
-.price{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--night);color:#fff;border-radius:20px;padding:16px 20px;margin:18px 0 6px}
-.price b{font:700 36px Fredoka}.price span{font-size:14px;opacity:.75}
-.secure{display:flex;gap:8px;align-items:center;justify-content:center;color:var(--mute);font-size:13px;margin-top:10px}
-@media(max-width:600px){.formbox{padding:26px 20px}}
-.page-head .logo-float{position:absolute;inset-inline-end:8%;top:50%;width:220px;transform:translateY(-50%) rotate(10deg);filter:drop-shadow(0 30px 40px rgba(0,0,0,.5))}
-@media(max-width:900px){.page-head .logo-float{display:none}}
+body{background:var(--cream)}
+.bhero{position:relative;background:var(--night);color:#fff;margin-top:-68px;padding:140px 0 0;overflow:hidden}
+.bhero:before{content:"";position:absolute;width:900px;height:900px;inset:-30% -20% auto auto;border-radius:50%;background:radial-gradient(closest-side,rgba(233,190,92,.28),transparent)}
+.bhero .grid{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+.bhero h1{font-size:clamp(42px,6vw,80px);margin:18px 0}
+.bhero p.lead{font-size:20px;color:rgba(255,255,255,.82);max-width:560px}
+.bhero .eyebrow{color:var(--gold2);background:rgba(233,190,92,.12)}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.chips span{display:inline-flex;align-items:center;gap:8px;font:500 15px Fredoka;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:8px 14px;border-radius:999px}
+.chips span:before{content:"✓";color:var(--gold2)}
+/* פוסטר */
+.poster{position:relative;justify-self:center;width:min(360px,90%);aspect-ratio:3/4;border-radius:22px;background:linear-gradient(160deg,#FFF8EE,#F2D6BD);color:var(--ink);padding:26px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 50px 80px -30px rgba(0,0,0,.7),0 0 0 10px rgba(255,255,255,.06);transform:rotate(-4deg);margin-bottom:-60px}
+.poster:before{content:"";position:absolute;top:-14px;left:50%;width:70px;height:26px;transform:translateX(-50%) rotate(2deg);background:rgba(255,255,255,.55);border-radius:4px}
+.poster img.lg{width:70px;margin-top:6px}
+.poster .pb{font:700 38px Fredoka;color:var(--wine);line-height:1;margin-top:6px}
+.poster .ps{font:600 14px Fredoka;letter-spacing:.12em;color:var(--gold);margin-top:6px}
+.poster .ylogo{width:110px;height:110px;border-radius:24px;background:#fff;margin:18px 0 10px;display:grid;place-items:center;border:2px dashed var(--line);font:500 14px Fredoka;color:var(--mute);overflow:hidden}
+.poster .ylogo img{width:100%;height:100%;object-fit:contain;padding:8px}
+.poster .pt{font:700 22px Fredoka;line-height:1.2}
+.poster .pt b{color:var(--wine)}
+.poster .pf{margin-top:auto;font:500 13px Fredoka;background:var(--night);color:#fff;border-radius:999px;padding:7px 14px}
+.sec{padding:100px 0}
+.vals{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.val{background:var(--card);border-radius:26px;padding:30px 26px;box-shadow:var(--sh);border:1px solid #fff}
+.val .n{font:700 44px Fredoka;color:var(--wine);line-height:1}
+.val h3{font-size:24px;margin:12px 0 6px}
+.val p{color:var(--ink2)}
+.prizeband{border-radius:32px;overflow:hidden;position:relative;background:var(--peach);display:grid;grid-template-columns:1fr 1fr;align-items:center}
+.prizeband .t{padding:46px}
+.prizeband h2{font-size:clamp(32px,4vw,50px);margin:12px 0}
+.prizeband p{font-size:19px;color:var(--ink2)}
+.prizeband img{width:100%;height:100%;object-fit:cover;min-height:320px}
+.formbox{max-width:680px;margin:0 auto;background:var(--card);border-radius:32px;padding:40px;box-shadow:0 40px 80px -40px rgba(120,60,20,.6);border:1px solid #fff}
+.price{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--night);color:#fff;border-radius:22px;padding:18px 22px;margin:20px 0 6px;flex-wrap:wrap}
+.price b{font:700 44px Fredoka;line-height:1}.price b small{font-size:18px;opacity:.8}.price span{font-size:14px;opacity:.8}
+.logoup{display:flex;align-items:center;gap:16px;border:2px dashed var(--line);border-radius:18px;padding:14px;cursor:pointer;background:var(--cream)}
+.logoup:hover{border-color:var(--wine)}
+.logoup .pv{width:72px;height:72px;border-radius:16px;background:#fff center/contain no-repeat;border:1px solid var(--line);flex:none;display:grid;place-items:center;color:var(--mute);font-size:28px}
+.logoup b{font:600 17px Fredoka;display:block}
+.secure{display:flex;gap:8px;align-items:center;justify-content:center;color:var(--mute);font-size:13px;margin-top:10px;text-align:center}
+.steps3{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.s3{background:var(--card);border-radius:22px;padding:24px;box-shadow:var(--sh);border:1px solid #fff}
+.s3 i{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--wine);color:#fff;font:700 20px Fredoka;font-style:normal;margin-bottom:12px}
+.s3 h3{font-size:20px;margin-bottom:4px}.s3 p{color:var(--ink2);font-size:15px}
+@media(max-width:900px){.bhero .grid,.prizeband{grid-template-columns:1fr}.poster{margin:30px auto -50px}.vals,.steps3{grid-template-columns:1fr 1fr}.prizeband .t{padding:30px 24px}}
+@media(max-width:560px){.vals,.steps3{grid-template-columns:1fr}.formbox{padding:26px 18px}}
 </style>
 </head>
 <body>
 <a class="skip" href="#main">דלג לתוכן</a>
-<header class="solid"><div class="bar"><a class="logo" href="/" aria-label="רעננים – דף הבית"><img src="/logo.svg" alt="" width="44" height="44"><span>רעננים</span></a><nav><a class="l" href="/">לאתר המבצע</a><a class="btn small gold" href="#form">הרשמה ותשלום</a></nav></div></header>
-<div class="page-head"><div class="wrap">
-  <img class="logo-float" src="/logo.svg" alt="">
-  <span class="eyebrow">לבעלי עסקים ברעננה</span>
-  <h1>תושבים יבחרו<br><span class="gold-t">לקנות דווקא אצלכם.</span></h1>
-  <p>כל קנייה אצלכם שווה ללקוח כרטיסים להגרלות על טיסה זוגית לאירופה, iPhone, ספא ועוד. סיבה טובה לבחור בכם ולא במתחרה מהרחוב הסמוך.</p>
-  <div class="cta-row"><a class="btn huge gold" href="#form">הרשמה ותשלום אונליין</a></div>
+<header class="solid"><div class="bar"><span class="logo"><img src="/logo.svg" alt="" width="44" height="44"><span>רעננים</span></span><nav><a class="btn small gold" href="#form">להצטרפות</a></nav></div></header>
+
+<div class="bhero"><div class="wrap grid">
+  <div>
+    <span class="eyebrow">לבעלי עסקים ברעננה · מקומות מוגבלים</span>
+    <h1>הלקוחות של רעננה<br><span class="gold-t">יבחרו בכם.</span></h1>
+    <p class="lead">רעננים הוא מבצע הקניות החדש של העיר: כל קנייה אצלכם שווה ללקוח כרטיס להגרלה על <b style="color:#fff">טיסה זוגית לאירופה</b> ועוד מתנות שוות. הלקוחות מקבלים סיבה לבחור דווקא בכם, ואתם מקבלים לקוחות חדשים.</p>
+    <div class="chips"><span>בלי מכשיר ובלי שינוי בקופה</span><span>בלי עמלות על מכירות</span><span>פוסטר שותפים לעסק</span></div>
+    <div class="cta-row"><a class="btn huge gold" href="#form">אני רוצה להצטרף</a></div>
+  </div>
+  <div class="poster" aria-label="דוגמה לפוסטר שותפים שנתלה בעסק">
+    <img class="lg" src="/logo.svg" alt="">
+    <div class="pb">רעננים</div>
+    <div class="ps">עסק שותף רשמי</div>
+    <div class="ylogo" id="posterLogo">הלוגו שלכם</div>
+    <div class="pt">קונים כאן?<br><b>מצלמים קבלה וזוכים.</b></div>
+    <div class="pf">טיסה זוגית לאירופה ועוד מתנות</div>
+  </div>
 </div></div>
-<main id="main" class="wrap">
-  <section style="padding-bottom:60px">
-    <div class="sh"><span class="eyebrow">אפס מאמץ מצדכם</span><h2>איך זה <span class="wine-t">עובד?</span></h2></div>
-    <div class="steps">
-      <div class="step"><span class="num" aria-hidden="true">1</span><h3>הלקוח קונה</h3><p>כרגיל. בלי מכשיר, בלי אפליקציה ובלי שינוי בקופה.</p></div>
-      <div class="step"><span class="num" aria-hidden="true">2</span><h3>מצלם קבלה</h3><p>באתר שלנו. המערכת מאמתת שהקנייה באמת הייתה אצלכם.</p></div>
-      <div class="step"><span class="num" aria-hidden="true">3</span><h3>אתם רואים תוצאות</h3><p>דוח מסודר: כמה קניות, כמה לקוחות ואיזה סכום הגיע אליכם דרכנו.</p></div>
+
+<main id="main">
+<div class="wrap">
+  <section class="sec" style="padding-top:130px">
+    <div class="sh c"><span class="eyebrow">מה מקבלים</span><h2>שותפים ב<span class="wine-t">רעננים</span></h2><p>כל מה שעסק שכונתי צריך כדי שיבואו אליו, בלי לשנות שום דבר בדרך שאתם עובדים.</p></div>
+    <div class="vals">
+      <div class="val"><div class="n">פוסטר</div><h3>שלט "שותפים ברעננים"</h3><p>נתלה אצלכם בעסק פוסטר מעוצב עם הלוגו שלכם, שמבליט שאתם שותפים רשמיים. כל מי שעובר בחנות יודע שקנייה אצלכם מזכה בכרטיסים.</p></div>
+      <div class="val"><div class="n">חשיפה</div><h3>הלוגו שלכם באתר</h3><p>מקום קבוע ברשימת העסקים השותפים באתר המבצע, והכרזה על הצטרפותכם בערוץ "רעננה NEWS".</p></div>
+      <div class="val"><div class="n">לקוחות</div><h3>סיבה לבחור בכם</h3><p>תושבים מגיעים במיוחד לעסקים השותפים כדי לצבור כרטיסים, וחוזרים שוב. כל קנייה אצלכם מקרבת אותם לזכייה.</p></div>
+      <div class="val"><div class="n">0%</div><h3>בלי עמלות</h3><p>תשלום חודשי אחד וזהו. בלי אחוזים מהמכירות ובלי התחייבות להמשך.</p></div>
+      <div class="val"><div class="n">דוח</div><h3>רואים תוצאות</h3><p>כמה קניות, כמה לקוחות ואיזה סכום הגיע אליכם דרך המבצע.</p></div>
+      <div class="val"><div class="n">1</div><h3>בלעדיות בתחום</h3><p>מספר העסקים בכל תחום מוגבל. מי שמצטרף ראשון, תופס את המקום.</p></div>
     </div>
   </section>
-  <section style="padding-top:0">
-    <div class="perks">
-      <div class="perk"><b>NEWS</b><h3>חשיפה</h3><p>הכרזה בערוץ "רעננה NEWS" ומקום קבוע באתר המבצע.</p></div>
-      <div class="perk"><b>+</b><h3>לקוחות חדשים</h3><p>אנשים מגיעים במיוחד כדי לצבור כרטיסים.</p></div>
-      <div class="perk"><b>0%</b><h3>בלי עמלות</h3><p>תשלום הצטרפות אחד, בלי אחוזים מהמכירות.</p></div>
-      <div class="perk"><b>1</b><h3>עסק בכל תחום</h3><p>מספר המקומות בכל תחום מוגבל. מי שמקדים, תופס.</p></div>
+
+  <section class="sec" style="padding-top:0">
+    <div class="prizeband">
+      <div class="t"><span class="eyebrow">למה הלקוחות יבואו</span><h2>טיסה זוגית לאירופה<br>ועוד מתנות שוות.</h2><p>כל 10 ₪ אצלכם = כרטיס להגרלה. הלקוחות מצלמים את הקבלה שלכם, והמערכת מאמתת שהקנייה באמת הייתה אצלכם.</p></div>
+      <img src="/img/prizes-hero-m.jpg" alt="טיסה זוגית ומתנות">
     </div>
   </section>
-  <section id="form" style="padding-top:0">
+
+  <section class="sec" style="padding-top:0">
+    <div class="sh c"><span class="eyebrow">פשוט</span><h2>מצטרפים בארבעה צעדים</h2></div>
+    <div class="steps3">
+      <div class="s3"><i>1</i><h3>ממלאים פרטים</h3><p>שם העסק, איש קשר ולוגו.</p></div>
+      <div class="s3"><i>2</i><h3>משלמים אונליין</h3><p>בעמוד סליקה מאובטח, עם קבלה למייל.</p></div>
+      <div class="s3"><i>3</i><h3>מקבלים פוסטר</h3><p>אנחנו מעצבים ותולים אצלכם פוסטר שותפים.</p></div>
+      <div class="s3"><i>4</i><h3>הלקוחות מגיעים</h3><p>העסק עולה לאתר, והלקוחות מתחילים לצבור אצלכם.</p></div>
+    </div>
+  </section>
+
+  <section class="sec" id="form" style="padding-top:0">
     <div class="formbox">
-      <h2 style="font-size:42px;text-align:center">הרשמה ותשלום</h2><p class="note" style="text-align:center">ממלאים פרטים, משלמים בכרטיס אשראי בעמוד מאובטח, ומקבלים קבלה למייל</p>
+      <h2 style="font-size:42px;text-align:center">הצטרפות כעסק שותף</h2><p class="note" style="text-align:center">שתי דקות, ואתם בפנים</p>
       <div id="bizForm">
-        <label for="b_business">שם העסק</label><input id="b_business" autocomplete="organization">
-        <div class="two"><div><label for="b_category">תחום</label><input id="b_category" placeholder="בית קפה, מספרה…"></div><div><label for="b_company_no">ח.פ / מספר עוסק</label><input id="b_company_no" inputmode="numeric"></div></div>
-        <div class="two"><div><label for="b_contact">איש קשר</label><input id="b_contact" autocomplete="name"></div><div><label for="b_phone">טלפון נייד</label><input id="b_phone" inputmode="tel" autocomplete="tel"></div></div>
+        <label for="b_business">שם העסק *</label><input id="b_business" autocomplete="organization">
+        <div class="two"><div><label for="b_category">תחום *</label><input id="b_category" placeholder="בית קפה, מספרה…"></div><div><label for="b_company_no">ח.פ / מספר עוסק</label><input id="b_company_no" inputmode="numeric"></div></div>
+        <div class="two"><div><label for="b_contact">איש קשר *</label><input id="b_contact" autocomplete="name"></div><div><label for="b_phone">טלפון נייד *</label><input id="b_phone" inputmode="tel" autocomplete="tel"></div></div>
         <label for="b_email">אימייל (לקבלה)</label><input id="b_email" type="email" autocomplete="email">
+        <label>הלוגו של העסק *</label>
+        <label class="logoup" for="b_logo"><span class="pv" id="logoPv">+</span><span><b>העלאת לוגו</b><span class="note" style="margin:0">PNG או JPG. ייכנס לפוסטר ולאתר</span></span></label>
+        <input type="file" id="b_logo" accept="image/*" class="hide">
         <label for="b_notes">משהו שחשוב לנו לדעת? (לא חובה)</label><textarea id="b_notes" rows="2"></textarea>
-        <div class="price"><div><span>דמי הצטרפות</span><br><b id="bPrice">250 ₪</b></div><span>תשלום חד-פעמי · קבלה כדין</span></div>
-        <label class="chk"><input type="checkbox" id="b_agree"> קראתי ואני מסכים/ה ל<a href="/terms.html#b" target="_blank">תנאי ההצטרפות לעסקים</a> ול<a href="/privacy.html" target="_blank">מדיניות הפרטיות</a>.</label>
+        <div class="price"><div><span>דמי השתתפות</span><br><b><em id="bPrice" style="font-style:normal">450</em> ₪ <small>/ חודש אחד</small></b></div><span>חיוב חד-פעמי לחודש אחד · בלי התחדשות אוטומטית · קבלה כדין</span></div>
+        <label class="chk"><input type="checkbox" id="b_agree"> קראתי ואני מסכים/ה ל<a href="/business-terms.html" target="_blank">תנאי ההשתתפות לעסקים</a> ול<a href="/privacy.html" target="_blank">מדיניות הפרטיות</a>.</label>
         <button class="btn full huge" id="bSend">למעבר לתשלום מאובטח</button><div class="err" id="bErr" role="alert"></div>
         <div class="secure">התשלום מתבצע בעמוד הסליקה של SUMIT. פרטי האשראי לא נשמרים אצלנו.</div>
       </div>
-      <div id="bDone" class="hide" style="text-align:center;padding:30px 0"><img src="/logo.svg" alt="" style="width:90px;margin:0 auto 10px"><h3 style="font-size:32px">התשלום התקבל. ברוכים הבאים!</h3><p class="note">קבלה נשלחה אליכם. נחזור תוך יום עסקים להפעלת העסק באתר.</p></div>
+      <div id="bDone" class="hide" style="text-align:center;padding:30px 0"><img src="/logo.svg" alt="" style="width:90px;margin:0 auto 10px"><h3 style="font-size:32px">התשלום התקבל. ברוכים הבאים לרעננים!</h3><p class="note">קבלה נשלחה אליכם. נחזור תוך יום עסקים לתיאום הפוסטר והפעלת העסק.</p></div>
       <div id="bLater" class="hide" style="text-align:center;padding:30px 0"><h3 style="font-size:30px">קיבלנו את הפרטים.</h3><p class="note">נחזור אליכם בקרוב עם קישור לתשלום.</p></div>
     </div>
   </section>
+</div>
 </main>
-<footer><div><a class="logo" href="/"><img src="/logo.svg" alt="" width="34" height="34"><span>רעננים</span></a></div><div><a href="/terms.html">תקנון</a> · <a href="/privacy.html">פרטיות</a> · <a href="/accessibility.html">נגישות</a></div></footer>
+<footer><div><span class="logo"><img src="/logo.svg" alt="" width="34" height="34"><span>רעננים</span></span></div><div><a href="/business-terms.html">תנאי השתתפות לעסקים</a> · <a href="/privacy.html">פרטיות</a> · <a href="/accessibility.html">נגישות</a></div></footer>
 <script src="/a11y.js"></script>
 <script>
 const $ = s => document.querySelector(s);
-fetch('/api/biz/price').then(r => r.json()).then(j => $('#bPrice').textContent = j.price + ' ₪');
+fetch('/api/biz/price').then(r => r.json()).then(j => $('#bPrice').textContent = j.price);
 const q = new URLSearchParams(location.search);
 if (q.get('paid')) { $('#bizForm').classList.add('hide'); $('#bDone').classList.remove('hide'); setTimeout(() => $('#form').scrollIntoView(), 300); }
 if (q.get('cancel')) $('#bErr').textContent = 'התשלום לא הושלם. אפשר לנסות שוב.';
+$('#b_logo').onchange = () => { const f = $('#b_logo').files[0]; if (!f) return; const u = URL.createObjectURL(f);
+  $('#logoPv').style.backgroundImage = `url('${u}')`; $('#logoPv').textContent = ''; $('#posterLogo').innerHTML = `<img src="${u}" alt="">`; };
 $('#bSend').onclick = async () => {
-  const body = {}; ['business', 'category', 'contact', 'phone', 'notes', 'email', 'company_no'].forEach(k => body[k] = $('#b_' + k).value);
-  body.agree = $('#b_agree').checked;
-  const b = $('#bSend'); b.disabled = true; $('#bErr').textContent = '';
+  $('#bErr').textContent = '';
+  const need = [['business', 'שם העסק'], ['category', 'תחום'], ['contact', 'איש קשר'], ['phone', 'טלפון']].find(([k]) => !$('#b_' + k).value.trim());
+  if (need) return $('#bErr').textContent = 'נא למלא ' + need[1];
+  if (!$('#b_logo').files[0]) return $('#bErr').textContent = 'נא להעלות את הלוגו של העסק';
+  if (!$('#b_agree').checked) return $('#bErr').textContent = 'יש לאשר את תנאי ההשתתפות';
+  const fd = new FormData(); ['business', 'category', 'contact', 'phone', 'notes', 'email', 'company_no'].forEach(k => fd.append(k, $('#b_' + k).value));
+  fd.append('agree', 'true'); fd.append('logo', $('#b_logo').files[0]);
+  const b = $('#bSend'); b.disabled = true; b.textContent = 'רגע…';
   try {
-    const r = await fetch('/api/biz/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r = await fetch('/api/biz/checkout', { method: 'POST', body: fd });
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || 'שגיאה');
     if (j.url) return location.href = j.url;
     $('#bizForm').classList.add('hide'); $('#bLater').classList.remove('hide');
   } catch (e) { $('#bErr').textContent = e.message; }
-  b.disabled = false;
+  b.disabled = false; b.textContent = 'למעבר לתשלום מאובטח';
 };
 </script>
 </body>

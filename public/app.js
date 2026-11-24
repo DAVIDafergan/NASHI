@@ -66,7 +66,7 @@ async function loadPublic() {
   const credits = [...new Set(raffles.map(r => r.credit).filter(c => c && c !== 'Unsplash'))];
   $('#credits').textContent = credits.length ? 'צילומי הפרסים להמחשה בלבד. צלמים: ' + credits.join(', ') + ' / Unsplash' : '';
 
-  $('#storeGrid').innerHTML = stores.map((s, i) => `<div class="store rv d${i % 3}"><div class="e" aria-hidden="true">${esc(s.emoji || s.name.trim()[0] || '')}</div><div><b>${esc(s.name)}</b><small>${esc(s.category)}${s.address ? ' · ' + esc(s.address) : ''}</small></div></div>`).join('') +
+  $('#storeGrid').innerHTML = stores.map((s, i) => `<div class="store rv d${i % 3}">${s.logo ? `<img class="e" src="${esc(s.logo)}" alt="" style="object-fit:contain;background:#fff;padding:4px">` : `<div class="e" aria-hidden="true">${esc(s.emoji || s.name.trim()[0] || '')}</div>`}<div><b>${esc(s.name)}</b><small>${esc(s.category)}${s.address ? ' · ' + esc(s.address) : ''}</small></div></div>`).join('') +
     '<a class="store join rv" href="/business.html">+ העסק שלכם כאן?</a>';
   $('#store').innerHTML = '<option value="">בחרו עסק</option>' + stores.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
   loadLeaders();
@@ -146,6 +146,7 @@ async function sendCode() {
   try {
     const r = await api('/api/otp/send', { phone: $('#phone').value });
     $('#stepPhone').classList.add('hide'); $('#stepCode').classList.remove('hide'); $('#code').focus();
+    api('/api/otp/known', { phone: $('#phone').value }).then(k => $('#nameFields').classList.toggle('hide', k.known)).catch(() => {});
     if (r.demo) { $('#demoBox').innerHTML = `<div class="demo">שירות ה-SMS עדיין לא מחובר, אז הקוד מוצג כאן: <b>${esc(r.demo)}</b></div>`; $('#code').value = r.demo; }
   } catch (e) { $('#loginErr').textContent = e.message; }
   b.disabled = false;
@@ -156,7 +157,7 @@ $('#resend').onclick = e => { e.preventDefault(); $('#stepCode').classList.add('
 $('#verify').onclick = async () => {
   const b = $('#verify'); b.disabled = true; $('#loginErr').textContent = '';
   try {
-    await api('/api/otp/verify', { phone: $('#phone').value, code: $('#code').value, name: $('#name').value, ref: getRef() });
+    await api('/api/otp/verify', { phone: $('#phone').value, code: $('#code').value, name: $('#name').value, last_name: $('#lname').value, age: $('#age').value, ref: getRef() });
     closeAll(); await loadMe();
     if (afterLogin) { const f = afterLogin; afterLogin = null; f(); }
   } catch (e) { $('#loginErr').textContent = e.message; }
