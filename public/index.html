@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>קנית·זכית | כל קנייה ברעננה היא כרטיס להגרלה</title>
+<meta name="description" content="קונים בעסקים של רעננה, מצלמים את הקבלה וצוברים כרטיסים ל-16 הגרלות. הפרס הגדול: חופשה זוגית ביוון.">
+<meta property="og:title" content="קנית·זכית · רעננה">
+<meta property="og:description" content="כל 10 ₪ בעסק שותף = כרטיס להגרלה. 16 פרסים, והגדול שבהם: חופשה זוגית ביוון.">
+<meta name="theme-color" content="#0B1220">
+<link rel="preload" href="/fonts/frank-ruhl-libre-hebrew-900-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/assistant-hebrew-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.6l1.2-1.8A1.5 1.5 0 0 1 9.5 3.5h5a1.5 1.5 0 0 1 1.2.7L16.9 6h1.6A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.6"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+  <symbol id="i-tix" viewBox="0 0 24 24"><path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-ai" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+  <symbol id="i-fp" viewBox="0 0 24 24"><path d="M12 11v4M8 8a5 5 0 0 1 8 0M6 12a6 6 0 0 1 .5-2.5M18 12c0 3-1 6-3 8M9 20c1-2 1.5-4 1.5-6M12 4a8 8 0 0 1 8 8"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13M12 8c-2-4-6-3-5 0M12 8c2-4 6-3 5 0"/></symbol>
+</svg>
+
+<div id="loader"><div class="lm">קנית<i>·</i>זכית</div></div>
+<canvas id="confetti"></canvas>
+
+<header id="hdr"><div class="bar">
+  <a class="logo" href="/"><span class="mk">₪</span>קנית<i>·</i>זכית</a>
+  <nav>
+    <a class="l" href="#how">איך זה עובד</a><a class="l" href="#prizes">הפרסים</a><a class="l" href="#invite">חבר מביא חבר</a><a class="l" href="#stores">עסקים</a>
+    <button class="btn small ghost" id="meBtn">כניסה</button>
+    <button class="btn small" data-scan><svg class="ico"><use href="#i-cam"/></svg>סריקת קבלה</button>
+  </nav>
+</div></header>
+
+<main>
+<div class="hero-wrap dark">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="wrap hero">
+    <div>
+      <span class="eyebrow rv">מבצע חנוכה ברעננה · 4.12–31.12</span>
+      <h1 class="rv d1">כל קנייה בעיר<br>היא <em class="gold-t">כרטיס להגרלה.</em></h1>
+      <p class="lead rv d2">קונים באחד העסקים השותפים, מצלמים את הקבלה, וכל 10 ₪ הופכים לכרטיס. <b>16 הגרלות</b> לאורך החודש, והגדולה שבהן: <b>חופשה זוגית ביוון</b>.</p>
+      <div class="cta-row rv d3">
+        <button class="btn huge" data-scan><svg class="ico"><use href="#i-cam"/></svg>לצלם קבלה</button>
+        <a class="btn huge ghost light" href="#prizes">לכל הפרסים</a>
+      </div>
+      <div class="facts rv d3">
+        <div><b id="fPrizes">16</b><span>הגרלות</span></div>
+        <div><b id="fStores">–</b><span>עסקים שותפים</span></div>
+        <div><b id="fTickets">–</b><span>כרטיסים בקופה</span></div>
+      </div>
+    </div>
+    <div class="grand-tag rv d2" id="grandTag"></div>
+  </div>
+</div>
+<div class="strip"><div class="track" id="strip"></div></div>
+
+<div class="wrap">
+  <section id="me" class="hide" style="padding-bottom:0">
+    <div class="me">
+      <div class="top">
+        <div><div class="hi">שלום <span id="meName"></span>, הכרטיסים שלך</div><div class="pts" id="mePts">0</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-scan><svg class="ico"><use href="#i-cam"/></svg>קבלה נוספת</button><button class="btn ghost" id="freeBtn"><svg class="ico"><use href="#i-gift"/></svg>כרטיס חינם השבוע</button></div>
+      </div>
+      <div class="kv"><div><b id="meChance">–</b><span>הסיכוי שלך בכל הגרלה</span></div><div><b id="meFriends">0</b><span>חברים שהצטרפו</span></div><div><b id="meBonus">0</b><span>כרטיסי בונוס</span></div></div>
+      <div class="reflink"><div class="t">כל חבר שמצטרף דרכך ומצלם קבלה ראשונה = <b>+<span class="rb">5</span> כרטיסים</b> לך<code id="refUrl"></code></div>
+        <button class="btn small" id="waShare"><svg class="ico"><use href="#i-share"/></svg>שליחה בוואטסאפ</button><button class="btn small ghost light" id="copyRef">העתקה</button></div>
+      <div class="list" id="meList"></div>
+      <div class="note">רוב הקבלות מאושרות תוך 24 שעות. <a href="#" id="logout">התנתקות</a></div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="sh rv"><span class="eyebrow">שלושה צעדים</span><h2>פשוט כמו <span class="hl">לשלם בקופה.</span></h2><p>בלי אפליקציה ובלי כרטיס מועדון. רק הקבלה שכבר יש לכם ביד.</p></div>
+    <div class="steps">
+      <div class="step rv"><span class="num">01</span><h3>קונים בעיר</h3><p>בבית קפה, במספרה, במסעדה או בכל עסק שותף ברעננה. כרגיל.</p></div>
+      <div class="step rv d1"><span class="num">02</span><h3>מצלמים קבלה</h3><p>כאן באתר, בעשר שניות. המערכת קוראת את הקבלה ומאמתת אותה.</p></div>
+      <div class="step rv d2"><span class="num">03</span><h3>משתתפים בכל ההגרלות</h3><p>הכרטיסים נצברים ונכנסים לכל 16 ההגרלות. יותר קניות, יותר סיכויים.</p></div>
+    </div>
+    <div class="rate rv"><b>10 ₪</b><span class="eq">=</span><b>כרטיס אחד</b><p>קנייה של 127 ₪ שווה 12 כרטיסים, וכל אחד מהם משתתף בכל ההגרלות עד סוף המבצע.</p></div>
+  </section>
+</div>
+
+<section id="prizes" style="padding-top:20px">
+  <div class="wrap">
+    <div class="prizes-head">
+      <div class="sh rv"><span class="eyebrow">16 הגרלות · חודש אחד</span><h2>הפרסים של <span class="hl">החנוכה הזה.</span></h2><p>הגרלה כמעט כל יומיים. כל כרטיס משתתף בכולן, בלי לבחור.</p></div>
+      <div class="pfilter rv" id="pfilter"><button class="on" data-f="all">הכול</button><button data-f="soon">השבוע</button><button data-f="big">הפרסים הגדולים</button></div>
+    </div>
+    <div class="prizes" id="prizeGrid"></div>
+    <div class="credit" id="credits"></div>
+  </div>
+</section>
+
+<div class="wrap">
+  <section id="invite" style="padding-top:20px">
+    <div class="ref rv">
+      <div class="t">
+        <span class="eyebrow">חבר מביא חבר</span>
+        <h2>מזמינים חברים,<br>מכפילים סיכויים.</h2>
+        <p>לכל אחד יש קישור אישי. חבר שנכנס דרכו ומצלם קבלה ראשונה מזכה אתכם ב-5 כרטיסים נוספים. בלי הגבלה על מספר החברים.</p>
+        <div class="cta-row"><button class="btn huge" id="inviteBtn"><svg class="ico"><use href="#i-share"/></svg>לקישור האישי שלי</button></div>
+      </div>
+      <div class="big"><div><b class="gold-t" dir="ltr">+5</b><span>כרטיסים על כל חבר</span></div></div>
+    </div>
+  </section>
+</div>
+
+<div class="dark safe" id="safe">
+  <div class="wrap">
+    <div class="sh rv"><span class="eyebrow">הוגנות</span><h2>מי שקנה באמת, <span class="gold-t">הוא מי שזוכה.</span></h2><p>כל קבלה עוברת בדיקה ממוחשבת ואנושית לפני שהיא הופכת לכרטיס.</p></div>
+    <div class="feats">
+      <div class="feat rv"><div class="ic"><svg class="ico"><use href="#i-ai"/></svg></div><h3>קריאת קבלה חכמה</h3><p>שם העסק, הסכום והתאריך נקראים מהתמונה ומושווים למה שהוזן.</p></div>
+      <div class="feat rv d1"><div class="ic"><svg class="ico"><use href="#i-fp"/></svg></div><h3>טביעת אצבע לתמונה</h3><p>אותה קבלה לא תעבור פעמיים, גם אם צולמה מחדש או נחתכה.</p></div>
+      <div class="feat rv d2"><div class="ic"><svg class="ico"><use href="#i-eye"/></svg></div><h3>זיהוי עריכות</h3><p>צילום מסך, ספרות ערוכות וקבלה בכתב יד מסומנים אוטומטית.</p></div>
+      <div class="feat rv d3"><div class="ic"><svg class="ico"><use href="#i-chart"/></svg></div><h3>ניתוח התנהגות</h3><p>מספרים עוקבים, סכומים חריגים וחשבונות כפולים מקבלים ציון סיכון.</p></div>
+    </div>
+    <div class="checksbar rv"><span>סכום תואם</span><span>עסק שותף</span><span>תאריך תקין</span><span>לא נסרקה בעבר</span><span>הגרלה אקראית ומתועדת</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="stores">
+    <div class="sh rv"><span class="eyebrow">קונים מקומי</span><h2>העסקים <span class="hl">השותפים</span></h2></div>
+    <div class="stores" id="storeGrid"></div>
+  </section>
+
+  <section id="faq" style="padding-top:0">
+    <div class="sh rv"><span class="eyebrow">שאלות</span><h2>כל מה שרציתם לדעת</h2></div>
+    <div class="faq">
+      <details class="rv"><summary>כמה כרטיסים אני מקבל?</summary><p>כרטיס אחד על כל 10 ₪ בקבלה. קנית ב-127 ₪? קיבלת 12 כרטיסים, וכולם משתתפים בכל ההגרלות שנותרו עד סוף המבצע.</p></details>
+      <details class="rv"><summary>אפשר להשתתף בלי לקנות?</summary><p>כן. פעם בשבוע אפשר לקבל כרטיס חינם במענה לשאלה קצרה באזור האישי.</p></details>
+      <details class="rv"><summary>איך עובד חבר מביא חבר?</summary><p>באזור האישי יש קישור אישי. חבר שנרשם דרכו ומקבל אישור לקבלה הראשונה שלו מזכה אתכם ב-5 כרטיסים.</p></details>
+      <details class="rv"><summary>אילו קבלות מתקבלות?</summary><p>קבלות מעסקים שותפים מ-7 הימים האחרונים, עד 3 קבלות ביום. כל קבלה נסרקת פעם אחת בלבד. שמרו את המקור: הזוכים יתבקשו להציג אותו.</p></details>
+      <details class="rv"><summary>איך בוחרים את הזוכים?</summary><p>בהגרלה ממוחשבת אקראית, שבה הסיכוי של כל משתתף יחסי למספר הכרטיסים שלו. הזוכים מקבלים SMS ומפורסמים כאן.</p></details>
+      <details class="rv"><summary>מה קורה עם הפרטים שלי?</summary><p>מספר הטלפון והקבלות משמשים רק לניהול המבצע ולא מועברים לאף אחד.</p></details>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="biz rv">
+      <span class="eyebrow" style="color:var(--ink2)">לבעלי עסקים ברעננה</span>
+      <h2>תושבים יבחרו לקנות דווקא אצלכם.</h2>
+      <p>כל קנייה אצלכם מקרבת את הלקוח לחופשה ביוון. בלי מכשיר, בלי שינוי בקופה ובלי עמלות.</p>
+      <a class="btn huge" href="/business.html">להצטרפות כעסק שותף</a>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer><div><a class="logo" href="/">קנית<i style="color:var(--gold)">·</i>זכית</a><div style="margin-top:6px">מבצע הקניות של רעננה · מבית רעננה NEWS</div></div>
+<div>ההשתתפות כפופה ל<a href="/terms.html">תקנון</a> · אפשר להשתתף גם ללא רכישה<br>תמונות: Unsplash</div></footer>
+
+<div class="fab" id="fab"><button class="btn huge" data-scan><svg class="ico"><use href="#i-cam"/></svg>לצלם קבלה</button></div>
+<div class="toast" id="toast"></div>
+
+<!-- כניסה -->
+<div class="modal" id="mLogin"><div class="box">
+  <button class="x" data-close>×</button>
+  <h3>כניסה</h3>
+  <div class="note" style="margin-top:0">נשלח קוד חד-פעמי ב-SMS. בלי סיסמה ובלי הרשמה ארוכה.</div>
+  <div id="stepPhone"><label>מספר טלפון נייד</label><input id="phone" inputmode="tel" placeholder="050-1234567" autocomplete="tel"><button class="btn full" id="sendCode">שליחת קוד</button></div>
+  <div id="stepCode" class="hide">
+    <label>הקוד שקיבלת</label><input id="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="letter-spacing:12px;text-align:center;font:900 30px Serif">
+    <label>שם פרטי</label><input id="name" placeholder="איך קוראים לך?">
+    <button class="btn full" id="verify">כניסה</button>
+    <div class="note"><a href="#" id="resend">לא הגיע? שליחה מחדש</a></div>
+  </div>
+  <div id="demoBox"></div>
+  <div class="err" id="loginErr"></div>
+</div></div>
+
+<!-- סריקה -->
+<div class="modal" id="mScan"><div class="box">
+  <button class="x" data-close>×</button>
+  <div id="scanForm">
+    <h3>צילום קבלה</h3>
+    <div class="drop" id="drop"><div class="big"><svg class="ico" style="width:26px;height:26px"><use href="#i-cam"/></svg></div><b>לחצו לצילום הקבלה</b><div class="note">כל הקבלה בתמונה, ישרה ומוארת</div></div>
+    <input type="file" id="photo" accept="image/*" capture="environment" class="hide">
+    <label>באיזה עסק קניתם?</label><select id="store"></select>
+    <div class="two"><div><label>סכום כולל (₪)</label><input id="amount" type="number" inputmode="decimal" min="10" placeholder="127"></div><div><label>תאריך</label><input id="rdate" type="date"></div></div>
+    <label>מספר קבלה</label><input id="rno" placeholder="מופיע על הקבלה">
+    <div class="note" id="preview">כל 10 ₪ = כרטיס אחד</div>
+    <button class="btn full" id="sendReceipt">שליחה לבדיקה</button>
+    <div class="err" id="scanErr"></div>
+  </div>
+  <div id="scanCheck" class="checking hide">
+    <div class="ring"></div><h3>בודקים את הקבלה</h3>
+    <div class="checks"><div>קוראים את הקבלה</div><div>מאמתים עסק וסכום</div><div>בודקים שלא נסרקה בעבר</div><div>מחשבים ציון אמינות</div></div>
+  </div>
+</div></div>
+
+<!-- כרטיס חינם -->
+<div class="modal" id="mFree"><div class="box">
+  <button class="x" data-close>×</button>
+  <h3>כרטיס חינם</h3>
+  <div class="note" style="margin-top:0">אפשר להשתתף גם בלי לקנות: עונים על השאלה ומקבלים כרטיס, פעם בשבוע.</div>
+  <label>מה המקום האהוב עליך ברעננה, ולמה?</label><textarea id="answer" rows="3"></textarea>
+  <button class="btn full" id="sendFree">קבלת כרטיס</button><div class="err" id="freeErr"></div>
+</div></div>
+
+<script src="/vendor/lenis.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

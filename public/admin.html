@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ניהול | קנית·זכית</title><link rel="stylesheet" href="/style.css">
+<style>
+body{background:var(--paper)}header{position:static}main{padding:24px 20px 80px}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:22px 0;background:var(--paper2);padding:4px;border-radius:999px;width:max-content;max-width:100%}
+.tabs button{border:0;background:none;font:600 14px Sans;color:var(--ink2);padding:9px 16px;border-radius:999px;cursor:pointer}.tabs button.on{background:var(--card);color:var(--ink);box-shadow:0 2px 8px -4px rgba(0,0,0,.25)}
+.risk{display:inline-block;font-weight:800;font-size:13px;border-radius:99px;padding:3px 12px}
+.flags{margin:8px 0;padding-right:18px;color:var(--ink2);font-size:14px}
+.rc{display:grid;grid-template-columns:150px 1fr;gap:16px}.rc img{width:150px;height:190px;object-fit:cover;border-radius:12px;cursor:zoom-in;background:#000}
+@media(max-width:600px){.rc{grid-template-columns:1fr}.rc img{width:100%;height:240px}}
+table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:10px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}th{color:var(--mute);font-weight:600;font-size:13px}
+.inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.inline input,.inline select{flex:1;min-width:130px;width:auto}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.kpi div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--mute)}.kpi b{font:900 26px Serif;display:block;color:var(--ink)}
+.warn{background:var(--gold3);color:#5E4515;border-radius:14px;padding:14px 16px;margin-top:14px;font-size:15px}
+.pr{display:flex;gap:14px;align-items:center}.pr .th{width:64px;height:48px;border-radius:8px;background:var(--paper2) center/cover;flex:none}
+</style></head>
+<body>
+<header class="solid"><div class="bar"><a class="logo" href="/"><span class="mk">₪</span>קנית<i>·</i>זכית</a><nav><a class="l" href="/">לאתר</a></nav></div></header>
+<main class="wrap">
+  <div id="login" class="me" style="max-width:380px;margin:40px auto">
+    <h3 style="font-size:28px">כניסת מנהל</h3>
+    <label>סיסמה</label><input type="password" id="pw">
+    <button class="btn full" id="go">כניסה</button><div class="err" id="lerr"></div>
+  </div>
+  <div id="panel" class="hide">
+    <div class="kpi" id="kpi"></div>
+    <div class="tabs">
+      <button class="btn small ghost on" data-t="pending">קבלות לאישור</button>
+      <button class="btn small ghost" data-t="stores">עסקים</button>
+      <button class="btn small ghost" data-t="raffles">הגרלות</button>
+      <button class="btn small ghost" data-t="apps">בקשות הצטרפות</button>
+      <button class="btn small ghost" data-t="sms">הגדרות SMS</button>
+    </div>
+    <div id="t-pending"></div>
+    <div id="t-stores" class="hide">
+      <div class="card"><b>הוספת עסק</b><div class="inline" style="margin-top:10px">
+        <input id="s_name" placeholder="שם העסק"><input id="s_category" placeholder="תחום"><input id="s_address" placeholder="כתובת">
+        <button class="btn small" id="addStore">הוספה</button></div></div>
+      <div class="card"><table id="storesT"></table></div>
+    </div>
+    <div id="t-raffles" class="hide">
+      <div class="card"><b>הגרלה חדשה</b><div class="inline" style="margin-top:10px">
+        <input id="r_title" placeholder="כותרת קטנה (למשל: הגרלת השבוע)"><input id="r_prize" placeholder="הפרס"><input id="r_blurb" placeholder="תיאור קצר"><input id="r_value" placeholder="שווי">
+        <input id="r_image" placeholder="קישור לתמונה"><input id="r_date" type="date"><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="r_grand" style="width:auto">פרס ראשי</label>
+        <button class="btn small" id="addRaffle">הוספה</button></div></div>
+      <div id="rafflesL"></div>
+    </div>
+    <div id="t-apps" class="hide"><div class="card"><table id="appsT"></table></div></div>
+    <div id="t-sms" class="hide"><div class="card" style="max-width:620px">
+      <b style="font-size:18px">ספק SMS</b><div class="note" style="margin-top:4px">כל עוד אין ספק, האתר עובד במצב הדגמה: קוד הכניסה מוצג על המסך במקום להישלח. מומלץ לחבר ספק לפני ההשקה.</div>
+      <label>ספק</label><select id="sm_type"><option value="none">ללא (מצב הדגמה)</option><option value="inforu">InforU</option><option value="019">019 SMS</option><option value="twilio">Twilio</option></select>
+      <div id="sm_il"><div class="two"><div><label>שם משתמש</label><input id="sm_user" autocomplete="off"></div><div><label>שם שולח (עד 11 תווים באנגלית)</label><input id="sm_sender" placeholder="KanitZachit" maxlength="11"></div></div></div>
+      <div id="sm_tw" class="hide"><div class="two"><div><label>Account SID</label><input id="sm_sid" autocomplete="off"></div><div><label>מספר שולח</label><input id="sm_from" placeholder="+1..."></div></div></div>
+      <label>API Token</label><input id="sm_token" type="password" autocomplete="new-password" placeholder="השאירו ריק כדי לא לשנות">
+      <button class="btn full" id="sm_save">שמירה</button>
+      <div class="inline" style="margin-top:18px"><input id="sm_test" inputmode="tel" placeholder="הטלפון שלך לבדיקה"><button class="btn small ghost" id="sm_testBtn">שליחת הודעת בדיקה</button></div>
+      <div class="err" id="sm_err"></div>
+    </div></div>
+  </div>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b || {}) }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error); return j; });
+const v = id => $('#' + id).value;
+async function load() {
+  const r = await fetch('/api/admin/overview'); if (r.status === 401) return;
+  const d = await r.json();
+  $('#login').classList.add('hide'); $('#panel').classList.remove('hide');
+  const paid = d.stores.filter(s => s.paid).length;
+  $('#kpi').innerHTML = `<div><b>${d.pending.length}</b>קבלות ממתינות</div><div><b>${d.users}</b>משתתפים</div><div><b>${d.stores.length}</b>עסקים (${paid} שילמו)</div><div><b>${paid * 250} ₪</b>הכנסות מהצטרפות</div><div><b>${d.sms === 'none' ? 'הדגמה' : d.sms}</b>ספק SMS</div><div><b>${d.ai ? 'פעיל' : 'כבוי'}</b>בדיקת AI</div>` + (d.sms === 'none' ? '<div class="warn" style="grid-column:1/-1">שירות ה-SMS עדיין לא מחובר, וקוד הכניסה מוצג למשתמשים על המסך. אפשר לחבר ספק בלשונית "הגדרות SMS".</div>' : '');
+  const c = d.smsCfg; $('#sm_type').value = c.type; $('#sm_user').value = c.user; $('#sm_sender').value = c.sender; $('#sm_sid').value = c.sid; $('#sm_from').value = c.from; $('#sm_token').placeholder = c.hasToken ? 'שמור. השאירו ריק כדי לא לשנות' : 'הדביקו כאן את הטוקן'; smToggle();
+  $('#t-pending').innerHTML = d.pending.length ? d.pending.map(p => `<div class="card rc">
+    <img src="/api/admin/image/${p.image}" onclick="open(this.src)">
+    <div><span class="risk" style="background:${p.risk >= 50 ? '#F6E3DE' : p.risk >= 20 ? 'var(--gold3)' : '#E3F0E8'}">סיכון ${p.risk}</span>
+    <b style="font-size:18px"> ${p.store}</b> · ${p.amount} ₪ · קבלה ${p.receipt_no}<br>${p.uname || ''} ${p.phone} · ${p.receipt_date}${p.rejected_before ? ` · <b style="color:#d5321a">${p.rejected_before} קבלות נדחו בעבר</b>` : ''}
+    <ul class="flags">${(JSON.parse(p.flags || '[]')).map(f => `<li>${f}</li>`).join('')}</ul>
+    ${p.ai ? (a => `<div class="note">AI קרא בקבלה: ${a.business_name || '?'} · ${a.total ?? '?'} ₪ · ${a.date || '?'} · מס׳ ${a.receipt_number || '?'}</div>`)(JSON.parse(p.ai)) : ''}
+    <div class="inline" style="margin-top:10px"><input id="a${p.id}" type="number" value="${p.amount}" style="max-width:130px"> ₪
+    <button class="btn small" onclick="act(${p.id},'approve')">אישור</button>
+    <input id="n${p.id}" placeholder="סיבת דחייה"><button class="btn small ghost" onclick="act(${p.id},'reject')">דחייה</button><button class="btn small ghost" onclick="ban(${p.uid})">חסימת משתמש</button></div></div></div>`).join('')
+    : '<div class="card">אין קבלות שממתינות.</div>';
+  $('#storesT').innerHTML = '<tr><th>עסק</th><th>קבלות</th><th>לקוחות</th><th>סכום שהגיע</th><th>שילם</th><th>פעיל</th><th></th></tr>' + d.stores.map(s => `<tr>
+    <td>${s.name}<br><small style="color:var(--mute)">${s.category}</small></td><td>${s.receipts}</td><td>${s.customers}</td><td>${Math.round(s.revenue).toLocaleString()} ₪</td>
+    <td><button class="btn small ghost" onclick="tog(${s.id},'paid')">${s.paid ? 'שילם' : 'לא'}</button></td>
+    <td><button class="btn small ghost" onclick="tog(${s.id},'active')">${s.active ? 'פעיל' : 'כבוי'}</button></td>
+    <td>${s.receipts ? '' : `<button class="btn small ghost" onclick="del(${s.id})">מחיקה</button>`}</td></tr>`).join('');
+  $('#rafflesL').innerHTML = d.raffles.map(r => `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="pr"><div class="th" style="background-image:url('${r.image || ''}')"></div><div><b>${r.prize}</b> · ${r.title} · ${r.draw_date}${r.value ? ' · ' + r.value : ''}${r.is_grand ? ' · <b style="color:var(--gold)">פרס ראשי</b>' : ''}
+    ${r.winner_user_id ? `<br>זוכה: ${r.wname || ''} ${r.wphone}` : ''}</div></div>
+    ${r.winner_user_id ? '' : `<div class="inline"><button class="btn small" onclick="draw(${r.id})">ביצוע הגרלה</button><button class="btn small ghost" onclick="delR(${r.id})">מחיקה</button></div>`}</div>`).join('');
+  $('#appsT').innerHTML = '<tr><th>עסק</th><th>תחום</th><th>איש קשר</th><th>טלפון</th><th>הערות</th><th>תאריך</th></tr>' + d.applications.map(a =>
+    `<tr><td>${a.business}</td><td>${a.category}</td><td>${a.contact}</td><td><a href="https://wa.me/972${a.phone.slice(1)}">${a.phone}</a></td><td>${a.notes}</td><td>${a.created_at.slice(0, 10)}</td></tr>`).join('');
+}
+async function act(id, action) { await post('/api/admin/receipts/' + id, { action, amount: v('a' + id), note: v('n' + id) }); load(); }
+async function ban(id) { if (confirm('לחסום את המשתמש? כל הקבלות והכרטיסים שלו יבוטלו.')) { await post(`/api/admin/users/${id}/ban`); load(); } }
+async function tog(id, field) { await post('/api/admin/stores/' + id, { field }); load(); }
+async function del(id) { if (confirm('למחוק את העסק?')) { await post('/api/admin/stores/' + id, { delete: 1 }); load(); } }
+async function delR(id) { if (confirm('למחוק את ההגרלה?')) { await post(`/api/admin/raffles/${id}/delete`); load(); } }
+async function draw(id) {
+  if (!confirm('לבצע את ההגרלה עכשיו? אי אפשר לבטל, והזוכה יקבל SMS.')) return;
+  try { const r = await post(`/api/admin/raffles/${id}/draw`); alert(`הזוכה: ${r.winner.name || ''} ${r.winner.phone}\n${r.winner.tickets} כרטיסים מתוך ${r.winner.total}`); load(); }
+  catch (e) { alert(e.message); }
+}
+$('#addStore').onclick = async () => { try { await post('/api/admin/stores', { name: v('s_name'), category: v('s_category'), address: v('s_address') }); load(); } catch (e) { alert(e.message); } };
+$('#addRaffle').onclick = async () => { try { await post('/api/admin/raffles', { title: v('r_title'), prize: v('r_prize'), blurb: v('r_blurb'), value: v('r_value'), image: v('r_image'), draw_date: v('r_date'), is_grand: $('#r_grand').checked }); load(); } catch (e) { alert(e.message); } };
+document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-t]').forEach(x => x.classList.toggle('on', x === b));
+  ['pending', 'stores', 'raffles', 'apps', 'sms'].forEach(t => $('#t-' + t).classList.toggle('hide', t !== b.dataset.t));
+});
+function smToggle() { const t = $('#sm_type').value; $('#sm_il').classList.toggle('hide', !['inforu', '019'].includes(t)); $('#sm_tw').classList.toggle('hide', t !== 'twilio'); }
+$('#sm_type').onchange = smToggle;
+$('#sm_save').onclick = async () => { $('#sm_err').textContent = ''; try { await post('/api/admin/sms', { type: v('sm_type'), user: v('sm_user'), sender: v('sm_sender'), sid: v('sm_sid'), from: v('sm_from'), token: v('sm_token') }); $('#sm_token').value = ''; $('#sm_err').style.color = 'var(--ok)'; $('#sm_err').textContent = 'נשמר'; load(); } catch (e) { $('#sm_err').style.color = ''; $('#sm_err').textContent = e.message; } };
+$('#sm_testBtn').onclick = async () => { $('#sm_err').textContent = ''; try { await post('/api/admin/sms/test', { phone: v('sm_test') }); $('#sm_err').style.color = 'var(--ok)'; $('#sm_err').textContent = 'נשלח. בדקו את הטלפון.'; } catch (e) { $('#sm_err').style.color = ''; $('#sm_err').textContent = e.message; } };
+$('#go').onclick = async () => { try { await post('/api/admin/login', { password: v('pw') }); load(); } catch (e) { $('#lerr').textContent = e.message; } };
+$('#pw').onkeydown = e => e.key === 'Enter' && $('#go').click();
+load();
+</script>
+</body></html>

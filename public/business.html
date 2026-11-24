@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>לעסקים | קנית·זכית</title>
+<meta name="theme-color" content="#0B1220">
+<link rel="stylesheet" href="/style.css">
+<style>
+.perks{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.perk{background:var(--card);padding:28px 24px}.perk b{display:block;font:900 34px Serif;color:var(--gold);margin-bottom:8px}.perk h3{font-size:21px;margin-bottom:6px}.perk p{color:var(--mute);font-size:15px}
+@media(max-width:860px){.perks{grid-template-columns:1fr 1fr}}
+.formbox{max-width:620px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:40px;box-shadow:var(--sh)}
+@media(max-width:600px){.formbox{padding:26px 20px}}
+</style>
+</head>
+<body>
+<header class="solid"><div class="bar"><a class="logo" href="/"><span class="mk">₪</span>קנית<i>·</i>זכית</a><nav><a class="l" href="/">לאתר המבצע</a><a class="btn small" href="#form">שריון מקום</a></nav></div></header>
+<div class="page-head"><div class="wrap">
+  <span class="eyebrow">לבעלי עסקים ברעננה</span>
+  <h1>תושבים יבחרו<br><span class="gold-t">לקנות דווקא אצלכם.</span></h1>
+  <p>כל קנייה אצלכם שווה ללקוח כרטיסים להגרלות על חופשה ביוון, iPhone ועוד 14 פרסים. סיבה טובה לבחור בכם ולא במתחרה מהרחוב הסמוך.</p>
+  <div class="cta-row"><a class="btn huge" href="#form">אני רוצה להצטרף</a></div>
+</div></div>
+<main class="wrap">
+  <section style="padding-bottom:60px">
+    <div class="sh"><span class="eyebrow">אפס מאמץ מצדכם</span><h2>איך זה <span class="hl">עובד?</span></h2></div>
+    <div class="steps">
+      <div class="step"><span class="num">01</span><h3>הלקוח קונה</h3><p>כרגיל. בלי מכשיר, בלי אפליקציה ובלי שינוי בקופה.</p></div>
+      <div class="step"><span class="num">02</span><h3>מצלם קבלה</h3><p>באתר שלנו. המערכת מאמתת שהקנייה באמת הייתה אצלכם.</p></div>
+      <div class="step"><span class="num">03</span><h3>אתם רואים תוצאות</h3><p>דוח מסודר: כמה קניות, כמה לקוחות ואיזה סכום הגיע אליכם דרכנו.</p></div>
+    </div>
+  </section>
+  <section style="padding-top:0">
+    <div class="perks">
+      <div class="perk"><b>NEWS</b><h3>חשיפה</h3><p>הכרזה בערוץ "רעננה NEWS" ומקום קבוע באתר המבצע.</p></div>
+      <div class="perk"><b>+</b><h3>לקוחות חדשים</h3><p>אנשים מגיעים במיוחד כדי לצבור כרטיסים.</p></div>
+      <div class="perk"><b>0%</b><h3>בלי עמלות</h3><p>תשלום קבוע אחד, בלי אחוזים מהמכירות.</p></div>
+      <div class="perk"><b>250 ₪</b><h3>להצטרפות</h3><p>עסק אחד בכל תחום. מי שמקדים, תופס.</p></div>
+    </div>
+  </section>
+  <section id="form" style="padding-top:0">
+    <div class="formbox">
+      <h2 style="font-size:40px;text-align:center">שריון מקום</h2><p class="note" style="text-align:center">נחזור אליכם תוך יום עסקים</p>
+      <div id="bizForm">
+        <label>שם העסק</label><input id="b_business">
+        <label>תחום</label><input id="b_category" placeholder="בית קפה, מספרה, חנות בגדים…">
+        <div class="two"><div><label>איש קשר</label><input id="b_contact"></div><div><label>טלפון</label><input id="b_phone" inputmode="tel"></div></div>
+        <label>משהו שחשוב לנו לדעת? (לא חובה)</label><textarea id="b_notes" rows="2"></textarea>
+        <button class="btn full huge" id="bSend">שריון מקום</button><div class="err" id="bErr"></div>
+      </div>
+      <div id="bDone" class="hide" style="text-align:center;padding:30px 0"><h3 style="font-size:32px">קיבלנו, תודה.</h3><p class="note">נחזור אליכם בקרוב.</p></div>
+    </div>
+  </section>
+</main>
+<footer><div><a class="logo" href="/">קנית<i style="color:var(--gold)">·</i>זכית</a></div><div>מבית רעננה NEWS</div></footer>
+<script>
+const $ = s => document.querySelector(s);
+$('#bSend').onclick = async () => {
+  const body = {}; ['business', 'category', 'contact', 'phone', 'notes'].forEach(k => body[k] = $('#b_' + k).value);
+  const r = await fetch('/api/business-apply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) return $('#bErr').textContent = j.error;
+  $('#bizForm').classList.add('hide'); $('#bDone').classList.remove('hide');
+};
+</script>
+</body>
+</html>
