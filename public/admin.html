@@ -12,10 +12,10 @@ table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:10px;bord
 .inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.inline input,.inline select{flex:1;min-width:130px;width:auto}
 .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.kpi div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--mute)}.kpi b{font:900 26px Serif;display:block;color:var(--ink)}
 .warn{background:var(--gold3);color:#5E4515;border-radius:14px;padding:14px 16px;margin-top:14px;font-size:15px}
-.pr{display:flex;gap:14px;align-items:center}.pr .th{width:64px;height:48px;border-radius:8px;background:var(--paper2) center/cover;flex:none}
+.pr{display:flex;gap:14px;align-items:center}.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px 14px}.rgrid .w2{grid-column:span 2}@media(max-width:800px){.rgrid{grid-template-columns:1fr}.rgrid .w2{grid-column:auto}}.pr .th{width:64px;height:48px;border-radius:8px;background:var(--paper2) center/cover;flex:none}
 </style></head>
 <body>
-<header class="solid"><div class="bar"><a class="logo" href="/"><img src="/logo.svg" alt="" width="40" height="40"><span>רעננ<b>ים</b></span></a><nav><a class="l" href="/">לאתר</a></nav></div></header>
+<header class="solid"><div class="bar"><a class="logo" href="/"><img src="/logo.svg" alt="" width="40" height="40"><span>רעננים</span></a><nav><a class="l" href="/">לאתר</a></nav></div></header>
 <main class="wrap">
   <div id="login" class="me" style="max-width:380px;margin:40px auto">
     <h3 style="font-size:28px">כניסת מנהל</h3>
@@ -27,7 +27,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:10px;bord
     <div class="tabs">
       <button class="btn small ghost on" data-t="pending">קבלות לאישור</button>
       <button class="btn small ghost" data-t="stores">עסקים</button>
-      <button class="btn small ghost" data-t="raffles">הגרלות</button>
+      <button class="btn small ghost" data-t="raffles">פרסים והגרלות</button>
       <button class="btn small ghost" data-t="apps">בקשות הצטרפות</button>
       <button class="btn small ghost" data-t="sms">הגדרות SMS</button>
     </div>
@@ -39,10 +39,20 @@ table{width:100%;border-collapse:collapse;font-size:15px}td,th{padding:10px;bord
       <div class="card"><table id="storesT"></table></div>
     </div>
     <div id="t-raffles" class="hide">
-      <div class="card"><b>הגרלה חדשה</b><div class="inline" style="margin-top:10px">
-        <select id="r_kind" style="max-width:150px"><option value="raffle">הגרלה</option><option value="top">פרס מובילים</option></select><input id="r_rank" type="number" min="1" placeholder="מקום" style="max-width:90px"><input id="r_title" placeholder="כותרת קטנה (למשל: הגרלת השבוע)"><input id="r_prize" placeholder="הפרס"><input id="r_blurb" placeholder="תיאור קצר"><input id="r_value" placeholder="שווי (פנימי, לא מוצג)">
-        <input id="r_image" placeholder="קישור לתמונה"><input id="r_date" type="date"><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="r_grand" style="width:auto">פרס ראשי</label>
-        <button class="btn small" id="addRaffle">הוספה</button></div></div>
+      <div class="card" id="rForm"><b id="rFormT" style="font-size:18px">פרס חדש</b><input type="hidden" id="r_id">
+        <div class="rgrid">
+          <div><label for="r_prize">שם הפרס</label><input id="r_prize" placeholder="למשל: טיסה זוגית לאירופה"></div>
+          <div><label for="r_title">כותרת קטנה</label><input id="r_title" placeholder="למשל: הגרלת השבוע"></div>
+          <div class="w2"><label for="r_blurb">תיאור קצר</label><input id="r_blurb" placeholder="משפט אחד שמופיע בכרטיס"></div>
+          <div><label for="r_date">תאריך ההגרלה</label><input id="r_date" type="date"></div>
+          <div><label for="r_kind">סוג</label><select id="r_kind"><option value="raffle">הגרלה</option><option value="top">פרס מובילים (לפי טבלה)</option></select></div>
+          <div><label for="r_rank">מקום (לפרס מובילים)</label><input id="r_rank" type="number" min="1" placeholder="1"></div>
+          <div><label for="r_value">שווי (פנימי, לא מוצג באתר)</label><input id="r_value"></div>
+          <div class="w2"><label for="r_image">תמונה</label><div class="inline"><span id="r_prev" style="width:84px;height:60px;border-radius:10px;background:var(--paper2) center/cover;display:inline-block;flex:none"></span><input id="r_image" placeholder="קישור לתמונה, או העלאה מהמחשב"><label class="btn small ghost" style="margin:0;cursor:pointer">העלאת תמונה<input type="file" id="r_file" accept="image/*" class="hide"></label></div></div>
+          <div class="w2"><label class="chk" style="margin:0"><input type="checkbox" id="r_grand"> הפרס הגדול (מוצג ראשון ובגדול, ועם ספירה לאחור)</label></div>
+        </div>
+        <div class="inline" style="margin-top:14px"><button class="btn" id="addRaffle">הוספה</button><button class="btn ghost hide" id="cancelEdit">ביטול עריכה</button></div>
+        <div class="note">הפרסים שמופיעים עכשיו הם הצעה. אפשר לערוך, למחוק ולהוסיף כרצונך, והאתר מתעדכן מיד.</div></div>
       <div id="rafflesL"></div>
     </div>
     <div id="t-apps" class="hide"><div class="card"><table id="appsT"></table></div></div>
@@ -87,7 +97,8 @@ async function load() {
   $('#rafflesL').innerHTML = d.raffles.map(r => `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
     <div class="pr"><div class="th" style="background-image:url('${r.image || ''}')"></div><div><b>${r.prize}</b> · ${r.title} · ${r.draw_date}${r.value ? ' · ' + r.value : ''}${r.is_grand ? ' · <b style="color:var(--gold)">פרס ראשי</b>' : ''}${r.kind === 'top' ? ' · <b style="color:var(--wine)">פרס מובילים, מקום ' + r.rank + '</b>' : ''}
     ${r.winner_user_id ? `<br>זוכה: ${r.wname || ''} ${r.wphone}` : ''}</div></div>
-    ${r.winner_user_id ? '' : `<div class="inline"><button class="btn small" onclick="draw(${r.id})">${r.kind === 'top' ? 'הענקה למוביל' : 'ביצוע הגרלה'}</button><button class="btn small ghost" onclick="delR(${r.id})">מחיקה</button></div>`}</div>`).join('');
+    ${r.winner_user_id ? '' : `<div class="inline"><button class="btn small" onclick="draw(${r.id})">${r.kind === 'top' ? 'הענקה למוביל' : 'ביצוע הגרלה'}</button><button class="btn small ghost" onclick="editR(${r.id})">עריכה</button><button class="btn small ghost" onclick="delR(${r.id})">מחיקה</button></div>`}</div>`).join('');
+  RAFFLES = d.raffles;
   $('#appsT').innerHTML = `<tr><td colspan="7"><div class="inline">תשלום עסקים (SUMIT דרך GiveIL): <b>${d.pay ? 'מחובר' : 'לא מחובר'}</b> · מחיר: ${d.bizPrice} ₪ <button class="btn small ghost" onclick="payTest()">בדיקת חיבור</button><span id="payMsg"></span></div></td></tr>` +
     '<tr><th>עסק</th><th>תחום</th><th>איש קשר</th><th>טלפון</th><th>סטטוס</th><th>הערות</th><th>תאריך</th></tr>' + d.applications.map(a =>
     `<tr><td>${a.business}${a.company_no ? '<br><small>' + a.company_no + '</small>' : ''}</td><td>${a.category}</td><td>${a.contact}${a.email ? '<br><small>' + a.email + '</small>' : ''}</td><td><a href="https://wa.me/972${a.phone.slice(1)}">${a.phone}</a></td><td>${{ paid: '<b style="color:var(--ok)">שילם</b>', pending_payment: 'לא השלים תשלום', new: 'חדש' }[a.status] || a.status}</td><td>${a.notes}</td><td>${a.created_at.slice(0, 10)}</td></tr>`).join('');
@@ -103,7 +114,22 @@ async function draw(id) {
   catch (e) { alert(e.message); }
 }
 $('#addStore').onclick = async () => { try { await post('/api/admin/stores', { name: v('s_name'), category: v('s_category'), address: v('s_address') }); load(); } catch (e) { alert(e.message); } };
-$('#addRaffle').onclick = async () => { try { await post('/api/admin/raffles', { kind: v('r_kind'), rank: v('r_rank'), title: v('r_title'), prize: v('r_prize'), blurb: v('r_blurb'), value: v('r_value'), image: v('r_image'), draw_date: v('r_date'), is_grand: $('#r_grand').checked }); load(); } catch (e) { alert(e.message); } };
+let RAFFLES = [];
+const rFields = ['kind', 'rank', 'title', 'prize', 'blurb', 'value', 'image'];
+function editR(id) {
+  const r = RAFFLES.find(x => x.id === id); if (!r) return;
+  $('#r_id').value = r.id; rFields.forEach(k => $('#r_' + k).value = r[k] ?? (k === 'kind' ? 'raffle' : ''));
+  $('#r_date').value = r.draw_date; $('#r_grand').checked = !!r.is_grand; $('#r_prev').style.backgroundImage = r.image ? `url('${r.image}')` : '';
+  $('#rFormT').textContent = 'עריכת פרס: ' + r.prize; $('#addRaffle').textContent = 'שמירת שינויים'; $('#cancelEdit').classList.remove('hide');
+  $('#rForm').scrollIntoView({ behavior: 'smooth' });
+}
+function resetR() { $('#r_id').value = ''; rFields.forEach(k => $('#r_' + k).value = k === 'kind' ? 'raffle' : ''); $('#r_date').value = ''; $('#r_grand').checked = false; $('#r_prev').style.backgroundImage = ''; $('#rFormT').textContent = 'פרס חדש'; $('#addRaffle').textContent = 'הוספה'; $('#cancelEdit').classList.add('hide'); }
+$('#cancelEdit').onclick = resetR;
+$('#r_image').oninput = () => $('#r_prev').style.backgroundImage = v('r_image') ? `url('${v('r_image')}')` : '';
+$('#r_file').onchange = async () => { const f = $('#r_file').files[0]; if (!f) return; const fd = new FormData(); fd.append('image', f);
+  const r = await fetch('/api/admin/upload', { method: 'POST', body: fd }); const j = await r.json(); if (!r.ok) return alert(j.error);
+  $('#r_image').value = j.url; $('#r_prev').style.backgroundImage = `url('${j.url}')`; $('#r_file').value = ''; };
+$('#addRaffle').onclick = async () => { const id = v('r_id'); try { await post(id ? '/api/admin/raffles/' + id : '/api/admin/raffles', { kind: v('r_kind'), rank: v('r_rank'), title: v('r_title'), prize: v('r_prize'), blurb: v('r_blurb'), value: v('r_value'), image: v('r_image'), draw_date: v('r_date'), is_grand: $('#r_grand').checked }); resetR(); load(); } catch (e) { alert(e.message); } };
 document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
   document.querySelectorAll('[data-t]').forEach(x => x.classList.toggle('on', x === b));
   ['pending', 'stores', 'raffles', 'apps', 'sms'].forEach(t => $('#t-' + t).classList.toggle('hide', t !== b.dataset.t));

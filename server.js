@@ -21,6 +21,8 @@ const MAX_POINTS_PER_RECEIPT = 20;
 const ptsFor = amount => Math.min(MAX_POINTS_PER_RECEIPT, Math.floor(amount / SHEKELS_PER_POINT));
 const UPLOADS = path.join(DATA_DIR, 'uploads');
 fs.mkdirSync(UPLOADS, { recursive: true });
+const MEDIA = path.join(DATA_DIR, 'media');
+fs.mkdirSync(MEDIA, { recursive: true });
 
 // ---------- מסד נתונים ----------
 const db = new Database(path.join(DATA_DIR, 'app.db'));
@@ -120,6 +122,7 @@ app.set('trust proxy', 1);
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/media', express.static(MEDIA, { maxAge: '30d' }));
 
 const userOf = req => { const id = unsign(req.cookies.sid); return id ? db.prepare('SELECT * FROM users WHERE id=?').get(id) : null; };
 const needUser = (req, res, next) => { const u = userOf(req); if (!u) return res.status(401).json({ error: 'צריך להתחבר' }); req.user = u; next(); };
@@ -395,6 +398,27 @@ app.post('/api/admin/raffles', needAdmin, (req, res) => {
   if (is_grand) db.prepare('UPDATE raffles SET is_grand=0').run();
   db.prepare('INSERT INTO raffles (title, prize, blurb, emoji, value, draw_date, is_grand, image, kind, rank) VALUES (?,?,?,?,?,?,?,?,?,?)').run(title, prize, blurb || '', '', value || '', draw_date, is_grand ? 1 : 0, image || null, kind === 'top' ? 'top' : 'raffle', kind === 'top' ? Math.max(1, +rank || 1) : null);
   res.json({ ok: true });
+});
+// עריכת פרס קיים
+app.post('/api/admin/raffles/:id', needAdmin, (req, res) => {
+  const r = db.prepare('SELECT * FROM raffles WHERE id=?').get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'לא נמצא' });
+  const { title, prize, blurb, value, draw_date, is_grand, image, kind, rank } = req.body;
+  if (!title || !prize || !draw_date) return res.status(400).json({ error: 'חסרים פרטים' });
+  if (is_grand) db.prepare('UPDATE raffles SET is_grand=0 WHERE id<>?').run(r.id);
+  db.prepare('UPDATE raffles SET title=?, prize=?, blurb=?, value=?, draw_date=?, is_grand=?, image=?, kind=?, rank=? WHERE id=?')
+    .run(title, prize, blurb || '', value || '', draw_date, is_grand ? 1 : 0, image || null, kind === 'top' ? 'top' : 'raffle', kind === 'top' ? Math.max(1, +rank || 1) : null, r.id);
+  res.json({ ok: true });
+});
+// העלאת תמונה לפרס: מוקטנת ונשמרת כ-JPG
+const imgUp = multer({ storage: multer.memoryStorage(), limits: { fileSize: 12 * 1024 * 1024 }, fileFilter: (q, f, cb) => cb(null, /^image\//.test(f.mimetype)) });
+app.post('/api/admin/upload', needAdmin, imgUp.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'לא התקבלה תמונה' });
+  try {
+    const name = crypto.randomUUID() + '.jpg';
+    await require('sharp')(req.file.buffer).rotate().resize(1400, 1400, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 82 }).toFile(path.join(MEDIA, name));
+    res.json({ url: '/media/' + name });
+  } catch (e) { res.status(400).json({ error: 'קובץ התמונה לא תקין' }); }
 });
 app.post('/api/admin/raffles/:id/delete', needAdmin, (req, res) => { db.prepare('DELETE FROM raffles WHERE id=? AND winner_user_id IS NULL').run(req.params.id); res.json({ ok: true }); });
 

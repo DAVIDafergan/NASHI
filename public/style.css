@@ -68,7 +68,7 @@ header.solid,body.light-top header{background:rgba(252,244,234,.88);backdrop-fil
 .logo img{width:44px;height:44px;filter:drop-shadow(0 6px 10px rgba(120,70,10,.35));transition:transform .4s cubic-bezier(.2,1.4,.4,1)}
 .logo:hover img{transform:rotate(-10deg) scale(1.08)}
 .logo i{font-style:normal;color:var(--gold2)}
-.logo b{font-weight:700;background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo b{font-weight:700}
 header.solid .logo,body.light-top .logo,footer .logo{color:var(--ink)}
 nav{display:flex;align-items:center;gap:4px}
 nav .l{color:rgba(255,255,255,.88);text-decoration:none;font:500 16px Fredoka;padding:8px 12px;border-radius:10px}
@@ -82,7 +82,8 @@ header.solid #meBtn,body.light-top #meBtn{background:#fff;color:var(--ink);box-s
 /* ===== גיבור ===== */
 .hero{position:relative;margin-top:-68px;background:var(--peach);overflow:hidden}
 .hero .city{position:absolute;inset:0 0 auto 0;height:min(78vh,720px);background:center 60%/cover no-repeat}
-.hero .city:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,26,44,.55) 0%,rgba(22,26,44,.25) 40%,rgba(242,214,189,0) 70%,var(--peach) 100%)}
+.hero .city:after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 55% at 50% 42%,rgba(18,20,36,.55),transparent 75%),linear-gradient(180deg,rgba(18,20,36,.72) 0%,rgba(18,20,36,.55) 45%,rgba(60,40,40,.35) 68%,var(--peach) 100%)}
+.hero .city{filter:saturate(.85)}
 .hero .hin{position:relative;text-align:center;padding:150px 24px 0}
 .hero .tag{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(8px);padding:7px 16px;border-radius:999px;font:500 15px Fredoka}
 .hero .tag b{color:var(--gold2)}
