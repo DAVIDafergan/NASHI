@@ -33,12 +33,13 @@ function revealInit() {
   $$('.rv:not(.in)').forEach(el => io.observe(el));
 }
 
-// כותרת: שקופה מעל הגיבור, אטומה אחרי
+// כותרת שקופה מעל הגיבור, פרלקסה עדינה לתמונת הפרסים
+const collageImg = $('#collageImg');
 const onScroll = () => {
-  const y = scrollY, h = $('.hero-wrap').offsetHeight;
-  $('#hdr').classList.toggle('solid', y > 40 && y < h - 70);
-  document.body.classList.toggle('light-top', y >= h - 70);
-  $('#fab').classList.toggle('on', y > h * .6);
+  const y = scrollY;
+  $('#hdr').classList.toggle('solid', y > 60);
+  $('#fab').classList.toggle('on', y > innerHeight * .9);
+  if (!reduce && collageImg) { const r = $('#collage').getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight) collageImg.style.transform = `translateY(${(r.top - innerHeight / 2) * -.06}px) scale(1.02)`; }
 };
 (lenis ? lenis.on('scroll', onScroll) : addEventListener('scroll', onScroll, { passive: true })); onScroll();
 
@@ -46,43 +47,54 @@ const onScroll = () => {
 const strip = items => { const s = items.map(t => `<span>${esc(t)}</span>`).join(''); $('#strip').innerHTML = s + s + s; };
 
 // ---------- נתונים ציבוריים ----------
-let PRIZES = [];
+let PRIZES = [], TOPS = [];
 async function loadPublic() {
   const [raffles, stores, stats] = await Promise.all([api('/api/raffles'), api('/api/stores'), api('/api/stats')]);
-  PRIZES = raffles;
-  const grand = raffles.find(r => r.is_grand);
-  if (grand?.image) $('#heroBg').style.backgroundImage = `url("${grand.image}")`;
-  if (grand) $('#grandTag').innerHTML = `<small>${esc(grand.title)} · ${fmtDate(grand.draw_date)}</small><h3>${esc(grand.prize)}</h3><p>${esc(grand.blurb || '')}</p>
-    ${grand.winner ? `<p style="color:var(--gold2);margin-top:8px">הזוכה: ${esc(grand.winner)}</p>` : '<div class="count" id="count"></div>'}`;
+  PRIZES = raffles.filter(r => r.kind !== 'top'); TOPS = raffles.filter(r => r.kind === 'top').sort((a, b) => a.rank - b.rank);
+  const grand = PRIZES.find(r => r.is_grand);
+  if (grand) $('#grandStrip').innerHTML = `<div><small>הפרס הגדול · הגרלה ב-${fmtDate(grand.draw_date)}</small><h3>${esc(grand.prize)}</h3></div>
+    ${grand.winner ? `<div style="font-family:Fredoka">הזוכה: ${esc(grand.winner)}</div>` : '<div class="count" id="count" aria-label="זמן עד ההגרלה"></div>'}
+    <button class="btn" data-scan2>להשתתף עכשיו</button>`;
+  $('[data-scan2]')?.addEventListener('click', () => needLogin(openScan));
   if (grand && !grand.winner) countdown(new Date(grand.draw_date + 'T20:00:00'));
   $('#fPrizes').textContent = raffles.length;
   $('#fStores').textContent = stats.stores;
-  if (stats.points >= 500) $('#fTickets').textContent = stats.points.toLocaleString('he-IL');
-  else { $('#fTickets').textContent = '10 ₪'; $('#fTickets').nextElementSibling.textContent = 'כרטיס אחד'; }
-  strip(raffles.filter(r => !r.winner).map(r => `${r.prize} · ${fmtShort(r.draw_date)}`));
+  if (stats.players >= 50) $('#fPlayers').textContent = stats.players.toLocaleString('he-IL');
+  else { $('#fPlayers').textContent = '10 ₪'; $('#fPlayers').nextElementSibling.textContent = 'כרטיס אחד'; }
+  strip(PRIZES.filter(r => !r.winner).map(r => `${r.prize} · ${fmtShort(r.draw_date)}`));
   renderPrizes('all');
   const credits = [...new Set(raffles.map(r => r.credit).filter(c => c && c !== 'Unsplash'))];
-  $('#credits').textContent = credits.length ? 'צילומים: ' + credits.join(', ') + ' / Unsplash' : '';
+  $('#credits').textContent = credits.length ? 'צילומי הפרסים להמחשה בלבד. צלמים: ' + credits.join(', ') + ' / Unsplash' : '';
 
-  $('#storeGrid').innerHTML = stores.map((s, i) => `<div class="store rv d${i % 3}"><div class="e">${esc(s.emoji || s.name.trim()[0] || '')}</div><div><b>${esc(s.name)}</b><small>${esc(s.category)}${s.address ? ' · ' + esc(s.address) : ''}</small></div></div>`).join('') +
+  $('#storeGrid').innerHTML = stores.map((s, i) => `<div class="store rv d${i % 3}"><div class="e" aria-hidden="true">${esc(s.emoji || s.name.trim()[0] || '')}</div><div><b>${esc(s.name)}</b><small>${esc(s.category)}${s.address ? ' · ' + esc(s.address) : ''}</small></div></div>`).join('') +
     '<a class="store join rv" href="/business.html">+ העסק שלכם כאן?</a>';
   $('#store').innerHTML = '<option value="">בחרו עסק</option>' + stores.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  loadLeaders();
   revealInit();
 }
-const valNum = v => +(String(v || '').replace(/[^\d]/g, '') || 0);
+async function loadLeaders() {
+  const L = await api('/api/leaders');
+  const medal = ['', 'p1', 'p2', 'p3'];
+  const top = i => TOPS.find(t => t.rank === i);
+  $('#topSub').textContent = TOPS[0] ? `נקבע לפי הטבלה ב-${fmtDate(TOPS[0].draw_date)}` : 'המקומות הראשונים בסוף החודש';
+  $('#pod').innerHTML = [2, 1, 3].map(i => { const l = L[i - 1], t = top(i);
+    return `<div class="p ${medal[i]}${l ? '' : ' empty'}"><div class="av">${l ? esc(l.name[0]) : '?'}</div><div class="nm">${l ? esc(l.name) : 'המקום פנוי'}</div><div class="pt">${l ? l.pts + ' כרטיסים' : '&nbsp;'}</div><div class="prz">${t ? esc(t.prize) : ''}</div><div class="blk">${i}</div></div>`; }).join('');
+  $('#lrows').innerHTML = L.length ? L.map(l => `<div class="lrow${me?.user && me.rank === l.rank ? ' me' : ''}"><span class="rk">${l.rank}</span><span class="n">${esc(l.name)} <small>··${esc(l.tail)}</small></span><span class="v">${l.pts}</span></div>`).join('')
+    : '<div class="lempty">הטבלה עוד ריקה. הקבלה הראשונה שלכם יכולה לשים אתכם במקום הראשון.</div>';
+}
 function renderPrizes(f) {
   const now = Date.now(), week = now + 7 * 864e5;
   let list = PRIZES.slice().sort((a, b) => b.is_grand - a.is_grand || a.draw_date.localeCompare(b.draw_date));
   if (f === 'soon') list = list.filter(r => !r.winner && new Date(r.draw_date) <= week && new Date(r.draw_date + 'T23:59') >= now);
-  if (f === 'big') list = list.filter(r => r.is_grand || valNum(r.value) >= 2000);
+  if (f === 'done') list = list.filter(r => r.winner);
   $('#prizeGrid').innerHTML = list.length ? list.map((r, i) => `<article class="pz rv d${i % 4}${r.is_grand ? ' grand' : ''}${r.winner ? ' done' : ''}">
-      <div class="img" style="${r.image ? `background-image:url('${esc(r.image)}')` : ''}"><span class="date">${r.winner ? 'הוגרל' : 'הגרלה ' + fmtDate(r.draw_date)}</span></div>
+      <div class="img" role="img" aria-label="${esc(r.prize)}" style="${r.image ? `background-image:url('${esc(r.image)}')` : ''}"><span class="date">${r.winner ? 'הוגרל' : 'הגרלה ' + fmtDate(r.draw_date)}</span></div>
       <div class="body"><small>${esc(r.title)}</small><h3>${esc(r.prize)}</h3>${r.blurb ? `<p>${esc(r.blurb)}</p>` : ''}
-        ${r.value ? `<div class="v">שווי ${esc(r.value)}</div>` : ''}${r.winner ? `<div class="win">הזוכה: ${esc(r.winner)}</div>` : ''}</div></article>`).join('')
-    : '<p class="note">אין הגרלות בשבוע הקרוב. כל הכרטיסים שלכם ממשיכים להגרלות הבאות.</p>';
+        ${r.winner ? `<div class="win">הזוכה: ${esc(r.winner)}</div>` : ''}</div></article>`).join('')
+    : `<p class="note">${f === 'done' ? 'עוד לא הוגרלו פרסים. הראשון בדרך!' : 'אין הגרלות בשבוע הקרוב. כל הכרטיסים שלכם ממשיכים להגרלות הבאות.'}</p>`;
   revealInit();
 }
-$$('#pfilter button').forEach(b => b.onclick = () => { $$('#pfilter button').forEach(x => x.classList.toggle('on', x === b)); renderPrizes(b.dataset.f); });
+$$('#pfilter button').forEach(b => b.onclick = () => { $$('#pfilter button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b); }); renderPrizes(b.dataset.f); });
 
 function countdown(target) {
   const f = () => {
@@ -106,6 +118,7 @@ async function loadMe() {
   const ch = me.total ? me.points / me.total * 100 : 0;
   $('#meChance').textContent = me.points ? (ch >= 1 ? ch.toFixed(0) : ch >= .1 ? ch.toFixed(1) : ch.toFixed(2)) + '%' : '0%';
   $('#meFriends').textContent = me.friends; $('#meBonus').textContent = me.bonus;
+  $('#meRank').textContent = me.rank ? '#' + me.rank : '–';
   $$('.rb').forEach(x => x.textContent = me.refBonus);
   $('#refUrl').textContent = refUrl();
   $('#freeBtn').classList.toggle('hide', me.freeThisWeek);
@@ -114,7 +127,7 @@ async function loadMe() {
     <span class="badge b-${r.status}">${st[r.status]}${r.status === 'approved' ? ` · +${r.points} כרטיסים` : ''}${r.note ? ` · ${esc(r.note)}` : ''}</span></div>`).join('')
     : '<div class="note">עוד לא צילמת קבלות. קנייה ראשונה בעסק שותף, ואת/ה בפנים.</div>';
 }
-const shareText = () => `מכיר/ה את "קנית·זכית"? כל קנייה בעסקים של רעננה היא כרטיס להגרלה, והפרס הגדול הוא חופשה זוגית ביוון. נרשמים כאן: ${refUrl()}`;
+const shareText = () => `מכיר/ה את "קנית·זכית"? כל קנייה בעסקים של רעננה היא כרטיס להגרלה, והפרס הגדול הוא טיסה זוגית לאירופה. נרשמים כאן: ${refUrl()}`;
 $('#waShare').onclick = () => open('https://wa.me/?text=' + encodeURIComponent(shareText()), '_blank');
 $('#copyRef').onclick = async () => { try { await navigator.clipboard.writeText(refUrl()); toast('הקישור הועתק'); } catch { prompt('העתיקו את הקישור', refUrl()); } };
 $('#inviteBtn').onclick = () => needLogin(() => { scrollTo('#me'); });
@@ -128,6 +141,7 @@ function needLogin(then) { if (me?.user) return then(); afterLogin = then; $('#l
 $('#meBtn').onclick = () => me?.user ? scrollTo('#me') : needLogin(() => scrollTo('#me'));
 
 async function sendCode() {
+  if (!$('#agree').checked) return $('#loginErr').textContent = 'יש לאשר את התקנון ומדיניות הפרטיות';
   const b = $('#sendCode'); b.disabled = true; $('#loginErr').textContent = ''; $('#demoBox').innerHTML = '';
   try {
     const r = await api('/api/otp/send', { phone: $('#phone').value });
@@ -156,7 +170,7 @@ const openScan = () => { $('#scanErr').textContent = ''; $('#scanForm').classLis
 $$('[data-scan]').forEach(b => b.onclick = () => needLogin(openScan));
 $('#drop').onclick = () => $('#photo').click();
 $('#photo').onchange = () => { const f = $('#photo').files[0]; if (f) $('#drop').innerHTML = `<img src="${URL.createObjectURL(f)}" alt=""><div class="note">לחצו כדי לצלם מחדש</div>`; };
-$('#amount').oninput = () => { const p = Math.floor(($('#amount').value || 0) / 10); $('#preview').innerHTML = p ? `הקבלה הזו שווה <b style="color:var(--gold);font-size:18px">${p} כרטיסים</b>` : 'כל 10 ₪ = כרטיס אחד'; };
+$('#amount').oninput = () => { const raw = Math.floor(($('#amount').value || 0) / 10), p = Math.min(20, raw); $('#preview').innerHTML = p ? `הקבלה הזו שווה <b style="color:var(--wine);font-size:18px">${p} כרטיסים</b>${raw > 20 ? ' (המקסימום לקבלה)' : ''}` : 'כל 10 ₪ = כרטיס אחד, עד 20 כרטיסים בקבלה'; };
 $('#sendReceipt').onclick = async () => {
   $('#scanErr').textContent = '';
   if (!$('#photo').files[0]) return $('#scanErr').textContent = 'צריך לצלם את הקבלה';
@@ -171,7 +185,7 @@ $('#sendReceipt').onclick = async () => {
     closeAll(); confetti();
     toast(r.approved ? `הקבלה אומתה. נוספו לך ${r.expected} כרטיסים.` : `הקבלה התקבלה. אחרי האישור יתווספו ${r.expected} כרטיסים.`, 5000);
     ['#amount', '#rno'].forEach(s => $(s).value = ''); $('#photo').value = ''; $('#drop').innerHTML = dropHtml;
-    loadMe();
+    loadMe().then(loadLeaders);
   } catch (e) { await anim; $('#scanCheck').classList.add('hide'); $('#scanForm').classList.remove('hide'); $('#scanErr').textContent = e.message; }
 };
 
@@ -186,8 +200,8 @@ $('#sendFree').onclick = async () => {
 function confetti() {
   if (reduce) return;
   const c = $('#confetti'), x = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
-  const cols = ['#E4C485', '#C99B4A', '#F1DFB4', '#ffffff'];
-  const ps = Array.from({ length: 110 }, () => ({ x: innerWidth / 2, y: innerHeight * .55, vx: (Math.random() - .5) * 14, vy: Math.random() * -15 - 5, s: Math.random() * 6 + 3, c: cols[Math.random() * 4 | 0], r: Math.random() * 6 }));
+  const cols = ['#F2C35C', '#C8902E', '#B32D3D', '#FFE7A8', '#3D84C6'];
+  const ps = Array.from({ length: 110 }, () => ({ x: innerWidth / 2, y: innerHeight * .55, vx: (Math.random() - .5) * 14, vy: Math.random() * -15 - 5, s: Math.random() * 6 + 3, c: cols[Math.random() * 5 | 0], r: Math.random() * 6 }));
   let t = 0; (function f() {
     x.clearRect(0, 0, c.width, c.height);
     ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .38; p.vx *= .985; p.r += .1; x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.globalAlpha = Math.max(0, 1 - t / 150); x.fillStyle = p.c; x.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); x.restore(); });

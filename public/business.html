@@ -3,64 +3,89 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>לעסקים | קנית·זכית</title>
-<meta name="theme-color" content="#0B1220">
+<meta name="description" content="הצטרפות עסקים למבצע קנית·זכית ברעננה: לקוחות חדשים, חשיפה ודוח תוצאות. הרשמה ותשלום אונליין.">
+<meta name="theme-color" content="#161A2C">
+<link rel="icon" href="/logo.svg">
 <link rel="stylesheet" href="/style.css">
 <style>
-.perks{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.perk{background:var(--card);padding:28px 24px}.perk b{display:block;font:900 34px Serif;color:var(--gold);margin-bottom:8px}.perk h3{font-size:21px;margin-bottom:6px}.perk p{color:var(--mute);font-size:15px}
+.perks{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.perk{background:var(--card);border-radius:24px;padding:28px 24px;box-shadow:var(--sh);border:1px solid #fff}.perk b{display:block;font:700 36px Fredoka;color:var(--wine);margin-bottom:6px}.perk h3{font-size:22px;margin-bottom:6px}.perk p{color:var(--mute);font-size:15px}
 @media(max-width:860px){.perks{grid-template-columns:1fr 1fr}}
-.formbox{max-width:620px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:40px;box-shadow:var(--sh)}
+.formbox{max-width:640px;margin:0 auto;background:var(--card);border-radius:32px;padding:40px;box-shadow:var(--sh);border:1px solid #fff}
+.price{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--night);color:#fff;border-radius:20px;padding:16px 20px;margin:18px 0 6px}
+.price b{font:700 36px Fredoka}.price span{font-size:14px;opacity:.75}
+.secure{display:flex;gap:8px;align-items:center;justify-content:center;color:var(--mute);font-size:13px;margin-top:10px}
 @media(max-width:600px){.formbox{padding:26px 20px}}
+.page-head .logo-float{position:absolute;inset-inline-end:8%;top:50%;width:220px;transform:translateY(-50%) rotate(10deg);filter:drop-shadow(0 30px 40px rgba(0,0,0,.5))}
+@media(max-width:900px){.page-head .logo-float{display:none}}
 </style>
 </head>
 <body>
-<header class="solid"><div class="bar"><a class="logo" href="/"><span class="mk">₪</span>קנית<i>·</i>זכית</a><nav><a class="l" href="/">לאתר המבצע</a><a class="btn small" href="#form">שריון מקום</a></nav></div></header>
+<a class="skip" href="#main">דלג לתוכן</a>
+<header class="solid"><div class="bar"><a class="logo" href="/" aria-label="קנית·זכית – דף הבית"><img src="/logo.svg" alt="" width="44" height="44"><span>קנית<i>·</i><b>זכית</b></span></a><nav><a class="l" href="/">לאתר המבצע</a><a class="btn small gold" href="#form">הרשמה ותשלום</a></nav></div></header>
 <div class="page-head"><div class="wrap">
+  <img class="logo-float" src="/logo.svg" alt="">
   <span class="eyebrow">לבעלי עסקים ברעננה</span>
   <h1>תושבים יבחרו<br><span class="gold-t">לקנות דווקא אצלכם.</span></h1>
-  <p>כל קנייה אצלכם שווה ללקוח כרטיסים להגרלות על חופשה ביוון, iPhone ועוד 14 פרסים. סיבה טובה לבחור בכם ולא במתחרה מהרחוב הסמוך.</p>
-  <div class="cta-row"><a class="btn huge" href="#form">אני רוצה להצטרף</a></div>
+  <p>כל קנייה אצלכם שווה ללקוח כרטיסים להגרלות על טיסה זוגית לאירופה, iPhone, ספא ועוד. סיבה טובה לבחור בכם ולא במתחרה מהרחוב הסמוך.</p>
+  <div class="cta-row"><a class="btn huge gold" href="#form">הרשמה ותשלום אונליין</a></div>
 </div></div>
-<main class="wrap">
+<main id="main" class="wrap">
   <section style="padding-bottom:60px">
-    <div class="sh"><span class="eyebrow">אפס מאמץ מצדכם</span><h2>איך זה <span class="hl">עובד?</span></h2></div>
+    <div class="sh"><span class="eyebrow">אפס מאמץ מצדכם</span><h2>איך זה <span class="wine-t">עובד?</span></h2></div>
     <div class="steps">
-      <div class="step"><span class="num">01</span><h3>הלקוח קונה</h3><p>כרגיל. בלי מכשיר, בלי אפליקציה ובלי שינוי בקופה.</p></div>
-      <div class="step"><span class="num">02</span><h3>מצלם קבלה</h3><p>באתר שלנו. המערכת מאמתת שהקנייה באמת הייתה אצלכם.</p></div>
-      <div class="step"><span class="num">03</span><h3>אתם רואים תוצאות</h3><p>דוח מסודר: כמה קניות, כמה לקוחות ואיזה סכום הגיע אליכם דרכנו.</p></div>
+      <div class="step"><span class="num" aria-hidden="true">1</span><h3>הלקוח קונה</h3><p>כרגיל. בלי מכשיר, בלי אפליקציה ובלי שינוי בקופה.</p></div>
+      <div class="step"><span class="num" aria-hidden="true">2</span><h3>מצלם קבלה</h3><p>באתר שלנו. המערכת מאמתת שהקנייה באמת הייתה אצלכם.</p></div>
+      <div class="step"><span class="num" aria-hidden="true">3</span><h3>אתם רואים תוצאות</h3><p>דוח מסודר: כמה קניות, כמה לקוחות ואיזה סכום הגיע אליכם דרכנו.</p></div>
     </div>
   </section>
   <section style="padding-top:0">
     <div class="perks">
       <div class="perk"><b>NEWS</b><h3>חשיפה</h3><p>הכרזה בערוץ "רעננה NEWS" ומקום קבוע באתר המבצע.</p></div>
       <div class="perk"><b>+</b><h3>לקוחות חדשים</h3><p>אנשים מגיעים במיוחד כדי לצבור כרטיסים.</p></div>
-      <div class="perk"><b>0%</b><h3>בלי עמלות</h3><p>תשלום קבוע אחד, בלי אחוזים מהמכירות.</p></div>
-      <div class="perk"><b>250 ₪</b><h3>להצטרפות</h3><p>עסק אחד בכל תחום. מי שמקדים, תופס.</p></div>
+      <div class="perk"><b>0%</b><h3>בלי עמלות</h3><p>תשלום הצטרפות אחד, בלי אחוזים מהמכירות.</p></div>
+      <div class="perk"><b>1</b><h3>עסק בכל תחום</h3><p>מספר המקומות בכל תחום מוגבל. מי שמקדים, תופס.</p></div>
     </div>
   </section>
   <section id="form" style="padding-top:0">
     <div class="formbox">
-      <h2 style="font-size:40px;text-align:center">שריון מקום</h2><p class="note" style="text-align:center">נחזור אליכם תוך יום עסקים</p>
+      <h2 style="font-size:42px;text-align:center">הרשמה ותשלום</h2><p class="note" style="text-align:center">ממלאים פרטים, משלמים בכרטיס אשראי בעמוד מאובטח, ומקבלים קבלה למייל</p>
       <div id="bizForm">
-        <label>שם העסק</label><input id="b_business">
-        <label>תחום</label><input id="b_category" placeholder="בית קפה, מספרה, חנות בגדים…">
-        <div class="two"><div><label>איש קשר</label><input id="b_contact"></div><div><label>טלפון</label><input id="b_phone" inputmode="tel"></div></div>
-        <label>משהו שחשוב לנו לדעת? (לא חובה)</label><textarea id="b_notes" rows="2"></textarea>
-        <button class="btn full huge" id="bSend">שריון מקום</button><div class="err" id="bErr"></div>
+        <label for="b_business">שם העסק</label><input id="b_business" autocomplete="organization">
+        <div class="two"><div><label for="b_category">תחום</label><input id="b_category" placeholder="בית קפה, מספרה…"></div><div><label for="b_company_no">ח.פ / מספר עוסק</label><input id="b_company_no" inputmode="numeric"></div></div>
+        <div class="two"><div><label for="b_contact">איש קשר</label><input id="b_contact" autocomplete="name"></div><div><label for="b_phone">טלפון נייד</label><input id="b_phone" inputmode="tel" autocomplete="tel"></div></div>
+        <label for="b_email">אימייל (לקבלה)</label><input id="b_email" type="email" autocomplete="email">
+        <label for="b_notes">משהו שחשוב לנו לדעת? (לא חובה)</label><textarea id="b_notes" rows="2"></textarea>
+        <div class="price"><div><span>דמי הצטרפות</span><br><b id="bPrice">250 ₪</b></div><span>תשלום חד-פעמי · קבלה כדין</span></div>
+        <label class="chk"><input type="checkbox" id="b_agree"> קראתי ואני מסכים/ה ל<a href="/terms.html#b" target="_blank">תנאי ההצטרפות לעסקים</a> ול<a href="/privacy.html" target="_blank">מדיניות הפרטיות</a>.</label>
+        <button class="btn full huge" id="bSend">למעבר לתשלום מאובטח</button><div class="err" id="bErr" role="alert"></div>
+        <div class="secure">התשלום מתבצע בעמוד הסליקה של SUMIT. פרטי האשראי לא נשמרים אצלנו.</div>
       </div>
-      <div id="bDone" class="hide" style="text-align:center;padding:30px 0"><h3 style="font-size:32px">קיבלנו, תודה.</h3><p class="note">נחזור אליכם בקרוב.</p></div>
+      <div id="bDone" class="hide" style="text-align:center;padding:30px 0"><img src="/logo.svg" alt="" style="width:90px;margin:0 auto 10px"><h3 style="font-size:32px">התשלום התקבל. ברוכים הבאים!</h3><p class="note">קבלה נשלחה אליכם. נחזור תוך יום עסקים להפעלת העסק באתר.</p></div>
+      <div id="bLater" class="hide" style="text-align:center;padding:30px 0"><h3 style="font-size:30px">קיבלנו את הפרטים.</h3><p class="note">נחזור אליכם בקרוב עם קישור לתשלום.</p></div>
     </div>
   </section>
 </main>
-<footer><div><a class="logo" href="/">קנית<i style="color:var(--gold)">·</i>זכית</a></div><div>מבית רעננה NEWS</div></footer>
+<footer><div><a class="logo" href="/"><img src="/logo.svg" alt="" width="34" height="34"><span>קנית<i>·</i><b>זכית</b></span></a></div><div><a href="/terms.html">תקנון</a> · <a href="/privacy.html">פרטיות</a> · <a href="/accessibility.html">נגישות</a></div></footer>
+<script src="/a11y.js"></script>
 <script>
 const $ = s => document.querySelector(s);
+fetch('/api/biz/price').then(r => r.json()).then(j => $('#bPrice').textContent = j.price + ' ₪');
+const q = new URLSearchParams(location.search);
+if (q.get('paid')) { $('#bizForm').classList.add('hide'); $('#bDone').classList.remove('hide'); setTimeout(() => $('#form').scrollIntoView(), 300); }
+if (q.get('cancel')) $('#bErr').textContent = 'התשלום לא הושלם. אפשר לנסות שוב.';
 $('#bSend').onclick = async () => {
-  const body = {}; ['business', 'category', 'contact', 'phone', 'notes'].forEach(k => body[k] = $('#b_' + k).value);
-  const r = await fetch('/api/business-apply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const j = await r.json();
-  if (!r.ok) return $('#bErr').textContent = j.error;
-  $('#bizForm').classList.add('hide'); $('#bDone').classList.remove('hide');
+  const body = {}; ['business', 'category', 'contact', 'phone', 'notes', 'email', 'company_no'].forEach(k => body[k] = $('#b_' + k).value);
+  body.agree = $('#b_agree').checked;
+  const b = $('#bSend'); b.disabled = true; $('#bErr').textContent = '';
+  try {
+    const r = await fetch('/api/biz/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'שגיאה');
+    if (j.url) return location.href = j.url;
+    $('#bizForm').classList.add('hide'); $('#bLater').classList.remove('hide');
+  } catch (e) { $('#bErr').textContent = e.message; }
+  b.disabled = false;
 };
 </script>
 </body>
