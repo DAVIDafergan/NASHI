@@ -321,8 +321,11 @@ const bridge = async (path, body) => {
   const r = await fetch(process.env.PAY_BRIDGE_URL.replace(/\/$/, '') + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Ext-Key': process.env.PAY_BRIDGE_KEY }, body: JSON.stringify(body), signal: AbortSignal.timeout(25000) });
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'שגיאת תשלום'); return j;
 };
+// מונה "עסקים כבר בפנים" = מספר בסיס שהמנהל קובע + כל עסק שאושר או שילם
 const bizShown = () => { const v = db.prepare("SELECT v FROM kv WHERE k='biz_shown'").get()?.v; return v == null ? 5 : Number(v) || 0; };
-app.get('/api/biz/price', (req, res) => res.json({ price: BIZ_PRICE, joined: bizShown() }));
+const bizApproved = () => db.prepare("SELECT COUNT(*) c FROM applications WHERE status IN ('paid','approved')").get().c;
+app.get('/api/biz/price', (req, res) => res.json({ price: BIZ_PRICE, joined: bizShown() + bizApproved() }));
+app.post('/api/admin/applications/:id/approve', needAdmin, (req, res) => { db.prepare("UPDATE applications SET status=CASE WHEN status='approved' THEN 'callback' ELSE 'approved' END WHERE id=? AND status<>'paid'").run(req.params.id); res.json({ ok: true }); });
 app.post('/api/admin/biz-shown', needAdmin, (req, res) => { const n = Math.max(0, Math.min(9999, parseInt(req.body.n) || 0)); db.prepare("INSERT INTO kv(k,v) VALUES('biz_shown',?) ON CONFLICT(k) DO UPDATE SET v=excluded.v").run(String(n)); res.json({ ok: true, n }); });
 const logoUp = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 }, fileFilter: (q, f, cb) => cb(null, /^image\//.test(f.mimetype)) });
 app.post('/api/biz/checkout', logoUp.single('logo'), async (req, res) => {
@@ -414,7 +417,7 @@ app.get('/api/admin/overview', needAdmin, (req, res) => res.json({
   raffles: db.prepare('SELECT r.*, u.phone wphone, u.name wname FROM raffles r LEFT JOIN users u ON u.id=r.winner_user_id ORDER BY draw_date').all(),
   applications: db.prepare('SELECT * FROM applications ORDER BY id DESC').all(),
   users: db.prepare('SELECT COUNT(*) c FROM users').get().c,
-  sms: smsConfig().type, siteOpen: siteOpen(), visits: visitStats(), bizShown: bizShown(), previewUrl: (PUBLIC() || '') + '/?preview=' + PREVIEW_KEY,
+  sms: smsConfig().type, siteOpen: siteOpen(), visits: visitStats(), bizShown: bizShown(), bizApproved: bizApproved(), previewUrl: (PUBLIC() || '') + '/?preview=' + PREVIEW_KEY,
   smsCfg: (c => ({ type: c.type, user: c.user || '', sender: c.sender || '', sid: c.sid || '', from: c.from || '', hasToken: !!c.token }))(smsConfig()),
 }));
 // הגדרת ספק SMS מהפאנל. טוקן ריק = משאירים את הקיים
