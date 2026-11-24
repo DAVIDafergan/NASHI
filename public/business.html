@@ -53,6 +53,7 @@ header{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08)}
 .poster img.l{width:58px;margin:0 auto}.poster .n{font:800 30px A;margin-top:6px}.poster .s{font:600 12px A;letter-spacing:.14em;color:var(--gold);margin-top:2px}
 .poster .yl{width:120px;height:120px;margin:22px auto 16px;border:1px dashed #C9CED6;border-radius:8px;display:grid;place-items:center;color:var(--mute);font-size:14px;overflow:hidden}.poster .yl img{width:100%;height:100%;object-fit:contain;padding:8px}
 .poster .t{font:800 21px/1.3 A}.poster .f{margin-top:16px;font-size:13px;color:var(--mute);border-top:1px solid var(--line);padding-top:12px}
+.joined{display:flex;align-items:center;justify-content:center;gap:12px;margin:22px auto 0;width:fit-content;background:#fff;border:1px solid var(--line);border-radius:999px;padding:10px 22px;font-size:17px;color:var(--ink2)}.joined b{font:800 26px A;color:var(--ink)}.joined i{width:10px;height:10px;border-radius:50%;background:#1f9d55;box-shadow:0 0 0 0 rgba(31,157,85,.5);animation:pl 1.8s infinite}@keyframes pl{70%{box-shadow:0 0 0 10px rgba(31,157,85,0)}100%{box-shadow:0 0 0 0 rgba(31,157,85,0)}}
 .proof{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:-46px;position:relative}
 .proof div{padding:24px;text-align:center}.proof div+div{border-inline-start:1px solid var(--line)}
 .proof b{display:block;font:800 40px A;line-height:1.1}.proof span{font-size:15px;color:var(--ink2)}
@@ -119,6 +120,7 @@ footer{max-width:1120px;margin:0 auto;padding:40px 24px 60px;display:flex;justif
     <div><b>35</b><span>בעלי עסקים השתתפו בפעילות הקודמת</span></div>
     <div><b dir="ltr">2,000+</b><span>תושבים לקחו חלק בפעילות הקודמת</span></div>
   </div>
+  <div class="joined hide" id="joinedBox" aria-live="polite"><i aria-hidden="true"></i><span><b id="joinedN">0</b> עסקים כבר בפנים</span></div>
 
   <section>
     <div class="sh"><div class="kicker">מה העסק מקבל</div><h2>שותפות שמביאה לקוחות, בלי לשנות דבר בעבודה שלכם</h2></div>
@@ -161,6 +163,7 @@ footer{max-width:1120px;margin:0 auto;padding:40px 24px 60px;display:flex;justif
     <div class="form">
       <div id="bizForm">
         <h2>הרשמה כעסק שותף</h2>
+        <p class="joinedS hide" id="joinedS" style="margin:-4px 0 10px;color:#1f7a47;font-weight:700">● <span id="joinedN2"></span> עסקים כבר נרשמו</p>
         <p class="sub">ממלאים פרטים, ואנחנו חוזרים אליכם לסגירת הפרטים והתשלום. ההרשמה לא מחייבת.</p>
         <label for="b_business">שם העסק *</label><input id="b_business" autocomplete="organization">
         <div class="two"><div><label for="b_category">תחום *</label><input id="b_category" placeholder="בית קפה, מספרה, חנות בגדים…"></div><div><label for="b_company_no">ח.פ / מספר עוסק</label><input id="b_company_no" inputmode="numeric"></div></div>
@@ -183,7 +186,9 @@ footer{max-width:1120px;margin:0 auto;padding:40px 24px 60px;display:flex;justif
 <script src="/a11y.js"></script>
 <script>
 const $ = s => document.querySelector(s);
-fetch('/api/biz/price').then(r => r.json()).then(j => $('#bPrice').textContent = j.price);
+fetch('/api/biz/price').then(r => r.json()).then(j => { $('#bPrice').textContent = j.price;
+  if (j.joined > 0) { $('#joinedBox').classList.remove('hide'); $('#joinedS').classList.remove('hide'); $('#joinedN2').textContent = j.joined;
+    let k = 0; const t = setInterval(() => { k++; $('#joinedN').textContent = k; if (k >= j.joined) clearInterval(t); }, Math.max(30, 900 / j.joined)); } });
 if (new URLSearchParams(location.search).get('paid')) { $('#bizForm').classList.add('hide'); $('#bPaid').classList.remove('hide'); setTimeout(() => $('#form').scrollIntoView(), 300); }
 $('#b_logo').onchange = () => { const f = $('#b_logo').files[0]; if (!f) return; const u = URL.createObjectURL(f);
   $('#logoPv').style.backgroundImage = `url('${u}')`; $('#logoPv').textContent = ''; $('#posterLogo').innerHTML = `<img src="${u}" alt="">`; $('#cardLogo').innerHTML = `<img src="${u}" alt="">`; };
