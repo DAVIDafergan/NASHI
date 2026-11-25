@@ -119,6 +119,7 @@ const SUB_RULES = [
   ['GET|POST|PATCH|DELETE', /^\/api\/campaigns\/\d+\/(donations(\.xlsx|\.csv|\/import|\/bulk|\/\d+)?|unfinished|clear-test|reconcile)$/, 'donations'],
   ['GET|POST|PUT|DELETE', /^\/api\/campaigns\/\d+\/teams(\.xlsx|\/\d+)?$/, 'teams'],
   ['GET|POST', /^\/api\/campaigns\/\d+\/(recipients|messages|messages\/log|mail-preview|mail-test)$/, 'messages'], ['GET', /^\/api\/msg-channels$/, 'messages'],
+  ['GET|POST|PUT|DELETE', /^\/api\/campaigns\/\d+\/events(\/\d+(\/(pledges(\/\d+(\/show)?)?|screen))?)?$/, 'donations'],
   ['POST', /^\/api\/assist$/, ''], ['POST', /^\/api\/me\/password$/, ''], ['POST', /^\/api\/me\/logout-all$/, ''], ['PUT', /^\/api\/me$/, ''], ['POST', /^\/api\/upload$/, '']
 ];
 const subAllowed = (u, method, p) => { const r = SUB_RULES.find(([m, re]) => m.split('|').includes(method) && re.test(p)); if (!r) return false; return !r[2] || r[2].split('|').some(k => u.sub[k]); };
@@ -133,7 +134,8 @@ const own = (req, res, next) => {
 
 // SSE hub per campaign
 const subs = new Map(); const sseIp = new Map();
-const emit = (cid, ev, data) => { const set = subs.get(cid); if (!set || !set.size) return; const msg = `event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`; for (const r of set) { try { r.write(msg); } catch { } } };
+let evHook = null; // set by lib/events.js: live donations also go to connected event screens
+const emit = (cid, ev, data) => { if (ev === 'donation' && data && data.donation && evHook) evHook(cid, data); const set = subs.get(cid); if (!set || !set.size) return; const msg = `event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`; for (const r of set) { try { r.write(msg); } catch { } } };
 // the full ambassadors leaderboard is heavy: during a donation rush send it at most once every 2s per campaign
 const teamTimers = new Map();
 const emitTeams = (c, test) => { if (!subs.get(c.id)?.size || teamTimers.has(c.id)) return; teamTimers.set(c.id, setTimeout(() => { teamTimers.delete(c.id); try { const cc = db.prepare('SELECT * FROM campaigns WHERE id=?').get(c.id); if (cc) emit(c.id, 'refresh', { stats: stats(cc, test), teams: teamStats(cc, test) }); } catch { } }, 2000)); };
@@ -1495,6 +1497,7 @@ app.get('/og/c/:slug.jpg', async (req, res) => {
   try { if (!fs.existsSync(out)) { fs.mkdirSync(dir, { recursive: true }); await require('sharp')(local).rotate().resize(1200, 630, { fit: 'cover', position: 'attention' }).jpeg({ quality: 80, mozjpeg: true }).toFile(out); } res.setHeader('Cache-Control', 'public, max-age=86400'); res.type('jpg').sendFile(out); }
   catch (e) { console.error('og', e.message); res.sendFile(pub('og.jpg')); }
 });
+{ const ev = require('./lib/events')(app, { db, J, bad, auth, own, stats, isTest, safeUrl, SITE, pub }); evHook = ev.forward; }
 app.use(express.static(pub(''), { maxAge: '1h', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
 app.get('/c/:slug/screen', (_, res) => res.sendFile(pub('screen.html')));
 app.get('/c/:slug/widget', (_, res) => res.sendFile(pub('widget.html')));

@@ -576,7 +576,7 @@ async function load(){
   renderStats(D.stats);if(D.team)reloadDonors();else renderDonors(D.donations,true);renderTeams(D.teams);timer();setInterval(timer,1000);stream();setTimeout(()=>$('#loader').classList.add('off'),900);
   renderUpdates(D.campaign.updates||[]);const idm=(c.settings||{}).idField;$('#idWrap').hidden=!idm;if(idm){$('#idWrap span').textContent=T(idm==='required'?'idNum':'idNumOpt');$('#fId').required=idm==='required'}
   fbInit();const qs=new URLSearchParams(location.search);const th=qs.get('thanks');if(th)showThanks(th);const rs=qs.get('resume');if(rs&&!D.campaign.closed)resumeDon(rs);
-  const qa=+qs.get('amount');if(qa>0){sel=qa;selLevel=null;setTimeout(()=>{openDonate()},600)}else if(qs.get('donate'))setTimeout(()=>openDonate(),600);
+  {const pn=qs.get('name'),pp=qs.get('phone');if(pn){$('#fName').value=pn.slice(0,80);$('#jName').value=pn.slice(0,80)}if(pp){$('#fPhone').value=pp.slice(0,20);$('#jPhone').value=pp.slice(0,20)}}const qa=+qs.get('amount');if(qa>0){sel=qa;selLevel=null;setTimeout(()=>{openDonate()},600)}else if(qs.get('donate'))setTimeout(()=>openDonate(),600);if(qs.get('join')&&!D.campaign.closed)setTimeout(()=>openJoin(),700);
   if(new URLSearchParams(location.search).get('cancel'))toast(T('cancelled'));
 }
 function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;[r,g,b]=[r,g,b].map(v=>Math.max(0,Math.min(255,v)));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0')}
