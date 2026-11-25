@@ -320,8 +320,8 @@ html[data-theme=dark] .loader .heart{stroke:#fff}
 .tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink)}
 .ncard{position:fixed;top:84px;inset-inline-end:16px;z-index:65;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--cardS);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px -20px rgba(60,50,120,.5);width:min(340px,calc(100vw - 32px));transform:translateX(120%);opacity:0;transition:.5s cubic-bezier(.22,1,.36,1)}
 html[dir=rtl] .ncard{transform:translateX(-120%)}
-.ncard.on{transform:none;opacity:1}
-.ncard .av{width:40px;height:40px;border-radius:999px;background:#efe9ff;color:#4c2fd0;display:grid;place-items:center;font-weight:700}
+.ncard.on,html[dir=rtl] .ncard.on{transform:none;opacity:1}
+.ncard .av{width:40px;height:40px;border-radius:999px;background:color-mix(in srgb,var(--v) 14%,#fff);color:var(--v);display:grid;place-items:center;font-weight:700}
 .ncard .i{min-width:0}.ncard small{display:block;font-size:11px;color:var(--mut)}.ncard b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ncard span{display:block;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ncard .a{font-weight:700;font-size:17px;color:var(--v)}
 @media(max-width:640px){.pcard{padding:18px 16px;border-radius:18px;margin-top:-28px;width:calc(100% - 0px)}.pcard .big{font-size:40px}.pcard .pct{min-width:70px;padding:8px 10px}.pcard .pct b{font-size:18px}.card{padding:18px;border-radius:16px}.maincol{gap:12px}.layout{gap:12px}.mcta .btn.grad{flex-basis:100%}.pcard .amt{min-width:0;flex:1 1 30%}.amt.lvb{min-width:0;flex:1 1 46%}.ncard{top:auto;bottom:96px}}
