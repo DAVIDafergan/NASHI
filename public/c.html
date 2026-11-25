@@ -405,13 +405,9 @@ html{scroll-behavior:smooth}
 body{padding-bottom:0!important}
 footer{padding:32px 16px calc(16px + env(safe-area-inset-bottom))!important;margin-bottom:0}
 
-/* about: clean heading, even paragraphs */
-#about .hd h2{position:relative;font-size:21px;font-weight:700;padding-inline-start:14px}
-#about .hd h2::before{content:"";position:absolute;inset-inline-start:0;top:.2em;bottom:.2em;width:4px;border-radius:4px;background:var(--v)}
-#about .story{color:var(--ink)}
-#about .story p:first-child{font-size:1.06em;font-weight:600}
-#about .story p{margin-bottom:14px}#about .story p:last-child{margin-bottom:0}
-#about .more{margin-top:10px;color:var(--v);font-weight:700}
+/* iOS Safari draws black/grey boxes for blurred/fixed layers: keep the header solid and drop the background blobs on touch devices */
+header{background:var(--paper)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+@media (hover:none),(max-width:860px){.aur{display:none!important}}
 </style>
 </head>
 <body>
