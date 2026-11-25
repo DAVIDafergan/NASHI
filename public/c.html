@@ -662,6 +662,6 @@ async function showThanks(token){const d=await fetch('/api/d/'+token).then(r=>r.
   $('#thxAmbGo').onclick=async()=>{const b=$('#thxAmbGo');b.disabled=true;try{const r=await fetch('/api/d/'+token+'/ambassador',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(x=>x.json());if(r.error)throw new Error(r.error);const L=location.origin+r.link;$('#ambLink').textContent=L;$('#ambWa').href=`https://wa.me/?text=${encodeURIComponent(T('ambMsg',{t:cs.title,u:L}))}`;$('#ambArea').href=r.area;$('#thxAmb').hidden=true;$('#thxAmbOk').hidden=false;$('#thxWa').hidden=true}catch(e){b.disabled=false;alert(e.message)}}}
 load();
 </script>
-<script>if(!/[?&]embed=1/.test(location.search)){const s=document.createElement("script");s.src="/a11y.js?v=3";s.defer=true;document.head.appendChild(s)}else document.documentElement.classList.add("embed")</script>
+<script>if(!/[?&]embed=1/.test(location.search)){const s=document.createElement("script");s.src="/a11y.js?v=4";s.defer=true;document.head.appendChild(s)}else document.documentElement.classList.add("embed")</script>
 </body>
 </html>

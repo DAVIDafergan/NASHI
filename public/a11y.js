@@ -3,7 +3,7 @@
   const K = 'ttm_a11y';
   let st = {}; try { st = JSON.parse(localStorage.getItem(K) || '{}'); } catch { }
   const css = `
-  .a11y-btn{position:fixed;bottom:24px;inset-inline-start:0;transform:none;z-index:9000;width:44px;height:44px;border-radius:0 14px 14px 0;background:#1c1917;color:#fff;display:grid;place-items:center;border:0;cursor:pointer;box-shadow:0 8px 24px -8px rgba(0,0,0,.5);font-size:22px}
+  .a11y-btn{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));inset-inline-start:0;transform:none;z-index:9000;width:34px;height:38px;border-radius:0 12px 12px 0;background:rgba(28,25,23,.55);color:#fff;display:grid;place-items:center;border:0;cursor:pointer;box-shadow:0 4px 14px -6px rgba(0,0,0,.4);opacity:.75;transition:opacity .2s,background .2s}.a11y-btn:hover,.a11y-btn:focus-visible{opacity:1;background:#1c1917}.a11y-btn svg{width:20px;height:20px}
   html[dir=rtl] .a11y-btn{border-radius:14px 0 0 14px}
   .a11y-btn:focus-visible{outline:3px solid #ffd600;outline-offset:2px}
   .a11y-pnl{position:fixed;bottom:24px;inset-inline-start:52px;transform:none;z-index:9001;width:min(300px,calc(100vw - 70px));background:#fff;color:#1c1917;border:1px solid #e9e6e2;border-radius:16px;padding:14px;box-shadow:0 24px 60px -20px rgba(0,0,0,.4);font:14px/1.5 Rubik,system-ui,sans-serif;display:none}
@@ -38,7 +38,7 @@
     document.querySelectorAll('.a11y-pnl button[data-k]').forEach(b => b.setAttribute('aria-pressed', !!st[b.dataset.k]));
     try { localStorage.setItem(K, JSON.stringify(st)); } catch { }
   };
-  const btn = document.createElement('button'); btn.className = 'a11y-btn'; btn.setAttribute('aria-label', he ? 'תפריט נגישות' : 'Accessibility menu'); btn.title = he ? 'נגישות' : 'Accessibility'; btn.innerHTML = '♿';
+  const btn = document.createElement('button'); btn.className = 'a11y-btn'; btn.setAttribute('aria-label', he ? 'תפריט נגישות' : 'Accessibility menu'); btn.title = he ? 'נגישות' : 'Accessibility'; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="4" r="2"/><path d="M19 8.5c-2 .6-4.3.9-7 .9s-5-.3-7-.9l-.5 1.9c1.9.6 3.9.9 5.8 1V14l-2 7.5 1.9.5L12 16l1.8 6 1.9-.5-2-7.5v-2.6c1.9-.1 3.9-.4 5.8-1z"/></svg>';
   const pnl = document.createElement('div'); pnl.className = 'a11y-pnl'; pnl.setAttribute('role', 'dialog'); pnl.setAttribute('aria-label', he ? 'הגדרות נגישות' : 'Accessibility settings');
   pnl.innerHTML = `<h4>${he ? 'נגישות' : 'Accessibility'}<button class="x" aria-label="${he ? 'סגירה' : 'Close'}">✕</button></h4>` + opts.map(([k, l, i]) => `<button data-k="${k}" aria-pressed="false"><span>${l}</span><b>${i}</b></button>`).join('') + `<a href="/accessibility">${he ? 'הצהרת נגישות' : 'Accessibility statement'}</a>`;
   const skip = document.createElement('a'); skip.className = 'a11y-skip'; skip.href = '#main'; skip.textContent = he ? 'דלגו לתוכן הראשי' : 'Skip to main content';
