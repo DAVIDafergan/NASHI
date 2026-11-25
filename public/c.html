@@ -247,7 +247,7 @@ html[data-theme=dark] .loader .heart{stroke:#fff}
 @keyframes lfade{to{opacity:1}}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:99}
 .hero .big{display:inline-block;transition:transform .3s}
-.hero .big.bump{animation:bump .6s cubic-bezier(.22,1,.36,1)}
+.big.bump{animation:bump .6s cubic-bezier(.22,1,.36,1)}
 @keyframes bump{30%{transform:scale(1.06)}}
 .heartf{position:fixed;z-index:98;pointer-events:none;font-size:28px;animation:hf 1.6s ease-out forwards}
 @keyframes hf{to{transform:translateY(-140px) scale(1.6);opacity:0}}
@@ -263,7 +263,7 @@ html[data-theme=dark] .loader .heart{stroke:#fff}
 .pcard{padding:22px}
 .prow{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
 .pcard .big{font-weight:800;font-size:clamp(38px,6vw,56px);line-height:1;letter-spacing:-.02em;color:var(--ink);display:inline-block;padding-bottom:.06em}
-.pcard .big .cur{font-size:.5em;vertical-align:top;margin-inline-end:4px}
+.pcard .big{display:inline-flex!important;align-items:baseline;direction:ltr;gap:.1em}.pcard .big .cur{font-size:.58em;font-weight:700;vertical-align:baseline;margin:0;opacity:.85;letter-spacing:0}
 .pcard .of{color:var(--mut);font-size:14px;margin-top:2px}.pcard .of b{color:var(--ink)}
 .pcard .pct{text-align:center;background:var(--soft);border-radius:14px;padding:10px 14px;min-width:84px}
 .pcard .pct b{display:block;font-weight:700;font-size:22px}.pcard .pct span{font-size:11px;color:var(--mut)}
@@ -611,7 +611,7 @@ $$('.tabs button').forEach(b=>b.onclick=()=>{$$('.tabs button').forEach(x=>x.cla
 $('#dq').oninput=e=>{dQ=e.target.value.trim();clearTimeout(reloadDonors.t);reloadDonors.t=setTimeout(reloadDonors,250)};
 async function reloadDonors(){offset=60;const l=await fetch(`/api/c/${slug}/donations?sort=${dTab}&q=${encodeURIComponent(dQ)}${D.team?'&team='+D.team.id:''}`).then(r=>r.json());renderDonors(l,true)}
 function renderUpdates(u){const sec=$('#updates');if(!u.length){sec.hidden=true;return}sec.hidden=false;$('#updList').innerHTML=u.map(x=>`<div class="ui"><small>${ago(x.created)}</small>${x.title?`<b>${esc(x.title)}</b>`:''}${x.body?`<p>${esc(x.body)}</p>`:''}${x.image?`<img src="${esc(x.image)}" alt="">`:''}</div>`).join('')}
-function stream(){const es=new EventSource(`/api/c/${slug}/stream`);es.addEventListener('update',async()=>{const d=await fetch(`/api/c/${slug}`).then(r=>r.json());renderUpdates(d.campaign.updates||[])});es.addEventListener('donation',e=>{const {donation,stats,teams}=JSON.parse(e.data);renderStats(stats);if(teams)renderTeams(teams);const big=$('.hero .big');big.classList.remove('bump');void big.offsetWidth;big.classList.add('bump');hearts(5);if(!D.team||donation.team_id===D.team.id){const el=$('#donorsList');if(el.querySelector('.empty'))el.innerHTML='';el.insertAdjacentHTML('afterbegin',donorRow(donation));el.firstElementChild.classList.add('new')}const nm=donation.anonymous||!donation.name?T('anonDonor'):donation.name;sideCard(nm,donation)});es.addEventListener('refresh',e=>{const {stats,teams}=JSON.parse(e.data);if(stats)renderStats(stats);if(teams)renderTeams(teams)})}
+function stream(){const es=new EventSource(`/api/c/${slug}/stream`);es.addEventListener('update',async()=>{const d=await fetch(`/api/c/${slug}`).then(r=>r.json());renderUpdates(d.campaign.updates||[])});es.addEventListener('donation',e=>{const {donation,stats,teams}=JSON.parse(e.data);renderStats(stats);if(teams)renderTeams(teams);const big=$('.pcard .big')||$('.big');if(big){big.classList.remove('bump');void big.offsetWidth;big.classList.add('bump')}hearts(5);if(!D.team||donation.team_id===D.team.id){const el=$('#donorsList');if(el.querySelector('.empty'))el.innerHTML='';el.insertAdjacentHTML('afterbegin',donorRow(donation));el.firstElementChild.classList.add('new')}const nm=donation.anonymous||!donation.name?T('anonDonor'):donation.name;sideCard(nm,donation)});es.addEventListener('refresh',e=>{const {stats,teams}=JSON.parse(e.data);if(stats)renderStats(stats);if(teams)renderTeams(teams)})}
 
 // ---- donate flow ----
 function showStep(n){['stepAmt','stepForm','stepPay','stepThx'].forEach((id,i)=>$('#'+id).hidden=i!==n);$('#mod').classList.add('on');document.body.style.overflow='hidden'}
