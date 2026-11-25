@@ -404,6 +404,14 @@ html{scroll-behavior:smooth}
 /* footer sits at the very bottom */
 body{padding-bottom:0!important}
 footer{padding:32px 16px calc(16px + env(safe-area-inset-bottom))!important;margin-bottom:0}
+
+/* about: clean heading, even paragraphs */
+#about .hd h2{position:relative;font-size:21px;font-weight:700;padding-inline-start:14px}
+#about .hd h2::before{content:"";position:absolute;inset-inline-start:0;top:.2em;bottom:.2em;width:4px;border-radius:4px;background:var(--v)}
+#about .story{color:var(--ink)}
+#about .story p:first-child{font-size:1.06em;font-weight:600}
+#about .story p{margin-bottom:14px}#about .story p:last-child{margin-bottom:0}
+#about .more{margin-top:10px;color:var(--v);font-weight:700}
 </style>
 </head>
 <body>
@@ -553,7 +561,7 @@ async function load(){
   $$('.amt:not(.lvb)').forEach(b=>b.onclick=()=>{sel=+b.dataset.a;selLevel=null;$('#custAmt').value='';$('#custAmtM').value='';$$('.amt').forEach(x=>x.classList.toggle('on',x.dataset.a===b.dataset.a));eq()});
   $('#curSymP').textContent=cur;$('#pDonate').onclick=()=>{const v=+$('#custAmtP').value||0;if(v>0){sel=v;selLevel=null;$$('.amt').forEach(x=>x.classList.remove('on'))}openDonate()};$('#custAmtP').onkeydown=e=>{if(e.key==='Enter')$('#pDonate').click()};
   $('#custAmt').oninput=$('#custAmtM').oninput=$('#custAmtP').oninput=e=>{sel=+e.target.value||0;selLevel=null;$$('.amt').forEach(x=>x.classList.remove('on'));eq()};
-  $('#readMore').hidden=!(c.story&&c.story.length>400);$('#readMore').onclick=()=>{$('#story').classList.add('open');$('#readMore').hidden=true};
+  {const st=$('#story');st.classList.remove('clamp','open');const long=st.scrollHeight>300&&innerWidth<901;st.classList.toggle('clamp',long);$('#readMore').hidden=!long}$('#readMore').onclick=()=>{$('#story').classList.add('open');$('#readMore').hidden=true};
   // levels
   if(D.levels.length){$('#levels').innerHTML=D.levels.map(l=>{const left=l.stock?l.stock-l.used:null;return `<button data-id="${l.id}" data-a="${l.monthly?l.amount*(l.months||12):l.amount}" class="${left!==null&&left<=0?'off':''}"><b>${cur}${fmt(l.monthly?l.amount*(l.months||12):l.amount)}</b><span>${esc(l.name)}${l.monthly?' · '+T('perMonthX',{a:cur+fmt(l.amount),n:l.months||12}):''}</span>${l.descr?`<small>${esc(l.descr)}</small>`:''}${left!==null?`<span class="st">${left>0?T('left',{n:left}):T('soldOut')}</span>`:''}</button>`}).join('');
     $$('#levels button').forEach(b=>b.onclick=()=>{sel=+b.dataset.a;selLevel=+b.dataset.id;$$('.amt').forEach(x=>x.classList.remove('on'));$('#custAmt').value='';eq();go1()})}
