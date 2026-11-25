@@ -119,7 +119,7 @@ const SUB_RULES = [
   ['GET|POST|PATCH|DELETE', /^\/api\/campaigns\/\d+\/(donations(\.xlsx|\.csv|\/import|\/bulk|\/\d+)?|unfinished|clear-test|reconcile)$/, 'donations'],
   ['GET|POST|PUT|DELETE', /^\/api\/campaigns\/\d+\/teams(\.xlsx|\/\d+)?$/, 'teams'],
   ['GET|POST', /^\/api\/campaigns\/\d+\/(recipients|messages|messages\/log|mail-preview|mail-test)$/, 'messages'], ['GET', /^\/api\/msg-channels$/, 'messages'],
-  ['GET|POST|PUT|DELETE', /^\/api\/campaigns\/\d+\/events(\/\d+(\/(pledges(\/\d+(\/show)?)?|screen))?)?$/, 'donations'],
+  ['GET|POST|PUT|DELETE', /^\/api\/campaigns\/\d+\/events(\/\d+(\/(pledges(\.xlsx|\/\d+(\/show)?)?|screen|duplicate))?)?$/, 'donations'],
   ['POST', /^\/api\/assist$/, ''], ['POST', /^\/api\/me\/password$/, ''], ['POST', /^\/api\/me\/logout-all$/, ''], ['PUT', /^\/api\/me$/, ''], ['POST', /^\/api\/upload$/, '']
 ];
 const subAllowed = (u, method, p) => { const r = SUB_RULES.find(([m, re]) => m.split('|').includes(method) && re.test(p)); if (!r) return false; return !r[2] || r[2].split('|').some(k => u.sub[k]); };
