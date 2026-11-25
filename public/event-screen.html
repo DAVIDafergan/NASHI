@@ -1393,7 +1393,7 @@ function showPop(ev,done){
 /* ---------- live connection (GiveIL event: state + server-sent events) ---------- */
 let es=null,retry=800;const QS=location.search;
 function onMsg(m){
-    if(m.type==='state'){render(m.state)}
+    if(m.type==='state'){if(m.state.engine&&m.state.engine!=='gala'&&!/[?&]preview=1/.test(location.search)){location.reload();return}render(m.state)}
     else if(m.type==='donation'){if(!m.test&&S){S.total=m.total;S.count=m.count;S.goal=m.goal;S.recent.unshift(m.donation);S.recent=S.recent.slice(0,30);S.top=[...S.top,m.donation].sort((a,b)=>b.amount-a.amount).slice(0,10);S.wall=[m.donation,...(S.wall||[])].slice(0,300);S.amounts=S.amounts||{};S.amounts[m.donation.amount]=(S.amounts[m.donation.amount]||0)+1;renderTiers(S);renderTotals(m.total,m.count,m.goal);renderList(S);renderWall(S)}if(!m.silent)enqueue(m)}
     else if(m.type==='message'){$('msg').textContent=m.text;$('msg').classList.add('on');play('pop');setTimeout(()=>$('msg').classList.remove('on'),(m.seconds||10)*1000)}
     else if(m.type==='command'){if(m.cmd==='reload')location.reload();if(m.cmd==='confetti')confetti(300,true);if(m.cmd==='sound')play(m.arg||'chime');if(m.cmd==='goal'){goalShown=false;renderTotals(S.total,S.count,S.goal)}if(m.cmd==='idle'){settings.idleMsg=m.arg||'';$('idle').textContent=settings.idleMsg;$('idle').classList.toggle('on',!!settings.idleMsg)}}

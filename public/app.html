@@ -1201,7 +1201,8 @@ pages.c_share=async()=>{setTop('שיתוף',C.title);const url=`${location.origi
 
 
 // ---- campaign: fundraising event (screens + pledges) ----
-const EVSTY=[['gala','ערב התרמה – מעוטר','קירות שותפים, קשת זהב ותרומה שעפה למקום'],['hasidi','חסידי – קטיפה וכתר','וילונות קטיפה, כתר וזהב'],['grand','יוקרתי – מסך מלא','מונה ענק עם הלוגו'],['royal','מלכותי – מסגרת זהב','מסגרת מעוטרת על רקע כהה'],['shtar','שטר שותפות','קלף וזהב, כמו תעודה'],['wallcounter','קיר תורמים + מונה','כל התורמים בקיר, מונה בצד'],['split','רשימה + מונה','התורמים האחרונים לצד הסכום'],['minimal','מינימלי','מונה ענק בלבד']];
+const EVSTY=[['stage','במה','כהה וקולנועי, מונה ענק בצבע הקמפיין'],['gold','ערב גאלה','שחור וזהב, פונט מעוצב, לאירועי ערב'],['aurora','זוהר','צבעים זזים ושכבות זכוכית'],['score','לוח טלתון','כמו לוח תוצאות, פס התקדמות מחולק'],['paper','בהיר ונקי','רקע בהיר, מתאים לאולם מואר'],['wall','קיר שותפים','כל השותפים על הקיר, מונה למעלה'],['gala','קלאסי מעוטר','מסגרות זהב ותרומה שעפה למקום']];
+const EVFONT=[['','לפי העיצוב'],['heebo','היבו – מודרני'],['rubik','רוביק – עגול'],['assistant','אסיסטנט – נקי'],['secular','סקולר – כותרות'],['suez','סואץ – מודגש'],['frank','פרנק רוהל – קלאסי'],['david','דוד – ספרותי'],['bellefair','בלפייר – אלגנטי']];
 const EVRES=[['auto','אוטומטי (ממלא כל מסך)'],['1920x1080','מסך / טלוויזיה 16:9'],['1080x1920','מסך עומד (אנכי)'],['3840x1080','מסך לד רחב 32:9'],['2560x1080','מסך רחב 21:9'],['1280x720','מקרן ישן 720p']];
 const EVSND={chime:'פעמונים',bell:'פעמון',coins:'מטבעות',harp:'נבל',fanfare:'תרועה',pop:'פופ',shofar:'שופר',none:'ללא צליל'};
 let EVS={id:null,sub:'screen',e:null};
@@ -1232,7 +1233,7 @@ pages.c_event=async()=>{const list=await evApi();if(EVS.id&&!list.some(x=>x.id==
   evSub()};
 const evSave=async(b,msg='נשמר – המסך מתעדכן')=>{await evApi('/'+EVS.e.id,{method:'PUT',body:b});Object.assign(EVS.e.settings,b);toast(msg)};
 function evSub(){const e=EVS.e,s=e.settings,cur=SYM[C.currency]||'₪',B=$('#evBody');
-  if(EVS.sub==='screen'){const st=s.style||'gala';
+  if(EVS.sub==='screen'){const st=EVSTY.some(x=>x[0]===s.style)?s.style:'stage';
     B.innerHTML=`<div class="card"><h3>בחרו עיצוב למסך</h3><p class="small muted">כל עיצוב מוצג עם הלוגו והפרטים של הקמפיין. לחיצה על עיצוב מחליפה אותו מיד גם במסך שכבר פתוח באירוע.</p>
       <div class="evsty">${EVSTY.map(([k,t,d])=>`<button class="evs ${k===st?'on':''}" data-st="${k}"><div class="evs-f"><img src="/ev/prev/${k}.webp" alt="" loading="lazy"></div><b>${t}</b><small>${d}</small><a class="evs-l" href="/e/${e.key}?style=${k}&preview=1" target="_blank" onclick="event.stopPropagation()">תצוגה עם הנתונים שלכם ↗</a>${k===st?'<i>✓ נבחר</i>':''}</button>`).join('')}</div></div>
     <div class="grid g2" style="margin-top:14px">
@@ -1247,7 +1248,9 @@ function evSub(){const e=EVS.e,s=e.settings,cur=SYM[C.currency]||'₪',B=$('#evB
         <label>כותרת משנה<input id="evSub" value="${esc(s.subtitle??'')}" placeholder="${esc(C.subtitle||'')}"></label>
         <label>פס רץ בתחתית<input id="evTick" value="${esc(s.ticker||'')}" placeholder="תודה לכל התורמים! · ${esc(C.title)}"></label>
         <div class="row"><label style="flex:1">גודל המסך<select id="evRes">${EVRES.map(([v,l])=>`<option value="${v}" ${(s.res||'auto')===v?'selected':''}>${l}</option>`).join('')}<option value="custom" ${s.res&&!EVRES.some(r=>r[0]===s.res)?'selected':''}>גודל מותאם…</option></select></label><label id="evResC" style="flex:1" ${s.res&&!EVRES.some(r=>r[0]===s.res)?'':'hidden'}>רוחב×גובה<input id="evResV" dir="ltr" placeholder="1920x1080" value="${esc(s.res&&!EVRES.some(r=>r[0]===s.res)?s.res:'')}"></label></div>
+        <div class="row"><label style="flex:1">פונט<select id="evFont">${EVFONT.map(([v,l])=>`<option value="${v}" ${(s.font||'')===v?'selected':''}>${l}</option>`).join('')}</select></label><label style="flex:none">צבע<input id="evAcc" type="color" value="${esc(/^#[0-9a-f]{6}$/i.test(s.accent||'')?s.accent:(C.color||'#7c5cff'))}" style="width:64px;height:44px;padding:4px"></label></div>
         <div class="row"><label style="flex:1">יעד על המסך (${cur})<input id="evGoal" type="number" value="${s.goal||''}" placeholder="${fmt(C.goal)}"></label><label style="flex:1">צליל לתרומה<select id="evSnd">${Object.entries(EVSND).map(([k,l])=>`<option value="${k}" ${(s.sound||'chime')===k?'selected':''}>${l}</option>`).join('')}</select></label></div>
+        <label>תרומה גדולה מעל (${cur}) – מקבלת אפקט מיוחד<input id="evBig" type="number" value="${s.bigThreshold||1000}"></label>
         <label class="ck"><input type="checkbox" id="evAmt" ${s.showAmount!==false?'checked':''}><span>להציג סכומים על המסך</span></label>
         <label class="ck"><input type="checkbox" id="evConf" ${s.confetti!==false?'checked':''}><span>קונפטי על כל תרומה</span></label>
         <label class="ck"><input type="checkbox" id="evQr" ${s.showQr!==false?'checked':''}><span>קוד QR לתרומה על המסך</span></label>
@@ -1266,7 +1269,7 @@ function evSub(){const e=EVS.e,s=e.settings,cur=SYM[C.currency]||'₪',B=$('#evB
     $('#evBgF').onchange=async ev=>{const r=await up(ev.target.files[0]);const vid=/^video/.test(r.type||'');await evSave(vid?{bg:'own',bgVideo:r.url,bgImage:''}:{bg:'own',bgImage:r.url,bgVideo:''},'הרקע הועלה');evSub()};
     $('#evLogoF').onchange=async ev=>{const r=await up(ev.target.files[0]);await evSave({logo:r.url},'הלוגו הועלה');evSub()};
     if($('#evLogoX'))$('#evLogoX').onclick=async()=>{await evSave({logo:''});evSub()};
-    const tx=(id,k)=>$(id).onchange=()=>evSave({[k]:$(id).value});tx('#evTitle','title');tx('#evSub','subtitle');tx('#evTick','ticker');tx('#evGoal','goal');tx('#evSnd','sound');
+    const tx=(id,k)=>$(id).onchange=()=>evSave({[k]:$(id).value});tx('#evTitle','title');tx('#evSub','subtitle');tx('#evTick','ticker');tx('#evGoal','goal');tx('#evSnd','sound');tx('#evFont','font');tx('#evAcc','accent');tx('#evBig','bigThreshold');
     $('#evRes').onchange=()=>{const v=$('#evRes').value;$('#evResC').hidden=v!=='custom';if(v!=='custom')evSave({res:v})};$('#evResV').onchange=()=>{const v=$('#evResV').value.replace(/\s|×/g,'x').toLowerCase();if(/^\d{3,5}x\d{3,5}$/.test(v))evSave({res:v});else toast('כתבו למשל 1920x1080')};
     const ck=(id,k)=>$(id).onchange=()=>evSave({[k]:$(id).checked});ck('#evAmt','showAmount');ck('#evConf','confetti');ck('#evQr','showQr');ck('#evLive','live');ck('#evAdd','addCampaign');
     $('#evReset').onclick=async()=>{await evSave({resetLive:true},'מעכשיו נספרות רק תרומות חדשות');pages.c_event()};
