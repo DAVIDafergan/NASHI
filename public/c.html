@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <!--META-->
+<script>try{if(localStorage.getItem('gx_theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -77,6 +78,8 @@ header .wrap{display:flex;align-items:center;justify-content:space-between;heigh
 @media(max-width:640px){.cover .fr .ov{padding:16px 16px 48px}.cover h1{font-size:26px}.cover p{font-size:14px}}
 .cover .lbl{position:absolute;top:16px;inset-inline-start:16px;background:rgba(255,255,255,.95);color:var(--ink);border-radius:999px;padding:7px 14px;font-weight:600;font-size:13px;box-shadow:var(--sh)}
 @media(max-width:640px){.cover .fr{height:min(100vw,520px)}}
+@media(max-width:640px){.cover.mr .fr{height:auto;aspect-ratio:var(--ir,4/5)}}
+html[data-theme=dark] .cover .lbl{background:rgba(14,15,20,.82);color:#fff}html[data-theme=dark] header{background:color-mix(in srgb,var(--paper) 88%,transparent)}
 .cover .fr .bg{opacity:0;transition:opacity 1.2s ease}.cover .fr .bg.on{opacity:1}
 .cover .dots{position:absolute;top:16px;inset-inline-end:16px;display:flex;gap:6px;z-index:2}.cover .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);transition:.3s}.cover .dots i.on{background:#fff;width:22px;border-radius:99px}
 .play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:78px;height:78px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(10px);border:1.5px solid rgba(255,255,255,.6);display:grid;place-items:center;color:#fff;font-size:30px;z-index:2;transition:.25s;animation:pulse 2.4s infinite}.play:hover{transform:translate(-50%,-50%) scale(1.08);background:rgba(255,255,255,.3)}@keyframes pulse{50%{box-shadow:0 0 0 18px rgba(255,255,255,0)}0%{box-shadow:0 0 0 0 rgba(255,255,255,.35)}}
@@ -487,7 +490,7 @@ let LANG='he';const T=(k,v={})=>Object.entries(v).reduce((s,[a,b])=>s.replace('{
 let slTimer;function initBanner(c){const m=(c.settings&&c.settings.media)||{};const def=m.default||{};const own=LANG!==(c.lang||'he')&&m[LANG]?m[LANG]:null;const uniq=a=>[...new Set(a.filter(Boolean))];
   const desk=own&&(own.desktop||[]).length?own.desktop:uniq([c.cover,...(def.desktop||[])]);const mob=own&&(own.mobile||[]).length?own.mobile:(def.mobile||[]);const lm={video:(own&&own.video)||def.video||''};
   const mobile=innerWidth<700;let imgs=mobile&&mob.length?mob:desk;
-  const sl=$('#slides');const cv=document.querySelector('.cover');const noT=!!(c.settings&&c.settings.showTitle===false)&&!!imgs.length;cv.classList.toggle('img',noT);cv.classList.toggle('notitle',noT);if(imgs.length){const im=new Image();im.onload=()=>{if(im.naturalWidth)cv.style.setProperty('--ir',im.naturalWidth+'/'+im.naturalHeight)};im.src=imgs[0]}sl.innerHTML=imgs.map((u,i)=>`<div class="bg ${i===0?'on':''}" style="background-image:url('${esc(String(u).replace(/['()\\]/g,c=>'%'+c.charCodeAt(0).toString(16)))}')"></div>`).join('');$('#heroBg').style.display=imgs.length?'none':'';
+  const sl=$('#slides');const cv=document.querySelector('.cover');const noT=!!(c.settings&&c.settings.showTitle===false)&&!!imgs.length;cv.classList.toggle('img',noT);cv.classList.toggle('notitle',noT);cv.classList.toggle('mr',mobile&&mob.length>0&&imgs===mob);if(imgs.length){const im=new Image();im.onload=()=>{if(im.naturalWidth)cv.style.setProperty('--ir',im.naturalWidth+'/'+im.naturalHeight)};im.src=imgs[0]}sl.innerHTML=imgs.map((u,i)=>`<div class="bg ${i===0?'on':''}" style="background-image:url('${esc(String(u).replace(/['()\\]/g,c=>'%'+c.charCodeAt(0).toString(16)))}')"></div>`).join('');$('#heroBg').style.display=imgs.length?'none':'';
   $('#dots').innerHTML=imgs.length>1?imgs.map((_,i)=>`<i class="${i===0?'on':''}"></i>`).join(''):'';clearInterval(slTimer);let k=0;if(imgs.length>1)slTimer=setInterval(()=>{k=(k+1)%imgs.length;$$('#slides .bg').forEach((e,i)=>e.classList.toggle('on',i===k));$$('#dots i').forEach((e,i)=>e.classList.toggle('on',i===k))},5000);
   const vid=lm.video||c.video||'';$('#play').hidden=!vid;$('#play').onclick=()=>openVideo(vid)}
 function openVideo(v){const m=v.match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/);$('#vb').innerHTML=m?`<iframe src="https://www.youtube.com/embed/${m[1]}?autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`:`<video src="${esc(v)}" controls autoplay playsinline></video>`;$('#vmod').classList.add('on');document.body.style.overflow='hidden'}
@@ -627,6 +630,7 @@ async function showThanks(token){const d=await fetch('/api/d/'+token).then(r=>r.
   $('#thxAmbGo').onclick=async()=>{const b=$('#thxAmbGo');b.disabled=true;try{const r=await fetch('/api/d/'+token+'/ambassador',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(x=>x.json());if(r.error)throw new Error(r.error);const L=location.origin+r.link;$('#ambLink').textContent=L;$('#ambWa').href=`https://wa.me/?text=${encodeURIComponent(T('ambMsg',{t:cs.title,u:L}))}`;$('#ambArea').href=r.area;$('#thxAmb').hidden=true;$('#thxAmbOk').hidden=false;$('#thxWa').hidden=true}catch(e){b.disabled=false;alert(e.message)}}}
 load();
 </script>
+<script>(function(){const b=document.getElementById('theme');if(!b)return;const sync=()=>{const d=document.documentElement.dataset.theme==='dark';b.textContent=d?'☀':'☾';b.title=d?'מצב בהיר':'מצב כהה';b.setAttribute('aria-pressed',d)};sync();b.addEventListener('click',()=>{const d=document.documentElement.dataset.theme==='dark'?'':'dark';if(d)document.documentElement.dataset.theme=d;else delete document.documentElement.dataset.theme;try{localStorage.setItem('gx_theme',d)}catch(e){}sync()})})()</script>
 <script>if(!/[?&]embed=1/.test(location.search)){const s=document.createElement("script");s.src="/a11y.js?v=3";s.defer=true;document.head.appendChild(s)}else document.documentElement.classList.add("embed")</script>
 </body>
 </html>
