@@ -485,6 +485,9 @@ aside .sec.sub{margin-top:10px;font-size:10.5px;opacity:.75}
 .evrec{display:grid;gap:6px;margin-top:12px;max-height:420px;overflow:auto}.evr{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}.evr div{flex:1;display:grid}.evr small{color:var(--mut);font-size:12px;text-align:start}.evr .amt{font-weight:900}.evr.sent{background:#f0fdf4;border-color:#bbf7d0}
 .ck-ev,#evBody label.ck{display:flex!important;flex-direction:row;gap:10px;align-items:flex-start;cursor:pointer}#evBody label.ck input{width:18px;height:18px;flex:none;margin-top:3px}
 .evq{display:grid;grid-template-columns:1fr 1fr;gap:8px}.evq .b{min-height:48px}
+
+/* the guide must sit above its own backdrop on phones, and the a11y tab must not cover the input */
+.guide{z-index:46}body.gopen .a11y-btn{display:none}
 </style>
 </head>
 <body>
@@ -1478,7 +1481,7 @@ async function admDel(id,title){if(!confirm(`למחוק לצמיתות את "${t
 
 // ---- guide ----
 let gHist=[];
-function toggleGuide(on){$('#guide').classList.toggle('on',on);if(innerWidth<=900)$('#bk').classList.toggle('on',on);if(on){if(!gHist.length)gMsg('a',C?'שלום! אני המדריך של GiveIL ואני מכיר כל פינה במערכת. שאלו אותי איך עושים משהו, "מה המצב" או "מה חסר כדי לעלות לאוויר" – ואני גם כותב הודעות, פוסטים ועדכונים עם הנתונים של הקמפיין שלכם.':'שלום! אני המדריך של GiveIL ואני מכיר כל פינה במערכת. שאלו אותי כל דבר – איך פותחים קמפיין, סליקה, שגרירים, הודעות ועוד.');if(innerWidth>900)$('#gIn').focus();renderSug()}}
+function toggleGuide(on){$('#guide').classList.toggle('on',on);document.body.classList.toggle('gopen',!!on);if(innerWidth<=900)$('#bk').classList.toggle('on',on);if(on){if(!gHist.length&&!$('#gMsgs').children.length)gMsg('a',C?'שלום! אני המדריך של GiveIL ואני מכיר כל פינה במערכת. שאלו אותי איך עושים משהו, "מה המצב" או "מה חסר כדי לעלות לאוויר" – ואני גם כותב הודעות, פוסטים ועדכונים עם הנתונים של הקמפיין שלכם.':'שלום! אני המדריך של GiveIL ואני מכיר כל פינה במערכת. שאלו אותי כל דבר – איך פותחים קמפיין, סליקה, שגרירים, הודעות ועוד.');if(innerWidth>900)$('#gIn').focus();renderSug()}}
 $('#gbtn').onclick=()=>toggleGuide(!$('#guide').classList.contains('on'));
 function gMsg(r,t){const el=document.createElement('div');el.className='msg '+r;el.textContent=t;if(r==='a'&&t.length>60){const c=document.createElement('span');c.className='cp';c.textContent='העתקה';c.onclick=()=>{navigator.clipboard.writeText(t);toast('הועתק')};el.appendChild(c)}$('#gMsgs').appendChild(el);$('#gMsgs').scrollTop=1e9}
 function renderSug(){const s=C?['מה המצב?','מה חסר כדי לעלות לאוויר?','כתוב הודעת וואטסאפ לשגרירים','כתוב 3 פוסטים לרשתות','הצע רמות תרומה','טיפים ליום האחרון']:['איך פותחים קמפיין?','איך מוסיפים שגרירים?','איך עובד מצב הבדיקה?','אילו ספקי סליקה נתמכים?'];$('#gSug').innerHTML=s.map(x=>`<button>${esc(x)}</button>`).join('');$$('#gSug button').forEach(b=>b.onclick=()=>askGuide(b.textContent))}
