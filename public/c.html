@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <!--META-->
-<script>try{if(localStorage.getItem('gx_theme')==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -44,7 +43,7 @@ html[data-theme=dark] .btn{background:#fff;color:#0e0f14}html[data-theme=dark] .
 .ic.t{background:#e0fbff}.ic.p{background:#efe9ff}
 html[data-theme=dark] .ic.t,html[data-theme=dark] .ic.p{background:var(--soft)}
 .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:500;background:var(--soft);border:0;color:var(--ink)}
-.chip.o{background:linear-gradient(120deg,rgba(124,92,255,.14),rgba(34,211,238,.14));border-color:transparent}.chip.v{background:#efe9ff;color:#4c2fd0;border-color:transparent}
+.chip.o{background:linear-gradient(120deg,color-mix(in srgb,var(--v) 14%,transparent),rgba(34,211,238,.14));border-color:transparent}.chip.v{background:#efe9ff;color:#4c2fd0;border-color:transparent}
 /* header */
 header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,#fff 88%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
 header .wrap{display:flex;align-items:center;justify-content:space-between;height:66px;gap:12px}
@@ -105,7 +104,7 @@ html[data-theme=dark] .cover .lbl{background:rgba(14,15,20,.82);color:#fff}html[
 /* donate pill */
 .dpill{display:flex;gap:10px;justify-content:center;align-items:stretch;margin:26px auto 0;max-width:580px;flex-wrap:wrap}
 .dpill .cust{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--cardS);border:1px solid var(--line2);border-radius:16px;padding:0 18px;box-shadow:var(--sh);transition:.2s}
-.dpill .cust:focus-within{border-color:var(--v);box-shadow:0 0 0 4px rgba(124,92,255,.15)}
+.dpill .cust:focus-within{border-color:var(--v);box-shadow:0 0 0 4px color-mix(in srgb,var(--v) 15%,transparent)}
 .dpill .cust span{color:var(--mut);font-weight:700}
 .dpill .cust input{flex:1;min-width:0;border:0;outline:0;background:none;font-weight:800;font-size:20px;padding:14px 4px;-moz-appearance:textfield;color:var(--ink)}
 .dpill .cust input::-webkit-outer-spin-button,.dpill .cust input::-webkit-inner-spin-button{-webkit-appearance:none}
@@ -212,7 +211,7 @@ html[data-theme=dark] .dn .tg{background:var(--soft);color:#c4b5ff}
 .f label>span{display:flex;gap:6px;align-items:center}
 .f label>span i{font-style:normal;color:#e0392b}
 .f input,.f select,.f textarea{width:100%;border:1px solid var(--line2);border-radius:12px;padding:13px 14px;font-size:16px;outline:0;background:var(--cardS);color:var(--ink);-webkit-appearance:none;transition:.2s}
-.f input:focus,.f select:focus{border-color:var(--v);box-shadow:0 0 0 4px rgba(124,92,255,.14)}
+.f input:focus,.f select:focus{border-color:var(--v);box-shadow:0 0 0 4px color-mix(in srgb,var(--v) 14%,transparent)}
 .f .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .f .chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);border:1px solid var(--line2);border-radius:12px;padding:11px 14px;background:var(--cardS);cursor:pointer}
 .f .chk input{width:18px;height:18px;accent-color:var(--v);-webkit-appearance:checkbox;padding:0;margin:0}
@@ -224,7 +223,7 @@ html[data-theme=dark] .dn .tg{background:var(--soft);color:#c4b5ff}
 .err{color:#e0392b;font-size:14px;min-height:20px;margin-top:6px;text-align:center;font-weight:600}
 .payframe{width:100%;min-height:520px;border:0;border-radius:14px;background:#fff}
 .thx{text-align:center;padding:16px 0 4px}
-.thx .ok{width:96px;height:96px;border-radius:50%;background:var(--grad);color:#1c1917;display:grid;place-items:center;margin:0 auto 16px;font-size:44px;animation:pop .6s cubic-bezier(.22,1,.36,1);box-shadow:0 20px 40px -16px rgba(124,92,255,.6)}
+.thx .ok{width:96px;height:96px;border-radius:50%;background:var(--grad);color:#1c1917;display:grid;place-items:center;margin:0 auto 16px;font-size:44px;animation:pop .6s cubic-bezier(.22,1,.36,1);box-shadow:0 20px 40px -16px color-mix(in srgb,var(--v) 60%,transparent)}
 @keyframes pop{from{transform:scale(.5);opacity:0}}
 .thx h3{justify-content:center;font-size:28px}
 .thx p{color:var(--mut);margin:10px 0 20px}
@@ -278,8 +277,8 @@ html[data-theme=dark] .loader .heart{stroke:#fff}
 .mcta{display:flex;gap:10px;margin-top:16px;align-items:center}
 .mcta .btn{flex:1;min-height:54px;font-size:17px}
 .mshare{display:flex;gap:6px}
-.mcta{flex-wrap:wrap}.mcta .cust.pc{box-sizing:border-box;max-width:100%;min-width:0;flex:1 1 180px;display:flex;align-items:center;gap:8px;background:var(--cardS);border:1px solid var(--line2);border-radius:999px;padding:0 18px;min-height:54px}.mcta .cust.pc input{flex:1;min-width:0;border:0;outline:0;background:none;font-weight:800;font-size:18px;color:var(--ink);-moz-appearance:textfield}.mcta .cust.pc input::-webkit-outer-spin-button,.mcta .cust.pc input::-webkit-inner-spin-button{-webkit-appearance:none}.mcta .cust.pc:focus-within{border-color:var(--v);box-shadow:0 0 0 4px rgba(124,92,255,.14)}
-.mcta{max-width:640px;margin-inline:auto}.mcta .btn.grad{flex:1 1 200px;border-radius:999px;min-height:56px;font-size:18px;font-weight:700;background:var(--v);color:#fff;box-shadow:0 12px 28px -10px rgba(124,92,255,.6)}.mcta .btn.grad::before{background:#5b3df5}.mcta .btn.grad:hover{color:#fff}.mcta .btn.grad .ar{background:rgba(255,255,255,.2)}
+.mcta{flex-wrap:wrap}.mcta .cust.pc{box-sizing:border-box;max-width:100%;min-width:0;flex:1 1 180px;display:flex;align-items:center;gap:8px;background:var(--cardS);border:1px solid var(--line2);border-radius:999px;padding:0 18px;min-height:54px}.mcta .cust.pc input{flex:1;min-width:0;border:0;outline:0;background:none;font-weight:800;font-size:18px;color:var(--ink);-moz-appearance:textfield}.mcta .cust.pc input::-webkit-outer-spin-button,.mcta .cust.pc input::-webkit-inner-spin-button{-webkit-appearance:none}.mcta .cust.pc:focus-within{border-color:var(--v);box-shadow:0 0 0 4px color-mix(in srgb,var(--v) 14%,transparent)}
+.mcta{max-width:640px;margin-inline:auto}.mcta .btn.grad{flex:1 1 200px;border-radius:999px;min-height:56px;font-size:18px;font-weight:700;background:var(--v);color:#fff;box-shadow:0 12px 28px -10px color-mix(in srgb,var(--v) 60%,transparent)}.mcta .btn.grad::before{background:#5b3df5}.mcta .btn.grad:hover{color:#fff}.mcta .btn.grad .ar{background:rgba(255,255,255,.2)}
 .mshare{flex:1 1 100%;justify-content:center;flex-wrap:wrap;gap:14px;margin-top:4px}.mshare .ib{display:none}.mshare .chip{background:none;border:0;padding:0;color:var(--mut);font-size:12.5px;font-weight:600;backdrop-filter:none}.mshare .chip:hover{color:var(--ink)}
 .pcard .amts{justify-content:center;margin-top:12px}.pcard .amt{min-width:92px}.pcard .secure{margin-top:10px}
 .card .hd{justify-content:space-between}
@@ -293,7 +292,7 @@ html[data-theme=dark] .loader .heart{stroke:#fff}
 .dbox .amts{justify-content:flex-start;margin:0 0 10px}
 .dbox .amt{flex:1 1 30%;text-align:center}
 .dbox .cust{display:flex;align-items:center;gap:8px;background:var(--cardS);border:1px solid var(--line2);border-radius:14px;padding:0 14px}
-.dbox .cust:focus-within{border-color:var(--v);box-shadow:0 0 0 4px rgba(124,92,255,.14)}
+.dbox .cust:focus-within{border-color:var(--v);box-shadow:0 0 0 4px color-mix(in srgb,var(--v) 14%,transparent)}
 .dbox .cust span{color:var(--mut);font-weight:700}
 .dbox .cust input{flex:1;min-width:0;border:0;outline:0;background:none;font-weight:800;font-size:18px;padding:12px 4px;color:var(--ink);-moz-appearance:textfield}
 .dbox .cust input::-webkit-outer-spin-button,.dbox .cust input::-webkit-inner-spin-button{-webkit-appearance:none}
@@ -376,6 +375,24 @@ html{scroll-behavior:smooth}
   body:has(.cover.img) .pcard{margin-top:-10px!important}
   header{background:var(--paper);backdrop-filter:none;-webkit-backdrop-filter:none}
 }
+
+/* donate: one control, half amount / half button */
+.mcta .dpx{min-width:0;width:100%;box-sizing:border-box}.mcta .dpx>*{flex:1 1 0!important;min-width:0!important;width:auto}.mcta .dpx .cust.pc input{width:100%}
+.mcta .dpx .btn.grad{padding:0 12px!important}.mcta .dpx .btn.grad .ar{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;font-size:14px}
+.mcta .dpx{flex:1 1 100%;display:flex;align-items:stretch;background:var(--cardS);border:1.5px solid var(--line2);border-radius:20px;padding:5px;box-shadow:0 10px 30px -16px rgba(28,25,23,.35);transition:border-color .2s,box-shadow .2s}
+.mcta .dpx:focus-within{border-color:var(--v);box-shadow:0 0 0 4px color-mix(in srgb,var(--v) 16%,transparent)}
+.mcta .dpx .cust.pc{flex:1 1 50%;min-width:0;border:0;background:none;box-shadow:none;border-radius:15px;padding:0 14px;min-height:56px}
+.mcta .dpx .cust.pc:focus-within{box-shadow:none;border:0}
+.mcta .dpx .cust.pc span{font-size:20px;color:var(--mut)}
+.mcta .dpx .cust.pc input{font-size:20px}
+.mcta .dpx .cust.pc input::placeholder{font-weight:500;font-size:16px;color:var(--mut)}
+.mcta .dpx .btn.grad{flex:1 1 50%;min-width:0;min-height:56px;border-radius:15px;font-size:17px;background:linear-gradient(135deg,var(--v),color-mix(in srgb,var(--v) 75%,#000));box-shadow:0 8px 20px -8px color-mix(in srgb,var(--v) 70%,transparent);gap:8px;white-space:nowrap}
+.mcta .dpx .btn.grad::before{background:color-mix(in srgb,var(--v) 80%,#000)}
+.amt{border-radius:16px;padding:12px 14px;font-size:16px;border:1.5px solid var(--line);box-shadow:none;transition:transform .15s,border-color .2s,background .2s}
+.amt:hover{border-color:var(--v);transform:translateY(-1px)}
+.amt.on{border-color:var(--v);background:var(--v);color:#fff;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--v) 70%,transparent)}
+.amt.on small,.amt.on .la,.amt.on .ln{color:#fff}
+.mshare .chip.shb{background:var(--v);color:#fff;padding:10px 22px;font-size:14px;font-weight:600;gap:8px}
 </style>
 </head>
 <body>
@@ -386,7 +403,7 @@ html{scroll-behavior:smooth}
 <header><div class="wrap">
   <a class="brand" href="/" title="GiveIL"><img src="/logo.svg" alt="GiveIL" style="width:34px;height:34px"><span class="wm">Give<b>IL</b></span><img id="hLogo" alt="" hidden style="display:none"><span id="hTitle" hidden></span></a>
   <nav class="nav"><a href="#about" data-i="navAbout">אודות</a><a href="#donors" data-i="donors">תורמים</a><a href="#teams" id="navTeams" hidden data-i="ambassadors">שגרירים</a></nav>
-  <div class="hacts"><button class="ib" id="theme" title="מצב כהה">☾</button><a class="ib share-b" id="shWaTop" target="_blank" rel="noopener" title="שיתוף" hidden>⤴</a><div class="langs" id="langs"></div></div>
+  <div class="hacts"><a class="ib share-b" id="shWaTop" target="_blank" rel="noopener" title="שיתוף" hidden>⤴</a><div class="langs" id="langs"></div></div>
 </div></header>
 
 <div id="top"></div>
@@ -399,9 +416,9 @@ html{scroll-behavior:smooth}
     <div class="bar"><i id="bar"></i><span class="bonus" id="bonusMark" hidden></span></div>
     <div class="meta"><span><b id="count">0</b> <span data-i="donors">תורמים</span></span><span id="multWrap" hidden><span class="mult">✕<span id="mult"></span> <span data-i="multiplied">כל תרומה מוכפלת</span></span></span><span id="bonusTxt" hidden></span></div>
     <div class="timer" id="timer"></div>
-    <div class="mcta"><div class="cust pc"><span id="curSymP">₪</span><input type="number" id="custAmtP" data-ip="otherAmount" placeholder="הזינו סכום" inputmode="numeric" min="1"></div><button class="btn grad" id="pDonate"><span class="ar">←</span><span data-i="donateNow">תרמו עכשיו</span></button></div>
+    <div class="mcta"><div class="dpx"><div class="cust pc"><span id="curSymP">₪</span><input type="number" id="custAmtP" data-ip="otherAmount" placeholder="הזינו סכום" inputmode="numeric" min="1"></div><button class="btn grad" id="pDonate"><span data-i="donateNow">תרמו עכשיו</span><span class="ar">←</span></button></div></div>
     <div class="amts" id="amts"></div><div class="eq" id="eq"></div><div class="secure">🔒 <span data-i="secure">תשלום מאובטח</span> · <span id="provName"></span> <span id="s46" hidden>· סעיף 46</span></div>
-    <div class="mshare"><a class="chip" id="shWa2" target="_blank" rel="noopener">💬 <span data-i="share">שיתוף</span></a><a class="chip" id="shCopy2" href="#">🔗 <span data-i="copyLink">העתקת קישור</span></a><a class="chip" id="teamsChip" href="#teams" hidden>👥 <span data-i="ambassadors">שגרירים</span></a><a class="ib" id="shWa" target="_blank" rel="noopener" title="WhatsApp">💬</a><a class="ib" id="shCopy" href="#" title="Copy">🔗</a><a class="ib" id="joinChip" href="#" hidden title="Join">🙋</a></div>
+    <div class="mshare"><a class="chip shb" id="shWa2" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><span data-i="share">שיתוף</span></a><a class="chip" id="shCopy2" href="#">🔗 <span data-i="copyLink">העתקת קישור</span></a><a class="chip" id="teamsChip" href="#teams" hidden>👥 <span data-i="ambassadors">שגרירים</span></a><a class="ib" id="shWa" target="_blank" rel="noopener" title="WhatsApp">💬</a><a class="ib" id="shCopy" href="#" title="Copy">🔗</a><a class="ib" id="joinChip" href="#" hidden title="Join">🙋</a></div>
   </section>
 <div class="layout">
 <div class="maincol">
@@ -506,7 +523,7 @@ async function load(){
   D=await r.json();const c=D.campaign;document.body.classList.toggle('closed',!!c.closed);document.body.classList.toggle('ended',!!c.ended);cur=SYM[c.currency]||'₪';if(c.settings&&c.settings.demo)$('#testbar').dataset.demo='1';
   const langs=(c.settings&&c.settings.langs&&c.settings.langs.length?c.settings.langs:[c.lang||'he']);$('#langs').innerHTML=langs.length>1?langs.filter(l=>/^[a-z]{2}$/.test(l)).map(l=>`<button data-l="${l}">${l.toUpperCase()}</button>`).join(''):'';$$('#langs button').forEach(b=>b.onclick=()=>{setLang(b.dataset.l);rerender()});const ls=langs.filter(l=>/^[a-z]{2}$/.test(l));$('#langs').insertAdjacentHTML('beforeend',ls.length>1?`<select class="lsel" aria-label="שפה">${ls.map(l=>`<option value="${l}" ${l===LANG?'selected':''}>${({he:'עברית',en:'English',fr:'Français',es:'Español'})[l]||l.toUpperCase()}</option>`).join('')}</select>`:'');const sel=$('#langs .lsel');if(sel)sel.onchange=()=>{setLang(sel.value);rerender()};
   let want=new URLSearchParams(location.search).get('lang');try{want=want||localStorage.getItem('gx_lang')}catch{}const auto=document.documentElement.dataset.autoLang;setLang(langs.includes(want)?want:(langs.includes(auto)?auto:(c.lang||'he')));
-  document.documentElement.style.setProperty('--c',c.color);document.documentElement.style.setProperty('--c2',shade(c.color,-18));
+  document.documentElement.style.setProperty('--c',c.color);document.documentElement.style.setProperty('--c2',shade(c.color,-18));if(/^#[0-9a-f]{6}$/i.test(c.color||'')){const R=document.documentElement.style;R.setProperty('--v',c.color);R.setProperty('--grad',`linear-gradient(120deg,${c.color},${shade(c.color,-18)})`)}
   document.title=c.title;$('#hTitle').textContent=c.title;$('#title').textContent=c.title;$('#subtitle').textContent=c.subtitle;
   if(c.logo){$('#hLogo').src=c.logo}
   initBanner(c);
@@ -539,7 +556,7 @@ async function load(){
   if((s.installments||1)>1){$('#instWrap').hidden=false;$('#fInst').innerHTML=Array.from({length:s.installments},(_,i)=>`<option value="${i+1}">${i+1===1?T('onePay'):i+1+' '+T('pays')}</option>`).join('')}
   $('#monthlyWrap').hidden=s.allowMonthly===false||!!c.noMonthly;$('#anonWrap').hidden=s.allowAnon===false;
   const url=location.origin+location.pathname;$('#shWa').href=$('#shWa2').href=$('#shWaTop').href=`https://wa.me/?text=${encodeURIComponent(c.title+'\n'+url)}`;if(s.s46)$('#s46').hidden=false;
-  $('#shCopy').onclick=$('#shCopy2').onclick=e=>{e.preventDefault();navigator.clipboard?.writeText(url);toast(T('copied'))};
+  $('#shCopy').onclick=$('#shCopy2').onclick=e=>{e.preventDefault();navigator.clipboard?.writeText(url);toast(T('copied'))};if(navigator.share)['#shWa','#shWa2','#shWaTop'].forEach(q=>{const a=$(q);if(a)a.onclick=e=>{e.preventDefault();navigator.share({title:c.title,text:c.subtitle||c.title,url:location.href}).catch(()=>{})}});
   try{const u=JSON.parse(localStorage.getItem('gx_u')||'null');if(u){$('#fName').value=u.name||'';$('#fPhone').value=u.phone||'';$('#fEmail').value=u.email||''}}catch{}
   renderStats(D.stats);if(D.team)reloadDonors();else renderDonors(D.donations,true);renderTeams(D.teams);timer();setInterval(timer,1000);stream();setTimeout(()=>$('#loader').classList.add('off'),900);
   renderUpdates(D.campaign.updates||[]);const idm=(c.settings||{}).idField;$('#idWrap').hidden=!idm;if(idm){$('#idWrap span').textContent=T(idm==='required'?'idNum':'idNumOpt');$('#fId').required=idm==='required'}
@@ -630,7 +647,6 @@ async function showThanks(token){const d=await fetch('/api/d/'+token).then(r=>r.
   $('#thxAmbGo').onclick=async()=>{const b=$('#thxAmbGo');b.disabled=true;try{const r=await fetch('/api/d/'+token+'/ambassador',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(x=>x.json());if(r.error)throw new Error(r.error);const L=location.origin+r.link;$('#ambLink').textContent=L;$('#ambWa').href=`https://wa.me/?text=${encodeURIComponent(T('ambMsg',{t:cs.title,u:L}))}`;$('#ambArea').href=r.area;$('#thxAmb').hidden=true;$('#thxAmbOk').hidden=false;$('#thxWa').hidden=true}catch(e){b.disabled=false;alert(e.message)}}}
 load();
 </script>
-<script>(function(){const b=document.getElementById('theme');if(!b)return;const sync=()=>{const d=document.documentElement.dataset.theme==='dark';b.textContent=d?'☀':'☾';b.title=d?'מצב בהיר':'מצב כהה';b.setAttribute('aria-pressed',d)};sync();b.addEventListener('click',()=>{const d=document.documentElement.dataset.theme==='dark'?'':'dark';if(d)document.documentElement.dataset.theme=d;else delete document.documentElement.dataset.theme;try{localStorage.setItem('gx_theme',d)}catch(e){}sync()})})()</script>
 <script>if(!/[?&]embed=1/.test(location.search)){const s=document.createElement("script");s.src="/a11y.js?v=3";s.defer=true;document.head.appendChild(s)}else document.documentElement.classList.add("embed")</script>
 </body>
 </html>
