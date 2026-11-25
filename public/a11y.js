@@ -3,7 +3,7 @@
   const K = 'ttm_a11y';
   let st = {}; try { st = JSON.parse(localStorage.getItem(K) || '{}'); } catch { }
   const css = `
-  .a11y-btn{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));inset-inline-start:0;transform:none;z-index:9000;width:34px;height:38px;border-radius:0 12px 12px 0;background:rgba(28,25,23,.55);color:#fff;display:grid;place-items:center;border:0;cursor:pointer;box-shadow:0 4px 14px -6px rgba(0,0,0,.4);opacity:.75;transition:opacity .2s,background .2s}.a11y-btn:hover,.a11y-btn:focus-visible{opacity:1;background:#1c1917}.a11y-btn svg{width:20px;height:20px}
+  .a11y-btn{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));inset-inline-start:0;transform:none;z-index:9000;width:34px;height:38px;border-radius:0 12px 12px 0;background:rgba(255,255,255,.92);color:#44403c;border:1px solid #e7e5e4;border-inline-start:0;box-shadow:0 4px 14px -6px rgba(0,0,0,.25);display:grid;place-items:center;border:0;cursor:pointer;box-shadow:0 4px 14px -6px rgba(0,0,0,.4);opacity:.75;transition:opacity .2s,background .2s}.a11y-btn:hover,.a11y-btn:focus-visible{opacity:1;background:#1c1917}.a11y-btn svg{width:20px;height:20px}
   html[dir=rtl] .a11y-btn{border-radius:14px 0 0 14px}
   .a11y-btn:focus-visible{outline:3px solid #ffd600;outline-offset:2px}
   .a11y-pnl{position:fixed;bottom:24px;inset-inline-start:52px;transform:none;z-index:9001;width:min(300px,calc(100vw - 70px));background:#fff;color:#1c1917;border:1px solid #e9e6e2;border-radius:16px;padding:14px;box-shadow:0 24px 60px -20px rgba(0,0,0,.4);font:14px/1.5 Rubik,system-ui,sans-serif;display:none}

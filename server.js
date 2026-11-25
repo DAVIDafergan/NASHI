@@ -820,10 +820,16 @@ app.get('/api/c/:slug/stream', (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).end();
   const ipN = sseIp.get(req.ip) || 0; if (ipN >= 1500) return res.status(429).end(); sseIp.set(req.ip, ipN + 1);
   res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' }); res.write(':ok\n\n');
-  if (!subs.has(c.id)) subs.set(c.id, new Set()); subs.get(c.id).add(res);
+  if (!subs.has(c.id)) subs.set(c.id, new Set()); res.__ip = req.ip; subs.get(c.id).add(res); viewersSoon(c.id);
   const ping = setInterval(() => { try { res.write(':p\n\n'); } catch { } }, 25000);
-  req.on('close', () => { clearInterval(ping); subs.get(c.id)?.delete(res); const n = (sseIp.get(req.ip) || 1) - 1; if (n > 0) sseIp.set(req.ip, n); else sseIp.delete(req.ip); });
+  req.on('close', () => { clearInterval(ping); subs.get(c.id)?.delete(res); viewersSoon(c.id); const n = (sseIp.get(req.ip) || 1) - 1; if (n > 0) sseIp.set(req.ip, n); else sseIp.delete(req.ip); });
 });
+// live "people viewing now" (unique IPs on the campaign stream), throttled
+const viewerTimers = new Map();
+function viewersSoon(cid) {
+  if (viewerTimers.has(cid)) return;
+  viewerTimers.set(cid, setTimeout(() => { viewerTimers.delete(cid); const set = subs.get(cid); if (!set) return; const n = new Set([...set].map(r => r.__ip)).size; emit(cid, 'viewers', { n }); }, 3000));
+}
 app.post('/api/c/:slug/donate', limit(600, 60000), async (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404);
   if (isEnded(c)) return bad(res, 'הקמפיין הסתיים – תודה לכל מי שתרם!');
