@@ -656,6 +656,7 @@ async function importDraft(){let d=null;try{d=JSON.parse(localStorage.getItem('g
   const c=await api('/campaigns',{method:'POST',body:{title:d.title,subtitle:d.subtitle||'',goal:d.goal||100000,start_at:toLocal(st),end_at:toLocal(en)}});
   const body={story:d.story||'',subtitle:d.subtitle||''};if(d.thanks)body.settings={thanks:d.thanks};
   if(Array.isArray(d.levels)&&d.levels.length)body.levels=d.levels.filter(l=>l.amount>0).sort((a,b)=>a.amount-b.amount).slice(0,6).map(l=>({name:l.name||'',amount:l.amount,descr:l.descr||''}));
+  if(/^data:image\/jpeg;base64,/.test(d.cover||'')){try{const bl=await (await fetch(d.cover)).blob();const fd=new FormData();fd.append('file',new File([bl],'cover.jpg',{type:'image/jpeg'}));const up=await api('/upload',{method:'POST',body:fd});if(up&&up.url)body.cover=up.url}catch{}}
   await api('/campaigns/'+c.id,{method:'PUT',body});
   window.oaiq?.("measure","custom",{type:"custom"},{custom_event_name:"campaign_created"});
   C=null;location.hash=`#/c/${c.id}/design`;toast('✨ הקמפיין מהשיחה נשמר. אפשר להמשיך לערוך')}catch(e){toast('לא הצלחנו לשמור את הטיוטה מהשיחה')}}

@@ -487,15 +487,25 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 </style>
 <style id="aib-css">
 .aib{max-width:680px;margin:28px auto 0;position:relative;z-index:2;animation:upIn .9s cubic-bezier(.22,1,.36,1) .42s both}
-.aib-in{position:relative;border-radius:24px;padding:2px;background:conic-gradient(from var(--ang,0deg),#7c5cff,#22d3ee,#ec4899,#7c5cff);animation:spinB 6s linear infinite;box-shadow:0 24px 60px -26px rgba(124,92,255,.65)}
-.aib textarea{display:block;width:100%;border:0;border-radius:22px;background:var(--card,#fff);color:var(--ink);font:inherit;font-size:17px;line-height:1.55;padding:18px 20px 62px;resize:none;outline:none;min-height:124px;text-align:start}
-.aib-go{position:absolute;bottom:12px;inset-inline-end:12px;border:0;border-radius:999px;min-height:42px;padding:0 20px;font:inherit;font-weight:700;font-size:15px;color:#fff;background:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .2s}
+.aib-in{position:relative;border-radius:30px}
+.aib-in .halo,.aib-in .ring{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.aib-in .halo{filter:blur(20px);opacity:.5;transition:opacity .3s}
+.aib-in:focus-within .halo{opacity:.85}
+.aib-in .spin{position:absolute;top:50%;left:50%;width:220%;aspect-ratio:1;translate:-50% -50%;background:conic-gradient(#4285f4,#9b72cb,#d96570,#fbbc05,#34a853,#22d3ee,#4285f4);animation:aibSp 5s linear infinite}
+@keyframes aibSp{to{rotate:360deg}}
+.aib-box{position:relative;margin:2.5px;border-radius:27.5px;background:var(--card,#fff);padding:14px 16px 10px;display:flex;flex-direction:column;gap:8px}
+.aib textarea{display:block;width:100%;border:0;background:transparent;color:var(--ink);font:inherit;font-size:17px;line-height:1.55;padding:4px 4px 0;resize:none;outline:none;min-height:60px;text-align:start}
+.aib-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.aib-tag{font-size:12.5px;color:var(--mut);display:inline-flex;align-items:center;gap:6px}
+.aib-tag i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;color:#fff;background:linear-gradient(135deg,#4285f4,#9b72cb 55%,#d96570)}
+.aib-go{flex:none;border:0;border-radius:999px;min-height:42px;padding:0 18px;font:inherit;font-weight:700;font-size:15px;color:#fff;background:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .2s}
 .aib-go:hover{transform:translateY(-2px)}
-.aib-ex{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:12px;font-size:13px;color:var(--mut)}
+.aib-ex{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:14px;font-size:13px;color:var(--mut)}
 .aib-ex button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card,#fff);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
 .aib-ex button:hover{border-color:#7c5cff;color:#7c5cff}
 .aib:not([hidden])~.cta{margin-top:18px}
-@media(max-width:700px){.aib{margin-top:18px}.aib textarea{font-size:16px;padding:14px 14px 58px;min-height:118px}.aib-in{animation:none}.aib-ex span{display:none}.aib-ex button{font-size:12.5px}}
+@media(max-width:700px){.aib{margin-top:18px}.aib textarea{font-size:16px;min-height:52px}.aib-box{padding:12px 12px 8px}.aib-tag span{display:none}.aib-ex span{display:none}.aib-ex button{font-size:12.5px}}
+@media (prefers-reduced-motion:reduce){.aib-in .spin{animation-duration:24s}}
 </style>
 </head>
 <body><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -506,7 +516,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
   <span class="lbl">פלטפורמה לגיוס תרומות וגיוס המונים לעמותות</span>
   <h1>הקמפיין הבא שלכם<br><span>מגייס יותר.</span></h1>
   <p>דף קמפיין חי, שגרירים עם קישור אישי, הסליקה שלכם בלי עמלת פלטפורמה, מסך אירוע ומדריך חכם. מהרעיון ליעד, תוך חצי שעה.</p>
-  <form class="aib" id="aib" hidden><div class="aib-in"><textarea id="aibT" rows="2" maxlength="1200" placeholder="ספרו לנו על הקמפיין שלכם: על מה מגייסים, לאיזו עמותה וכמה רוצים לגייס…" aria-label="ספרו לנו על הקמפיין"></textarea><button class="aib-go" aria-label="בנו לי קמפיין"><span>בנו לי קמפיין</span> ✨</button></div><div class="aib-ex"><span>לדוגמה:</span><button type="button">ספר תורה לבית הכנסת שלנו, 150 אלף ₪</button><button type="button">חבילות מזון לחג ל-300 משפחות</button></div></form>
+  <form class="aib" id="aib" hidden><div class="aib-in"><div class="halo"><i class="spin"></i></div><div class="ring"><i class="spin"></i></div><div class="aib-box"><textarea id="aibT" rows="2" maxlength="1200" placeholder="ספרו לנו על הקמפיין שלכם: על מה מגייסים, לאיזו עמותה וכמה רוצים לגייס…" aria-label="ספרו לנו על הקמפיין"></textarea><div class="aib-row"><span class="aib-tag"><i>✦</i><span>נבנה איתכם את הקמפיין בשיחה</span></span><button class="aib-go" aria-label="בנו לי קמפיין"><span>בנו לי קמפיין</span> ✨</button></div></div></div><div class="aib-ex"><span>לדוגמה:</span><button type="button">ספר תורה לבית הכנסת שלנו, 150 אלף ₪</button><button type="button">חבילות מזון לחג ל-300 משפחות</button></div></form>
   <div class="cta"><a class="btn" href="/app#reg"><span class="ar">←</span>פותחים קמפיין</a><a class="btn o" href="/c/demo">צפו בקמפיין לדוגמה ↗</a></div>
   <div class="tr"><span>0% עמלה מהתרומות</span><span>מצב בדיקה לפני העלייה לאוויר</span><span>אימות מול רשם העמותות</span><span>4 שפות</span></div>
   <div class="nums" data-r><div><b>0%</b><span>עמלה מהתרומות</span></div><div><b class="t">30 דק׳</b><span>מהרשמה לקמפיין חי</span></div><div><b class="v">4</b><span>שפות מהקופסה</span></div></div>
