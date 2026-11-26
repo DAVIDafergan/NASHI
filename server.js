@@ -351,7 +351,7 @@ app.post('/api/login', limit(10, 60000), (req, res) => {
   hits.delete(fk);
   if (needsCode(u)) { if (!(u.vcode && u.vcode_exp - 14 * 60e3 > Date.now())) sendCode(u.id).catch(() => { }); return res.json({ ok: true, verify: true, email: u.email }); }
   db.prepare('UPDATE users SET logins=COALESCE(logins,0)+1 WHERE id=?').run(u.id);
-  vLink(req, u.id); vEvent(req.cookies?.gv, 'login.ok', '', '', false, u.id);
+  vLink(req, u.id); if (u.role === 'admin') markSelf(res); else vEvent(req.cookies?.gv, 'login.ok', '', '', false, u.id);
   logEvent('auth.login', { uid: u.id, ip: req.ip, msg: email, meta: { ua: String(req.get('user-agent') || '').slice(0, 160) } });
   setSid(res, u.id);
   res.json({ ok: true });
@@ -1471,8 +1471,15 @@ const VEV = db.prepare('INSERT INTO vev(vid,type,label,path) VALUES(?,?,?,?)');
 function vEvent(vid, type, label = '', path = '', isPage = false, uid = null) { if (!vid) return; try { VUP.run(VSTAGE[type] || 1, isPage ? 1 : 0, isPage ? 0 : 1, uid, vid); VEV.run(vid, type, String(label).slice(0, 160), String(path).slice(0, 160)); } catch { } }
 function vLink(req, uid) { const vid = req.cookies?.gv; if (!vid || !uid) return; try { db.prepare('UPDATE visitors SET uid=? WHERE vid=? AND (uid IS NULL OR uid!=?)').run(uid, vid, uid); } catch { } }
 const vValid = v => /^[a-f0-9]{24}$/.test(String(v || ''));
+// the platform's own admins are never tracked: a device that ever signed in as admin gets a "gvx" cookie and is skipped
+const VADM = db.prepare("SELECT 1 FROM visitors v JOIN users u ON u.id=v.uid WHERE v.vid=? AND u.role='admin'");
+const markSelf = res => res.cookie('gvx', '1', { maxAge: 5 * 365 * 864e5, httpOnly: true, sameSite: 'lax' });
+const vSkip = (req, res) => { if (req.cookies?.gvx) return true; const vid = req.cookies?.gv; if (vValid(vid) && VADM.get(vid)) { markSelf(res); return true; } return false; };
 app.use((req, res, next) => {
   if (req.method !== 'GET' || !/^\/(index\.html|app|terms|privacy|accessibility)?$/.test(req.path) || BOT.test(req.get('user-agent') || '')) return next();
+  if (vSkip(req, res)) return next();
+  // a signed-in customer opening their dashboard is not a site visit
+  if (req.path === '/app' && req.cookies?.gv && db.prepare('SELECT 1 FROM visitors WHERE vid=? AND uid IS NOT NULL').get(req.cookies.gv)) return next();
   let vid = req.cookies?.gv; if (!vValid(vid)) { vid = require('crypto').randomBytes(12).toString('hex'); res.cookie('gv', vid, { maxAge: 365 * 864e5, httpOnly: false, sameSite: 'lax', secure: req.secure }); }
   try {
     const ua = String(req.get('user-agent') || '').slice(0, 200); let ref = ''; try { ref = new URL(req.get('referer') || '').hostname; } catch { }
@@ -1485,18 +1492,24 @@ app.use((req, res, next) => {
 const VT = new Set(['reg.open', 'reg.start', 'reg.step2', 'reg.step3', 'reg.step4', 'reg.submit', 'reg.error', 'reg.back', 'login.open', 'login.try', 'login.error', 'forgot', 'click', 'plan.use', 'scroll', 'leave']);
 app.post('/api/t', limit(120, 60000), (req, res) => {
   const vid = req.cookies?.gv; const b = typeof req.body === 'object' ? req.body : {}; const t = String(b.t || '');
-  if (vValid(vid) && VT.has(t) && !BOT.test(req.get('user-agent') || '')) { if (!db.prepare('SELECT 1 FROM visitors WHERE vid=?').get(vid)) db.prepare("INSERT OR IGNORE INTO visitors(vid,src,device,ua,ip) VALUES(?,?,?,?,?)").run(vid, 'direct', deviceOf(req.get('user-agent') || ''), String(req.get('user-agent') || '').slice(0, 200), req.ip); vEvent(vid, t, b.l || '', b.p || ''); }
+  if (vValid(vid) && VT.has(t) && !BOT.test(req.get('user-agent') || '') && !vSkip(req, res)) { if (!db.prepare('SELECT 1 FROM visitors WHERE vid=?').get(vid)) db.prepare("INSERT OR IGNORE INTO visitors(vid,src,device,ua,ip) VALUES(?,?,?,?,?)").run(vid, 'direct', deviceOf(req.get('user-agent') || ''), String(req.get('user-agent') || '').slice(0, 200), req.ip); vEvent(vid, t, b.l || '', b.p || ''); }
   res.status(204).end();
 });
 // admin: list + funnel
 app.get('/api/admin/visitors', auth, adm, (req, res) => {
   const days = Math.min(60, Math.max(1, +req.query.days || 1)); const since = `-${days} day`; const st = +req.query.stage || 0;
-  const funnel = db.prepare(`SELECT SUM(stage>=1) s1, SUM(stage>=2) s2, SUM(stage>=3) s3, SUM(stage>=4) s4, SUM(stage>=5) s5, SUM(stage>=6) s6, SUM(stage>=7) s7, SUM(stage>=8) s8, SUM(stage>=9) s9, SUM(stage>=10) s10 FROM visitors WHERE last_at >= datetime('now',?)`).get(since);
-  const rows = db.prepare(`SELECT v.vid, v.first_at, v.last_at, v.src, v.landing, v.device, v.stage, v.pages, v.acts, v.uid, u.email, COALESCE(u.org_name,u.org) org, u.name,
+  // never count the platform's own admins; existing customers (signed up before this visit) are listed but kept out of the funnel
+  const NOTADM = "(u.role IS NULL OR u.role!='admin')"; const CUST = "(u.id IS NOT NULL AND u.created < v.first_at)";
+  const funnel = db.prepare(`SELECT SUM(stage>=1) s1, SUM(stage>=2) s2, SUM(stage>=3) s3, SUM(stage>=4) s4, SUM(stage>=5) s5, SUM(stage>=6) s6, SUM(stage>=7) s7, SUM(stage>=8) s8, SUM(stage>=9) s9, SUM(stage>=10) s10 FROM visitors v LEFT JOIN users u ON u.id=v.uid WHERE v.last_at >= datetime('now',?) AND ${NOTADM} AND NOT ${CUST}`).get(since);
+  const who = req.query.who === 'all' ? '' : req.query.who === 'cust' ? `AND ${CUST}` : `AND NOT ${CUST}`;
+  const rows = db.prepare(`SELECT v.vid, v.first_at, v.last_at, v.src, v.landing, v.device, v.stage, v.pages, v.acts, v.uid, u.email, COALESCE(u.org_name,u.org) org, u.name, ${CUST} cust,
      (SELECT label FROM vev WHERE vid=v.vid AND type='reg.error' ORDER BY id DESC LIMIT 1) lastErr,
-     (SELECT COUNT(*) FROM visitors w WHERE w.ip=v.ip AND w.vid!=v.vid) sameIp
-     FROM visitors v LEFT JOIN users u ON u.id=v.uid WHERE v.last_at >= datetime('now',?) ${st ? 'AND v.stage = ' + st : ''} ORDER BY v.last_at DESC LIMIT 400`).all(since);
-  res.json({ funnel, rows, live: db.prepare("SELECT COUNT(*) n FROM visitors WHERE last_at >= datetime('now','-5 minutes')").get().n });
+     (SELECT group_concat(x, '|') FROM (SELECT CASE WHEN type='page' THEN 'p:' || path ELSE type END x FROM vev WHERE vid=v.vid AND type NOT IN ('scroll','click','leave') ORDER BY id LIMIT 40)) trail,
+     (SELECT CAST((julianday(MAX(at)) - julianday(MIN(at))) * 86400 AS INTEGER) FROM vev WHERE vid=v.vid) secs
+     FROM visitors v LEFT JOIN users u ON u.id=v.uid WHERE v.last_at >= datetime('now',?) AND ${NOTADM} ${who} ${st ? 'AND v.stage = ' + st : ''} ORDER BY v.last_at DESC LIMIT 400`).all(since);
+  const live = db.prepare(`SELECT COUNT(*) n FROM visitors v LEFT JOIN users u ON u.id=v.uid WHERE v.last_at >= datetime('now','-5 minutes') AND ${NOTADM} AND NOT ${CUST}`).get().n;
+  const custN = db.prepare(`SELECT COUNT(*) n FROM visitors v LEFT JOIN users u ON u.id=v.uid WHERE v.last_at >= datetime('now',?) AND ${NOTADM} AND ${CUST}`).get(since).n;
+  res.json({ funnel, rows, live, custN });
 });
 app.get('/api/admin/visitors/:vid', auth, adm, (req, res) => {
   const v = db.prepare('SELECT v.*, u.email, COALESCE(u.org_name,u.org) org, u.name, u.phone FROM visitors v LEFT JOIN users u ON u.id=v.uid WHERE vid=?').get(req.params.vid); if (!v) return bad(res, 'not found', 404);
