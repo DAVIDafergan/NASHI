@@ -1117,7 +1117,7 @@ body[data-skin="gala"] .gc .p span{max-height:5cqh!important;max-width:60%!impor
 <g id="gScroll"><path d="M0,0 C18,-34 70,-38 78,-6 C84,20 52,34 40,16 C32,3 46,-8 56,-1" fill="none" stroke="url(#gGold)" stroke-width="5" stroke-linecap="round"/><path d="M0,0 C40,8 70,34 120,30 C150,28 168,10 190,14" fill="none" stroke="url(#gGold)" stroke-width="4" stroke-linecap="round"/><path d="M60,22 C74,50 108,58 130,44" fill="none" stroke="url(#gGold)" stroke-width="3" stroke-linecap="round"/><circle cx="196" cy="14" r="5" fill="url(#gGold)"/><circle cx="56" cy="-1" r="4" fill="url(#gGold)"/></g>
 <g id="gCrown"><path d="M10,92 L22,34 L58,66 L100,14 L142,66 L178,34 L190,92 Z" fill="url(#gGold)" stroke="#7a520e" stroke-width="2.5" stroke-linejoin="round"/><path d="M10,92 L190,92 L186,112 Q100,126 14,112 Z" fill="url(#gGoldH)" stroke="#7a520e" stroke-width="2.5"/><circle cx="100" cy="10" r="9" fill="url(#gRuby)" stroke="#7a520e" stroke-width="2"/><circle cx="22" cy="30" r="7" fill="url(#gJewel)" stroke="#7a520e" stroke-width="2"/><circle cx="178" cy="30" r="7" fill="url(#gJewel)" stroke="#7a520e" stroke-width="2"/><circle cx="58" cy="102" r="6" fill="url(#gJewel)"/><circle cx="100" cy="104" r="7" fill="url(#gRuby)"/><circle cx="142" cy="102" r="6" fill="url(#gJewel)"/><path d="M40,92 L58,66 M100,92 L100,40 M160,92 L142,66" stroke="#fff3bf" stroke-width="2" opacity=".7"/></g>
 </defs></svg>
-<img class="g-arch" src="/ev/orn/arch.png" alt="">
+<img class="g-arch" src="/ev/orn/arch.webp" alt="">
   
   <canvas id="gDust"></canvas><div class="g-frame"></div>
   <div class="g-top"><div class="g-logo" id="gLogo"></div><div class="g-plaque"><small id="gLabel">עד כה התחייבו</small><b id="gTotal">0</b></div><div class="g-meter"><i id="gBar"></i></div></div>
@@ -1146,7 +1146,7 @@ body[data-skin="gala"] .gc .p span{max-height:5cqh!important;max-width:60%!impor
   <div class="tiers" id="tiers"></div>
   <footer id="footer"><div class="ticker" id="ticker"></div></footer>
 </div>
-<div class="pop" id="pop"><div class="pop__veil"></div><div class="gp" id="gp"><div class="burst"></div><div class="halo"></div><div class="fr p1"><img src="/ev/orn/pill.png" alt=""><span class="gk" id="gpk">הריני השותף</span></div><div class="fr p2"><img src="/ev/orn/plate.png" alt=""><div class="gn" id="gpn"></div><i class="shine" style="--m:url(/ev/orn/plate.png)"></i></div><div class="fr p3" id="gpa3"><img src="/ev/orn/card.png" alt=""><div class="ga" id="gpa"></div><i class="shine" style="--m:url(/ev/orn/card.png)"></i></div><div class="gd" id="gpd"></div><div id="gsp"></div></div><div class="card" id="card"><div class="rays"></div><div class="k" id="pk">תרומה חדשה</div><div class="n" id="pn"></div><div class="a" id="pa"></div><div class="d" id="pd"></div><div class="b" id="pb"></div><div class="tb" id="ptier"></div><div class="seal" id="pseal">נחתם</div></div></div>
+<div class="pop" id="pop"><div class="pop__veil"></div><div class="gp" id="gp"><div class="burst"></div><div class="halo"></div><div class="fr p1"><img src="/ev/orn/pill.webp" alt=""><span class="gk" id="gpk">הריני השותף</span></div><div class="fr p2"><img src="/ev/orn/plate.webp" alt=""><div class="gn" id="gpn"></div><i class="shine" style="--m:url(/ev/orn/plate.webp)"></i></div><div class="fr p3" id="gpa3"><img src="/ev/orn/card.webp" alt=""><div class="ga" id="gpa"></div><i class="shine" style="--m:url(/ev/orn/card.webp)"></i></div><div class="gd" id="gpd"></div><div id="gsp"></div></div><div class="card" id="card"><div class="rays"></div><div class="k" id="pk">תרומה חדשה</div><div class="n" id="pn"></div><div class="a" id="pa"></div><div class="d" id="pd"></div><div class="b" id="pb"></div><div class="tb" id="ptier"></div><div class="seal" id="pseal">נחתם</div></div></div>
 <div class="msg" id="msg"></div>
 <div class="goalhit" id="goalhit"><b id="goalText"></b></div>
 <div class="idle" id="idle"></div>
@@ -1238,26 +1238,26 @@ function renderGala(st){
   const top=items[0];
   $('gTotal').textContent=cur+fmt(st.total||0);
   $('gLabel').textContent=settings.galaLabel||'עד כה התחייבו';
-  const card=(d,i)=>`<div class="gc" style="--i:${i}"><img class="cf" src="/ev/orn/card.png" alt=""><div class="n">${esc(d.donor)}</div><div class="p">${d.dedication?`<span>${esc(d.dedication)}</span>`:''}${settings.showAmount===false&&d.dedication?'':`<b>${esc(cur)}${fmt(d.amount)}</b>`}</div></div>`;
-  const ghost='<div class="gc ghost"><img class="cf" src="/ev/orn/card.png" alt=""></div>';
+  const card=(d,i)=>`<div class="gc" style="--i:${i}"><img class="cf" src="/ev/orn/card.webp" alt=""><div class="n">${esc(d.donor)}</div><div class="p">${d.dedication?`<span>${esc(d.dedication)}</span>`:''}${settings.showAmount===false&&d.dedication?'':`<b>${esc(cur)}${fmt(d.amount)}</b>`}</div></div>`;
+  const ghost='<div class="gc ghost"><img class="cf" src="/ev/orn/card.webp" alt=""></div>';
   const rest=items.slice(1);
   const R=[],L=[];rest.forEach((d,i)=>(i%2?L:R).push(d));
   const col=(arr,t)=>{
-    const head=`<h4><img class="tf" src="${document.body.dataset.gv==='hasidi'?'/ev/skin/h-scroll.webp':'/ev/orn/tab.png'}" alt=""><span>${t}</span></h4>`;
+    const head=`<h4><img class="tf" src="${document.body.dataset.gv==='hasidi'?'/ev/skin/h-scroll.webp':'/ev/orn/tab.webp'}" alt=""><span>${t}</span></h4>`;
     const roll=arr.length>4;
     const cards=arr.map((d,i)=>card(d,roll?Math.min(i,4):i)).join('');
     const body=roll?`<div class="gtrack" style="--gdur:${Math.max(24,arr.length*6)}s">${cards}${cards}</div>`:`<div class="gtrack still">${cards}${Array.from({length:Math.max(0,4-arr.length)},()=>ghost).join('')}</div>`;
     return head+`<div class="gview">${body}</div>`};
   $('gR').innerHTML=col(R,'השותפים');
   $('gL').innerHTML=col(L,'השותפים');
-  const fo='<img class="fo l" src="/ev/orn/corner.png" alt=""><img class="fo r" src="/ev/orn/corner.png" alt="">';
-  const plate='<img class="plate" src="/ev/orn/card.png" alt="">';
+  const fo='<img class="fo l" src="/ev/orn/corner.webp" alt=""><img class="fo r" src="/ev/orn/corner.webp" alt="">';
+  const plate='<img class="plate" src="/ev/orn/card.webp" alt="">';
   const medal='';
   const goal=+st.goal||0,pct=goal>0?Math.min(100,(+st.total||0)/goal*100):0;
   const goalH=`<div class="sum"><div class="sc"><small>${esc(settings.galaLabel||'עד כה התחייבו')}</small><b><em>${esc(cur)}</em>${fmt(+st.total||0)}</b></div>${goal>0?`<div class="sep"></div><div class="sc"><small>יעד</small><b><em>${esc(cur)}</em>${fmt(goal)}</b></div>`:''}</div>${goal>0?`<div class="bar"><i style="width:${pct.toFixed(1)}%"></i><span>${Math.round(pct)}%</span></div>`:''}`;
   $('gLogo').innerHTML=settings.logo?`<img src="${settings.logo}" alt="">`:'';
   const ttl=(settings.title||'').trim()?`<div class="ttl"><small>\u05e9\u05d8\u05e8 \u05e9\u05d5\u05ea\u05e4\u05d5\u05ea</small><b>${esc(settings.title)}</b></div>`:'';
-  $('gC').innerHTML=top?ttl+goalH+`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/ev/orn/plate.png" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:ttl+goalH+`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
+  $('gC').innerHTML=top?ttl+goalH+`<div class="feat" data-k="${top.id}">${plate}<div class="in"><div class="n">${esc(top.donor)}</div><div class="sep"></div><div class="amt">${esc(cur)}${fmt(top.amount)}</div></div></div>${top.dedication?`<div class="ded"><img class="df" src="/ev/orn/plate.webp" alt=""><span>${esc(top.dedication)}</span></div>`:''}${medal}`:ttl+goalH+`<div class="feat">${plate}<div class="in"><div class="n">${esc(settings.title||'')}</div></div></div>${medal}`;
   $('gTicker').innerHTML=`<span>${esc(settings.ticker||'')}</span>`.repeat(6);
   setTimeout(()=>{fitAll();fitGalaCenter()},40);
 }

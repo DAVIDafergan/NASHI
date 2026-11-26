@@ -56,7 +56,7 @@ main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:3cqw;
 .fh{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.6cqh}
 .fh b{font-size:2.4cqh;font-weight:800}
 .fh span{font-size:1.8cqh;color:var(--mut)}
-#list{display:flex;flex-direction:column;gap:1.2cqh;overflow:hidden;flex:1;mask-image:linear-gradient(#000 82%,transparent);-webkit-mask-image:linear-gradient(#000 82%,transparent)}
+#list{display:flex;flex-direction:column;gap:1.2cqh;overflow:hidden;flex:1;mask-image:linear-gradient(transparent,#000 4%,#000 84%,transparent);-webkit-mask-image:linear-gradient(transparent,#000 4%,#000 84%,transparent)}
 .row{display:flex;align-items:center;gap:1.6cqh;background:var(--card);border:1px solid var(--line);border-radius:2cqh;padding:1.5cqh 2cqh;animation:rin .9s cubic-bezier(.22,1,.36,1) both;backdrop-filter:blur(10px)}
 .row .av{flex:none;width:5.4cqh;height:5.4cqh;border-radius:1.6cqh;display:grid;place-items:center;font-weight:900;font-size:2.6cqh;background:linear-gradient(135deg,var(--a),var(--a2));color:#fff}
 .row .nm{flex:1;min-width:0}
@@ -161,6 +161,7 @@ body.portrait header{flex-wrap:wrap}
 body.wide main{grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr)}
 body.wide.t-wall main{grid-template-columns:minmax(0,1fr)}
 body.noamt .row .am,body.noamt #pa{display:none}
+#list .lt{display:flex;flex-direction:column;gap:1.2cqh;will-change:transform}#list .ldup{display:contents}#list .lt.go{animation:lscroll var(--dur,40s) linear var(--dl,2s) infinite}@keyframes lscroll{to{transform:translateY(calc(var(--shift) * -1))}}#list .lt .row{animation:none}#list .lt .row.new{animation:rin .9s cubic-bezier(.22,1,.36,1) both}body[data-t=wall] #list .lt{display:grid;grid-template-columns:repeat(var(--wc,4),1fr);grid-auto-rows:min-content;align-content:start;gap:1.2cqh}@media (prefers-reduced-motion:reduce){#list .lt.go{animation-duration:calc(var(--dur) * 2)}}
 </style>
 </head>
 <body data-t="stage">
@@ -212,7 +213,7 @@ function totals(total,count,goal){countTo($('total'),total);const c=st.currency|
   if(goal&&total>=goal&&!goalHit&&S&&S._ready){goalHit=true;celebrate(st.goalMsg||'הגענו ליעד! תודה!')}if(goal&&total<goal)goalHit=false}
 const initials=n=>String(n||'').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('')||'♥';
 function rowHtml(d,isNew){const c=st.currency||'₪';return `<div class="row ${isNew?'new':''}"><div class="av">${esc(initials(d.donor))}</div><div class="nm"><b>${esc(d.donor)}${d.live?'<span class="tg">באתר</span>':''}</b>${d.dedication&&st.dedicationShow!==false?`<small>${esc(d.dedication)}</small>`:''}</div><div class="am num">${c}${fmt(d.amount)}</div></div>`}
-function list(newId){const L=document.body.dataset.t==='wall'?(S.wall||S.recent):S.recent;$('list').innerHTML=(L||[]).slice(0,document.body.dataset.t==='wall'?80:12).map(d=>rowHtml(d,d.id===newId)).join('')||`<div style="color:var(--mut);font-size:2.6cqh;padding:2cqh">היו הראשונים להצטרף 💙</div>`}
+function list(newId){const L=(S.wall&&S.wall.length?S.wall:S.recent)||[];const box=$('list');if(!L.length){box.innerHTML=`<div style="color:var(--mut);font-size:2.6cqh;padding:2cqh">היו הראשונים להצטרף 💙</div>`;return}const rows=L.slice(0,300).map(d=>rowHtml(d,d.id===newId)).join('');box.innerHTML=`<div class="lt">${rows}</div>`;requestAnimationFrame(()=>{const lt=box.firstElementChild;if(!lt)return;const h=lt.scrollHeight;if(h<=box.clientHeight+8)return;lt.insertAdjacentHTML('beforeend',`<div class="ldup" aria-hidden="true">${L.slice(0,300).map(d=>rowHtml(d,false)).join('')}</div>`);const per=document.body.dataset.t==='wall'?0.012:0.03;lt.style.setProperty('--dur',Math.max(20,Math.round(h*per*10)/10)+'s');lt.style.setProperty('--shift',(h+parseFloat(getComputedStyle(lt).rowGap||getComputedStyle(lt).gap||0))+'px');lt.style.setProperty('--dl',newId?'6s':'2s');lt.classList.add('go')})}
 function render(s){if(s.engine&&s.engine!==ENGINE&&!PREVIEW){location.reload();return}S=s;apply(s.settings);list();totals(s.total,s.count,s.goal);setTimeout(()=>{S._ready=true;goalHit=s.goal&&s.total>=s.goal},100)}
 /* ---------- popup queue ---------- */
 const Q=[];let busy=false;function enqueue(m){Q.push(m);pump()}
