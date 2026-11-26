@@ -317,12 +317,42 @@ h2{transition:letter-spacing .9s cubic-bezier(.22,1,.36,1)}
 [data-r]:not(.in) h2{letter-spacing:.02em}
 @media (prefers-reduced-motion:reduce){.hero *,h1 span,.g,.btn::after,.dark::after,.stp::before{animation:none!important}#sprog{display:none}.phone{transform:none!important}}
 </style>
+<style id="motion2-css">
+/* ---------- continuous movement ---------- */
+.hero{position:relative;overflow:hidden}.hero>.wrap{position:relative;z-index:1}
+.drift{position:absolute;inset:0;pointer-events:none;z-index:0}
+.drift b{position:absolute;bottom:-60px;inset-inline-start:var(--x);font-size:calc(28px * var(--s));color:#7c5cff;opacity:0;animation:rise var(--t) linear var(--d) infinite;font-weight:800}
+.drift b:nth-child(3n){color:#22d3ee}.drift b:nth-child(4n){color:#ec4899}
+@keyframes rise{0%{transform:translateY(0) rotate(0);opacity:0}10%{opacity:.38}50%{transform:translateY(-55vh) translateX(26px) rotate(20deg)}90%{opacity:.3}100%{transform:translateY(-110vh) translateX(-10px) rotate(-12deg);opacity:0}}
+.ribbon{overflow:hidden;padding:16px 0;border-block:1px solid var(--line);background:color-mix(in srgb,var(--card) 70%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.rb-track{display:flex;width:max-content;animation:rbMove 42s linear infinite}
+.ribbon:hover .rb-track{animation-play-state:paused}
+.rb-set{display:flex;align-items:center;gap:22px;padding-inline-end:22px;white-space:nowrap;font-weight:600;font-size:15px;color:var(--ink)}
+.rb-set i{font-style:normal;color:#7c5cff;font-size:12px}
+@keyframes rbMove{to{transform:translateX(50%)}}
+html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:translateX(-50%)}}
+.hero [data-r]:has(>.phone){animation:phFloat 6s ease-in-out infinite}
+@keyframes phFloat{50%{translate:0 -14px}}
+.tile .ti{animation:bob 3.2s ease-in-out infinite}
+.tiles .tile:nth-child(2) .ti{animation-delay:-.4s}.tiles .tile:nth-child(3) .ti{animation-delay:-.8s}.tiles .tile:nth-child(4) .ti{animation-delay:-1.2s}.tiles .tile:nth-child(5) .ti{animation-delay:-1.6s}.tiles .tile:nth-child(6) .ti{animation-delay:-2s}.tiles .tile:nth-child(7) .ti{animation-delay:-2.4s}.tiles .tile:nth-child(8) .ti{animation-delay:-2.8s}
+@keyframes bob{50%{translate:0 -7px}}
+.steps{position:relative}
+.steps::after{content:"";position:absolute;top:42px;inset-inline:6%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);background-size:30% 100%;background-repeat:no-repeat;animation:runner 3.2s cubic-bezier(.65,0,.35,1) infinite;pointer-events:none;opacity:.8}
+@keyframes runner{from{background-position:120% 0}to{background-position:-20% 0}}
+@media(max-width:900px){.steps::after{display:none}}
+.pc.hl{background:linear-gradient(var(--card),var(--card)) padding-box,conic-gradient(from var(--ang,0deg),#7c5cff,#22d3ee,#ec4899,#7c5cff) border-box;border:2px solid transparent!important;animation:spinB 5s linear infinite}
+@property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes spinB{to{--ang:360deg}}
+.cta2{background:linear-gradient(120deg,#1c1917,#312e81,#0e7490,#1c1917)!important;background-size:300% 300%!important;animation:ctaBg 12s ease-in-out infinite}
+@keyframes ctaBg{50%{background-position:100% 50%}}
+@media (prefers-reduced-motion:reduce){.drift,.steps::after{display:none}.rb-track,.phone,.hero [data-r],.tile .ti,.pc.hl,.cta2{animation:none!important}}
+</style>
 </head>
 <body><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
 <nav><div class="wrap"><a class="logo" href="/"><img src="/logo.svg" alt="GiveIL"><span class="wm">Give<b>IL</b></span></a><div class="links"><a href="#features">יכולות</a><a href="#who">למי זה מתאים</a><a href="#managed">ליווי מלא</a><a href="/madrich">מדריכים</a><a href="#how">איך זה עובד</a><a href="#guide">איך מגייסים</a><a href="#pricing">מחיר</a><a href="#faq">שאלות</a></div><div class="acts"><button class="ib" id="theme" title="מצב כהה">☾</button><a class="btn o" href="/app">כניסה</a><a class="btn" href="/app#reg"><span class="ar">←</span>פתיחת קמפיין</a></div></div></nav>
 
-<header class="hero" id="main"><div class="wrap">
+<header class="hero" id="main"><div class="drift" aria-hidden="true"><b style="--x:6%;--d:0s;--t:17s;--s:1.1">₪</b><b style="--x:16%;--d:-6s;--t:21s;--s:0.9">❤</b><b style="--x:27%;--d:-11s;--t:19s;--s:0.7">✦</b><b style="--x:41%;--d:-3s;--t:23s;--s:0.8">₪</b><b style="--x:58%;--d:-9s;--t:18s;--s:1">❤</b><b style="--x:69%;--d:-14s;--t:22s;--s:0.8">✦</b><b style="--x:79%;--d:-5s;--t:20s;--s:1.2">₪</b><b style="--x:90%;--d:-12s;--t:24s;--s:0.85">❤</b><b style="--x:95%;--d:-2s;--t:16s;--s:0.7">✦</b><b style="--x:50%;--d:-17s;--t:26s;--s:0.75">₪</b></div><div class="wrap">
   <span class="lbl">פלטפורמה לגיוס תרומות וגיוס המונים לעמותות</span>
   <h1>הקמפיין הבא שלכם<br><span>מגייס יותר.</span></h1>
   <p>דף קמפיין חי, שגרירים עם קישור אישי, הסליקה שלכם בלי עמלת פלטפורמה, מסך אירוע ומדריך חכם. מהרעיון ליעד, תוך חצי שעה.</p>
@@ -332,7 +362,7 @@ h2{transition:letter-spacing .9s cubic-bezier(.22,1,.36,1)}
   <div data-r><div class="phone"><div class="float f1">🎉 תרומה חדשה<small>מתעדכן בזמן אמת</small></div><div class="float f2">👥 שגרירים<small>לכל אחד קישור ויעד אישי</small></div><div class="float f3">💳 ביט · אשראי · הו״ק<small>דרך הסליקה שלכם</small></div><div class="scr"><iframe src="/c/demo?embed=1&lang=he" title="קמפיין לדוגמה בנייד" loading="lazy" scrolling="yes"></iframe></div></div><div class="phone-cap">ככה נראה דף קמפיין אמיתי בנייד – אפשר לגלול בתוכו · <a href="/c/demo" style="text-decoration:underline">לפתיחה במסך מלא ↗</a></div></div>
 </div></header>
 
-<div class="strip"><div class="wrap"><span>מתחברים למערכת הסליקה שלכם</span><span>התרומות נכנסות ישירות לחשבון העמותה</span><span>אשראי · ביט · הוראות קבע</span></div></div>
+<div class="ribbon" aria-label="יתרונות"><div class="rb-track"><div class="rb-set"><span>💳 מתחברים למערכת הסליקה שלכם</span><i>✦</i><span>🏦 התרומות נכנסות ישירות לחשבון העמותה</span><i>✦</i><span>📱 אשראי · ביט · הוראות קבע</span><i>✦</i><span>👥 שגרירים עם קישור אישי</span><i>✦</i><span>📺 מסך אירוע חי</span><i>✦</i><span>🌍 4 שפות</span><i>✦</i><span>🧪 מצב בדיקה לפני העלייה לאוויר</span><i>✦</i><span>📊 ייצוא לאקסל</span><i>✦</i><span>✅ אימות מול רשם העמותות</span><i>✦</i><span>0% עמלה מהתרומות</span><i>✦</i></div><div class="rb-set" aria-hidden="true"><span>💳 מתחברים למערכת הסליקה שלכם</span><i>✦</i><span>🏦 התרומות נכנסות ישירות לחשבון העמותה</span><i>✦</i><span>📱 אשראי · ביט · הוראות קבע</span><i>✦</i><span>👥 שגרירים עם קישור אישי</span><i>✦</i><span>📺 מסך אירוע חי</span><i>✦</i><span>🌍 4 שפות</span><i>✦</i><span>🧪 מצב בדיקה לפני העלייה לאוויר</span><i>✦</i><span>📊 ייצוא לאקסל</span><i>✦</i><span>✅ אימות מול רשם העמותות</span><i>✦</i><span>0% עמלה מהתרומות</span><i>✦</i></div></div></div>
 
 <section id="live" style="padding-top:clamp(40px,6vw,80px)"><div class="wrap">
   <div data-r style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap"><div><span class="lbl">קמפיינים על הפלטפורמה</span><h2 style="margin-top:12px">גלו קמפיינים</h2></div><a class="btn o" href="/c/demo">לקמפיין לדוגמה ↗</a></div>
