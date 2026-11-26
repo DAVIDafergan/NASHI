@@ -1407,12 +1407,36 @@ async function connect(){
   es.onmessage=e=>{try{onMsg(JSON.parse(e.data))}catch(x){}};
   es.onerror=()=>{$('offline').classList.add('on');try{es.close()}catch(x){}setTimeout(connect,retry);retry=Math.min(8000,retry*1.6)};
 }
+
+/* safety net: if the live stream is blocked (venue Wi-Fi, proxies), poll the state every 10s and replay anything missed */
+setInterval(async()=>{if(/[?&]preview=1/.test(location.search)||!S)return;try{const r=await fetch('/api/e/'+encodeURIComponent(slug)+'/state'+location.search,{cache:'no-store'});if(!r.ok)return;const s=await r.json();if(s.engine&&S.engine&&s.engine!==S.engine){location.reload();return}
+ const known=new Set([...(S.wall||[]),...(S.recent||[])].map(d=>String(d.id)));const fresh=(s.wall&&s.wall.length?s.wall:(s.recent||[])).filter(d=>!known.has(String(d.id))).reverse();
+ if(fresh.length&&fresh.length<=6){for(const d of fresh)onMsg({type:'donation',donation:d,total:s.total,count:s.count,goal:s.goal})}else if(fresh.length||s.total!==S.total||s.count!==S.count){onMsg({type:'state',state:s})}}catch(e){}},10000);
 setInterval(()=>{const d=new Date();$('clock').textContent=d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})},1000);
 $('unmute').onclick=()=>{try{ac().resume()}catch(e){}armed=true;$('unmute').classList.add('off');document.documentElement.requestFullscreen?.().catch(()=>{})};
-addEventListener('keydown',e=>{if(e.key==='f')document.documentElement.requestFullscreen?.();if(e.key==='t')enqueue({donation:{donor:'בדיקה',amount:180,dedication:'בדיקת מסך'}})});
+addEventListener('keydown',e=>{if(e.key==='t')enqueue({donation:{donor:'בדיקה',amount:180,dedication:'בדיקת מסך'}})});
 if(window.top!==window)$('unmute').classList.add('off');
 if(/[?&]preview=1/.test(location.search)){const u=$('unmute');if(u)u.classList.add('off')}
 connect();
+</script>
+
+<button id="fsBtn" title="מסך מלא (F)" aria-label="מסך מלא">⛶ מסך מלא</button>
+<style>#fsBtn{position:fixed;bottom:18px;left:18px;z-index:9999;font:600 15px system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:10px 16px;cursor:pointer;backdrop-filter:blur(6px);transition:opacity .4s}#fsBtn.hide{opacity:0;pointer-events:none}body.fsidle{cursor:none}</style>
+<script>
+(function(){const d=document,el=d.documentElement,b=d.getElementById('fsBtn');
+const isFs=()=>!!(d.fullscreenElement||d.webkitFullscreenElement);
+const enter=()=>{try{const f=el.requestFullscreen||el.webkitRequestFullscreen;if(f&&!isFs()){const p=f.call(el);p&&p.catch&&p.catch(()=>{})}}catch(e){}};
+const exit=()=>{try{(d.exitFullscreen||d.webkitExitFullscreen).call(d)}catch(e){}};
+const can=!!(el.requestFullscreen||el.webkitRequestFullscreen);if(!can)b.style.display='none';
+b.onclick=e=>{e.stopPropagation();isFs()?exit():enter()};
+// first tap anywhere also goes full screen (browsers only allow it after a user gesture)
+d.addEventListener('pointerdown',e=>{if(e.target!==b&&!isFs())enter()},{capture:true});
+d.addEventListener('dblclick',()=>{isFs()?exit():enter()});
+d.addEventListener('keydown',e=>{if(e.key==='f'||e.key==='F'||e.key==='ב'){isFs()?exit():enter()}});
+let t;const wake=()=>{d.body.classList.remove('fsidle');b.classList.toggle('hide',isFs());clearTimeout(t);t=setTimeout(()=>{d.body.classList.add('fsidle');b.classList.add('hide')},3000)};
+['mousemove','pointerdown','fullscreenchange','webkitfullscreenchange'].forEach(ev=>d.addEventListener(ev,wake));
+setTimeout(wake,50);if(!isFs())b.classList.remove('hide');
+})();
 </script>
 </body>
 </html>
