@@ -146,7 +146,7 @@ function stats(c, test) {
   const mult = 1; // multipliers removed from the product
   return { count: r.n, raised: r.s, total: Math.round(r.s * mult), goal: c.goal, bonus_goal: c.bonus_goal, multiplier: mult, pct: c.goal ? Math.min(999, Math.round(r.s * mult / c.goal * 1000) / 10) : 0 };
 }
-function publicDonation(d) { return { id: d.id, name: d.anonymous ? '' : d.name, amount: d.amount, currency: d.currency, dedication: d.dedication, team_id: d.team_id, anonymous: !!d.anonymous, created: d.paid_at || d.created, monthly: !!d.monthly }; }
+function publicDonation(d) { return { id: d.id, name: d.anonymous ? '' : d.name, amount: d.amount, currency: d.currency, dedication: d.dedication, team_id: d.team_id, anonymous: !!d.anonymous, created: d.paid_at || d.created, monthly: !!d.monthly, months: d.monthly && d.installments > 1 ? d.installments : undefined }; }
 function markPaid(id, { ref = '', meta = {}, amount } = {}) {
   const d = db.prepare('SELECT * FROM donations WHERE id=?').get(id); if (!d) return null;
   if (d.status === 'paid') return d;
