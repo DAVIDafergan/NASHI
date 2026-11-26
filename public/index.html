@@ -382,12 +382,39 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
  [data-r].st{transition-delay:0s!important}
 }
 </style>
+<style id="o3-css">
+/* 3D objects */
+.o3{display:block;height:auto;filter:drop-shadow(0 22px 26px rgba(76,47,208,.28));translate:0 var(--py,0px);will-change:translate}
+.o3-top{width:clamp(110px,13vw,170px);margin:0 auto 14px;animation:o3f 6s ease-in-out infinite}
+@keyframes o3f{50%{transform:translateY(-10px) rotate(2deg)}}
+.h3d{position:absolute;inset:0;pointer-events:none;z-index:0}
+.h3d .o3{position:absolute;width:clamp(150px,15vw,230px)}
+.h3-a{top:16%;inset-inline-start:max(3%,calc(50% - 660px));animation:o3f 7s ease-in-out infinite}
+.h3-b{top:34%;inset-inline-end:max(2%,calc(50% - 700px));animation:o3f 8s ease-in-out -3s infinite;width:clamp(130px,13vw,200px)!important}
+@media(max-width:1180px){.h3-b{display:none}.h3-a{position:static!important;width:104px!important;margin:0 auto -6px}.h3d{position:relative;inset:auto;padding-top:4px}}
+.wab{position:relative}.wt{position:relative}
+.o3-mega{width:clamp(110px,12vw,160px);margin-bottom:10px;animation:o3f 6.5s ease-in-out infinite;filter:drop-shadow(0 18px 22px rgba(0,0,0,.35))}
+.cta2 .o3-rocket{position:absolute;inset-inline-start:4%;bottom:-6%;width:clamp(120px,15vw,210px);animation:o3r 5s ease-in-out infinite;filter:drop-shadow(0 18px 24px rgba(0,0,0,.4))}
+.cta2>*:not(.o3){position:relative;z-index:1}
+@keyframes o3r{50%{transform:translate(6px,-14px) rotate(3deg)}}
+@media(max-width:860px){.cta2 .o3-rocket{position:static;width:96px;margin:0 auto 8px}}
+@media(max-width:700px){
+ .o3,.o3-top,.o3-mega,.cta2 .o3-rocket,.h3-a{animation:none!important;translate:none!important}
+ .o3-top{width:96px;margin-bottom:10px}.o3-mega{width:92px}
+ .hero{padding-top:20px!important}
+ /* less text on phones: long explanations fold to two lines, tap to open */
+ .gs p,.mf-c p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .gs.open p,.mf-c.open p{-webkit-line-clamp:unset;display:block}
+ .gs,.mf-c{cursor:pointer}
+}
+@media (prefers-reduced-motion:reduce){.o3{animation:none!important;translate:none!important}}
+</style>
 </head>
 <body><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
 <nav><div class="wrap"><a class="logo" href="/"><img src="/logo.svg" alt="GiveIL"><span class="wm">Give<b>IL</b></span></a><div class="links"><a href="#features">יכולות</a><a href="#who">למי זה מתאים</a><a href="#managed">ליווי מלא</a><a href="/madrich">מדריכים</a><a href="#how">איך זה עובד</a><a href="#guide">איך מגייסים</a><a href="#pricing">מחיר</a><a href="#faq">שאלות</a></div><div class="acts"><button class="ib" id="theme" title="מצב כהה">☾</button><a class="btn o" href="/app">כניסה</a><a class="btn" href="/app#reg"><span class="ar">←</span>פתיחת קמפיין</a></div></div></nav>
 
-<header class="hero" id="main"><div class="drift" aria-hidden="true"><b style="--x:6%;--d:0s;--t:17s;--s:1.1">₪</b><b style="--x:16%;--d:-6s;--t:21s;--s:0.9">❤</b><b style="--x:27%;--d:-11s;--t:19s;--s:0.7">✦</b><b style="--x:41%;--d:-3s;--t:23s;--s:0.8">₪</b><b style="--x:58%;--d:-9s;--t:18s;--s:1">❤</b><b style="--x:69%;--d:-14s;--t:22s;--s:0.8">✦</b><b style="--x:79%;--d:-5s;--t:20s;--s:1.2">₪</b><b style="--x:90%;--d:-12s;--t:24s;--s:0.85">❤</b><b style="--x:95%;--d:-2s;--t:16s;--s:0.7">✦</b><b style="--x:50%;--d:-17s;--t:26s;--s:0.75">₪</b></div><div class="wrap">
+<header class="hero" id="main"><div class="h3d" aria-hidden="true"><img class="o3 h3-a" src="/img3d/heart.webp" alt="" width="577" height="720" decoding="async"><img class="o3 h3-b" src="/img3d/target.webp" alt="" width="695" height="720" decoding="async"></div><div class="wrap">
   <span class="lbl">פלטפורמה לגיוס תרומות וגיוס המונים לעמותות</span>
   <h1>הקמפיין הבא שלכם<br><span>מגייס יותר.</span></h1>
   <p>דף קמפיין חי, שגרירים עם קישור אישי, הסליקה שלכם בלי עמלת פלטפורמה, מסך אירוע ומדריך חכם. מהרעיון ליעד, תוך חצי שעה.</p>
@@ -405,7 +432,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 </div></section>
 
 <section id="features"><div class="wrap">
-  <div data-r style="text-align:center"><span class="lbl">יכולות</span><h2 style="margin-top:12px">כל מה שקמפיין מיליונים צריך.<br><span class="g">הכל כלול במחיר.</span></h2></div>
+  <div data-r style="text-align:center"><img class="o3 o3-top" src="/img3d/screen.webp" alt="" width="720" height="644" loading="lazy" decoding="async"><span class="lbl">יכולות</span><h2 style="margin-top:12px">כל מה שקמפיין מיליונים צריך.<br><span class="g">הכל כלול במחיר.</span></h2></div>
   <div class="tiles">
     <div class="tile" data-r><div class="ti"><svg class="li" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg></div><h3>קמפיין תוך חצי שעה</h3><p>בונים, מעצבים ומשתפים – בלי מתכנת</p></div>
     <div class="tile" data-r><div class="ti"><svg class="li" viewBox="0 0 24 24" aria-hidden="true"><circle pathLength="1" cx="12" cy="12" r="9"/><circle pathLength="1" cx="12" cy="12" r="5"/><path pathLength="1" d="M12 12l7-7M16 5h3v3"/></svg></div><h3>יעד וספירה לאחור</h3><p>התקדמות חיה ויעד בונוס אוטומטי</p></div>
@@ -439,7 +466,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
    <div class="gs" data-r><i>6</i><div><h3>תודה שמביאה את הבא</h3><p>כל תורם מקבל תודה מיד, ויחד איתה בקשה אחת פשוטה: לשלוח את הקישור לעוד שלושה אנשים. כך כל תרומה פותחת מעגל חדש.</p></div></div>
   </div>
   <div class="wab" data-r>
-   <div class="wt"><span class="lbl" style="background:rgba(37,211,102,.22);color:#dcfce7">חדש</span><h3>מערך שגרירים בוואטסאפ</h3><p>כל תורם הוא שגריר פוטנציאלי. ברגע שתרומה נכנסת, התורם מקבל הודעת תודה בוואטסאפ עם הזמנה להצטרף לגיוס. לחיצה אחת – ויש לו קישור אישי, אזור אישי משלו, ועדכון על כל תרומה שנכנסת דרכו.</p>
+   <div class="wt"><img class="o3 o3-mega" src="/img3d/mega.webp" alt="" width="720" height="638" loading="lazy" decoding="async"><span class="lbl" style="background:rgba(37,211,102,.22);color:#dcfce7">חדש</span><h3>מערך שגרירים בוואטסאפ</h3><p>כל תורם הוא שגריר פוטנציאלי. ברגע שתרומה נכנסת, התורם מקבל הודעת תודה בוואטסאפ עם הזמנה להצטרף לגיוס. לחיצה אחת – ויש לו קישור אישי, אזור אישי משלו, ועדכון על כל תרומה שנכנסת דרכו.</p>
     <ul><li><b>תודה מיידית</b> לכל תורם, עם הזמנה להפוך לשגריר</li><li><b>קישור אישי</b> והודעה מוכנה לשליחה לחברים</li><li><b>אזור אישי</b>: כמה גייס, מי תרם דרכו, מקום בדירוג</li><li><b>עדכון בוואטסאפ</b> על כל תרומה שנכנסת דרכו</li></ul></div>
    <div class="wchat" aria-hidden="true">
     <div class="bub">תודה רבה, מיכל! 💙<br>תרומתך בסך ₪180 התקבלה.<br><br>רוצים לעזור לנו להגיע ליעד? הצטרפו לשגרירים בלחיצה אחת:<br><u dir="ltr">giveil.com/j/…</u><small>10:42</small></div>
@@ -450,7 +477,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 </div></section>
 
 <section><div class="wrap">
-  <div data-r style="text-align:center"><span class="lbl">מתכננים יעד</span><h2 style="margin-top:12px">מה צריך כדי <span class="g">להגיע ליעד?</span></h2><p class="sub" style="margin-inline:auto">הזיזו את המספרים וקבלו תוכנית: כמה תורמים, כמה שגרירים, ואיזה קצב.</p></div>
+  <div data-r style="text-align:center"><img class="o3 o3-top" src="/img3d/target.webp" alt="" width="695" height="720" loading="lazy" decoding="async"><span class="lbl">מתכננים יעד</span><h2 style="margin-top:12px">מה צריך כדי <span class="g">להגיע ליעד?</span></h2><p class="sub" style="margin-inline:auto">הזיזו את המספרים וקבלו תוכנית: כמה תורמים, כמה שגרירים, ואיזה קצב.</p></div>
   <div class="plan" data-r>
    <div class="pin">
     <label><span>יעד הקמפיין</span><b id="pGv"></b><input type="range" id="pG" min="10000" max="3000000" step="10000" value="250000"></label>
@@ -515,7 +542,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 </div></section>
 
 <section id="secure"><div class="wrap">
-  <div data-r style="text-align:center"><span class="lbl">🛡️ הכסף שלכם, בידיים שלכם</span><h2 style="margin-top:12px">לאן הולך <span class="g">כל שקל</span> שנתרם?</h2><p class="sub" style="margin-inline:auto">ככה עוברת תרומה, מהלחיצה על "לתרום" ועד שהיא אצלכם בבנק.</p></div>
+  <div data-r style="text-align:center"><img class="o3 o3-top" src="/img3d/card.webp" alt="" width="720" height="603" loading="lazy" decoding="async"><span class="lbl">🛡️ הכסף שלכם, בידיים שלכם</span><h2 style="margin-top:12px">לאן הולך <span class="g">כל שקל</span> שנתרם?</h2><p class="sub" style="margin-inline:auto">ככה עוברת תרומה, מהלחיצה על "לתרום" ועד שהיא אצלכם בבנק.</p></div>
   <div class="mf" data-r>
     <div class="mf-row">
       <div class="mf-trk" aria-hidden="true"></div><div class="mf-coin" aria-hidden="true">₪</div>
@@ -548,7 +575,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
   </div>
 </div></section>
 
-<section style="padding-top:0"><div class="wrap"><div class="cta2" data-r><h2>מחר הקמפיין שלכם כבר באוויר</h2><p>פותחים חשבון, מאמתים עמותה, ובונים. המדריך החכם איתכם בכל צעד.</p><a class="btn w" href="/app#reg" style="margin-top:22px">פתיחת קמפיין חינם ←</a></div></div></section>
+<section style="padding-top:0"><div class="wrap"><div class="cta2" data-r><img class="o3 o3-rocket" src="/img3d/rocket.webp" alt="" width="609" height="720" loading="lazy" decoding="async"><h2>מחר הקמפיין שלכם כבר באוויר</h2><p>פותחים חשבון, מאמתים עמותה, ובונים. המדריך החכם איתכם בכל צעד.</p><a class="btn w" href="/app#reg" style="margin-top:22px">פתיחת קמפיין חינם ←</a></div></div></section>
 
 <footer><div class="wrap"><div style="display:flex;align-items:center;gap:12px"><img src="/logo.svg" alt="" style="width:34px"><div><b style="font-size:16px;color:var(--ink)">Give<b style="color:#0038b8">IL</b></b><div style="font-size:12px;letter-spacing:.08em">GIVEIL · צדקה תציל ממוות · © <span id="y"></span></div><div style="font-size:12.5px;margin-top:4px">GiveIL מופעלת על ידי DA פרויקטים · מוטה גור 2, רעננה · שירות ותמיכה בשעות הפעילות 11:00–17:00</div></div></div><div class="links"><a href="/app">כניסה</a><a href="/madrich">מדריכים</a><a href="/terms">תקנון</a><a href="/privacy">פרטיות</a><a href="/accessibility">נגישות</a><a href="mailto:hello@giveil.com">צור קשר</a></div></div></footer>
 <script>try{if(localStorage.getItem('gx_theme')==='dark')document.documentElement.dataset.theme='dark'}catch{}document.getElementById('theme').onclick=()=>{const d=document.documentElement.dataset.theme==='dark'?'':'dark';document.documentElement.dataset.theme=d;try{localStorage.setItem('gx_theme',d)}catch{}};fetch('/api/public/campaigns').then(r=>r.json()).then(l=>{const g=document.getElementById('cg');if(!l.length){document.getElementById('live').hidden=true;return}const f=n=>Math.round(n).toLocaleString('he-IL');g.innerHTML=l.map(c=>{const cur=c.currency==='USD'?'$':'₪';const w=Math.min(100,c.pct);return `<a class="cgc${c.ended?' done':''}" href="/c/${c.slug}"><div class="im" style="${c.cover?`background-image:url('${c.cover.replace(/['"()\\]/g,'')}')`:''}">${c.demo?'<span>קמפיין לדוגמה</span>':''}${c.live?'<span class="lv">● באוויר</span>':''}${c.ended?'<span class="en">🏁 הסתיים</span>':''}</div><div class="bd"><h3>${c.title.replace(/</g,'&lt;')}</h3><div class="bar"><i style="width:${w}%"></i></div><div class="m"><span><b>${cur}${f(c.total)}</b> מתוך ${cur}${f(c.goal)}</span><span>${Math.round(c.pct)}%</span></div></div></a>`}).join('')}).catch(()=>{document.getElementById('live').hidden=true});document.getElementById('y').textContent=new Date().getFullYear();const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});document.querySelectorAll('[data-r]').forEach(el=>io.observe(el));</script>
@@ -589,6 +616,14 @@ const ph=document.querySelector('.phone');if(ph&&!rm&&matchMedia('(hover:hover) 
 (function(){
 // demo phone: load the iframe a little before it scrolls into view
 const f=document.querySelector('.phone iframe[data-src]');if(f){const go=()=>{if(!f.src)f.src=f.dataset.src};if('IntersectionObserver' in window){const o=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){go();o.disconnect()}},{rootMargin:'900px 0px'});o.observe(f)}else go();setTimeout(go,4000)}
+})();
+</script>
+<script>
+(function(){
+// tap to unfold folded cards (phones)
+document.querySelectorAll('.gs,.mf-c').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('open')));
+// gentle scroll parallax for the 3D objects (desktop only)
+if(matchMedia('(min-width:701px)').matches&&!matchMedia('(prefers-reduced-motion:reduce)').matches){const els=[...document.querySelectorAll('.o3')];let tk=false;const run=()=>{tk=false;const vh=innerHeight;for(const e of els){const r=e.getBoundingClientRect();if(r.bottom<-100||r.top>vh+100)continue;const k=((r.top+r.height/2)-vh/2)/vh;e.style.setProperty('--py',(k*-26).toFixed(1)+'px')}};addEventListener('scroll',()=>{if(!tk){tk=true;requestAnimationFrame(run)}},{passive:true});run()}
 })();
 </script>
 </body>
