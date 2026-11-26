@@ -14,6 +14,8 @@ const CANON = (() => { const b = (process.env.PUBLIC_URL || process.env.BASE_URL
 const isRailHost = h => /\.up\.railway\.app$/i.test(String(h || '').split(':')[0]);
 app.use((req, res, next) => { if (isRailHost(req.get('host')) && (req.method === 'GET' || req.method === 'HEAD') && process.env.RAILWAY_ENVIRONMENT) return res.redirect(301, CANON + req.originalUrl); next(); });
 app.disable('x-powered-by');
+// gzip everything except live streams (SSE must flush unbuffered)
+app.use(require('compression')({ threshold: 1024, filter: (req, res) => !/\/stream$/.test(req.path) && !String(res.getHeader('Content-Type') || '').includes('event-stream') && require('compression').filter(req, res) }));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin'); res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   if (process.env.RAILWAY_ENVIRONMENT) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -70,7 +72,7 @@ db.exec("CREATE INDEX IF NOT EXISTS vev_vid ON vev(vid, id)");
 db.exec("CREATE INDEX IF NOT EXISTS ev_type ON events(type, id)"); db.exec("CREATE INDEX IF NOT EXISTS ev_at ON events(at)");
 for (const col of ["blocked INTEGER DEFAULT 0", "block_note TEXT DEFAULT ''", "tv INTEGER DEFAULT 0", "last_seen TEXT DEFAULT ''", "last_ip TEXT DEFAULT ''", "logins INTEGER DEFAULT 0"]) { try { db.exec('ALTER TABLE users ADD COLUMN ' + col); } catch { } }
 try { db.exec('ALTER TABLE donations ADD COLUMN resumed_from INTEGER'); } catch { }
-try { db.exec('CREATE INDEX IF NOT EXISTS d_team ON donations(team_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS d_camp ON donations(campaign_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS t_camp ON teams(campaign_id)'); } catch { }
+try { db.exec('CREATE INDEX IF NOT EXISTS d_team ON donations(team_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS d_camp ON donations(campaign_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS t_camp ON teams(campaign_id)'); db.exec('CREATE INDEX IF NOT EXISTS d_level ON donations(level_id, status, test)'); db.exec('CREATE INDEX IF NOT EXISTS d_team_amt ON donations(team_id, status, test, amount)'); db.exec('CREATE INDEX IF NOT EXISTS d_camp_amt ON donations(campaign_id, status, test, amount)'); db.exec('CREATE INDEX IF NOT EXISTS d_feed ON donations(campaign_id, status, test, paid_at)'); } catch { }
 const EVT = db.prepare('INSERT INTO events(type,level,user_id,campaign_id,ip,msg,meta) VALUES(?,?,?,?,?,?,?)');
 function logEvent(type, o = {}) { try { EVT.run(type, o.level || 'info', o.uid || null, o.cid || null, String(o.ip || '').slice(0, 64), String(o.msg || '').slice(0, 300), JSON.stringify(o.meta || {}).slice(0, 2000)); } catch { } if (NOTIFY_T[type]) setImmediate(() => adminNotify(type, o).catch(e => console.error('notify', e.message))); }
 // ---- email to the platform owner on important events (super-admin → הגדרות → "עדכונים למייל") ----
@@ -135,7 +137,7 @@ const own = (req, res, next) => {
 // SSE hub per campaign
 const subs = new Map(); const sseIp = new Map();
 let evHook = null; // set by lib/events.js: live donations also go to connected event screens
-const emit = (cid, ev, data) => { if (ev === 'donation' && data && data.donation && evHook) evHook(cid, data); const set = subs.get(cid); if (!set || !set.size) return; const msg = `event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`; for (const r of set) { try { r.write(msg); } catch { } } };
+const emit = (cid, ev, data) => { if (ev !== 'viewers') { try { for (const [k, v] of pubCache) if (v.cid === cid) pubCache.delete(k); } catch { } } if (ev === 'donation' && data && data.donation && evHook) evHook(cid, data); const set = subs.get(cid); if (!set || !set.size) return; const msg = `event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`; for (const r of set) { try { r.write(msg); } catch { } } };
 // the full ambassadors leaderboard is heavy: during a donation rush send it at most once every 2s per campaign
 const teamTimers = new Map();
 const emitTeams = (c, test) => { if (!subs.get(c.id)?.size || teamTimers.has(c.id)) return; teamTimers.set(c.id, setTimeout(() => { teamTimers.delete(c.id); try { const cc = db.prepare('SELECT * FROM campaigns WHERE id=?').get(c.id); if (cc) emit(c.id, 'refresh', { stats: stats(cc, test), teams: teamStats(cc, test) }); } catch { } }, 2000)); };
@@ -804,6 +806,16 @@ app.post('/api/impersonate/stop', (req, res) => {
 });
 // ---------- public campaign API ----------
 const getC = slug => db.prepare('SELECT * FROM campaigns WHERE slug=?').get(slug);
+// short-lived cache of the public campaign payload: absorbs traffic spikes (thousands of page loads at once);
+// dropped immediately when a donation lands (see emit) so totals stay live
+const pubCache = new Map();
+app.get('/api/c/:slug', (req, res, next) => {
+  const key = req.params.slug + '|' + (req.query.team || ''); const hit = pubCache.get(key);
+  if (hit && Date.now() - hit.t < 3000) { res.setHeader('Content-Type', 'application/json; charset=utf-8'); return res.send(hit.body); }
+  const json = res.json.bind(res);
+  res.json = obj => { if (res.statusCode === 200 && obj && obj.campaign) { const body = JSON.stringify(obj); if (pubCache.size > 500) pubCache.clear(); pubCache.set(key, { t: Date.now(), body, cid: obj.campaign.id }); res.setHeader('Content-Type', 'application/json; charset=utf-8'); return res.send(body); } return json(obj); };
+  next();
+});
 app.get('/api/c/:slug', (req, res) => {
   const c = getC(req.params.slug); if (!c) return bad(res, 'not found', 404);
   const test = isTest(c); const s = J(c.settings); const paused = !!s.adminPaused; for (const k of ADMIN_KEYS) delete s[k];
