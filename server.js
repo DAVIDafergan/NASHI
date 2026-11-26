@@ -832,7 +832,8 @@ app.get('/api/c/:slug/donations', (req, res) => { const c = getC(req.params.slug
 app.get('/api/c/:slug/stream', (req, res) => {
   const c = getC(req.params.slug); if (!c) return res.status(404).end();
   const ipN = sseIp.get(req.ip) || 0; if (ipN >= 1500) return res.status(429).end(); sseIp.set(req.ip, ipN + 1);
-  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' }); res.write(':ok\n\n');
+  // no-transform stops the edge proxy from compressing (and so buffering) the stream; the 2KB comment pushes past any initial buffer
+  res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no' }); res.flushHeaders && res.flushHeaders(); res.write(':' + ' '.repeat(2048) + '\n\n:ok\n\n');
   if (!subs.has(c.id)) subs.set(c.id, new Set()); res.__ip = req.ip; subs.get(c.id).add(res); viewersSoon(c.id);
   const ping = setInterval(() => { try { res.write(':p\n\n'); } catch { } }, 25000);
   req.on('close', () => { clearInterval(ping); subs.get(c.id)?.delete(res); viewersSoon(c.id); const n = (sseIp.get(req.ip) || 1) - 1; if (n > 0) sseIp.set(req.ip, n); else sseIp.delete(req.ip); });
