@@ -847,7 +847,7 @@ app.post('/api/c/:slug/donate', limit(600, 60000), async (req, res) => {
   const type = isTest(c) ? 'test' : (prov.type || 'test'); const cfg = prov;
   if (!isTest(c) && type === 'test') return bad(res, 'התרומות בקמפיין זה סגורות');
   const P = providers[type]; if (!P) return bad(res, 'ספק סליקה לא מוגדר');
-  let inst = Math.min(Math.max(1, +b.installments || 1), s.installments || 1);
+  let inst = Math.min(Math.max(1, +b.installments || 1), (s.installments === undefined || s.installments === '' ? 12 : +s.installments) || 1);
   // monthly quick button: the donor pledges amount × months; the processor charges `amount` every month for `months` months
   let finalAmount = amount, isMonthly = !!(b.monthly || (level && level.monthly)) && s.allowMonthly !== false;
   if (level && level.monthly) { inst = Math.max(1, +level.months || 12); finalAmount = level.amount * inst; isMonthly = true; }
