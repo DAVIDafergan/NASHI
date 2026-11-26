@@ -155,7 +155,7 @@ function markPaid(id, { ref = '', meta = {}, amount } = {}) {
   const nd = db.prepare('SELECT * FROM donations WHERE id=?').get(id);
   const c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(d.campaign_id);
   emit(c.id, 'donation', { donation: publicDonation(nd), stats: stats(c, nd.test) }); emitTeams(c, nd.test);
-  logEvent(nd.test ? 'donation.test' : 'donation.paid', { cid: c.id, msg: `${nd.anonymous ? 'אנונימי' : nd.name} · ₪${nd.amount}${nd.monthly ? ' (הו״ק)' : ''} · ${c.title}`, meta: { did: nd.id, provider: nd.provider } });
+  logEvent(nd.test ? 'donation.test' : 'donation.paid', { cid: c.id, msg: `${nd.name || 'ללא שם'}${nd.anonymous ? ' (אנונימי בדף)' : ''} ·₪${nd.amount}${nd.monthly ? ' (הו״ק)' : ''} · ${c.title}`, meta: { did: nd.id, provider: nd.provider } });
   if (nd.resumed_from) { db.prepare("UPDATE donations SET status='recovered' WHERE id=? AND status IN ('pending','failed')").run(nd.resumed_from); logEvent('donation.recovered', { cid: c.id, msg: `${nd.name} · ₪${nd.amount} · ${c.title}`, meta: { did: nd.id, from: nd.resumed_from } }); }
   thankMail(c, nd).catch(() => { });
   ambassadorFlow(c, nd).catch(e => logEvent('wa.error', { level: 'warn', cid: c.id, msg: String(e?.message || e).slice(0, 200) }));
@@ -468,7 +468,7 @@ app.get('/api/home', auth, (req, res) => {
     for (const d of rows) { const t = Date.parse((d.paid_at || d.created).replace(' ', 'T') + 'Z'); const ago = now - t; cd.n++; cd.s += d.amount; if (ago < 36e5) { ch.n++; ch.s += d.amount; } const hi = 23 - Math.min(23, Math.floor(ago / 36e5)); H[hi] += d.amount; }
     day.n += cd.n; day.s += cd.s; hour.n += ch.n; hour.s += ch.s;
     for (const d of db.prepare("SELECT d.id,d.name,d.anonymous,d.amount,d.dedication,d.paid_at,d.created,d.monthly,t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.campaign_id=? AND d.status='paid' AND d.test=? ORDER BY COALESCE(d.paid_at,d.created) DESC LIMIT 12").all(c.id, test))
-      feed.push({ id: d.id, cid: c.id, ctitle: c.title, name: names ? (d.anonymous ? '' : d.name) : '', anonymous: !!d.anonymous, amount: d.amount, dedication: names ? (d.dedication || '') : '', team: d.team || '', monthly: !!d.monthly, at: d.paid_at || d.created, test: !!test });
+      feed.push({ id: d.id, cid: c.id, ctitle: c.title, name: names ? d.name : '', anonymous: !!d.anonymous, amount: d.amount, dedication: names ? (d.dedication || '') : '', team: d.team || '', monthly: !!d.monthly, at: d.paid_at || d.created, test: !!test });
     if (c.status === 'live') { const p = db.prepare("SELECT COUNT(*) n FROM donations WHERE campaign_id=? AND status='pending' AND test=0 AND created > datetime('now','-2 day') AND created < datetime('now','-10 minutes')").get(c.id).n; pending += p;
       const end = c.end_at ? Date.parse((ilToUtc(c.end_at) || '').replace(' ', 'T') + 'Z') : 0; if (end && end > now && end - now < 48 * 36e5) ending.push({ id: c.id, title: c.title, hours: Math.round((end - now) / 36e5) }); }
     return { id: c.id, slug: c.slug, title: c.title, status: c.status, goal: c.goal, cover: c.cover || ((J(c.settings).media?.default?.desktop || [])[0]) || '', end_at: c.end_at, currency: c.currency, test: !!test, stats: st, today: cd, hour: ch, ended: isEnded(c) };
@@ -568,6 +568,7 @@ app.get('/api/campaigns/:id/donations', auth, own, (req, res) => {
   const { q, status, test } = req.query; let sql = 'SELECT d.*, t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.campaign_id=?'; const p = [req.c.id];
   if (status) { sql += ' AND d.status=?'; p.push(status); }
   if (test !== undefined && test !== '') { sql += ' AND d.test=?'; p.push(test === '1' ? 1 : 0); }
+  if (req.query.id) { sql += ' AND d.id=?'; p.push(+req.query.id || 0); }
   if (q) { sql += ' AND (d.name LIKE ? OR d.phone LIKE ? OR d.email LIKE ? OR d.dedication LIKE ?)'; p.push(...Array(4).fill('%' + q + '%')); }
   sql += ' ORDER BY d.id DESC LIMIT 2000'; const lite = req.user.sub && !req.user.sub.donations; // members without donor access get amounts & times only (for the live charts)
   res.json(db.prepare(sql).all(...p).map(d => lite ? { id: d.id, amount: d.amount, status: d.status, test: d.test, created: d.created, paid_at: d.paid_at, monthly: d.monthly, team_id: d.team_id } : ({ ...d, meta: undefined })));
