@@ -477,6 +477,14 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 @media(max-width:700px){.o3-top,.o3-mega,.cta2 .o3-rocket,.h3-a{animation:o3s 5s ease-in-out infinite!important}@keyframes o3s{50%{transform:translateY(-6px)}}}
 @media (prefers-reduced-motion:reduce){.orb i,.vc-coins i,.vc-bar i::after{animation:none!important}}
 </style>
+<style id="o3b-css">
+.o3-top.o3-wide{width:clamp(130px,16vw,210px)}
+.o3-live{width:clamp(84px,9vw,120px);animation:o3f 6s ease-in-out infinite;margin-inline-end:4px;align-self:center}
+.mf{position:relative}.o3-live+div{margin-inline-end:auto}
+.o3-bank{position:absolute;inset-inline-end:-46px;bottom:-34px;width:clamp(110px,12vw,150px);animation:o3f 7s ease-in-out -2s infinite;z-index:2}
+@media(max-width:1100px){.o3-bank{position:static;width:96px;margin:6px auto 0}}
+@media(max-width:700px){.o3-live{width:64px;animation:o3s 5s ease-in-out infinite!important}.o3-bank{width:84px;animation:o3s 5s ease-in-out infinite!important}.o3-top.o3-wide{width:120px}}
+</style>
 </head>
 <body><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
@@ -495,7 +503,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 
 
 <section id="live" style="padding-top:clamp(40px,6vw,80px)"><div class="wrap">
-  <div data-r style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap"><div><span class="lbl">קמפיינים על הפלטפורמה</span><h2 style="margin-top:12px">גלו קמפיינים</h2></div><a class="btn o" href="/c/demo">לקמפיין לדוגמה ↗</a></div>
+  <div data-r style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap"><img class="o3 o3-live" src="/img3d/phone.webp" alt="" width="608" height="705" loading="lazy" decoding="async"><div><span class="lbl">קמפיינים על הפלטפורמה</span><h2 style="margin-top:12px">גלו קמפיינים</h2></div><a class="btn o" href="/c/demo">לקמפיין לדוגמה ↗</a></div>
   <div class="cg" id="cg"></div>
 </div></section>
 
@@ -577,7 +585,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 </div></section>
 
 <section id="pricing"><div class="wrap">
-  <div data-r class="center" style="text-align:center"><span class="lbl">מחיר</span><h2 style="margin-top:12px">פשוט. בלי אחוזים.</h2><p class="sub" style="margin-inline:auto">כל התוכניות כוללות את כל היכולות. משלמים על הגודל, לא על ההצלחה.</p></div>
+  <div data-r class="center" style="text-align:center"><img class="o3 o3-top" src="/img3d/tag.webp" alt="" width="565" height="720" loading="lazy" decoding="async"><span class="lbl">מחיר</span><h2 style="margin-top:12px">פשוט. בלי אחוזים.</h2><p class="sub" style="margin-inline:auto">כל התוכניות כוללות את כל היכולות. משלמים על הגודל, לא על ההצלחה.</p></div>
   <div class="price">
     <div class="pc" data-r><h3>בנייה ובדיקה</h3><div class="pr">₪0<small> / חינם</small></div><ul><li>בונים קמפיין מלא במצב בדיקה</li><li>תרומות מדומות, שגרירים, מסך אירוע</li><li>משלמים רק כשעולים לאוויר</li></ul><a class="btn o" href="/app#reg">להתחיל</a></div>
     <div class="pc hl" data-r><h3>קמפיין</h3><div class="pr"><span data-price="campaign">₪790</span><small> / קמפיין</small></div><ul><li>קמפיין אחד באוויר עד 45 יום, ללא הגבלת סכום</li><li>שגרירים ללא הגבלה</li><li>מסך אירוע, 4 שפות, מדריך חכם</li><li>תשלום חד-פעמי לפני העלייה לאוויר</li></ul><a class="btn" href="/app#reg">פתיחת קמפיין</a></div>
@@ -601,7 +609,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 </div></div></section>
 
 <section id="who"><div class="wrap">
-  <div data-r style="text-align:center"><span class="lbl">למי זה מתאים</span><h2 style="margin-top:12px">גיוס המונים לכל מטרה טובה</h2><p class="sub" style="margin-inline:auto">כל עמותה או ארגון רשום בישראל – לכל מטרה, מכל תחום, בכל גודל.</p></div>
+  <div data-r style="text-align:center"><img class="o3 o3-top o3-wide" src="/img3d/hands.webp" alt="" width="720" height="508" loading="lazy" decoding="async"><span class="lbl">למי זה מתאים</span><h2 style="margin-top:12px">גיוס המונים לכל מטרה טובה</h2><p class="sub" style="margin-inline:auto">כל עמותה או ארגון רשום בישראל – לכל מטרה, מכל תחום, בכל גודל.</p></div>
   <div class="tiles">
     <div class="tile" data-r><div class="ti"><svg class="li" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></div><h3>עמותות וארגוני חסד</h3><p>קמפיין שנתי, חגים וחירום</p></div>
     <div class="tile" data-r><div class="ti"><svg class="li" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path pathLength="1" d="M9 12l2 2 4-4"/></svg></div><h3>חיילים ומשפחות מילואים</h3><p>גיוס המונים לציוד, סיוע ומשפחות</p></div>
@@ -625,7 +633,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
       <div class="mf-n"><div class="mf-ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></div><div><b>המסוף שלכם</b><small>החיוב יוצא על שם העמותה</small></div></div>
       <div class="mf-n"><div class="mf-ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M4 10h16M12 3l8 5H4l8-5zM6 10v8M10 10v8M14 10v8M18 10v8"/></svg><span class="mf-ok" aria-hidden="true">✓</span></div><div><b>הבנק שלכם</b><small>הסכום המלא, בלי עצירה בדרך</small></div></div>
     </div>
-    <div class="mf-note">אנחנו בונים את הדף וסופרים את התרומות. <b>בכסף עצמו אנחנו לא נוגעים.</b></div>
+    <img class="o3 o3-bank" src="/img3d/bank.webp" alt="" width="720" height="684" loading="lazy" decoding="async"><div class="mf-note">אנחנו בונים את הדף וסופרים את התרומות. <b>בכסף עצמו אנחנו לא נוגעים.</b></div>
   </div>
   <div class="mf-g">
     <div class="mf-c" data-r><i>💳</i><h3>אין לנו כרטיסי אשראי</h3><p>התורם מקליד את פרטי הכרטיס ישירות אצל חברת הסליקה. לשרתים של GiveIL הם לא מגיעים, ולכן גם אין מה לשמור.</p></div>
