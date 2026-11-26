@@ -486,7 +486,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 @media(max-width:700px){.o3-live{width:64px;animation:o3s 5s ease-in-out infinite!important}.o3-bank{width:84px;animation:o3s 5s ease-in-out infinite!important}.o3-top.o3-wide{width:120px}}
 </style>
 <style id="aib-css">
-.aib{max-width:660px;margin:28px auto 0;position:relative;z-index:2;animation:upIn .9s cubic-bezier(.22,1,.36,1) .42s both}
+.aib{max-width:660px;margin:44px auto 0;position:relative;z-index:2;animation:upIn .9s cubic-bezier(.22,1,.36,1) .42s both}
 .aib-in{position:relative;border-radius:999px}
 .aib-in.multi{border-radius:28px}
 .aib-in .halo,.aib-in .ring{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
@@ -500,14 +500,14 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 .aib-go{flex:none;width:42px;height:42px;border:0;border-radius:50%;font:inherit;font-weight:700;font-size:19px;color:#fff;background:var(--ink);cursor:pointer;display:grid;place-items:center;transform:scale(0);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .2s}
 .aib.has .aib-go{transform:none;opacity:1;pointer-events:auto}
 .aib:not(.has) .aib-go{width:0!important;margin-inline-start:-8px}
-.aib:not([hidden])~.cta{margin-top:20px}
-.aib-lb{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:16px;color:var(--ink);margin-bottom:12px;cursor:text}
+.aib:not([hidden])~.cta{display:none!important}.aib:not([hidden])~.tr{margin-top:34px}
+.aib-lb{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:17px;color:var(--ink);margin-bottom:16px;cursor:text}
 .aib-lb i{font-style:normal;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;color:#fff;background:linear-gradient(135deg,#4285f4,#9b72cb 55%,#d96570);flex:none}
 .aib-ic{flex:none;font-size:18px;color:#a8a29e;margin-inline-end:2px}
 .aib-box{cursor:text}
 .aib input::placeholder{color:#8a8580}
 @media(max-width:700px){.aib-lb{font-size:14.5px;margin-bottom:10px}}
-@media(max-width:700px){.aib{margin-top:18px}.aib input{font-size:16px}.aib-box{padding-inline-start:18px;min-height:54px}.aib-go{width:38px;height:38px}}
+@media(max-width:700px){.aib{margin-top:28px}.aib:not([hidden])~.tr{margin-top:24px}.aib input{font-size:16px}.aib-box{padding-inline-start:18px;min-height:54px}.aib-go{width:38px;height:38px}}
 @media (prefers-reduced-motion:reduce){.aib-in .spin{animation-duration:24s}}
 </style>
 </head>
