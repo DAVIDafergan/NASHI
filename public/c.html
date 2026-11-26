@@ -275,11 +275,22 @@ html[data-theme=dark] .loader .heart{stroke:#fff}
 .pcard .pct b{display:block;font-weight:700;font-size:22px}.pcard .pct span{font-size:11px;color:var(--mut)}
 .pcard .bar{margin:16px 0 10px;max-width:none}
 .pcard .meta{justify-content:flex-start}
-.pcard .timer{max-width:none;margin:12px 0 0;display:inline-flex;align-items:center;gap:6px;background:var(--soft);border-radius:999px;padding:6px 14px 6px 10px;font-size:13px;color:var(--mut)}
-.pcard .timer div{flex:none;background:none;border:0;padding:0;box-shadow:none;display:flex;align-items:baseline;gap:3px}
-.pcard .timer b{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:0;background:none;-webkit-text-fill-color:var(--ink)}
-.pcard .timer span{font-size:11px}
-.pcard .timer .tl{font-weight:600;margin-inline-end:4px}
+.pcard .timer{display:block;max-width:none;width:100%;margin:14px 0 0;padding:12px 12px 13px;border-radius:20px;background:linear-gradient(180deg,color-mix(in srgb,var(--v) 7%,var(--cardS)),color-mix(in srgb,var(--v) 3%,var(--cardS)));border:1px solid color-mix(in srgb,var(--v) 16%,transparent);text-align:center}
+.pcard .timer .tl{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--mut);margin:0 0 9px;letter-spacing:.01em}
+.pcard .timer .tl i{width:7px;height:7px;border-radius:50%;background:var(--v);box-shadow:0 0 0 0 color-mix(in srgb,var(--v) 45%,transparent);animation:tdot 2s ease-out infinite}
+@keyframes tdot{to{box-shadow:0 0 0 7px transparent}}
+.pcard .timer .tb{display:flex;justify-content:center;align-items:flex-start;gap:0;flex:none;background:none;border:0;border-radius:0;padding:0;box-shadow:none;backdrop-filter:none}
+.pcard .timer .tb div{flex:1 1 0;max-width:86px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;padding:0;box-shadow:none;backdrop-filter:none;border-radius:0}
+.pcard .timer .tb b{display:block;width:100%;padding:9px 0 8px;border-radius:13px;background:var(--cardS);border:1px solid var(--line);box-shadow:0 1px 0 rgba(0,0,0,.03),0 6px 14px -10px rgba(0,0,0,.25);font-size:25px;line-height:1;font-weight:800;letter-spacing:.01em;font-variant-numeric:tabular-nums;color:var(--ink);-webkit-text-fill-color:var(--ink)}
+.pcard .timer .tb span{font-size:11px;font-weight:600;color:var(--mut)}
+.pcard .timer .tb em{flex:none;width:16px;font-style:normal;font-size:20px;font-weight:800;line-height:44px;color:color-mix(in srgb,var(--v) 55%,transparent)}
+.pcard .timer.pre{background:linear-gradient(135deg,var(--v),color-mix(in srgb,var(--v) 72%,#000));border-color:transparent;padding:15px 12px 14px}
+.pcard .timer.pre .tl{color:#fff;font-size:14px;margin-bottom:11px}.pcard .timer.pre .tl i{background:#fff;box-shadow:0 0 0 0 rgba(255,255,255,.5)}
+.pcard .timer.pre .tb b{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);box-shadow:none;color:#fff;-webkit-text-fill-color:#fff;font-size:28px;padding:11px 0 10px}
+.pcard .timer.pre .tb span{color:rgba(255,255,255,.82)}.pcard .timer.pre .tb em{color:rgba(255,255,255,.55);line-height:50px}
+.pcard .timer.urg .tb b{color:var(--v);-webkit-text-fill-color:var(--v)}
+.pcard .timer.over{padding:10px 12px;font-size:15px}
+@media(prefers-reduced-motion:reduce){.pcard .timer .tl i{animation:none}}
 .mcta{display:flex;gap:10px;margin-top:16px;align-items:center}
 .mcta .btn{flex:1;min-height:54px;font-size:17px}
 .mshare{display:flex;gap:6px}
@@ -394,13 +405,6 @@ html{scroll-behavior:smooth}
 .amt.on small,.amt.on .la,.amt.on .ln{color:#fff}
 .mshare .chip.shb{background:var(--v);color:#fff;padding:10px 22px;font-size:14px;font-weight:600;gap:8px}
 
-/* countdown before the campaign opens */
-.pcard .timer.pre{display:block;width:100%;background:var(--soft);border-radius:18px;padding:14px 12px 12px;text-align:center}
-.pcard .timer.pre .tl{display:block;font-size:14px;font-weight:700;color:var(--ink);margin:0 0 10px}
-.pcard .timer.pre .tb{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;direction:rtl}
-.pcard .timer.pre .tb div{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--cardS);border:1px solid var(--line);border-radius:12px;padding:10px 4px}
-.pcard .timer.pre .tb b{font-size:24px;line-height:1;font-weight:800;color:var(--v);-webkit-text-fill-color:var(--v)}
-.pcard .timer.pre .tb span{font-size:12px;color:var(--mut)}
 /* footer sits at the very bottom */
 body{padding-bottom:0!important}
 footer{padding:32px 16px calc(16px + env(safe-area-inset-bottom))!important;margin-bottom:0}
@@ -631,7 +635,9 @@ function timer(){const c=D.campaign;const el=$('#timer');const end=new Date(c.en
   if(start>now){diff=start-now;lbl=T('startsIn')}
   if(diff<=0||c.ended){el.className='timer over';el.textContent=T('ended');if(!c.ended&&c.status==='live'){c.ended=c.closed=true;document.body.classList.add('ended','closed');$('#joinBtn')&&($('#joinBtn').hidden=true);$('#joinChip')&&($('#joinChip').hidden=true)}endBan();return}
   const d=Math.floor(diff/864e5),h=Math.floor(diff%864e5/36e5),m=Math.floor(diff%36e5/6e4),s=Math.floor(diff%6e4/1e3);
-  if(lbl){el.className='timer pre';el.innerHTML=`<span class="tl">${lbl}</span><div class="tb">`+[[d,T('days')],[h,T('hours')],[m,T('mins')],[s,T('secs')]].map(([v,l])=>`<div><b>${String(v).padStart(2,'0')}</b><span>${l}</span></div>`).join('')+'</div>';return}el.className='timer';el.innerHTML=`<span class="tl">⏱ ${lbl||T('timeLeft')}</span>`+[[d,T('days')],[h,T('hours')],[m,T('mins')],[s,T('secs')]].filter(([v],i)=>i>0||v>0).map(([v,l])=>`<div><b>${String(v).padStart(2,'0')}</b><span>${l}</span></div>`).join('')}
+  const U=[[d,T('days')],[h,T('hours')],[m,T('mins')],[s,T('secs')]].filter(([v],i)=>i>0||v>0||lbl);const cls='timer'+(lbl?' pre':diff<864e5?' urg':'');const key=cls+U.length+(lbl||'');
+  if(el.dataset.k!==key||!el.querySelector('.tb')){el.dataset.k=key;el.className=cls;el.innerHTML=`<span class="tl"><i></i>${lbl||T('timeLeft')}</span><div class="tb">`+U.map(([v,l])=>`<div><b></b><span>${l}</span></div>`).join('<em aria-hidden="true">:</em>')+'</div>'}
+  el.querySelectorAll('.tb b').forEach((e,i)=>{const t=String(U[i][0]).padStart(2,'0');if(e.textContent!==t)e.textContent=t})}
 function ago(s){if(!s)return '';const t=new Date(s.includes('T')?s:s.replace(' ','T')+'Z');const m=Math.max(0,Math.round((Date.now()-t)/6e4));if(m<60)return T('minAgo',{n:m});const h=Math.round(m/60);if(h<48)return T('hrAgo',{n:h});return T('dayAgo',{n:Math.round(h/24)})}
 function donorRow(d){const name=d.anonymous||!d.name?T('anonDonor'):d.name;const t=d.team_id&&D.teams.find(x=>x.id===d.team_id);return `<div class="dn"><div class="av">${esc(name[0])}</div><div class="i"><b>${esc(name)}</b><small>${ago(d.created)}</small>${t?`<span class="tg">${T('forT')} ${esc(t.name)}</span>`:''}</div><div class="a">${D.campaign.settings.hideAmounts?'❤':cur+fmt(d.amount)}${D.campaign.multiplier>1&&!D.campaign.settings.hideAmounts?`<small>= ${cur}${fmt(d.amount*D.campaign.multiplier)}</small>`:''}${d.monthly?`<small>${d.months>1&&!D.campaign.settings.hideAmounts?T('monthlyX',{a:cur+fmt(Math.round(d.amount/d.months)),m:d.months}):T('monthlyTag')}</small>`:''}</div>${d.dedication?`<div class="ded">“${esc(d.dedication)}”</div>`:''}</div>`}
 let pendingRows=[];function renderDonors(list,reset){const el=$('#donorsList');if(reset){el.innerHTML='';pendingRows=[]}if(!list.length&&reset){el.innerHTML=`<div class="empty">${T('first')}</div>`;$('#more').hidden=true;return}const all=pendingRows.concat(list);const show=all.slice(0,12);pendingRows=all.slice(12);el.insertAdjacentHTML('beforeend',show.map(donorRow).join(''));$('#more').hidden=!(pendingRows.length||list.length>=60)}
