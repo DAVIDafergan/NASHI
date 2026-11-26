@@ -324,7 +324,7 @@ const bridge = async (path, body) => {
 // מונה "עסקים כבר בפנים" = מספר בסיס שהמנהל קובע + כל עסק שאושר או שילם
 const bizShown = () => { const v = db.prepare("SELECT v FROM kv WHERE k='biz_shown'").get()?.v; return v == null ? 5 : Number(v) || 0; };
 const bizApproved = () => db.prepare("SELECT COUNT(*) c FROM applications WHERE status IN ('paid','approved')").get().c;
-app.get('/api/biz/price', (req, res) => res.json({ price: BIZ_PRICE, joined: bizShown() + bizApproved() }));
+app.get('/api/biz/price', (req, res) => res.json({ price: BIZ_PRICE, joined: bizShown() + bizApproved(), goal: 20 }));
 app.post('/api/admin/applications/:id/approve', needAdmin, (req, res) => { db.prepare("UPDATE applications SET status=CASE WHEN status='approved' THEN 'callback' ELSE 'approved' END WHERE id=? AND status<>'paid'").run(req.params.id); res.json({ ok: true }); });
 app.post('/api/admin/biz-shown', needAdmin, (req, res) => { const n = Math.max(0, Math.min(9999, parseInt(req.body.n) || 0)); db.prepare("INSERT INTO kv(k,v) VALUES('biz_shown',?) ON CONFLICT(k) DO UPDATE SET v=excluded.v").run(String(n)); res.json({ ok: true, n }); });
 const logoUp = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 }, fileFilter: (q, f, cb) => cb(null, /^image\//.test(f.mimetype)) });
