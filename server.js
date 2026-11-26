@@ -1628,7 +1628,8 @@ process.on('uncaughtException', e => { logEvent('server.crash', { level: 'error'
       c = db.prepare('SELECT * FROM campaigns WHERE id=?').get(r.lastInsertRowid);
     } else {
       const s = J(c.settings); s.demo = true;
-      db.prepare('UPDATE campaigns SET cover=CASE WHEN cover=\'\' THEN ? ELSE cover END, story=CASE WHEN story=\'\' THEN ? ELSE story END, settings=?, end_at=? WHERE id=?').run(COVER, story, JSON.stringify(s), end, c.id);
+      // the demo always runs in test mode: its sample donations are test donations, and nobody can be charged on it
+      db.prepare('UPDATE campaigns SET cover=CASE WHEN cover=\'\' THEN ? ELSE cover END, story=CASE WHEN story=\'\' THEN ? ELSE story END, settings=?, end_at=?, status=\'test\' WHERE id=?').run(COVER, story, JSON.stringify(s), end, c.id);
     }
     if (!db.prepare('SELECT 1 FROM levels WHERE campaign_id=?').get(c.id)) [['חבילה למשפחה', 180], ['שתי משפחות', 360], ['סל חג לחודש', 1000], ['שותף/ה מרכזי/ת', 5000]].forEach(([n, a], i) => db.prepare('INSERT INTO levels(campaign_id,name,amount,pos) VALUES(?,?,?,?)').run(c.id, n, a, i));
     if (!db.prepare('SELECT 1 FROM teams WHERE campaign_id=?').get(c.id)) [['הרב יוסי', 'yossi', 20000], ['משפחת לוי', 'levi', 12000], ['נועה – שגרירה', 'noa', 8000], ['ישיבת אור', 'or', 15000]].forEach(([n, sl, g], i) => db.prepare('INSERT INTO teams(campaign_id,slug,name,goal,pos) VALUES(?,?,?,?,?)').run(c.id, sl, n, g, i));

@@ -347,6 +347,24 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 @keyframes ctaBg{50%{background-position:100% 50%}}
 @media (prefers-reduced-motion:reduce){.drift,.steps::after{display:none}.rb-track,.phone,.hero [data-r],.tile .ti,.pc.hl,.cta2{animation:none!important}}
 </style>
+<style id="mobile-rows">
+/* phones: long stacks become swipeable rows so the page is much shorter */
+@media(max-width:700px){
+ .tiles,.steps,.gd,.price,.mgl,.mf-g{display:flex!important;grid-template-columns:none!important;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;gap:12px!important;margin-inline:-16px;padding:6px 16px 14px!important;scroll-padding-inline:16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+ .tiles::-webkit-scrollbar,.steps::-webkit-scrollbar,.gd::-webkit-scrollbar,.price::-webkit-scrollbar,.mgl::-webkit-scrollbar,.mf-g::-webkit-scrollbar{display:none}
+ .tiles>*,.steps>*,.gd>*,.price>*,.mgl>*,.mf-g>*{flex:0 0 78%;scroll-snap-align:start;min-width:0}
+ .tiles>*{flex-basis:42%;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 10px}
+ .dark .tiles>*{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+ .price>*{flex-basis:84%}
+ .price{padding-top:18px!important}
+ .steps::after{display:none}
+ .swipe-hint{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--mut);margin-top:-2px}
+ .swipe-hint i{font-style:normal;display:inline-block;animation:swp 1.6s ease-in-out infinite}
+ @keyframes swp{50%{transform:translateX(-6px)}}
+ .dark .swipe-hint{color:#aeb2c2}
+}
+@media(min-width:701px){.swipe-hint{display:none}}
+</style>
 </head>
 <body><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
@@ -359,7 +377,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
   <div class="cta"><a class="btn" href="/app#reg"><span class="ar">←</span>פותחים קמפיין</a><a class="btn o" href="/c/demo">צפו בקמפיין לדוגמה ↗</a></div>
   <div class="tr"><span>0% עמלה מהתרומות</span><span>מצב בדיקה לפני העלייה לאוויר</span><span>אימות מול רשם העמותות</span><span>4 שפות</span></div>
   <div class="nums" data-r><div><b>0%</b><span>עמלה מהתרומות</span></div><div><b class="t">30 דק׳</b><span>מהרשמה לקמפיין חי</span></div><div><b class="v">4</b><span>שפות מהקופסה</span></div></div>
-  <div data-r><div class="phone"><div class="float f1">🎉 תרומה חדשה<small>מתעדכן בזמן אמת</small></div><div class="float f2">👥 שגרירים<small>לכל אחד קישור ויעד אישי</small></div><div class="float f3">💳 ביט · אשראי · הו״ק<small>דרך הסליקה שלכם</small></div><div class="scr"><iframe src="/c/demo?embed=1&lang=he" title="קמפיין לדוגמה בנייד" loading="lazy" scrolling="yes"></iframe></div></div><div class="phone-cap">ככה נראה דף קמפיין אמיתי בנייד – אפשר לגלול בתוכו · <a href="/c/demo" style="text-decoration:underline">לפתיחה במסך מלא ↗</a></div></div>
+  <div data-r><div class="phone"><div class="float f1">🎉 תרומה חדשה<small>מתעדכן בזמן אמת</small></div><div class="float f2">👥 שגרירים<small>לכל אחד קישור ויעד אישי</small></div><div class="float f3">💳 ביט · אשראי · הו״ק<small>דרך הסליקה שלכם</small></div><div class="scr"><iframe data-src="/c/demo?embed=1&lang=he" title="קמפיין לדוגמה בנייד" scrolling="yes"></iframe></div></div><div class="phone-cap">ככה נראה דף קמפיין אמיתי בנייד – אפשר לגלול בתוכו · <a href="/c/demo" style="text-decoration:underline">לפתיחה במסך מלא ↗</a></div></div>
 </div></header>
 
 <div class="ribbon" aria-label="יתרונות"><div class="rb-track"><div class="rb-set"><span>💳 מתחברים למערכת הסליקה שלכם</span><i>✦</i><span>🏦 התרומות נכנסות ישירות לחשבון העמותה</span><i>✦</i><span>📱 אשראי · ביט · הוראות קבע</span><i>✦</i><span>👥 שגרירים עם קישור אישי</span><i>✦</i><span>📺 מסך אירוע חי</span><i>✦</i><span>🌍 4 שפות</span><i>✦</i><span>🧪 מצב בדיקה לפני העלייה לאוויר</span><i>✦</i><span>📊 ייצוא לאקסל</span><i>✦</i><span>✅ אימות מול רשם העמותות</span><i>✦</i><span>0% עמלה מהתרומות</span><i>✦</i></div><div class="rb-set" aria-hidden="true"><span>💳 מתחברים למערכת הסליקה שלכם</span><i>✦</i><span>🏦 התרומות נכנסות ישירות לחשבון העמותה</span><i>✦</i><span>📱 אשראי · ביט · הוראות קבע</span><i>✦</i><span>👥 שגרירים עם קישור אישי</span><i>✦</i><span>📺 מסך אירוע חי</span><i>✦</i><span>🌍 4 שפות</span><i>✦</i><span>🧪 מצב בדיקה לפני העלייה לאוויר</span><i>✦</i><span>📊 ייצוא לאקסל</span><i>✦</i><span>✅ אימות מול רשם העמותות</span><i>✦</i><span>0% עמלה מהתרומות</span><i>✦</i></div></div></div>
@@ -548,6 +566,15 @@ const cu=b=>{const m=b.textContent.match(/^(\D*)(\d+)(.*)$/);if(!m||rm)return;co
 const io3=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.querySelectorAll('b').forEach(cu);io3.unobserve(e.target)}}),{threshold:.4});document.querySelectorAll('.nums').forEach(n=>io3.observe(n));
 // gentle 3D tilt of the phone mockup following the mouse (desktop only)
 const ph=document.querySelector('.phone');if(ph&&!rm&&matchMedia('(hover:hover) and (min-width:900px)').matches){let raf=0;addEventListener('mousemove',e=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const r=ph.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;const x=(e.clientX-(r.left+r.width/2))/innerWidth,y=(e.clientY-(r.top+r.height/2))/innerHeight;ph.style.transform=`perspective(1200px) rotateY(${(x*10).toFixed(2)}deg) rotateX(${(-y*8).toFixed(2)}deg)`})},{passive:true});document.addEventListener('mouseleave',()=>ph.style.transform='')}
+})();
+</script>
+<script>
+(function(){
+// demo phone: load the iframe a little before it scrolls into view
+const f=document.querySelector('.phone iframe[data-src]');if(f){const go=()=>{if(!f.src)f.src=f.dataset.src};if('IntersectionObserver' in window){const o=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){go();o.disconnect()}},{rootMargin:'900px 0px'});o.observe(f)}else go();setTimeout(go,4000)}
+// "swipe" hint under each row on phones
+if(matchMedia('(max-width:700px)').matches)document.querySelectorAll('.tiles,.steps,.gd,.price,.mgl,.mf-g').forEach(r=>{if(r.children.length<2)return;const h=document.createElement('div');h.className='swipe-hint';h.innerHTML='<i>←</i> החליקו לעוד';r.after(h);r.addEventListener('scroll',()=>h.style.opacity='0',{once:true,passive:true})});
+if(matchMedia('(max-width:700px)').matches){const pr=document.querySelector('.price'),hl=pr&&pr.querySelector('.hl');if(hl)requestAnimationFrame(()=>{pr.scrollLeft+=hl.getBoundingClientRect().left-pr.getBoundingClientRect().left-((pr.clientWidth-hl.offsetWidth)/2)})}
 })();
 </script>
 </body>
