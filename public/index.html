@@ -501,6 +501,12 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 .aib.has .aib-go{transform:none;opacity:1;pointer-events:auto}
 .aib:not(.has) .aib-go{width:0!important;margin-inline-start:-8px}
 .aib:not([hidden])~.cta{margin-top:20px}
+.aib-lb{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:16px;color:var(--ink);margin-bottom:12px;cursor:text}
+.aib-lb i{font-style:normal;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;color:#fff;background:linear-gradient(135deg,#4285f4,#9b72cb 55%,#d96570);flex:none}
+.aib-ic{flex:none;font-size:18px;color:#a8a29e;margin-inline-end:2px}
+.aib-box{cursor:text}
+.aib input::placeholder{color:#8a8580}
+@media(max-width:700px){.aib-lb{font-size:14.5px;margin-bottom:10px}}
 @media(max-width:700px){.aib{margin-top:18px}.aib input{font-size:16px}.aib-box{padding-inline-start:18px;min-height:54px}.aib-go{width:38px;height:38px}}
 @media (prefers-reduced-motion:reduce){.aib-in .spin{animation-duration:24s}}
 </style>
@@ -513,7 +519,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
   <span class="lbl">פלטפורמה לגיוס תרומות וגיוס המונים לעמותות</span>
   <h1>הקמפיין הבא שלכם<br><span>מגייס יותר.</span></h1>
   <p>דף קמפיין חי, שגרירים עם קישור אישי, הסליקה שלכם בלי עמלת פלטפורמה, מסך אירוע ומדריך חכם. מהרעיון ליעד, תוך חצי שעה.</p>
-  <form class="aib" id="aib" hidden><div class="aib-in"><div class="halo"><i class="spin"></i></div><div class="ring"><i class="spin"></i></div><div class="aib-box"><input id="aibT" type="text" maxlength="600" autocomplete="off" enterkeyhint="go" placeholder="ספר תורה לבית הכנסת שלנו, 150 אלף ₪" aria-label="ספרו לנו על הקמפיין שלכם"><button class="aib-go" aria-label="בנו לי קמפיין" tabindex="-1">↑</button></div></div></form>
+  <form class="aib" id="aib" hidden><label class="aib-lb" for="aibT"><i>✦</i> כתבו על מה מגייסים, ונבנה לכם קמפיין</label><div class="aib-in"><div class="halo"><i class="spin"></i></div><div class="ring"><i class="spin"></i></div><div class="aib-box"><span class="aib-ic" aria-hidden="true">✎</span><input id="aibT" type="text" maxlength="600" autocomplete="off" enterkeyhint="go" placeholder="כתבו כאן…" aria-label="ספרו לנו על הקמפיין שלכם"><button class="aib-go" aria-label="בנו לי קמפיין" tabindex="-1">↑</button></div></div></form>
   <div class="cta"><a class="btn" href="/app#reg"><span class="ar">←</span>פותחים קמפיין</a><a class="btn o" href="/c/demo">צפו בקמפיין לדוגמה ↗</a></div>
   <div class="tr"><span>0% עמלה מהתרומות</span><span>מצב בדיקה לפני העלייה לאוויר</span><span>אימות מול רשם העמותות</span><span>4 שפות</span></div>
   <div class="nums" data-r><div><b>0%</b><span>עמלה מהתרומות</span></div><div><b class="t">30 דק׳</b><span>מהרשמה לקמפיין חי</span></div><div><b class="v">4</b><span>שפות מהקופסה</span></div></div>
@@ -746,6 +752,11 @@ const go=v=>{v=String(v||'').trim();try{if(v)sessionStorage.setItem('gvFirst',v)
 f.addEventListener('submit',e=>{e.preventDefault();go(t.value)});
 t.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();go(t.value)}});
 const upd=()=>f.classList.toggle('has',!!t.value.trim());t.addEventListener('input',upd);upd();
+// typewriter examples in the empty field, so it reads as a place to type
+const EX=['ספר תורה לבית הכנסת שלנו, 150 אלף ₪','חבילות מזון לחג ל-300 משפחות','בניין חדש לישיבה, יעד של מיליון ₪','ציוד לחיילים של הגדוד שלנו'];let ei=0,ci=0,dir=1,tm;
+const tick=()=>{if(t.value){t.placeholder='כתבו כאן…';tm=setTimeout(tick,1200);return}const w=EX[ei];ci+=dir;t.placeholder=w.slice(0,ci)+'▏';let d=dir>0?55:22;if(dir>0&&ci>=w.length){dir=-1;d=1900}else if(dir<0&&ci<=0){dir=1;ei=(ei+1)%EX.length;d=350}tm=setTimeout(tick,d)};
+if(!matchMedia('(prefers-reduced-motion:reduce)').matches)tick();else t.placeholder='לדוגמה: '+EX[0];
+f.querySelector('.aib-box').addEventListener('click',()=>t.focus());
 })();
 </script>
 </body>
