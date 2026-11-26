@@ -417,9 +417,9 @@ header{background:var(--paper)!important;backdrop-filter:none!important;-webkit-
 .pcard .pct.ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .pct.ring .rt{fill:none;stroke:var(--soft);stroke-width:6}
 .pct.ring .rf{fill:none;stroke:url(#rgG);stroke-width:6;stroke-linecap:round;stroke-dasharray:169.65;stroke-dashoffset:169.65;transition:stroke-dashoffset 1.6s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 0 4px color-mix(in srgb,var(--v) 45%,transparent))}
-.pct.ring .rv{position:relative;text-align:center;line-height:1.05}.pct.ring .rv b{font-size:19px!important;font-weight:800}.pct.ring .rv span{display:block;font-size:10.5px;color:var(--mut)}
+.pct.ring .rv{position:relative;text-align:center;line-height:1.05;max-width:78%}.pct.ring .rv b{font-size:20px!important;font-weight:800;letter-spacing:-.02em;white-space:nowrap}.pct.ring .rv b[data-len='4']{font-size:16px!important}.pct.ring .rv b[data-len='5']{font-size:14px!important}.pct.ring .rv span{display:block;font-size:10.5px;color:var(--mut)}
 .pct.ring.pop{animation:rpop .7s cubic-bezier(.22,1,.36,1)}@keyframes rpop{40%{transform:scale(1.1)}}
-@media(max-width:640px){.pcard .pct.ring{width:72px;height:72px}.pct.ring .rv b{font-size:16px!important}}
+@media(max-width:640px){.pcard .pct.ring{width:76px;height:76px}.pct.ring .rv b{font-size:18px!important}.pct.ring .rv b[data-len='4']{font-size:14.5px!important}.pct.ring .rv b[data-len='5']{font-size:12.5px!important}}
 .meta .live{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--mut);font-weight:600}.meta .live i{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:lvP 1.8s ease-out infinite}@keyframes lvP{100%{box-shadow:0 0 0 8px rgba(34,197,94,0)}}.meta .live.fade{animation:glF .5s}@keyframes glF{from{opacity:0}}
 .monsum{display:block;margin-top:6px;font-size:12.5px;color:var(--mut);font-weight:600}
 
@@ -619,7 +619,7 @@ function rerender(){if(!D)return;renderStats(D.stats);renderTeams(D.teams);eq();
 let shown=0;function countUp(el,to){const from=shown;shown=to;if(from===to){el.textContent=fmt(to);return}const t0=performance.now(),d=Math.min(1400,400+Math.abs(to-from)/50);const step=n=>{const k=Math.min(1,(n-t0)/d);const e=1-Math.pow(1-k,3);el.textContent=fmt(from+(to-from)*e);if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
 function endBan(){if(!D||!D.campaign.ended)return;const s=D.stats||{};$('#endT').textContent=T('ended');$('#endS').textContent=T('endS',{raised:cur+fmt(s.total||0),goal:cur+fmt(s.goal||D.campaign.goal||0),pct:Math.round(s.pct||0),n:fmt(s.count||0)});const f=document.querySelector('.cover .fr');if(f)f.dataset.end='🏁 '+T('ended')}
 let lastPct=-1;function goalFx(s,w){const rf=$('#ringF');if(rf)rf.style.strokeDashoffset=169.65*(1-Math.min(1,(s.pct||0)/100));const r=$('.pct.ring');if(r&&lastPct>=0&&s.pct>lastPct){r.classList.remove('pop');void r.offsetWidth;r.classList.add('pop')}lastPct=s.pct||0}
-function renderStats(s){const c=D.campaign;setTimeout(endBan);countUp($('#raised'),s.total);$('#goal').textContent=cur+fmt(s.goal);$('#pct').textContent=Math.min(s.pct,999)+'%';$('#count').textContent=s.count;
+function renderStats(s){const c=D.campaign;setTimeout(endBan);countUp($('#raised'),s.total);$('#goal').textContent=cur+fmt(s.goal);{const pv=Math.min(+s.pct||0,999),pt=(pv>0&&pv<10?(Math.round(pv*10)/10):Math.round(pv))+'%',pe=$('#pct');pe.textContent=pt;pe.dataset.len=pt.length}$('#count').textContent=s.count;
   const goalAll=s.bonus_goal>s.goal?s.bonus_goal:s.goal;requestAnimationFrame(()=>{const w=Math.min(100,s.total/goalAll*100);$('#bar').style.width=w+'%';goalFx(s,w)});
   if(s.bonus_goal>s.goal){$('#bonusMark').hidden=false;$('#bonusMark').style.insetInlineStart=(s.goal/goalAll*100)+'%';$('#bonusTxt').hidden=false;$('#bonusTxt').innerHTML=s.total>=s.goal?T('bonusHit',{b:cur+fmt(s.bonus_goal)}):T('bonus',{b:cur+fmt(s.bonus_goal)})}
   if(c.multiplier>1){$('#multWrap').hidden=false;$('#mult').textContent=c.multiplier;$('#multIc').textContent=c.multiplier}
