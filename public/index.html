@@ -485,6 +485,18 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 @media(max-width:1100px){.o3-bank{position:static;width:96px;margin:6px auto 0}}
 @media(max-width:700px){.o3-live{width:64px;animation:o3s 5s ease-in-out infinite!important}.o3-bank{width:84px;animation:o3s 5s ease-in-out infinite!important}.o3-top.o3-wide{width:120px}}
 </style>
+<style id="aib-css">
+.aib{max-width:680px;margin:28px auto 0;position:relative;z-index:2;animation:upIn .9s cubic-bezier(.22,1,.36,1) .42s both}
+.aib-in{position:relative;border-radius:24px;padding:2px;background:conic-gradient(from var(--ang,0deg),#7c5cff,#22d3ee,#ec4899,#7c5cff);animation:spinB 6s linear infinite;box-shadow:0 24px 60px -26px rgba(124,92,255,.65)}
+.aib textarea{display:block;width:100%;border:0;border-radius:22px;background:var(--card,#fff);color:var(--ink);font:inherit;font-size:17px;line-height:1.55;padding:18px 20px 62px;resize:none;outline:none;min-height:124px;text-align:start}
+.aib-go{position:absolute;bottom:12px;inset-inline-end:12px;border:0;border-radius:999px;min-height:42px;padding:0 20px;font:inherit;font-weight:700;font-size:15px;color:#fff;background:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .2s}
+.aib-go:hover{transform:translateY(-2px)}
+.aib-ex{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:12px;font-size:13px;color:var(--mut)}
+.aib-ex button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card,#fff);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
+.aib-ex button:hover{border-color:#7c5cff;color:#7c5cff}
+.aib:not([hidden])~.cta{margin-top:18px}
+@media(max-width:700px){.aib{margin-top:18px}.aib textarea{font-size:16px;padding:14px 14px 58px;min-height:118px}.aib-in{animation:none}.aib-ex span{display:none}.aib-ex button{font-size:12.5px}}
+</style>
 </head>
 <body><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
@@ -494,6 +506,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
   <span class="lbl">פלטפורמה לגיוס תרומות וגיוס המונים לעמותות</span>
   <h1>הקמפיין הבא שלכם<br><span>מגייס יותר.</span></h1>
   <p>דף קמפיין חי, שגרירים עם קישור אישי, הסליקה שלכם בלי עמלת פלטפורמה, מסך אירוע ומדריך חכם. מהרעיון ליעד, תוך חצי שעה.</p>
+  <form class="aib" id="aib" hidden><div class="aib-in"><textarea id="aibT" rows="2" maxlength="1200" placeholder="ספרו לנו על הקמפיין שלכם: על מה מגייסים, לאיזו עמותה וכמה רוצים לגייס…" aria-label="ספרו לנו על הקמפיין"></textarea><button class="aib-go" aria-label="בנו לי קמפיין"><span>בנו לי קמפיין</span> ✨</button></div><div class="aib-ex"><span>לדוגמה:</span><button type="button">ספר תורה לבית הכנסת שלנו, 150 אלף ₪</button><button type="button">חבילות מזון לחג ל-300 משפחות</button></div></form>
   <div class="cta"><a class="btn" href="/app#reg"><span class="ar">←</span>פותחים קמפיין</a><a class="btn o" href="/c/demo">צפו בקמפיין לדוגמה ↗</a></div>
   <div class="tr"><span>0% עמלה מהתרומות</span><span>מצב בדיקה לפני העלייה לאוויר</span><span>אימות מול רשם העמותות</span><span>4 שפות</span></div>
   <div class="nums" data-r><div><b>0%</b><span>עמלה מהתרומות</span></div><div><b class="t">30 דק׳</b><span>מהרשמה לקמפיין חי</span></div><div><b class="v">4</b><span>שפות מהקופסה</span></div></div>
@@ -717,6 +730,15 @@ document.querySelectorAll('.vc-ch button').forEach(b=>b.onclick=()=>{pct=+b.data
 const pg=$('pG');if(pg)pg.addEventListener('input',calc);
 const vc=document.querySelector('.vcalc');if(vc){new IntersectionObserver((es,o)=>{if(es.some(e=>e.isIntersecting)){calc();o.disconnect()}},{threshold:.3}).observe(vc)}
 fetch('/api/pricing').then(r=>r.json()).then(p=>{if(p&&p.campaign){document.querySelectorAll('.vp').forEach(e=>e.textContent='₪'+p.campaign);if(p.monthly)document.querySelectorAll('.vm').forEach(e=>e.textContent='₪'+p.monthly)}setTimeout(calc,50)}).catch(()=>{});
+})();
+</script>
+<script>
+(function(){const f=document.getElementById('aib');if(!f)return;const t=document.getElementById('aibT');
+fetch('/api/build/status').then(r=>r.json()).then(s=>{if(s&&s.on)f.hidden=false}).catch(()=>{});
+const go=v=>{v=String(v||'').trim();try{if(v)sessionStorage.setItem('gvFirst',v);sessionStorage.removeItem('gvBuild')}catch(e){}try{window.gvT&&gvT('click','ai-builder')}catch(e){}location.href='/build'};
+f.addEventListener('submit',e=>{e.preventDefault();go(t.value)});
+t.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();go(t.value)}});
+f.querySelectorAll('.aib-ex button').forEach(b=>b.onclick=()=>go(b.textContent));
 })();
 </script>
 </body>

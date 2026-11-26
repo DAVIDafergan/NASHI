@@ -1531,6 +1531,8 @@ app.get('/og/c/:slug.jpg', async (req, res) => {
   catch (e) { console.error('og', e.message); res.sendFile(pub('og.jpg')); }
 });
 { const ev = require('./lib/events')(app, { db, J, bad, auth, own, stats, isTest, safeUrl, SITE, pub }); evHook = ev.forward; }
+require('./lib/builder')(app, { bad, limit, BOT, logEvent });
+app.get('/build', (req, res) => res.sendFile(pub('build.html')));
 app.use(express.static(pub(''), { maxAge: '1h', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); else if (/[\\/]ev[\\/]/.test(p)) res.setHeader('Cache-Control', 'public, max-age=604800'); } }));
 app.get('/c/:slug/screen', (_, res) => res.sendFile(pub('screen.html')));
 app.get('/c/:slug/widget', (_, res) => res.sendFile(pub('widget.html')));

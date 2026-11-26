@@ -648,7 +648,18 @@ $('#logout').onclick=async e=>{e.preventDefault();await api('/logout',{method:'P
 let SUP={};
 async function loadSupport(){try{SUP=await api('/support')}catch{SUP={}}const h=$('#hbtn');const ctx=()=>{const where=C?` (קמפיין: ${C.title})`:'';return (SUP.text||'שלום, אני צריך עזרה עם GiveIL')+where};if(SUP.phone){h.href='https://wa.me/'+SUP.phone.replace(/\D/g,'').replace(/^0/,'972')+'?text='+encodeURIComponent(ctx());h.hidden=false}else h.hidden=true;h.onclick=()=>{if(SUP.phone)h.href='https://wa.me/'+SUP.phone.replace(/\D/g,'').replace(/^0/,'972')+'?text='+encodeURIComponent(ctx())}}
 loadSupport();
-async function boot(){const {user}=await api('/me');if(!user){$('#auth').style.display='';$('#shell').classList.remove('on');if(/#reset=/.test(location.hash))swap('reset');else if(location.hash==='#reg')swap('reg');return}U=user;$('#auth').style.display='none';$('#shell').classList.add('on');$('#gbtn').hidden=false;
+
+/* a campaign drafted in the chat builder (/build) is created here on first entry */
+async function importDraft(){let d=null;try{d=JSON.parse(localStorage.getItem('gvDraft')||'null')}catch{}if(!d||!d.title||Date.now()-(d.at||0)>7*864e5){try{localStorage.removeItem('gvDraft')}catch{}return}
+ try{localStorage.removeItem('gvDraft')}catch{}
+ try{const st=d.start?new Date(d.start+'T09:00'):new Date();const en=new Date(st.getTime()+(Math.max(1,+d.days||14))*864e5);
+  const c=await api('/campaigns',{method:'POST',body:{title:d.title,subtitle:d.subtitle||'',goal:d.goal||100000,start_at:toLocal(st),end_at:toLocal(en)}});
+  const body={story:d.story||'',subtitle:d.subtitle||''};if(d.thanks)body.settings={thanks:d.thanks};
+  if(Array.isArray(d.levels)&&d.levels.length)body.levels=d.levels.filter(l=>l.amount>0).sort((a,b)=>a.amount-b.amount).slice(0,6).map(l=>({name:l.name||'',amount:l.amount,descr:l.descr||''}));
+  await api('/campaigns/'+c.id,{method:'PUT',body});
+  window.oaiq?.("measure","custom",{type:"custom"},{custom_event_name:"campaign_created"});
+  C=null;location.hash=`#/c/${c.id}/design`;toast('✨ הקמפיין מהשיחה נשמר. אפשר להמשיך לערוך')}catch(e){toast('לא הצלחנו לשמור את הטיוטה מהשיחה')}}
+async function boot(){const {user}=await api('/me');if(!user){$('#auth').style.display='';$('#shell').classList.remove('on');if(/#reset=/.test(location.hash))swap('reset');else if(location.hash==='#reg')swap('reg');return}U=user;$('#auth').style.display='none';$('#shell').classList.add('on');setTimeout(importDraft,700);$('#gbtn').hidden=false;
   if(U.avatar)$('#uAv').innerHTML=`<img src="${esc(U.avatar)}" alt="">`;else $('#uAv').textContent=(U.name||U.email)[0].toUpperCase();$('#uName').textContent=U.name||U.email;$('#uOrg').textContent=U.org_name||U.org||'';$('#adminNav').hidden=U.role!=='admin';$('#teamNav').hidden=!!U.sub;$$('#campNav a').forEach(x=>x.hidden=!tabOk(x.dataset.p.split('/')[1]));if(U.sub)$('#uOrg').textContent=(U.org_name||U.org||'')+' · צוות';if(U.imp&&!$('#impBar')){document.body.classList.add('imp');document.body.insertAdjacentHTML('afterbegin',`<div id="impBar">👀 אתם צופים במערכת בתור <b>${esc(U.email)}</b><button onclick="impStop()">חזרה לניהול-על</button></div>`)}PROVS=await api('/providers');route()}
 
 // ---- UX: unsaved-changes bar, navigation guard, responsive tables, campaign switcher ----
