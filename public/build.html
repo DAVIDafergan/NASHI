@@ -143,7 +143,7 @@ function toEnd(smooth=true){const m=$('msgs');requestAnimationFrame(()=>m.scroll
 
 function bubble(role,text,imgs){const d=document.createElement('div');d.className='m '+(role==='user'?'u':'a');
  if(role==='user'){if(imgs&&imgs.length){const th=document.createElement('div');th.className='th';imgs.forEach(u=>{const i=new Image();i.src=u;i.alt='';th.appendChild(i)});d.appendChild(th)}d.appendChild(document.createTextNode(text))}
- else{const s=document.createElement('span');s.textContent=text;d.appendChild(s)}
+ else{const s=document.createElement('span');s.innerHTML=md(text);d.appendChild(s)}
  $('in').appendChild(d);toEnd();return d}
 function md(t){return esc(t).replace(/\*\*([^*\n]+?)\*\*/g,'<b>$1</b>')}
 function setTxt(id,val,ph){const e=$(id);const had=e.textContent;if(val){e.classList.remove('ph');if(had!==val){e.textContent=val;e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash')}}else{e.classList.add('ph');e.textContent=ph}}
