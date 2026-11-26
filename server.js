@@ -568,7 +568,10 @@ app.post('/api/campaigns/:id/updates', auth, own, (req, res) => { const b = req.
 app.delete('/api/campaigns/:id/updates/:uid', auth, own, (req, res) => { db.prepare('DELETE FROM updates WHERE id=? AND campaign_id=?').run(req.params.uid, req.c.id); res.json({ ok: true }); });
 app.get('/api/campaigns/:id/donations', auth, own, (req, res) => {
   const { q, status, test } = req.query; let sql = 'SELECT d.*, t.name team FROM donations d LEFT JOIN teams t ON t.id=d.team_id WHERE d.campaign_id=?'; const p = [req.c.id];
-  if (status) { sql += ' AND d.status=?'; p.push(status); }
+  // "active" = started in the last 20 minutes and not paid yet; "abandoned" = started earlier and never finished
+  if (status === 'active') sql += " AND d.status='pending' AND d.created >= datetime('now','-20 minutes')";
+  else if (status === 'abandoned') sql += " AND d.status='pending' AND d.created < datetime('now','-20 minutes')";
+  else if (status) { sql += ' AND d.status=?'; p.push(status); }
   if (test !== undefined && test !== '') { sql += ' AND d.test=?'; p.push(test === '1' ? 1 : 0); }
   if (req.query.id) { sql += ' AND d.id=?'; p.push(+req.query.id || 0); }
   if (q) { sql += ' AND (d.name LIKE ? OR d.phone LIKE ? OR d.email LIKE ? OR d.dedication LIKE ?)'; p.push(...Array(4).fill('%' + q + '%')); }
@@ -873,6 +876,7 @@ app.post('/api/c/:slug/donate', limit(600, 60000), async (req, res) => {
   if (s.idField === 'required') { const z = String(b.id_number || '').replace(/\D/g, ''); if (z.length < 8 || z.length > 9) return bad(res, 'נא להזין מספר תעודת זהות תקין'); }
   const r = db.prepare('INSERT INTO donations(campaign_id,team_id,level_id,amount,currency,name,phone,email,id_number,dedication,anonymous,status,test,provider,installments,monthly,token) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(c.id, team ? team.id : null, level ? level.id : null, finalAmount, c.currency, name, phone, email, String(b.id_number || '').replace(/\D/g, '').slice(0, 9), String(b.dedication || '').slice(0, 300), b.anonymous && s.allowAnon !== false ? 1 : 0, 'pending', isTest(c) ? 1 : 0, type, inst, isMonthly ? 1 : 0, token);
   if (resumed) db.prepare('UPDATE donations SET resumed_from=? WHERE id=?').run(resumed.id, r.lastInsertRowid);
+  try { const set = subs.get(c.id); if (set) for (const s2 of set) s2.write('event: started\ndata: {}\n\n'); } catch { } // the dashboard shows the donation as "in process" right away
   const donation = db.prepare('SELECT * FROM donations WHERE id=?').get(r.lastInsertRowid);
   try {
     const out = await P.start({ base: base(req), donation, campaign: c, cfg, method });
