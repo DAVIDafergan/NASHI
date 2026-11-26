@@ -503,6 +503,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 .aib:not([hidden])~.cta{display:none!important}.aib:not([hidden])~.tr{margin-top:34px}
 .aib-lb{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:17px;color:var(--ink);margin-bottom:16px;cursor:text}
 .aib-lb i{font-style:normal;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;color:#fff;background:linear-gradient(135deg,#4285f4,#9b72cb 55%,#d96570);flex:none}
+.aib-back{display:inline-flex;margin:14px auto 0;font-size:14px;font-weight:600;color:#4c2fd0;background:rgba(124,92,255,.1);border-radius:999px;padding:8px 16px}
 .aib-ic{flex:none;font-size:18px;color:#a8a29e;margin-inline-end:2px}
 .aib-box{cursor:text}
 .aib input::placeholder{color:#8a8580}
@@ -748,9 +749,11 @@ fetch('/api/pricing').then(r=>r.json()).then(p=>{if(p&&p.campaign){document.quer
 <script>
 (function(){const f=document.getElementById('aib');if(!f)return;const t=document.getElementById('aibT');
 fetch('/api/build/status').then(r=>r.json()).then(s=>{if(s&&s.on)f.hidden=false}).catch(()=>{});
-const go=v=>{v=String(v||'').trim();try{if(v)sessionStorage.setItem('gvFirst',v);sessionStorage.removeItem('gvBuild')}catch(e){}try{window.gvT&&gvT('click','ai-builder')}catch(e){}location.href='/build'};
+const go=v=>{v=String(v||'').trim();try{if(v)sessionStorage.setItem('gvFirst',v)}catch(e){}try{window.gvT&&gvT('click','ai-builder')}catch(e){}location.href='/build'};
 f.addEventListener('submit',e=>{e.preventDefault();go(t.value)});
 t.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();go(t.value)}});
+// a conversation that was started earlier can be continued
+try{const sv=JSON.parse(localStorage.getItem('gvBuild')||'null');if(sv&&Array.isArray(sv.msgs)&&sv.msgs.length&&Date.now()-(sv.at||0)<14*864e5){const a=document.createElement('a');a.href='/build';a.className='aib-back';a.textContent='↩ להמשיך את השיחה'+(sv.draft&&sv.draft.title?' על "'+sv.draft.title+'"':'');f.appendChild(a)}}catch(e){}
 const upd=()=>f.classList.toggle('has',!!t.value.trim());t.addEventListener('input',upd);upd();
 // typewriter examples in the empty field, so it reads as a place to type
 const EX=['ספר תורה לבית הכנסת שלנו, 150 אלף ₪','חבילות מזון לחג ל-300 משפחות','בניין חדש לישיבה, יעד של מיליון ₪','ציוד לחיילים של הגדוד שלנו'];let ei=0,ci=0,dir=1,tm;
