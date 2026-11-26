@@ -441,6 +441,9 @@ header{background:var(--paper)!important;backdrop-filter:none!important;-webkit-
 @keyframes okH{0%{opacity:.9;transform:scale(.85)}100%{opacity:0;transform:scale(1.45)}}
 .thx #thxH,.thx #thxP{animation:okT .6s 1s both}@keyframes okT{from{opacity:0;transform:translateY(8px)}}
 @media (prefers-reduced-motion:reduce){.okd .okr,.okd .okc{stroke-dashoffset:0}.okd .okb{transform:none}.okd.go *,.okd.go::before,.okd.go::after,.thx #thxH,.thx #thxP{animation:none!important}}
+.mcta{container-type:inline-size;container-name:mcta}
+@container mcta (max-width:300px){.mcta .dpx .btn.grad .ar{display:none}.mcta .dpx .btn.grad{font-size:15.5px;gap:0;white-space:nowrap}.mcta .dpx .cust.pc{padding:0 10px}.mcta .dpx .cust.pc input::placeholder{font-size:14.5px}.mcta .dpx .cust.pc span{font-size:17px}}
+@container mcta (max-width:230px){.mcta .dpx{flex-direction:column;gap:5px}.mcta .dpx>*{flex:none!important;width:100%!important}.mcta .dpx .btn.grad{min-height:50px}}
 </style>
 </head>
 <body>
@@ -579,7 +582,7 @@ async function load(){
   $('#lbl').innerHTML=c.multiplier>1?T('multLbl',{m:c.multiplier}):(c.ended?T('ended'):T('active'));
   $('#provName').textContent={test:T('testProv'),nedarim:'Nedarim Plus',meshulam:'Grow',paypal:'PayPal',sumit:'SUMIT',cardcom:'Cardcom',payplus:'PayPlus',hyp:'Hyp',pelecard:'Pelecard',icredit:'iCredit',payme:'PayMe',zcredit:'Z-Credit',morning:'Morning',tranzila:'Tranzila',link:'SSL',bit:'Bit',paybox:'PayBox'}[c.providerType]||'';renderPM();
   
-  $('#story').innerHTML=c.story?c.story.split(/\n{2,}/).map(p=>`<p>${esc(p).replace(/\n/g,'<br>')}</p>`).join(''):'';if(!c.story&&!c.video)$('#about').hidden=true;$('#story').classList.toggle('long',(c.story||'').length>900);$('#about').classList.toggle('hasv',!!c.video&&!!c.story);{const po=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');po.unobserve(e.target)}}),{threshold:.15,rootMargin:'0px 0px -6% 0px'});$$('#story p').forEach((p,i)=>{p.style.transitionDelay=Math.min(i,4)*70+'ms';po.observe(p)})}
+  $('#story').innerHTML=c.story?c.story.split(/\n{2,}/).map(p=>`<p>${esc(p).replace(/\*\*([^*\n]+?)\*\*/g,'<b>$1</b>').replace(/(^|[\s("'״])_([^_\n]+?)_(?=$|[\s.,!?:;)"'״])/g,'$1<i>$2</i>').replace(/\n/g,'<br>')}</p>`).join(''):'';if(!c.story&&!c.video)$('#about').hidden=true;$('#story').classList.toggle('long',(c.story||'').length>900);$('#about').classList.toggle('hasv',!!c.video&&!!c.story);{const po=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');po.unobserve(e.target)}}),{threshold:.15,rootMargin:'0px 0px -6% 0px'});$$('#story p').forEach((p,i)=>{p.style.transitionDelay=Math.min(i,4)*70+'ms';po.observe(p)})}
   // amounts
   const s=c.settings||{};const presets=(s.presets||[100,180,360,500,1000,1800]).slice(0,6);
   if(c.settings&&c.settings.ctaText){$$('[data-i=donateNow]').forEach(e=>e.textContent=c.settings.ctaText)}if(c.settings&&c.settings.goalText)$$('[data-i=ofGoal]').forEach(e=>e.textContent=c.settings.goalText);if(c.settings&&c.settings.showTimer===false)$('#timer').hidden=true;if(c.settings&&c.settings.hideGoal){$('.pcard .bar').hidden=true;$('.pcard .of').hidden=true;$('.pcard .pct').hidden=true}if(c.settings&&c.settings.dedicationOn===false)$('#fDed').parentElement.hidden=true;
