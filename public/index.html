@@ -348,22 +348,26 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 @media (prefers-reduced-motion:reduce){.drift,.steps::after{display:none}.rb-track,.phone,.hero [data-r],.tile .ti,.pc.hl,.cta2{animation:none!important}}
 </style>
 <style id="mobile-rows">
-/* phones: long stacks become swipeable rows so the page is much shorter */
+/* phones: compact layout, no sideways scrolling, calm motion */
 @media(max-width:700px){
- .tiles,.steps,.gd,.price,.mgl,.mf-g{display:flex!important;grid-template-columns:none!important;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;gap:12px!important;margin-inline:-16px;padding:6px 16px 14px!important;scroll-padding-inline:16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
- .tiles::-webkit-scrollbar,.steps::-webkit-scrollbar,.gd::-webkit-scrollbar,.price::-webkit-scrollbar,.mgl::-webkit-scrollbar,.mf-g::-webkit-scrollbar{display:none}
- .tiles>*,.steps>*,.gd>*,.price>*,.mgl>*,.mf-g>*{flex:0 0 78%;scroll-snap-align:start;min-width:0}
- .tiles>*{flex-basis:42%;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 10px}
- .dark .tiles>*{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
- .price>*{flex-basis:84%}
- .price{padding-top:18px!important}
- .steps::after{display:none}
- .swipe-hint{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--mut);margin-top:-2px}
- .swipe-hint i{font-style:normal;display:inline-block;animation:swp 1.6s ease-in-out infinite}
- @keyframes swp{50%{transform:translateX(-6px)}}
- .dark .swipe-hint{color:#aeb2c2}
+ section{padding-block:44px!important}
+ .cg{grid-template-columns:1fr 1fr!important;gap:10px!important;margin-top:22px!important}
+ .cgc{border-radius:14px}.cgc .im{aspect-ratio:16/10}
+ .cgc .im span{font-size:10.5px;padding:3px 7px;bottom:7px;inset-inline-start:7px;border-radius:6px}.cgc .im span.lv,.cgc .im span.en{inset-inline-start:auto;inset-inline-end:7px}
+ .cgc .bd{padding:10px 11px 12px}.cgc h3{font-size:13.5px;min-height:2.6em}.cgc .bar{margin:8px 0 6px;height:6px}.cgc .m{font-size:11.5px;flex-wrap:wrap;gap:2px 6px}
+ .tiles{gap:18px 10px!important;margin-top:28px!important}.tile .ti{width:38px!important;height:38px!important;margin-bottom:8px!important}.tile h3{font-size:14px!important}.tile p{font-size:12px!important;margin-top:3px!important;line-height:1.4!important}
+ .steps{grid-template-columns:1fr 1fr!important;gap:10px!important;margin-top:24px!important}
+ .stp{padding:14px!important;border-radius:14px}.stp::before{width:28px!important;height:28px!important;font-size:13px!important;margin-bottom:8px!important}.stp h3{font-size:14.5px!important}.stp p{font-size:12.5px!important;line-height:1.45}
+ .gd{gap:10px!important;margin-top:22px!important}.gs{padding:14px!important;border-radius:16px!important;gap:10px!important}.gs h3{font-size:15px!important}.gs p{font-size:13px!important;line-height:1.5!important}
+ .price{gap:12px!important;margin-top:24px!important}.pc{padding:18px!important;gap:8px!important}.pc .pr{font-size:32px!important}.pc ul{font-size:13px!important;gap:5px!important}
+ .mgl{grid-template-columns:1fr 1fr!important;gap:8px!important}.mgl li{padding:12px!important;border-radius:14px!important}.mgl b{font-size:14px!important}.mgl span{font-size:12.5px!important}
+ .mf-g{grid-template-columns:1fr 1fr!important;gap:8px!important}.mf-c{padding:14px!important;border-radius:14px!important}.mf-c h3,.mf-c b{font-size:14px!important}.mf-c p{font-size:12.5px!important;line-height:1.45!important}
+ .nums{margin-top:28px!important}
+ /* calm: no drifting, bobbing, floating or spinning on phones */
+ .drift,.steps::after,#sprog,.dark::after{display:none!important}
+ .tile .ti,.hero [data-r],.phone,.pc.hl,h1 span,.g,.hero .cta .btn::after,.float{animation:none!important}
+ [data-r].st{transition-delay:0s!important}
 }
-@media(min-width:701px){.swipe-hint{display:none}}
 </style>
 </head>
 <body><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -572,9 +576,6 @@ const ph=document.querySelector('.phone');if(ph&&!rm&&matchMedia('(hover:hover) 
 (function(){
 // demo phone: load the iframe a little before it scrolls into view
 const f=document.querySelector('.phone iframe[data-src]');if(f){const go=()=>{if(!f.src)f.src=f.dataset.src};if('IntersectionObserver' in window){const o=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){go();o.disconnect()}},{rootMargin:'900px 0px'});o.observe(f)}else go();setTimeout(go,4000)}
-// "swipe" hint under each row on phones
-if(matchMedia('(max-width:700px)').matches)document.querySelectorAll('.tiles,.steps,.gd,.price,.mgl,.mf-g').forEach(r=>{if(r.children.length<2)return;const h=document.createElement('div');h.className='swipe-hint';h.innerHTML='<i>←</i> החליקו לעוד';r.after(h);r.addEventListener('scroll',()=>h.style.opacity='0',{once:true,passive:true})});
-if(matchMedia('(max-width:700px)').matches){const pr=document.querySelector('.price'),hl=pr&&pr.querySelector('.hl');if(hl)requestAnimationFrame(()=>{pr.scrollLeft+=hl.getBoundingClientRect().left-pr.getBoundingClientRect().left-((pr.clientWidth-hl.offsetWidth)/2)})}
 })();
 </script>
 </body>
