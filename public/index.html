@@ -486,25 +486,22 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
 @media(max-width:700px){.o3-live{width:64px;animation:o3s 5s ease-in-out infinite!important}.o3-bank{width:84px;animation:o3s 5s ease-in-out infinite!important}.o3-top.o3-wide{width:120px}}
 </style>
 <style id="aib-css">
-.aib{max-width:680px;margin:28px auto 0;position:relative;z-index:2;animation:upIn .9s cubic-bezier(.22,1,.36,1) .42s both}
-.aib-in{position:relative;border-radius:30px}
+.aib{max-width:660px;margin:28px auto 0;position:relative;z-index:2;animation:upIn .9s cubic-bezier(.22,1,.36,1) .42s both}
+.aib-in{position:relative;border-radius:999px}
+.aib-in.multi{border-radius:28px}
 .aib-in .halo,.aib-in .ring{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
-.aib-in .halo{filter:blur(20px);opacity:.5;transition:opacity .3s}
-.aib-in:focus-within .halo{opacity:.85}
-.aib-in .spin{position:absolute;top:50%;left:50%;width:220%;aspect-ratio:1;translate:-50% -50%;background:conic-gradient(#4285f4,#9b72cb,#d96570,#fbbc05,#34a853,#22d3ee,#4285f4);animation:aibSp 5s linear infinite}
+.aib-in .halo{filter:blur(18px);opacity:.5;transition:opacity .3s}
+.aib-in:focus-within .halo{opacity:.9}
+.aib-in .spin{position:absolute;top:50%;left:50%;width:max(220%,700px);aspect-ratio:1;translate:-50% -50%;background:conic-gradient(#4285f4,#9b72cb,#d96570,#fbbc05,#34a853,#22d3ee,#4285f4);animation:aibSp 5s linear infinite}
 @keyframes aibSp{to{rotate:360deg}}
-.aib-box{position:relative;margin:2.5px;border-radius:27.5px;background:var(--card,#fff);padding:14px 16px 10px;display:flex;flex-direction:column;gap:8px}
-.aib textarea{display:block;width:100%;border:0;background:transparent;color:var(--ink);font:inherit;font-size:17px;line-height:1.55;padding:4px 4px 0;resize:none;outline:none;min-height:60px;text-align:start}
-.aib-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.aib-tag{font-size:12.5px;color:var(--mut);display:inline-flex;align-items:center;gap:6px}
-.aib-tag i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;color:#fff;background:linear-gradient(135deg,#4285f4,#9b72cb 55%,#d96570)}
-.aib-go{flex:none;border:0;border-radius:999px;min-height:42px;padding:0 18px;font:inherit;font-weight:700;font-size:15px;color:#fff;background:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .2s}
-.aib-go:hover{transform:translateY(-2px)}
-.aib-ex{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:14px;font-size:13px;color:var(--mut)}
-.aib-ex button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card,#fff);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
-.aib-ex button:hover{border-color:#7c5cff;color:#7c5cff}
-.aib:not([hidden])~.cta{margin-top:18px}
-@media(max-width:700px){.aib{margin-top:18px}.aib textarea{font-size:16px;min-height:52px}.aib-box{padding:12px 12px 8px}.aib-tag span{display:none}.aib-ex span{display:none}.aib-ex button{font-size:12.5px}}
+.aib-box{position:relative;margin:2.5px;border-radius:inherit;background:var(--card,#fff);display:flex;align-items:center;gap:8px;padding:8px 10px 8px 8px;padding-inline-start:22px;padding-inline-end:8px;min-height:58px}
+.aib input{flex:1 1 0;min-width:0;width:0;display:block;border:0;background:transparent;color:var(--ink);font:inherit;font-size:17px;line-height:1.5;padding:0;height:42px;outline:none;text-align:start;text-overflow:ellipsis;-webkit-appearance:none;appearance:none;border-radius:0}
+.aib input::placeholder{color:#a8a29e;opacity:1}
+.aib-go{flex:none;width:42px;height:42px;border:0;border-radius:50%;font:inherit;font-weight:700;font-size:19px;color:#fff;background:var(--ink);cursor:pointer;display:grid;place-items:center;transform:scale(0);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .2s}
+.aib.has .aib-go{transform:none;opacity:1;pointer-events:auto}
+.aib:not(.has) .aib-go{width:0!important;margin-inline-start:-8px}
+.aib:not([hidden])~.cta{margin-top:20px}
+@media(max-width:700px){.aib{margin-top:18px}.aib input{font-size:16px}.aib-box{padding-inline-start:18px;min-height:54px}.aib-go{width:38px;height:38px}}
 @media (prefers-reduced-motion:reduce){.aib-in .spin{animation-duration:24s}}
 </style>
 </head>
@@ -516,7 +513,7 @@ html[dir=ltr] .rb-track{animation-name:rbMoveL}@keyframes rbMoveL{to{transform:t
   <span class="lbl">פלטפורמה לגיוס תרומות וגיוס המונים לעמותות</span>
   <h1>הקמפיין הבא שלכם<br><span>מגייס יותר.</span></h1>
   <p>דף קמפיין חי, שגרירים עם קישור אישי, הסליקה שלכם בלי עמלת פלטפורמה, מסך אירוע ומדריך חכם. מהרעיון ליעד, תוך חצי שעה.</p>
-  <form class="aib" id="aib" hidden><div class="aib-in"><div class="halo"><i class="spin"></i></div><div class="ring"><i class="spin"></i></div><div class="aib-box"><textarea id="aibT" rows="2" maxlength="1200" placeholder="ספרו לנו על הקמפיין שלכם: על מה מגייסים, לאיזו עמותה וכמה רוצים לגייס…" aria-label="ספרו לנו על הקמפיין"></textarea><div class="aib-row"><span class="aib-tag"><i>✦</i><span>נבנה איתכם את הקמפיין בשיחה</span></span><button class="aib-go" aria-label="בנו לי קמפיין"><span>בנו לי קמפיין</span> ✨</button></div></div></div><div class="aib-ex"><span>לדוגמה:</span><button type="button">ספר תורה לבית הכנסת שלנו, 150 אלף ₪</button><button type="button">חבילות מזון לחג ל-300 משפחות</button></div></form>
+  <form class="aib" id="aib" hidden><div class="aib-in"><div class="halo"><i class="spin"></i></div><div class="ring"><i class="spin"></i></div><div class="aib-box"><input id="aibT" type="text" maxlength="600" autocomplete="off" enterkeyhint="go" placeholder="ספר תורה לבית הכנסת שלנו, 150 אלף ₪" aria-label="ספרו לנו על הקמפיין שלכם"><button class="aib-go" aria-label="בנו לי קמפיין" tabindex="-1">↑</button></div></div></form>
   <div class="cta"><a class="btn" href="/app#reg"><span class="ar">←</span>פותחים קמפיין</a><a class="btn o" href="/c/demo">צפו בקמפיין לדוגמה ↗</a></div>
   <div class="tr"><span>0% עמלה מהתרומות</span><span>מצב בדיקה לפני העלייה לאוויר</span><span>אימות מול רשם העמותות</span><span>4 שפות</span></div>
   <div class="nums" data-r><div><b>0%</b><span>עמלה מהתרומות</span></div><div><b class="t">30 דק׳</b><span>מהרשמה לקמפיין חי</span></div><div><b class="v">4</b><span>שפות מהקופסה</span></div></div>
@@ -748,7 +745,7 @@ fetch('/api/build/status').then(r=>r.json()).then(s=>{if(s&&s.on)f.hidden=false}
 const go=v=>{v=String(v||'').trim();try{if(v)sessionStorage.setItem('gvFirst',v);sessionStorage.removeItem('gvBuild')}catch(e){}try{window.gvT&&gvT('click','ai-builder')}catch(e){}location.href='/build'};
 f.addEventListener('submit',e=>{e.preventDefault();go(t.value)});
 t.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();go(t.value)}});
-f.querySelectorAll('.aib-ex button').forEach(b=>b.onclick=()=>go(b.textContent));
+const upd=()=>f.classList.toggle('has',!!t.value.trim());t.addEventListener('input',upd);upd();
 })();
 </script>
 </body>
